@@ -1,9 +1,14 @@
+# --------------------------------------------------------------------------
+# Copyright ©2016 Commvault Systems, Inc.
+# See License.txt in the project root for
+# license information.
+# --------------------------------------------------------------------------
+
 =======
 CVPySDK
 =======
 
 CVPySDK is a Python Package for Commvault Software.
-
 CVPySDK uses REST API to perform operations on a Commcell.
 
 
@@ -11,9 +16,9 @@ CVPySDK uses REST API to perform operations on a Commcell.
 Requirements
 ------------
 
-- Python 2.7
-- requests Python package (https://github.com/kennethreitz/requests)
-- Commvault Software v11 SP6 or later release
+	.. Python 2.7
+	.. requests Python package (https://github.com/kennethreitz/requests)
+	.. Commvault Software v11 SP6 or later release
 
 
 ------------------
@@ -31,7 +36,7 @@ It can be installed from source. After downloading, from within the ``cvpysdk`` 
 Using CVPySDK
 -------------
 
-Login to Commcell::
+Login to Commcell:
 
     >>> from cvpysdk import commcell
     >>> commcell_object = commcell.Commcell(commcell_name, commcell_username, commcell_password, port)
@@ -70,11 +75,11 @@ Run restore out of place job for a subclient:
 	>>> job = subclient_object.restore_out_of_place()
 
 Job Operations:
-	>>> job.pause()		    # Suspends the Job
-	>>> job.resume()	    # Resumes the Job
-	>>> job.kill()		    # Kills the Job
-	>>> job.status		    # Current Status the Job  --  Completed / Pending / Failed / .... / etc.
-	>>> job.finished	    # Job finished or not     --  True / False
+	>>> job.pause()			# Suspends the Job
+	>>> job.resume()		# Resumes the Job
+	>>> job.kill()			# Kills the Job
+	>>> job.status			# Current Status the Job  --	Completed / Pending / Failed / .... / etc.
+	>>> job.finished		# Job finished or not     --	True / False
 
 
 ------------
@@ -85,7 +90,7 @@ On Windows, if CVPySDK was installed using an ``.exe`` or ``.msi``
 installer, simply use the uninstall feature of "Add/Remove Programs" in the
 Control Panel.
 
-Alternatively, you can uninstall using the pip command::
+Alternatively, you can uninstall using the pip command.
 
 	pip uninstall cvpysdk
 

@@ -66,6 +66,7 @@ class Backupsets(object):
         )
 
         self._instance_name = None
+        self._instance_id = None
         self._backupsets = self._get_backupsets()
 
     def __repr__(self):
@@ -110,6 +111,7 @@ class Backupsets(object):
                 for dictionary in response.json()['backupsetProperties']:
                     if not self._instance_name:
                         self._instance_name = str(dictionary['backupSetEntity']['instanceName'])
+                        self._instance_id = str(dictionary['backupSetEntity']['instanceId'])
 
                     agent = str(dictionary['backupSetEntity']['appName']).lower()
 
@@ -200,7 +202,8 @@ class Backupsets(object):
 
                                 return Backupset(self._agent_object,
                                                  backupset_name,
-                                                 backupset_id)
+                                                 backupset_id,
+                                                 self._instance_id)
                             else:
                                 o_str = 'Failed to create new backupset with error code: "{0}"'
                                 print o_str.format(error_code)
@@ -243,7 +246,8 @@ class Backupsets(object):
             if all_backupsets and backupset_name in all_backupsets:
                 return Backupset(self._agent_object,
                                  backupset_name,
-                                 all_backupsets[backupset_name])
+                                 all_backupsets[backupset_name],
+                                 self._instance_id)
 
             raise SDKException('Backupset',
                                '102',
@@ -322,7 +326,7 @@ class Backupsets(object):
 class Backupset(object):
     """Class for performing backupset operations for a specific backupset."""
 
-    def __init__(self, agent_object, backupset_name, backupset_id=None):
+    def __init__(self, agent_object, backupset_name, backupset_id=None, instance_id=1):
         """Initialise the backupset object.
 
             Args:
@@ -330,6 +334,8 @@ class Backupset(object):
                 backupset_name (str) - name of the backupset
                 backupset_id (str) - id of the backupset
                     default: None
+                instance_id (str) - id of the instance associated with the backupset
+                    default: 1, for File System iDA
 
             Returns:
                 object - instance of the Backupset class
@@ -337,6 +343,7 @@ class Backupset(object):
         self._agent_object = agent_object
         self._backupset_name = str(backupset_name).lower()
         self._commcell_object = self._agent_object._commcell_object
+        self._instance_id = instance_id
 
         if backupset_id:
             # Use the backupset id provided in the arguments
