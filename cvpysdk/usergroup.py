@@ -63,7 +63,7 @@ class UserGroups(object):
 
         for user_group_name, _ in self._user_groups.items():
             sub_str = 'User Group "{0}" of Commcell: "{1}"\n'
-            sub_str.format(user_group_name, self._commcell_object._headers['Host'])
+            sub_str = sub_str.format(user_group_name, self._commcell_object._headers['Host'])
             representation_string += sub_str
 
         return representation_string.strip()
