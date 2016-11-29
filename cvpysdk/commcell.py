@@ -40,6 +40,8 @@ from alert import Alerts
 from storage import MediaAgents
 from storage import DiskLibraries
 from storage import StoragePolicies
+from storage import SchedulePolicies
+from usergroup import UserGroups
 from exception import SDKException
 
 
@@ -108,11 +110,13 @@ class Commcell(object):
             Alerts(self),
             MediaAgents(self),
             DiskLibraries(self),
-            StoragePolicies(self)
+            StoragePolicies(self),
+            SchedulePolicies(self),
+            UserGroups(self)
         ]
 
-        self.clients, self.alerts, \
-            self.media_agents, self.disk_libraries, self.storage_policies = commcell_entities
+        self.clients, self.alerts, self.media_agents, self.disk_libraries, \
+            self.storage_policies, self.schedule_policies, self.user_groups = commcell_entities
 
     def __enter__(self):
         """Returns the current instance.
@@ -155,9 +159,11 @@ class Commcell(object):
     def _remove_attribs_(self):
         """Removes all the attributes associated with the instance of this class."""
         del self.clients
-        del self.disk_libraries
+        del self.alerts
         del self.media_agents
+        del self.disk_libraries
         del self.storage_policies
+        del self.schedule_policies
         del self.__user_guid
         del self._commcell_service
         del self._cvpysdk_object

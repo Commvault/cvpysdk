@@ -30,7 +30,8 @@ Alert:
              alert_name,
              alert_id=None)  -- initialise object of alert with the specified commcell name
                                          and id, and associated to the specified commcell
-    __repr__()              -- return the alert name and id, the instance is associated with
+    __repr__()              -- return the alert name with description and category,
+                                the alert is associated with
     _get_alert_id()         -- method to get the alert id, if not specified in __init__
     _get_alert_properties() -- get the properties of this alert
     _get_alert_category()   -- return the category of the alert
@@ -69,8 +70,11 @@ class Alerts(object):
         representation_string = ""
 
         for alert_name in self._alerts:
-            alert_category = self._alerts[alert_name]['alertCategory']
-            sub_str = 'Alert "{0}" with Category: "{1}"\n'.format(alert_name, alert_category)
+            alert_description = self._alerts[alert_name]['description']
+            alert_category = self._alerts[alert_name]['category']
+            sub_str = 'Alert "{0}" for: "{1}" with Category: "{2}"\n'.format(alert_name,
+                                                                             alert_description,
+                                                                             alert_category)
             representation_string += sub_str
 
         return representation_string.strip()
@@ -83,11 +87,11 @@ class Alerts(object):
                     {
                          "alert1_name": {
                              "id": alert1_id,
-                             "alert_category": alert1_category
+                             "category": alert1_category
                          },
                          "alert2_name": {
                              "id": alert2_id,
-                             "alert_category": alert2_category
+                             "category": alert2_category
                          }
                     }
 
@@ -106,10 +110,12 @@ class Alerts(object):
                 for dictionary in response.json()['alertList']:
                     temp_name = str(dictionary['alert']['name']).lower()
                     temp_id = str(dictionary['alert']['id']).lower()
+                    temp_description = str(dictionary['description']).lower()
                     temp_category = str(dictionary['alertCategory']['name']).lower()
 
                     alert_dict['id'] = temp_id
-                    alert_dict['alert_category'] = temp_category
+                    alert_dict['description'] = temp_description
+                    alert_dict['category'] = temp_category
                     alerts_dict[temp_name] = alert_dict
 
                 return alerts_dict

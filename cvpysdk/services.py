@@ -69,6 +69,12 @@ class ApiLibrary(object):
         self.BACKUPSET_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s'
         self.SUBCLIENT_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s&subclientId=%s'
 
+        self.GET_ALL_CLIENTGROUPS = '{0}ClientGroup'
+        self.CLIENTGROUP = '{0}ClientGroup/%s'
+
+        self.GET_ALL_USERGROUPS = '{0}UserGroup'
+        self.USERGROUP = '{0}UserGroup/%s'
+
         self.BROWSE = '{0}DoBrowse'
         self.RESTORE = '{0}retrieveToClient'
 

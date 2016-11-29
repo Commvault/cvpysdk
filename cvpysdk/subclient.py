@@ -741,9 +741,9 @@ class Subclient(object):
 
                     time.sleep(1)
                     return Job(self._commcell_object, response.json()['jobId'])
-                elif "errorList" in response.json():
-                    error_code = response.json()['errorList'][0]['errorCode']
-                    error_message = response.json()['errorList'][0]['errLogMessage']
+                elif "errList" in response.json():
+                    error_code = response.json()['errList'][0]['errorCode']
+                    error_message = response.json()['errList'][0]['errLogMessage']
 
                     print "Restore job failed with error code: %s" % (error_code)
                     print "Error message: %s" % (error_message)

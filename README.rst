@@ -17,6 +17,7 @@ Requirements
 ------------
 
 	.. Python 2.7
+	.. requests Python package (https://github.com/kennethreitz/requests)
 	.. Commvault Software v11 SP6 or later release
 
 
@@ -24,14 +25,9 @@ Requirements
 Installing CVPySDK
 ------------------
 
-CVPySDK is available as a Windows executable distribution as well as Zip format source distribution.
+CVPySDK is available on GitHub (https://github.com/CommvaultEngg/cvpysdk).
 
-The easiest way to install CVPySDK is via pip::
-
-    pip install cvpysdk
-
-
-Alternatively it can be installed from source. From within the ``cvpysdk`` directory, execute::
+It can be installed from source. After downloading, from within the ``cvpysdk`` directory, execute::
 
     python setup.py install
 

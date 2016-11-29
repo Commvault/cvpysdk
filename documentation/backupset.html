@@ -1,0 +1,191 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module backupset</title>
+<meta charset="utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>backupset</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:///C:/share/pysdk/commvault/backupset.py">c:\share\pysdk\commvault\backupset.py</a></font></td></tr></table>
+    <p><tt>Main&nbsp;file&nbsp;for&nbsp;performing&nbsp;backup&nbsp;set&nbsp;operations.<br>
+&nbsp;<br>
+<a href="#Backupsets">Backupsets</a>&nbsp;and&nbsp;<a href="#Backupset">Backupset</a>&nbsp;are&nbsp;2&nbsp;classes&nbsp;defined&nbsp;in&nbsp;this&nbsp;file.<br>
+&nbsp;<br>
+<a href="#Backupsets">Backupsets</a>:&nbsp;Class&nbsp;for&nbsp;representing&nbsp;all&nbsp;the&nbsp;backup&nbsp;sets&nbsp;associated&nbsp;with&nbsp;a&nbsp;specific&nbsp;agent<br>
+&nbsp;<br>
+<a href="#Backupset">Backupset</a>:&nbsp;Class&nbsp;for&nbsp;a&nbsp;single&nbsp;backup&nbsp;set&nbsp;selected&nbsp;for&nbsp;an&nbsp;agent,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;to&nbsp;perform&nbsp;operations&nbsp;on&nbsp;that&nbsp;backup&nbsp;set<br>
+&nbsp;<br>
+&nbsp;<br>
+<a href="#Backupsets">Backupsets</a>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__init__(agent_object)&nbsp;--&nbsp;initialise&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;of&nbsp;<a href="#Backupsets">Backupsets</a>&nbsp;class&nbsp;associated&nbsp;with<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;specified&nbsp;agent<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__repr__()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;return&nbsp;all&nbsp;the&nbsp;backup&nbsp;sets&nbsp;associated&nbsp;with&nbsp;the&nbsp;specified&nbsp;agent<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_get_backupsets()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;gets&nbsp;all&nbsp;the&nbsp;backupsets&nbsp;associated&nbsp;with&nbsp;the&nbsp;agent&nbsp;specified<br>
+&nbsp;&nbsp;&nbsp;&nbsp;get(backupset_name)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;returns&nbsp;the&nbsp;<a href="#Backupset">Backupset</a>&nbsp;class&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;of&nbsp;the&nbsp;input&nbsp;backup&nbsp;set&nbsp;name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;add(backupset_name)&nbsp;&nbsp;--&nbsp;adds&nbsp;a&nbsp;new&nbsp;backupset&nbsp;to&nbsp;the&nbsp;agent&nbsp;of&nbsp;the&nbsp;specified&nbsp;client<br>
+&nbsp;&nbsp;&nbsp;&nbsp;delete(backupset_name)&nbsp;&nbsp;--&nbsp;removes&nbsp;the&nbsp;backupsets&nbsp;from&nbsp;the&nbsp;agent&nbsp;of&nbsp;the&nbsp;specified&nbsp;client<br>
+&nbsp;<br>
+<a href="#Backupset">Backupset</a>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__init__(agent_object,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;backupset_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;backupset_id=None)&nbsp;&nbsp;--&nbsp;initialise&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;of&nbsp;<a href="#Backupset">Backupset</a>&nbsp;with&nbsp;the&nbsp;specified&nbsp;agent&nbsp;name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;id,&nbsp;and&nbsp;associated&nbsp;to&nbsp;the&nbsp;specified&nbsp;agent<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__repr__()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;return&nbsp;the&nbsp;backupset&nbsp;name&nbsp;and&nbsp;id,&nbsp;the&nbsp;instance&nbsp;is&nbsp;associated&nbsp;with<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_get_backupset_id()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;method&nbsp;to&nbsp;get&nbsp;the&nbsp;backupset&nbsp;id,&nbsp;if&nbsp;not&nbsp;specified&nbsp;in&nbsp;__init__<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_get_backupset_properties()&nbsp;--&nbsp;get&nbsp;the&nbsp;properties&nbsp;of&nbsp;this&nbsp;backupset<br>
+&nbsp;&nbsp;&nbsp;&nbsp;backup()&nbsp;--&nbsp;runs&nbsp;full&nbsp;backup&nbsp;for&nbsp;all&nbsp;subclients&nbsp;associated&nbsp;with&nbsp;this&nbsp;backupset<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_run_backup(subclient_name,&nbsp;return_list)&nbsp;--&nbsp;runs&nbsp;full&nbsp;backup&nbsp;for&nbsp;the&nbsp;specified&nbsp;subclient,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;appends&nbsp;the&nbsp;job&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;to&nbsp;the&nbsp;return&nbsp;list</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="threading.html">threading</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#object">__builtin__.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="backupset.html#Backupset">Backupset</a>
+</font></dt><dt><font face="helvetica, arial"><a href="backupset.html#Backupsets">Backupsets</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Backupset">class <strong>Backupset</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;for&nbsp;performing&nbsp;backupset&nbsp;operations&nbsp;for&nbsp;a&nbsp;specific&nbsp;backupset.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Backupset-__init__"><strong>__init__</strong></a>(self, agent_object, backupset_name, backupset_id<font color="#909090">=None</font>)</dt><dd><tt>Initialise&nbsp;the&nbsp;backupset&nbsp;<a href="__builtin__.html#object">object</a>.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;agent_object&nbsp;(<a href="__builtin__.html#object">object</a>)&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;Agent&nbsp;class<br>
+&nbsp;&nbsp;&nbsp;&nbsp;backupset_name&nbsp;(str)&nbsp;-&nbsp;name&nbsp;of&nbsp;the&nbsp;backupset<br>
+&nbsp;&nbsp;&nbsp;&nbsp;backupset_id&nbsp;(str)&nbsp;-&nbsp;id&nbsp;of&nbsp;the&nbsp;backupset<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;None<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#Backupset">Backupset</a>&nbsp;class</tt></dd></dl>
+
+<dl><dt><a name="Backupset-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>String&nbsp;representation&nbsp;of&nbsp;the&nbsp;instance&nbsp;of&nbsp;this&nbsp;class.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str&nbsp;-&nbsp;string&nbsp;containing&nbsp;the&nbsp;details&nbsp;of&nbsp;this&nbsp;backupset</tt></dd></dl>
+
+<dl><dt><a name="Backupset-backup"><strong>backup</strong></a>(self)</dt><dd><tt>Run&nbsp;full&nbsp;backup&nbsp;job&nbsp;for&nbsp;all&nbsp;subclients&nbsp;in&nbsp;this&nbsp;backupset.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;-&nbsp;list&nbsp;containing&nbsp;the&nbsp;job&nbsp;objects&nbsp;for&nbsp;the&nbsp;full&nbsp;backup&nbsp;jobs&nbsp;started&nbsp;for<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;subclients&nbsp;in&nbsp;the&nbsp;backupset</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>backupset_id</strong></dt>
+<dd><tt>Treats&nbsp;the&nbsp;backupset&nbsp;id&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
+</dl>
+<dl><dt><strong>backupset_name</strong></dt>
+<dd><tt>Treats&nbsp;the&nbsp;backupset&nbsp;name&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Backupsets">class <strong>Backupsets</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;for&nbsp;getting&nbsp;all&nbsp;the&nbsp;backupsets&nbsp;associated&nbsp;with&nbsp;a&nbsp;client.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Backupsets-__init__"><strong>__init__</strong></a>(self, agent_object)</dt><dd><tt>Initialize&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;of&nbsp;the&nbsp;<a href="#Backupsets">Backupsets</a>&nbsp;class.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;agent_object&nbsp;(<a href="__builtin__.html#object">object</a>)&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;Agent&nbsp;class<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#Backupsets">Backupsets</a>&nbsp;class</tt></dd></dl>
+
+<dl><dt><a name="Backupsets-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Representation&nbsp;string&nbsp;for&nbsp;the&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#Backupsets">Backupsets</a>&nbsp;class.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str&nbsp;-&nbsp;string&nbsp;of&nbsp;all&nbsp;the&nbsp;backupsets&nbsp;associated&nbsp;with&nbsp;the&nbsp;specified&nbsp;agent</tt></dd></dl>
+
+<dl><dt><a name="Backupsets-add"><strong>add</strong></a>(self, backupset_name, on_demand_backupset<font color="#909090">=False</font>)</dt><dd><tt>Adds&nbsp;a&nbsp;new&nbsp;backup&nbsp;set&nbsp;to&nbsp;the&nbsp;agent.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;backupset_name&nbsp;(str)&nbsp;-&nbsp;name&nbsp;of&nbsp;the&nbsp;new&nbsp;backupset&nbsp;to&nbsp;add<br>
+&nbsp;&nbsp;&nbsp;&nbsp;on_demand_backupset&nbsp;(bool)&nbsp;-&nbsp;flag&nbsp;to&nbsp;specify&nbsp;whether&nbsp;the&nbsp;backupset&nbsp;to&nbsp;be&nbsp;added<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is&nbsp;normal&nbsp;backupset&nbsp;or&nbsp;an&nbsp;on-demand&nbsp;backupset<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#Backupset">Backupset</a>&nbsp;class,&nbsp;if&nbsp;created&nbsp;successfully<br>
+&nbsp;&nbsp;&nbsp;&nbsp;None&nbsp;-&nbsp;if&nbsp;failed&nbsp;to&nbsp;add&nbsp;new&nbsp;backup&nbsp;set<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SDKException:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;type&nbsp;of&nbsp;the&nbsp;backupset&nbsp;name&nbsp;argument&nbsp;is&nbsp;not&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;empty<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;success<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;backupset&nbsp;with&nbsp;same&nbsp;name&nbsp;already&nbsp;exists</tt></dd></dl>
+
+<dl><dt><a name="Backupsets-delete"><strong>delete</strong></a>(self, backupset_name)</dt><dd><tt>Deletes&nbsp;the&nbsp;backup&nbsp;set&nbsp;from&nbsp;the&nbsp;agent.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;backupset_name&nbsp;(str)&nbsp;-&nbsp;name&nbsp;of&nbsp;the&nbsp;backupset<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;None<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SDKException:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;type&nbsp;of&nbsp;the&nbsp;backupset&nbsp;name&nbsp;argument&nbsp;is&nbsp;not&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;empty<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;success<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;no&nbsp;backupset&nbsp;exists&nbsp;with&nbsp;the&nbsp;given&nbsp;name</tt></dd></dl>
+
+<dl><dt><a name="Backupsets-get"><strong>get</strong></a>(self, backupset_name)</dt><dd><tt>Returns&nbsp;a&nbsp;backupset&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;of&nbsp;the&nbsp;specified&nbsp;backupset&nbsp;name.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;backupset_name&nbsp;(str)&nbsp;-&nbsp;name&nbsp;of&nbsp;the&nbsp;backupset<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#Backupset">Backupset</a>&nbsp;class&nbsp;for&nbsp;the&nbsp;given&nbsp;backupset&nbsp;name<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SDKException:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;type&nbsp;of&nbsp;the&nbsp;backupset&nbsp;name&nbsp;argument&nbsp;is&nbsp;not&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;no&nbsp;backupset&nbsp;exists&nbsp;with&nbsp;the&nbsp;given&nbsp;name</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table>
+</body></html>

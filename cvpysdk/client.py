@@ -216,15 +216,11 @@ class Client(object):
         """
         self._commcell_object = commcell_object
         self._client_name = str(client_name).lower()
+
         if client_id:
             self._client_id = str(client_id)
         else:
             self._client_id = self._get_client_id()
-
-        if not self.client_id:
-            raise SDKException('Client',
-                               '104',
-                               'No client exists with name: {0}'.format(client_name))
 
         self._CLIENT = self._commcell_object._services.CLIENT % (self.client_id)
         self.properties = self._get_client_properties()
