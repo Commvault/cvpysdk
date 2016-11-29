@@ -31,7 +31,7 @@ It can be installed from source. After downloading, from within the ``cvpysdk`` 
 Using CVPySDK
 -------------
 
-Login to Commcell:
+Login to Commcell::
 
     >>> from cvpysdk import commcell
     >>> commcell_object = commcell.Commcell(commcell_name, commcell_username, commcell_password, port)
@@ -85,7 +85,7 @@ On Windows, if CVPySDK was installed using an ``.exe`` or ``.msi``
 installer, simply use the uninstall feature of "Add/Remove Programs" in the
 Control Panel.
 
-Alternatively, you can uninstall using the pip command:
+Alternatively, you can uninstall using the pip command::
 
 	pip uninstall cvpysdk
 
