@@ -1,0 +1,99 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module cvpysdk</title>
+<meta charset="utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>cvpysdk</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:///C:/share/pysdk/commvault/cvpysdk.py">c:\share\pysdk\commvault\cvpysdk.py</a></font></td></tr></table>
+    <p><tt>Helper&nbsp;file&nbsp;for&nbsp;session&nbsp;operations.<br>
+&nbsp;<br>
+<a href="#CVPySDK">CVPySDK</a>:&nbsp;Class&nbsp;for&nbsp;common&nbsp;operations&nbsp;for&nbsp;the&nbsp;CS,&nbsp;as&nbsp;well&nbsp;as&nbsp;the&nbsp;python&nbsp;package<br>
+&nbsp;<br>
+<a href="#CVPySDK">CVPySDK</a>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__init__(commcell_object)&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;initialise&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;of&nbsp;the&nbsp;<a href="#CVPySDK">CVPySDK</a>&nbsp;class&nbsp;and&nbsp;bind&nbsp;to&nbsp;the&nbsp;commcell<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_is_valid_service_()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;checks&nbsp;if&nbsp;the&nbsp;service&nbsp;is&nbsp;valid&nbsp;and&nbsp;running&nbsp;or&nbsp;not<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_login_()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;sign&nbsp;in&nbsp;the&nbsp;user&nbsp;to&nbsp;the&nbsp;commcell&nbsp;with&nbsp;the&nbsp;credentials&nbsp;provided<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_logout_()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;sign&nbsp;out&nbsp;the&nbsp;current&nbsp;logged&nbsp;in&nbsp;user&nbsp;from&nbsp;the&nbsp;commcell,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;end&nbsp;the&nbsp;session<br>
+&nbsp;&nbsp;&nbsp;&nbsp;make_request()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;run&nbsp;the&nbsp;http&nbsp;request&nbsp;specified&nbsp;on&nbsp;the&nbsp;URL/WebService&nbsp;provided,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;return&nbsp;the&nbsp;flag&nbsp;specifying&nbsp;success/fail,&nbsp;and&nbsp;response</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="httplib.html">httplib</a><br>
+</td><td width="25%" valign=top><a href="requests.html">requests</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#object">__builtin__.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="cvpysdk.html#CVPySDK">CVPySDK</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="CVPySDK">class <strong>CVPySDK</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Helper&nbsp;class&nbsp;for&nbsp;login,&nbsp;and&nbsp;logout&nbsp;operations.<br>
+&nbsp;<br>
+Also&nbsp;contains&nbsp;method&nbsp;for&nbsp;performing&nbsp;request&nbsp;of&nbsp;all&nbsp;types.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="CVPySDK-__init__"><strong>__init__</strong></a>(self, commcell_object)</dt><dd><tt>Initialize&nbsp;the&nbsp;<a href="#CVPySDK">CVPySDK</a>&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;for&nbsp;running&nbsp;various&nbsp;operations.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;commcell_object&nbsp;(<a href="__builtin__.html#object">object</a>)&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;Commcell&nbsp;class<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#CVPySDK">CVPySDK</a>&nbsp;class</tt></dd></dl>
+
+<dl><dt><a name="CVPySDK-make_request"><strong>make_request</strong></a>(self, method, url, payload<font color="#909090">=None</font>, attempts<font color="#909090">=0</font>)</dt><dd><tt>Makes&nbsp;the&nbsp;request&nbsp;of&nbsp;the&nbsp;type&nbsp;specified&nbsp;in&nbsp;the&nbsp;argument&nbsp;'method'<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;method&nbsp;(str)&nbsp;-&nbsp;http&nbsp;operation&nbsp;to&nbsp;perform,&nbsp;e.g.;&nbsp;GET,&nbsp;POST,&nbsp;PUT,&nbsp;DELETE<br>
+&nbsp;&nbsp;&nbsp;&nbsp;url&nbsp;(str)&nbsp;-&nbsp;the&nbsp;web&nbsp;url&nbsp;or&nbsp;the&nbsp;web&nbsp;service&nbsp;on&nbsp;which&nbsp;to&nbsp;run&nbsp;the&nbsp;HTTP&nbsp;request&nbsp;on<br>
+&nbsp;&nbsp;&nbsp;&nbsp;payload&nbsp;(dict&nbsp;/&nbsp;str)&nbsp;-&nbsp;data&nbsp;to&nbsp;be&nbsp;passed&nbsp;along&nbsp;with&nbsp;the&nbsp;request<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;None<br>
+&nbsp;&nbsp;&nbsp;&nbsp;attempts&nbsp;(int)&nbsp;-&nbsp;number&nbsp;of&nbsp;attempts&nbsp;made&nbsp;with&nbsp;the&nbsp;same&nbsp;request<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;0<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tuple:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(True,&nbsp;response)&nbsp;-&nbsp;in&nbsp;case&nbsp;of&nbsp;success<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(False,&nbsp;response)&nbsp;-&nbsp;in&nbsp;case&nbsp;of&nbsp;failure<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SDKException:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;the&nbsp;method&nbsp;passed&nbsp;is&nbsp;incorrect&nbsp;/&nbsp;not&nbsp;supported<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;the&nbsp;number&nbsp;of&nbsp;attempts&nbsp;exceed&nbsp;3<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Error&nbsp;returned&nbsp;by&nbsp;the&nbsp;requests&nbsp;package</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table>
+</body></html>
