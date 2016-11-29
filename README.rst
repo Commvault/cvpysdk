@@ -10,9 +10,9 @@ CVPySDK uses REST API to perform operations on a Commcell.
 Requirements
 ------------
 
-	.. Python 2.7
-	.. requests Python package (https://github.com/kennethreitz/requests)
-	.. Commvault Software v11 SP6 or later release
+Python 2.7
+requests Python package (https://github.com/kennethreitz/requests)
+Commvault Software v11 SP6 or later release
 
 
 ------------------
