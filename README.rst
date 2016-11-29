@@ -3,6 +3,7 @@ CVPySDK
 =======
 
 CVPySDK is a Python Package for Commvault Software.
+
 CVPySDK uses REST API to perform operations on a Commcell.
 
 
@@ -10,9 +11,9 @@ CVPySDK uses REST API to perform operations on a Commcell.
 Requirements
 ------------
 
-Python 2.7
-requests Python package (https://github.com/kennethreitz/requests)
-Commvault Software v11 SP6 or later release
+- Python 2.7
+- requests Python package (https://github.com/kennethreitz/requests)
+- Commvault Software v11 SP6 or later release
 
 
 ------------------
@@ -72,8 +73,8 @@ Job Operations:
 	>>> job.pause()			# Suspends the Job
 	>>> job.resume()		# Resumes the Job
 	>>> job.kill()			# Kills the Job
-	>>> job.status			# Current Status the Job  --	Completed / Pending / Failed / .... / etc.
-	>>> job.finished		# Job finished or not     --	True / False
+	>>> job.status			# Current Status the Job  --  Completed / Pending / Failed / .... / etc.
+	>>> job.finished		# Job finished or not     --  True / False
 
 
 ------------
@@ -84,7 +85,7 @@ On Windows, if CVPySDK was installed using an ``.exe`` or ``.msi``
 installer, simply use the uninstall feature of "Add/Remove Programs" in the
 Control Panel.
 
-Alternatively, you can uninstall using the pip command.
+Alternatively, you can uninstall using the pip command:
 
 	pip uninstall cvpysdk
 
