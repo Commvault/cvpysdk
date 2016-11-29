@@ -70,11 +70,11 @@ Run restore out of place job for a subclient:
 	>>> job = subclient_object.restore_out_of_place()
 
 Job Operations:
-	>>> job.pause()			# Suspends the Job
-	>>> job.resume()		# Resumes the Job
-	>>> job.kill()			# Kills the Job
-	>>> job.status			# Current Status the Job  --  Completed / Pending / Failed / .... / etc.
-	>>> job.finished		# Job finished or not     --  True / False
+	>>> job.pause()		    # Suspends the Job
+	>>> job.resume()	    # Resumes the Job
+	>>> job.kill()		    # Kills the Job
+	>>> job.status		    # Current Status the Job  --  Completed / Pending / Failed / .... / etc.
+	>>> job.finished	    # Job finished or not     --  True / False
 
 
 ------------
