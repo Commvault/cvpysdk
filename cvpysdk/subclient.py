@@ -539,7 +539,7 @@ class Subclient(object):
                      re.search(r'\d/\d/\d\d\d\d', to_date))):
                 today = time.strftime('%d/%m/%Y')
                 if today == to_date:
-                    to_date = time.time()
+                    to_date = int(time.time())
                 else:
                     to_date = int(time.mktime(time.strptime(to_date, '%d/%m/%Y')))
             else:
@@ -594,7 +594,7 @@ class Subclient(object):
                 "applicationId": int(self._backupset_object._agent_object.agent_id),
                 "clientName": self._backupset_object._agent_object._client_object.client_name,
                 "backupsetId": int(self._backupset_object.backupset_id),
-                "instanceId": 1,
+                "instanceId": int(self._backupset_object._instance_id),
                 "clientId": int(self._backupset_object._agent_object._client_object.client_id)
             },
             "timeRange": {
@@ -720,7 +720,7 @@ class Subclient(object):
                 "srcContent": {
                     "subclientId": int(self.subclient_id),
                     "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                    "instanceId": 1,
+                    "instanceId": int(self._backupset_object._instance_id),
                     "backupSetId": int(self._backupset_object.backupset_id),
                     "appTypeId": int(self._backupset_object._agent_object.agent_id)
                 }
@@ -741,9 +741,9 @@ class Subclient(object):
 
                     time.sleep(1)
                     return Job(self._commcell_object, response.json()['jobId'])
-                elif "errorList" in response.json():
-                    error_code = response.json()['errorList'][0]['errorCode']
-                    error_message = response.json()['errorList'][0]['errLogMessage']
+                elif "errList" in response.json():
+                    error_code = response.json()['errList'][0]['errorCode']
+                    error_message = response.json()['errList'][0]['errLogMessage']
 
                     print "Restore job failed with error code: %s" % (error_code)
                     print "Error message: %s" % (error_message)
@@ -838,7 +838,7 @@ class Subclient(object):
                 "srcContent": {
                     "subclientId": int(self.subclient_id),
                     "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                    "instanceId": 1,
+                    "instanceId": int(self._backupset_object._instance_id),
                     "backupSetId": int(self._backupset_object.backupset_id),
                     "appTypeId": int(self._backupset_object._agent_object.agent_id)
                 }

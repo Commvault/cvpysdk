@@ -69,6 +69,20 @@ EXCEPTION_DICT = {
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class'
     },
+    'ClientGroup': {
+        '101': 'Client Group name should be specified',
+        '102': 'Attribute name not provided',
+        '103': 'Data type of the inputs is not valid',
+        '104': '',
+        '105': 'Attribute\'s value not provided'
+    },
+    'UserGroup': {
+        '101': 'User Group name should be specified',
+        '102': 'Attribute name not provided',
+        '103': 'Data type of the inputs is not valid',
+        '104': '',
+        '105': 'Attribute\'s value not provided'
+    },
     'Alert': {
         '101': 'Alert name should be specified',
         '102': 'Attribute name not provided',

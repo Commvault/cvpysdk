@@ -210,7 +210,7 @@ class Job(object):
 
         if flag:
             if response.json() and 'job' in response.json().keys():
-                print response.json()['job']
+                return response.json()['job']
             else:
                 raise SDKException('Response', '102')
         else:
