@@ -30,14 +30,21 @@ def readme():
     with open('README.rst') as file_object:
         return file_object.read()
 
+
+def get_license():
+    """Reads the License.txt file and returns its contents."""
+    with open('License.txt') as file_object:
+        return file_object.read()
+
 setup(
     name='cvpysdk',
     version=get_version(),
-    description='Python SDK for Commvault',
-    long_description=readme(),
     author='Commvault Systems Inc.',
-    url='https://github.com/CommvaultEngg/cvpysdk',
     author_email='Dev-PythonSDK@commvault.com',
+    description='Python SDK for Commvault',
+    license=get_license(),
+    long_description=readme(),
+    url='https://github.com/CommvaultEngg/cvpysdk',
     scripts=[],
     packages=find_packages(),
     keywords='commvault , cv , simpana , commcell',

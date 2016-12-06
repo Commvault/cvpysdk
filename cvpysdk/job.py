@@ -12,22 +12,25 @@
 Job: Class for keeping track of a job and perform various operations on it.
 
 Job:
-    __init__(commcell_object, job_id) -- initialises the instance of Job class associated with the
-                                            specified commcell of job with id: 'job_id'
-    __repr__()         -- returns the string representation of the object of this class,
-                            with the job id it is associated with
-    _is_valid_job()    --  checks if the job with the given id is a valid job or not.
-    _check_finished()  --  checks if the job has finished or not yet
-    _is_finished()     --  checks for the status of the job. Returns True if finished, else False
-    get_job_summary()  --  gets the summary of the job with the given job id
-    get_job_details()  --  gets the details of the job with the given job id
-    pause()            --  suspend the job
-    resume()           --  resumes the job
-    kill()             --  kills the job
+    __init__(commcell_object,
+             job_id)            --  initialises the instance of Job class associated with the
+                                        specified commcell of job with id: 'job_id'
+    __repr__()                  --  returns the string representation of the object of this class,
+                                        with the job id it is associated with
+    _is_valid_job()             --  checks if the job with the given id is a valid job or not.
+    _check_finished()           --  checks if the job has finished or not yet
+    _is_finished()              --  checks for the status of the job.
+                                        Returns True if finished, else False
+    get_job_summary()           --  gets the summary of the job with the given job id
+    get_job_details()           --  gets the details of the job with the given job id
+    pause()                     --  suspend the job
+    resume()                    --  resumes the job
+    kill()                      --  kills the job
 
 
-job.status    -- Gives the current status of the job.(Completed / Suspended / Waiting / ... / etc.)
-job.finished  -- Tells whether the job is finished or not. (True / False)
+job.status                      --  Gives the current status of the job.
+                                        (Completed / Suspended / Waiting / ... / etc.)
+job.finished                    --  Tells whether the job is finished or not. (True / False)
 
 """
 
@@ -44,8 +47,8 @@ class Job(object):
         """Initialise the Job class instance.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
-                job_id (str / int) - id of the job
+                commcell_object (object)  --  instance of the Commcell class
+                job_id (str / int)        --  id of the job
 
             Returns:
                 object - instance of the Job class

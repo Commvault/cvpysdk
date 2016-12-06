@@ -20,7 +20,6 @@ Commcell:
              commcell_password)  --  initialise object of the Commcell class
     __enter__()                  --  returns the current instance, using the "with" context manager
     __exit__()                   --  logs out the user associated with the current instance
-    __del__()                    --  logs out the user associated with the current instance
     __repr__()                   --  return the name of the commcell, user is connected to,
                                         along with the user name of the connected user.
     _update_response_()          --  returns only the relevant response for the response received
@@ -52,13 +51,13 @@ class Commcell(object):
         """Initialize the Commcell object with the values required for doing the api operations.
 
             Args:
-                commcell_name (str) - name of the server; name@domain.com
-                port (int) - port, the server is reachable at
+                commcell_name (str)      --  name of the server; name@domain.com
+                commcell_username (str)  --  username of the user to log in to webconsole
+                    default: ''
+                commcell_password (str)  --  plain text password to log in to webconsole
+                    default: ''
+                port (int)               --  port, the server is reachable at
                     default: 81
-                commcell_username (str) - username of the user to log in to commserver
-                    default: ''
-                commcell_password (str) - plain text / base64 encrypted password to log in
-                    default: ''
 
             Returns:
                 object - instance of this class
@@ -73,13 +72,8 @@ class Commcell(object):
 
         self._user = commcell_username
 
-        try:
-            # Checks if the password is base 64 encoded or not
-            base64.decodestring(commcell_password)
-            self._password = commcell_password
-        except:
-            # encodes the plain text password using base64 encoding
-            self._password = base64.b64encode(commcell_password)
+        # encodes the plain text password using base64 encoding
+        self._password = base64.b64encode(commcell_password)
 
         self._headers = {
             'Host': commcell_name,
@@ -115,8 +109,8 @@ class Commcell(object):
             UserGroups(self)
         ]
 
-        self.clients, self.alerts, self.media_agents, self.disk_libraries, \
-            self.storage_policies, self.schedule_policies, self.user_groups = commcell_entities
+        self.clients, self.alerts, self.media_agents, self.disk_libraries, self.storage_policies, \
+            self.schedule_policies, self.user_groups = commcell_entities
 
     def __enter__(self):
         """Returns the current instance.
@@ -144,7 +138,7 @@ class Commcell(object):
         """Returns only the relevant response from the response received from the server.
 
             Args:
-                input_string (str) - input string to retrieve the relevant response from
+                input_string (str)  --  input string to retrieve the relevant response from
 
             Returns:
                 str - final response to be used
@@ -164,6 +158,7 @@ class Commcell(object):
         del self.disk_libraries
         del self.storage_policies
         del self.schedule_policies
+        del self.user_groups
         del self.__user_guid
         del self._commcell_service
         del self._cvpysdk_object

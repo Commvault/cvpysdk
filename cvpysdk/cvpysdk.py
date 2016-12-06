@@ -38,7 +38,7 @@ class CVPySDK(object):
         """Initialize the CVPySDK object for running various operations.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
+                commcell_object (object)  --  instance of the Commcell class
 
             Returns:
                 object - instance of the CVPySDK class
@@ -130,11 +130,11 @@ class CVPySDK(object):
         """Makes the request of the type specified in the argument 'method'
 
             Args:
-                method (str) - http operation to perform, e.g.; GET, POST, PUT, DELETE
-                url (str) - the web url or the web service on which to run the HTTP request on
-                payload (dict / str) - data to be passed along with the request
+                method (str)          --  http operation to perform, e.g.; GET, POST, PUT, DELETE
+                url (str)             --  the web url or service to run the HTTP request on
+                payload (dict / str)  --  data to be passed along with the request
                     default: None
-                attempts (int) - number of attempts made with the same request
+                attempts (int)        --  number of attempts made with the same request
                     default: 0
 
             Returns:

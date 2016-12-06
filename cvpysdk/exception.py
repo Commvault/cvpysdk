@@ -9,11 +9,11 @@
 
 """File for handling all the exceptions for the CVPySDK python package.
 
-EXCEPTION_DICT: A python dictionary for holding all the exception messages for a specific event
-                    or class.
+EXCEPTION_DICT:     A python dictionary for holding all the exception messages
+                        for a specific event or class.
 
-SDKException: Class inheriting the "Exception" Base class for raising a specific exception for
-                the CVPySDK python package.
+SDKException:       Class inheriting the "Exception" Base class for raising
+                        a specific exception for the CVPySDK python package.
 """
 
 # Common dictionary for all exceptions among the python package
@@ -41,11 +41,13 @@ EXCEPTION_DICT = {
     },
     'Agent': {
         '101': 'Agent name should be specified',
-        '102': ''
+        '102': '',
+        '103': 'Data type of the inputs is not valid'
     },
     'Backupset': {
         '101': 'Backupset name should be specified',
-        '102': ''
+        '102': '',
+        '103': 'Data type of the inputs is not valid'
     },
     'Subclient': {
         '101': 'Data type of the inputs is not valid',
@@ -67,7 +69,8 @@ EXCEPTION_DICT = {
         '104': 'Type of library should either be the DiskLibrary class instance or string'
     },
     'Schedules': {
-        '101': 'Invalid Class object passed as argument to the Schedules class'
+        '101': 'Invalid Class object passed as argument to the Schedules class',
+        '102': 'Data type of the input is not valid'
     },
     'ClientGroup': {
         '101': 'Client Group name should be specified',
@@ -89,6 +92,9 @@ EXCEPTION_DICT = {
         '103': 'Data type of the inputs is not valid',
         '104': '',
         '105': 'Attribute\'s value not provided'
+    },
+    'Workflow': {
+        '101': 'Data type of the input is not valid'
     }
 }
 
@@ -100,9 +106,9 @@ class SDKException(Exception):
         """Initialize the SDKException class instance for the exception.
 
             Args:
-                exception_module (str)  - name of the module where the exception was raised
-                exception_id (str)      - id of the exception specific to the exception_module
-                exception_message (str) - additional message about the exception
+                exception_module (str)   --  name of the module where the exception was raised
+                exception_id (str)       --  id of the exception specific to the exception_module
+                exception_message (str)  --  additional message about the exception
 
             Returns:
                 object - instance of the SDKException class of type Exception

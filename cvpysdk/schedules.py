@@ -12,9 +12,11 @@
 Schedules: Initializes instance of all schedules for a commcell entity.
 
 Schedules:
-    __init__(class_object)  --  initialise object of the Schedules class
-    __repr__()              -- string of all the schedules associated with the commcell entity
-    _get_schedules()        -- gets all the schedules associated with the commcell entity
+    __init__(class_object)          --  initialise object of the Schedules class
+    __repr__()                      --  string of all schedules associated with the commcell entity
+    _get_schedules()                --  gets all the schedules associated with the commcell entity
+    has_schedule(schedule_name)     --  checks if schedule exists for the comcell entity or not
+
 """
 
 from exception import SDKException
@@ -27,7 +29,7 @@ class Schedules(object):
         """Initialise the Schedules class instance.
 
             Args:
-                class_object (object) - instance of the client/agent/backupset/subclient class
+                class_object (object)  --  instance of the client/agent/backupset/subclient class
 
             Returns:
                 object - instance of the Schedules class
@@ -153,3 +155,21 @@ class Schedules(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def has_schedule(self, schedule_name):
+        """Checks if a schedule exists for the commcell entity with the input schedule name.
+
+            Args:
+                schedule_name (str)  --  name of the schedule
+
+            Returns:
+                bool - boolean output whether the schedule exists for the commcell entity or not
+
+            Raises:
+                SDKException:
+                    if type of the schedule name argument is not string
+        """
+        if not isinstance(schedule_name, str):
+            raise SDKException('Schedules', '102')
+
+        return self.schedules and str(schedule_name).lower() in self.schedules

@@ -20,6 +20,7 @@ Clients:
     __init__(commcell_object) -- initialise object of Clients class associated with the commcell
     __repr__()                -- return all the clients associated with the commcell
     _get_clients()            -- gets all the clients associated with the commcell
+    has_client(client_name)   -- checks if a client exists with the given name or not
     get(client_name)          -- returns the Client class object of the input client name
     delete(client_name)       -- deletes the client specified by the client name from the commcell
 
@@ -48,7 +49,7 @@ class Clients(object):
         """Initialize object of the Clients class.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
+                commcell_object (object)  --  instance of the Commcell class
 
             Returns:
                 object - instance of the Clients class
@@ -104,11 +105,29 @@ class Clients(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def has_client(self, client_name):
+        """Checks if a client exists in the commcell with the input client name.
+
+            Args:
+                client_name (str)  --  name of the client
+
+            Returns:
+                bool - boolean output whether the client exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the client name argument is not string
+        """
+        if not isinstance(client_name, str):
+            raise SDKException('Client', '103')
+
+        return self._clients and str(client_name).lower() in self._clients
+
     def get(self, client_name):
         """Returns a client object of the specified client name.
 
             Args:
-                client_name (str) - name of the client
+                client_name (str)  --  name of the client
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -122,10 +141,9 @@ class Clients(object):
             raise SDKException('Client', '103')
         else:
             client_name = str(client_name).lower()
-            all_clients = self._clients
 
-            if all_clients and client_name in all_clients:
-                return Client(self._commcell_object, client_name, all_clients[client_name])
+            if self.has_client(client_name):
+                return Client(self._commcell_object, client_name, self._clients[client_name])
 
             raise SDKException('Client',
                                '104',
@@ -135,7 +153,7 @@ class Clients(object):
         """Deletes the client from the commcell.
 
             Args:
-                client_name (str) - name of the client to remove from the commcell
+                client_name (str)  --  name of the client to remove from the commcell
 
             Returns:
                 None
@@ -151,10 +169,9 @@ class Clients(object):
             raise SDKException('Client', '103')
         else:
             client_name = str(client_name).lower()
-            all_clients = self._clients
 
-            if all_clients and client_name in all_clients:
-                client_id = all_clients[client_name]
+            if self.has_client(client_name):
+                client_id = self._clients[client_name]
                 CLIENT = self._commcell_object._services.CLIENT % (client_id)
                 CLIENT += "?forceDelete=1"
 
@@ -206,9 +223,9 @@ class Client(object):
         """Initialise the Client class instance.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
-                client_name (str) - name of the client
-                client_id (str) - id of the client
+                commcell_object (object)  --  instance of the Commcell class
+                client_name (str)         --  name of the client
+                client_id (str)           --  id of the client
                     default: None
 
             Returns:

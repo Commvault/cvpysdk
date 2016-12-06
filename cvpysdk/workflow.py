@@ -12,7 +12,10 @@
 WorkFlow: Class for handling all Workflows, and running a Workflow job
 
 WorkFlow:
-    __init__(commcell_object)  --  initialise object of the WorkFlow class
+    __init__(commcell_object)       --  initialise instance of the WorkFlow class
+    __repr__()                      --  returns all the workflows deployed in the commcell
+    _get_workflows()                --  gets all the workflows deployed on the commcell
+    has_workflow(workflow_name)     --  checks if the workflow exists with the given name or not
 
 """
 
@@ -26,7 +29,7 @@ class WorkFlow(object):
         """Initialize the WorkFlow class instance for performing workflow related operations.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
+                commcell_object (object)  --  instance of the Commcell class
 
             Returns:
                 object - instance of the WorkFlow class
@@ -137,3 +140,21 @@ class WorkFlow(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def has_workflow(self, workflow_name):
+        """Checks if a workflow exists in the commcell with the input workflow name.
+
+            Args:
+                workflow_name (str)  --  name of the workflow
+
+            Returns:
+                bool - boolean output whether the workflow exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+        """
+        if not isinstance(workflow_name, str):
+            raise SDKException('Workflow', '101')
+
+        return self._workflows and str(workflow_name).lower() in self._workflows

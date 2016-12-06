@@ -12,8 +12,9 @@
 ApiLibrary: class having all the REST API services initialized with the commcell
 
 ApiLibrary:
-    __init__(commcell_service) - initialize all the API services with the commcell service.
-    __repr__() - retuns string representation for this class.
+    __init__(commcell_service)      --  initialize all the API services with the commcell service
+    __repr__()                      --  retuns string representation for this class
+
 """
 
 
@@ -24,7 +25,7 @@ class ApiLibrary(object):
         """Initializes the instance of the class ApiLibrary.
 
             Args:
-                commcell_service (str) - the url of the commcell service for the API
+                commcell_service (str)  --  the url of the commcell service for the API
         """
         self.LOGIN = '{0}Login'
         self.LOGOUT = '{0}Logout'
@@ -69,10 +70,10 @@ class ApiLibrary(object):
         self.BACKUPSET_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s'
         self.SUBCLIENT_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s&subclientId=%s'
 
-        self.GET_ALL_CLIENTGROUPS = '{0}ClientGroup'
+        self.CLIENTGROUPS = '{0}ClientGroup'
         self.CLIENTGROUP = '{0}ClientGroup/%s'
 
-        self.GET_ALL_USERGROUPS = '{0}UserGroup'
+        self.USERGROUPS = '{0}UserGroup'
         self.USERGROUP = '{0}UserGroup/%s'
 
         self.BROWSE = '{0}DoBrowse'

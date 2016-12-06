@@ -17,19 +17,19 @@ Agent: Class for a single agent selected for a client, and to perform operations
 
 
 Agents:
-    __init__(client_object) -- initialise object of Agents class associated with
+    __init__(client_object)     -- initialise object of Agents class associated with
                                     the specified client
-    __repr__()              -- return all the agents associated with the specified client
-    _get_agents()           -- gets all the agents associated with the client specified
-    get(agent_name)         -- returns the Agent class object of the input agent name
-
+    __repr__()                  -- return all the agents associated with the specified client
+    _get_agents()               -- gets all the agents associated with the client specified
+    has_agent(agent_name)       -- checks if an agent exists with the given name
+    get(agent_name)             -- returns the Agent class object of the input agent name
 
 Agent:
     __init__(client_object,
              agent_name,
              agent_id=None)    -- initialise object of Agent with the specified agent name
                                      and id, and associated to the specified client
-    __repr__()                 -- return the agent name and id, the instance is associated with
+    __repr__()                 -- return the agent name, the instance is associated with
     _get_agent_id()            -- method to get the agent id, if not specified in __init__ method
 
 """
@@ -48,7 +48,7 @@ class Agents(object):
         """Initialize object of the Agents class.
 
             Args:
-                client_object (object) - instance of the Client class
+                client_object (object)  --  instance of the Client class
 
             Returns:
                 object - instance of the Agents class
@@ -111,11 +111,29 @@ class Agents(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def has_agent(self, agent_name):
+        """Checks if an agent is installed for the client with the input agent name.
+
+            Args:
+                agent_name (str)  --  name of the agent
+
+            Returns:
+                bool - boolean output whether the agent is installed for the client or not
+
+            Raises:
+                SDKException:
+                    if type of the agent name argument is not string
+        """
+        if not isinstance(agent_name, str):
+            raise SDKException('Agent', '103')
+
+        return self._agents and str(agent_name).lower() in self._agents
+
     def get(self, agent_name):
         """Returns a agent object of the specified client.
 
             Args:
-                agent_name (str) - name of the agent
+                agent_name (str)  --  name of the agent
 
             Returns:
                 object - instance of the Agent class for the given agent name
@@ -126,13 +144,12 @@ class Agents(object):
                     if no agent exists with the given name
         """
         if not isinstance(agent_name, str):
-            raise SDKException('Agent', '101')
+            raise SDKException('Agent', '103')
         else:
             agent_name = str(agent_name).lower()
-            all_agents = self._agents
 
-            if all_agents and agent_name in all_agents:
-                return Agent(self._client_object, agent_name, all_agents[agent_name])
+            if self.has_agent(agent_name):
+                return Agent(self._client_object, agent_name, self._agents[agent_name])
 
             raise SDKException('Agent',
                                '102',
@@ -146,10 +163,9 @@ class Agent(object):
         """Initialise the agent object.
 
             Args:
-                client_object (object) - instance of the Client class to which the agent belongs
-                agent_name (str) - name of the agent
-                    (File System, Virtual Server, etc.)
-                agent_id (str) - id of the associated agent
+                client_object (object)  --  instance of the Client class to which the agent belongs
+                agent_name (str)        --  name of the agent (File System, Virtual Server, etc.)
+                agent_id (str)          --  id of the associated agent
                     default: None
 
             Returns:

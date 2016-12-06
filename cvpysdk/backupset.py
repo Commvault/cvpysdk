@@ -13,30 +13,35 @@ Backupsets and Backupset are 2 classes defined in this file.
 
 Backupsets: Class for representing all the backup sets associated with a specific agent
 
-Backupset: Class for a single backup set selected for an agent,
+Backupset:  Class for a single backup set selected for an agent,
                 and to perform operations on that backup set
 
 
 Backupsets:
-    __init__(agent_object) -- initialise object of Backupsets class associated with
-                                    the specified agent
-    __repr__()              -- return all the backup sets associated with the specified agent
-    _get_backupsets()           -- gets all the backupsets associated with the agent specified
-    get(backupset_name)         -- returns the Backupset class object of the input backup set name
-    add(backupset_name)  -- adds a new backupset to the agent of the specified client
-    delete(backupset_name)  -- removes the backupsets from the agent of the specified client
+    __init__(agent_object)          -- initialise object of Backupsets class associated with
+                                        the specified agent
+    __repr__()                      -- return all the backup sets associated with the agent
+    _get_backupsets()               -- gets all the backupsets associated with the agent specified
+    has_backupset(backupset_name)   -- checks if a backupset exists with the given name or not
+    add(backupset_name)             -- adds a new backupset to the agent of the specified client
+    get(backupset_name)             -- returns the Backupset class object
+                                        of the input backup set name
+    delete(backupset_name)          -- removes the backupset from the agent of the specified client
 
 Backupset:
     __init__(agent_object,
              backupset_name,
-             backupset_id=None)  -- initialise object of Backupset with the specified agent name
+             backupset_id=None,
+             instance_id=1)         -- initialise object of Backupset with the specified agent name
                                          and id, and associated to the specified agent
-    __repr__()              -- return the backupset name and id, the instance is associated with
-    _get_backupset_id()         -- method to get the backupset id, if not specified in __init__
-    _get_backupset_properties() -- get the properties of this backupset
-    backup() -- runs full backup for all subclients associated with this backupset
-    _run_backup(subclient_name, return_list) -- runs full backup for the specified subclient,
-                                                    and appends the job object to the return list
+    __repr__()                      -- return the backupset name, the instance is associated with
+    _get_backupset_id()             -- method to get the backupset id, if not specified in __init__
+    _get_backupset_properties()     -- get the properties of this backupset
+    _run_backup(subclient_name,
+                return_list)        -- runs full backup for the specified subclient,
+                                        and appends the job object to the return list
+    backup()                        -- runs full backup for all subclients
+                                        associated with this backupset
 
 """
 
@@ -54,7 +59,7 @@ class Backupsets(object):
         """Initialize object of the Backupsets class.
 
             Args:
-                agent_object (object) - instance of the Agent class
+                agent_object (object)  --  instance of the Agent class
 
             Returns:
                 object - instance of the Backupsets class
@@ -127,13 +132,31 @@ class Backupsets(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def has_backupset(self, backupset_name):
+        """Checks if a backupset exists for the agent with the input backupset name.
+
+            Args:
+                backupset_name (str)  --  name of the backupset
+
+            Returns:
+                bool - boolean output whether the backupset exists for the agent or not
+
+            Raises:
+                SDKException:
+                    if type of the backupset name argument is not string
+        """
+        if not isinstance(backupset_name, str):
+            raise SDKException('Backupset', '103')
+
+        return self._backupsets and str(backupset_name).lower() in self._backupsets
+
     def add(self, backupset_name, on_demand_backupset=False):
         """Adds a new backup set to the agent.
 
             Args:
-                backupset_name (str) - name of the new backupset to add
-                on_demand_backupset (bool) - flag to specify whether the backupset to be added
-                                                is normal backupset or an on-demand backupset
+                backupset_name (str)        --  name of the new backupset to add
+                on_demand_backupset (bool)  --  flag to specify whether the backupset to be added
+                                                    is normal backupset or an on-demand backupset
 
             Returns:
                 object - instance of the Backupset class, if created successfully
@@ -147,13 +170,11 @@ class Backupsets(object):
                     if backupset with same name already exists
         """
         if not isinstance(backupset_name, str):
-            raise SDKException('Backupset', '101')
+            raise SDKException('Backupset', '103')
         else:
             backupset_name = str(backupset_name).lower()
 
-        all_backupsets = self._backupsets
-        if all_backupsets and backupset_name not in all_backupsets:
-
+        if not self.has_backupset(backupset_name):
             add_backupset_service = self._commcell_object._services.ADD_BACKUPSET
 
             request_json = {
@@ -227,7 +248,7 @@ class Backupsets(object):
         """Returns a backupset object of the specified backupset name.
 
             Args:
-                backupset_name (str) - name of the backupset
+                backupset_name (str)  --  name of the backupset
 
             Returns:
                 object - instance of the Backupset class for the given backupset name
@@ -238,15 +259,14 @@ class Backupsets(object):
                     if no backupset exists with the given name
         """
         if not isinstance(backupset_name, str):
-            raise SDKException('Backupset', '101')
+            raise SDKException('Backupset', '103')
         else:
             backupset_name = str(backupset_name).lower()
-            all_backupsets = self._backupsets
 
-            if all_backupsets and backupset_name in all_backupsets:
+            if self.has_backupset(backupset_name):
                 return Backupset(self._agent_object,
                                  backupset_name,
-                                 all_backupsets[backupset_name],
+                                 self._backupsets[backupset_name],
                                  self._instance_id)
 
             raise SDKException('Backupset',
@@ -257,7 +277,7 @@ class Backupsets(object):
         """Deletes the backup set from the agent.
 
             Args:
-                backupset_name (str) - name of the backupset
+                backupset_name (str)  --  name of the backupset
 
             Returns:
                 None
@@ -270,15 +290,13 @@ class Backupsets(object):
                     if no backupset exists with the given name
         """
         if not isinstance(backupset_name, str):
-            raise SDKException('Backupset', '101')
+            raise SDKException('Backupset', '103')
         else:
             backupset_name = str(backupset_name).lower()
 
-        all_backupsets = self._backupsets
-
-        if all_backupsets and backupset_name in all_backupsets:
+        if self.has_backupset(backupset_name):
             delete_backupset_service = self._commcell_object._services.BACKUPSET % \
-                (all_backupsets[backupset_name])
+                (self._backupsets[backupset_name])
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'DELETE', delete_backupset_service)
@@ -330,11 +348,11 @@ class Backupset(object):
         """Initialise the backupset object.
 
             Args:
-                agent_object (object) - instance of the Agent class
-                backupset_name (str) - name of the backupset
-                backupset_id (str) - id of the backupset
+                agent_object (object)  --  instance of the Agent class
+                backupset_name (str)   --  name of the backupset
+                backupset_id (str)     --  id of the backupset
                     default: None
-                instance_id (str) - id of the instance associated with the backupset
+                instance_id (str)      --  id of the instance associated with the backupset
                     default: 1, for File System iDA
 
             Returns:

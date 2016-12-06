@@ -17,28 +17,29 @@ Alert: Class for a single alert selected
 
 
 Alerts:
-    __init__(commcell_object) -- initialise object of Alerts class associated with
+    __init__(commcell_object)   -- initialise object of Alerts class associated with
                                     the specified commcell
-    __repr__()              -- return all the alerts associated with the specified commcell
-    _get_alert()           -- gets all the alerts associated with the commcell specified
-    get(alert_name)         -- returns the alert class object of the input alert name
-    delete(alert_name)  -- removes the alerts from the commcell of the specified alert
-    console_alerts()    -- returns the list of all console alerts
+    __repr__()                  -- return all the alerts associated with the specified commcell
+    _get_alert()                -- gets all the alerts associated with the commcell specified
+    has_alert(alert_name)       -- checks whether the alert exists or not
+    get(alert_name)             -- returns the alert class object of the input alert name
+    delete(alert_name)          -- removes the alerts from the commcell of the specified alert
+    console_alerts()            -- returns the list of all console alerts
 
 Alert:
     __init__(commcell_object,
              alert_name,
-             alert_id=None)  -- initialise object of alert with the specified commcell name
-                                         and id, and associated to the specified commcell
-    __repr__()              -- return the alert name with description and category,
-                                the alert is associated with
-    _get_alert_id()         -- method to get the alert id, if not specified in __init__
-    _get_alert_properties() -- get the properties of this alert
-    _get_alert_category()   -- return the category of the alert
-    enable()                -- enables the alert
-    disable()               -- disables the alert
-    enable_notification_type -- enables notification type of alert
-    disable_notification_type -- disables notification type of alert
+             alert_id=None)     -- initialise object of alert with the specified commcell name
+                                     and id, and associated to the specified commcell
+    __repr__()                  -- return the alert name with description and category,
+                                    the alert is associated with
+    _get_alert_id()             -- method to get the alert id, if not specified in __init__
+    _get_alert_properties()     -- get the properties of this alert
+    _get_alert_category()       -- return the category of the alert
+    enable()                    -- enables the alert
+    disable()                   -- disables the alert
+    enable_notification_type    -- enables notification type of alert
+    disable_notification_type   -- disables notification type of alert
 
 """
 
@@ -52,7 +53,7 @@ class Alerts(object):
         """Initialize object of the Alerts class.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
+                commcell_object (object)  --  instance of the Commcell class
 
             Returns:
                 object - instance of the Alerts class
@@ -122,14 +123,32 @@ class Alerts(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object.__update_response__(response.text)
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def has_alert(self, alert_name):
+        """Checks if a alert exists for the commcell with the input alert name.
+
+            Args:
+                alert_name (str)  --  name of the alert
+
+            Returns:
+                bool - boolean output whether the alert exists for the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the alert name argument is not string
+        """
+        if not isinstance(alert_name, str):
+            raise SDKException('Alert', '103')
+
+        return self._alerts and str(alert_name).lower() in self._alerts
 
     def get(self, alert_name):
         """Returns a alert object of the specified alert name.
 
             Args:
-                alert_name (str) - name of the alert
+                alert_name (str)  --  name of the alert
 
             Returns:
                 object - instance of the Alert class for the given alert name
@@ -143,11 +162,11 @@ class Alerts(object):
             raise SDKException('Alert', '103')
         else:
             alert_name = str(alert_name).lower()
-            all_alerts = self._alerts
 
-            if all_alerts and alert_name in all_alerts:
-                return Alert(self._commcell_object, alert_name, all_alerts[alert_name]['id'],
-                             all_alerts[alert_name]['alert_category'])
+            if self.has_alert(alert_name):
+                return Alert(self._commcell_object, alert_name,
+                             self._alerts[alert_name]['id'],
+                             self._alerts[alert_name]['category'])
 
             raise SDKException('Alert',
                                '104',
@@ -157,8 +176,8 @@ class Alerts(object):
         """Prints the console alerts from page_number to the number of pages asked for page_count
 
             Args:
-                page_number (int) - page number to get the alerts from
-                page_count  (int) - number of pages to get the alerts of
+                page_number (int)  --  page number to get the alerts from
+                page_count  (int)  --  number of pages to get the alerts of
 
             Raises:
                 SDKException:
@@ -188,7 +207,7 @@ class Alerts(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object.__update_response__(response.text)
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     # TODO: test this method
@@ -196,7 +215,7 @@ class Alerts(object):
         """Deletes the alert from the commcell.
 
             Args:
-                alert_name (str) - name of the alert
+                alert_name (str)  --  name of the alert
 
             Returns:
                 None
@@ -211,10 +230,9 @@ class Alerts(object):
             raise SDKException('Alert', '103')
         else:
             alert_name = str(alert_name).lower()
-            all_alerts = self._alerts
 
-            if all_alerts and alert_name in all_alerts:
-                alert_id = all_alerts[alert_name]
+            if self.has_alert(alert_name):
+                alert_id = self._alerts[alert_name]
                 alert = self._commcell_object._services.ALERT % (alert_id)
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE',
@@ -233,7 +251,7 @@ class Alerts(object):
                         raise SDKException('Response', '102')
                 else:
                     exception_message = 'Failed to delete the Alert: {0}'.format(alert_name)
-                    response_string = self._commcell_object.__update_response__(response.text)
+                    response_string = self._commcell_object._update_response_(response.text)
                     exception_message += "\n" + response_string
 
                     raise SDKException('Alert', '104', exception_message)
@@ -250,11 +268,11 @@ class Alert(object):
         """Initialise the Alert class instance.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
-                alert_name (str) - name of the alert
-                alert_id (str) - id of the alert
+                commcell_object (object)  --  instance of the Commcell class
+                alert_name (str)          --  name of the alert
+                alert_id (str)            --  id of the alert
                     default: None
-                alert_category (str) - name of the alert category
+                alert_category (str)      --  name of the alert category
                     default: None
 
             Returns:
@@ -303,7 +321,7 @@ class Alert(object):
                 str - id associated with this alert
         """
         alerts = Alerts(self._commcell_object)
-        return alerts.get(self.alert_name).alert_id
+        return alerts.get(self.alert_name).id
 
     def _get_alert_category(self):
         """Gets the alert category associated with this alert.
@@ -312,7 +330,7 @@ class Alert(object):
                 str - alert category name associated with this alert
         """
         alerts = Alerts(self._commcell_object)
-        return alerts.get(self.alert_name).alert_category
+        return alerts.get(self.alert_name).category
 
     def _get_alert_properties(self):
         """Gets the alert properties of this alert.
@@ -333,7 +351,7 @@ class Alert(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object.__update_response__(response.text)
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     @property
@@ -355,7 +373,7 @@ class Alert(object):
         """Enable the notification type.
 
             Args:
-                alert_notification_type (str) - alert notification to enable
+                alert_notification_type (str)  --  alert notification to enable
 
             Returns:
                 None
@@ -391,7 +409,7 @@ class Alert(object):
                 else:
                     raise SDKException('Response', '102')
             else:
-                response_string = self._commcell_object.__update_response__(response.text)
+                response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         else:
             raise SDKException(
@@ -403,7 +421,7 @@ class Alert(object):
         """Disable the notification type.
 
             Args:
-                alert_notification_type (str) - alert notification to disable
+                alert_notification_type (str)  --  alert notification to disable
 
             Returns:
                 None
@@ -439,7 +457,7 @@ class Alert(object):
                 else:
                     raise SDKException('Response', '102')
             else:
-                response_string = self._commcell_object.__update_response__(response.text)
+                response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         else:
             raise SDKException(
@@ -468,7 +486,7 @@ class Alert(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object.__update_response__(response.text)
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def disable(self):
@@ -493,5 +511,5 @@ class Alert(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object.__update_response__(response.text)
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

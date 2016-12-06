@@ -17,30 +17,31 @@ Subclient: Class for representing a single subclient, and to perform operations 
 
 
 Subclients:
-    __init__(backupset_object) -- initialise object of subclients object associated with
-                                    the specified backup set.
-    __repr__()                 -- return all the subclients associated with the specified backupset
-    get(subclient_name)        -- returns the subclient object of the input subclient name
-    _get_subclients()          -- gets all the subclients associated with the backupset specified
-    add(subclient_name)        -- adds a new subclient to the backupset
-    delete(subclient_name)     -- deletes the subclient (subclient name) from the backupset
+    __init__(backupset_object)  --  initialise object of subclients object associated with
+                                        the specified backup set.
+    __repr__()                  --  return all the subclients associated with the backupset
+    _get_subclients()           --  gets all the subclients associated with the backupset specified
+    has_subclient()             --  checks if a subclient exists with the given name or not
+    get(subclient_name)         --  returns the subclient object of the input subclient name
+    delete(subclient_name)      --  deletes the subclient (subclient name) from the backupset
 
 Subclient:
     __init__(backupset_object,
              subclient_name,
-             subclient_id)     -- initialise object of subclient with the specified subclient name
-                                     and id, and associated to the specified backupset
-    __repr__()                 -- return the subclient name and id, the instance is associated with
-    _get_subclient_id()         -- method to get subclient id, if not specified in __init__ method
-    _get_subclient_properties() -- get the properties of this subclient
-    backup()          --  run a backup job for the subclient
-    browse()          --  gets the content of the backup for this subclient at the path specified
-    browse_in_time()  --  gets the content of the backup for this subclient
-                            at the path specified in the time range specified
-    restore_in_place()      --  Restores the files/folders specified in the
-                                    input paths list to the same location
-    restore_out_of_place()  --  Restores the files/folders specified in the input paths list
-                                    to the input client, at the specified destionation location
+             subclient_id)      --  initialise instance of the Subclient class,
+                                        associated to the specified backupset
+    __repr__()                  --  return the subclient name, the instance is associated with
+    _get_subclient_id()         --  method to get subclient id, if not specified in __init__ method
+    _get_subclient_properties() --  get the properties of this subclient
+    backup()                    --  run a backup job for the subclient
+    browse()                    --  gets the content of the backup for this subclient
+                                        at the path specified
+    browse_in_time()            --  gets the content of the backup for this subclient
+                                        at the input path in the time range specified
+    restore_in_place()          --  Restores the files/folders specified in the
+                                        input paths list to the same location
+    restore_out_of_place()      --  Restores the files/folders specified in the input paths list
+                                        to the input client, at the specified destionation location
 """
 
 import re
@@ -60,7 +61,7 @@ class Subclients(object):
         """Initialize the Sublcients object for the given backupset.
 
             Args:
-                backupset_object (object) - instance of the Backupset class
+                backupset_object (object)  --  instance of the Backupset class
 
             Returns:
                 object - instance of the Subclients class
@@ -128,18 +129,29 @@ class Subclients(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    '''
-    # TODO: Write definition for adding a new subclient to the backupset
-    def add(self):
-        """Adds a new subclient to the backupset."""
-        pass
-    '''
+    def has_subclient(self, subclient_name):
+        """Checks if a subclient exists in the commcell with the input subclient name.
+
+            Args:
+                subclient_name (str)  --  name of the subclient
+
+            Returns:
+                bool - boolean output whether the subclient exists in the backupset or not
+
+            Raises:
+                SDKException:
+                    if type of the subclient name argument is not string
+        """
+        if not isinstance(subclient_name, str):
+            raise SDKException('Subclient', '101')
+
+        return self._subclients and str(subclient_name).lower() in self._subclients
 
     def get(self, subclient_name):
         """Returns a subclient object of the specified backupset name.
 
             Args:
-                subclient_name (str) - name of the subclient
+                subclient_name (str)  --  name of the subclient
 
             Returns:
                 object - instance of the Subclient class for the given subclient name
@@ -153,12 +165,11 @@ class Subclients(object):
             raise SDKException('Subclient', '101')
         else:
             subclient_name = str(subclient_name).lower()
-            all_subclients = self._subclients
 
-            if all_subclients and subclient_name in all_subclients:
+            if self.has_subclient(subclient_name):
                 return Subclient(self._backupset_object,
                                  subclient_name,
-                                 all_subclients[subclient_name])
+                                 self._subclients[subclient_name])
 
             raise SDKException('Subclient',
                                '102',
@@ -168,7 +179,7 @@ class Subclients(object):
         """Deletes the subclient specified by the subclient_name from the backupset.
 
             Args:
-                subclient_name (str) - name of the subclient to remove from the backupset
+                subclient_name (str)  --  name of the subclient to remove from the backupset
 
             Returns:
                 None
@@ -185,11 +196,9 @@ class Subclients(object):
         else:
             subclient_name = str(subclient_name).lower()
 
-        all_subclients = self._subclients
-
-        if all_subclients and subclient_name in all_subclients:
+        if self.has_subclient(subclient_name):
             delete_subclient_service = self._commcell_object._services.SUBCLIENT % \
-                (all_subclients[subclient_name])
+                (self._subclients[subclient_name])
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'DELETE', delete_subclient_service)
@@ -236,9 +245,9 @@ class Subclient(object):
         """Initialise the Subclient object.
 
             Args:
-                backupset_object (object) - instance of the Backupset class
-                subclient_name (str) - name of the subclient
-                subclient_id (str) - id of the subclient
+                backupset_object (object)  --  instance of the Backupset class
+                subclient_name (str)       --  name of the subclient
+                subclient_id (str)         --  id of the subclient
                     default: None
 
             Returns:
@@ -311,7 +320,7 @@ class Subclient(object):
         """Converts the given float size to appropriate size in KB / MB / GB, etc.
 
             Args:
-                size (float) -- float value to convert
+                size (float)  --  float value to convert
 
             Returns:
                 str - size converted to the specific type (B, KB, MB, GB, etc.)
@@ -342,17 +351,17 @@ class Subclient(object):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
-                backup_level (str) - level of backup the user wish to run
+                backup_level (str)         --  level of backup the user wish to run
                         Full / Incremental / Synthetic_full
                     default: Full
 
-                incremental_backup (bool) - run incremental backup
-                    only applicable in case of Synthetic_full backup
+                incremental_backup (bool)  --  run incremental backup
+                        only applicable in case of Synthetic_full backup
                     default: False
 
-                incremental_level (str) - run incremental backup before / after synthetic full
+                incremental_level (str)    --  run incremental backup before / after synthetic full
                         BEFORE_SYNTH / AFTER_SYNTH
-                    only applicable in case of Synthetic_full backup
+                        only applicable in case of Synthetic_full backup
                     default: BEFORE_SYNTH
 
             Returns:
@@ -404,19 +413,21 @@ class Subclient(object):
         """Gets the content of the backup for this subclient at the path specified.
 
             Args:
-                path (str) - folder path to get the contents of
-                show_deleted_files (bool) - include deleted files in the content or not
+                path (str)                  --  folder path to get the contents of
+                show_deleted_files (bool)   --  include deleted files in the content or not
                     default: False
-                vm_file_browse (bool) - browse files and folders inside a guest virtual machine
+                vm_file_browse (bool)       --  browse files and folders inside
+                                                    a guest virtual machine
                     only applicable when browsing content inside a guest virtual machine
                     default: False
-                vm_disk_browse (bool) - browse virtual machine files, e.g.; .vmdk files, etc.
+                vm_disk_browse (bool)       --  browse virtual machine files
+                                                    e.g.; .vmdk files, etc.
                     only applicable when browsing content inside a guest virtual machine
                     default: False
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
-                dict - path alogn with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder, size, modification time
 
             Raises:
                 SDKException:
@@ -489,23 +500,23 @@ class Subclient(object):
             at the path specified in the time range specified.
 
             Args:
-                path (str) - folder path to get the contents of
-                show_deleted_files (bool) - include deleted files in the content or not
+                path (str)                  --  folder path to get the contents of
+                show_deleted_files (bool)   --  include deleted files in the content or not
                     default: True
-                restore_index (bool) - restore index if it is not cached
+                restore_index (bool)        --  restore index if it is not cached
                     default: True
-                from_date (str) - date to get the contents after
+                from_date (str)             --  date to get the contents after
                         format: dd/MM/YYYY
-                    gets contents from 01/01/1970 if not specified
+                        gets contents from 01/01/1970 if not specified
                     default: None
-                to_date (str) - date to get the contents before
+                to_date (str)               --  date to get the contents before
                         format: dd/MM/YYYY
-                    gets contents till current day if not specified
+                        gets contents till current day if not specified
                     default: None
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
-                dict - path alogn with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder, size, modification time
 
             Raises:
                 SDKException:
@@ -664,12 +675,12 @@ class Subclient(object):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
-                paths (list) - list of full paths of files/folders to restore
-                overwrite (bool) - unconditional overwrite files during restore
+                paths (list)                    --  list of full paths of files/folders to restore
+                overwrite (bool)                --  unconditional overwrite files during restore
                     default: True
-                restore_deleted_files (bool) - restore files that have been deleted on media
+                restore_deleted_files (bool)    --  restore files that have been deleted on media
                     default: True
-                restore_data_and_acl (bool) - restore data and ACL files
+                restore_data_and_acl (bool)     --  restore data and ACL files
                     default: True
 
             Returns:
@@ -766,14 +777,15 @@ class Subclient(object):
             at the specified destionation location.
 
             Args:
-                client (str/object) - either the name of the client or instance of the Client
-                destination_path (str) - full path of the location on client to restore to
-                paths (list) - list of full paths of files/folders to restore
-                overwrite (bool) - unconditional overwrite files during restore
+                client (str/object)             --  either the name of the client or
+                                                        the instance of the Client
+                destination_path (str)          --  full path of the restore location on client
+                paths (list)                    --  list of full paths of files/folders to restore
+                overwrite (bool)                --  unconditional overwrite files during restore
                     default: True
-                restore_deleted_files (bool) - restore files that have been deleted on media
+                restore_deleted_files (bool)    --  restore files that have been deleted on media
                     default: True
-                restore_data_and_acl (bool) - restore data and ACL files
+                restore_data_and_acl (bool)     --  restore data and ACL files
                     default: True
 
             Returns:
@@ -815,6 +827,19 @@ class Subclient(object):
                 else:
                     path = '\\'
             paths[index] = path
+
+        if int(self._backupset_object._agent_object.agent_id) == 33:
+            destination_path = destination_path.strip('\\').strip('/')
+            if destination_path:
+                destination_path = destination_path.replace('/', '\\')
+            else:
+                destination_path = '\\'
+        elif int(self._backupset_object._agent_object.agent_id) == 29:
+            destination_path = destination_path.strip('\\').strip('/')
+            if destination_path:
+                destination_path = destination_path.replace('\\', '/')
+            else:
+                destination_path = '\\'
 
         request_json = {
             "mode": 2,

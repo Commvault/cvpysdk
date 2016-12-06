@@ -16,18 +16,19 @@ UserGroups: Class for representing all the user groups associated with a commcel
 UserGroup:  Class for representing a single User Group of the commcell
 
 UserGroups:
-    __init__(commcell_object)  -- initialise instance of the UserGroups associated with
-                                    the specified commcell
-    __repr__()                 -- return all the usergroups associated with the specified commcell
-    _get_usergroups()          -- gets all the usergroups associated with the commcell specified
-    get(usergroup_name)        -- returns the instance of the UserGroup class,
-                                    for the the input user group name
+    __init__(commcell_object)  --  initialise instance of the UserGroups associated with
+                                       the specified commcell
+    __repr__()                 --  return all the usergroups associated with the specified commcell
+    _get_usergroups()          --  gets all the usergroups associated with the commcell specified
+    has_user_group()           --  checks if a user group exists with the given name or not
+    get(user_group_name)       --  returns the instance of the UserGroup class,
+                                       for the the input user group name
+    delete(user_group_name)    --  deletes the user group from the commcell
 
 UserGroup:
     __init__(commcell_object,
              usergroup_name,
-             usergroup_id=None)  -- initialise object of UserGroup class with the specified
-                                     usergroup name and id
+             usergroup_id=None)  -- initialise instance of the UserGroup for the commcell
     __repr__()                   -- return the usergroup name, the instance is associated with
     _get_usergroup_id()          -- method to get the usergroup id, if not specified in __init__
     _get_usergroup_properties()  -- get the properties of this usergroup
@@ -44,13 +45,13 @@ class UserGroups(object):
         """Initialize object of the UserGroups class.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
+                commcell_object (object)  --  instance of the Commcell class
 
             Returns:
                 object - instance of the UserGroups class
         """
         self._commcell_object = commcell_object
-        self._USER_GROUPS = self._commcell_object._services.GET_ALL_USERGROUPS
+        self._USER_GROUPS = self._commcell_object._services.USERGROUPS
         self._user_groups = self._get_user_groups()
 
     def __repr__(self):
@@ -102,13 +103,32 @@ class UserGroups(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', response.text)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def has_user_group(self, user_group_name):
+        """Checks if a user group exists in the commcell with the input user group name.
+
+            Args:
+                user_group_name (str)  --  name of the user group
+
+            Returns:
+                bool - boolean output whether the user group exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the user group name argument is not string
+        """
+        if not isinstance(user_group_name, str):
+            raise SDKException('UserGroup', '103')
+
+        return self._user_groups and str(user_group_name).lower() in self._user_groups
 
     def get(self, user_group_name):
         """Returns a user group object of the specified user group name.
 
             Args:
-                user_group_name (str) - name of the user group
+                user_group_name (str)  --  name of the user group
 
             Returns:
                 object - instance of the UserGroup class for the given user group name
@@ -122,16 +142,91 @@ class UserGroups(object):
             raise SDKException('UserGroup', '103')
         else:
             user_group_name = str(user_group_name).lower()
-            all_usergroups = self._user_groups
 
-            if all_usergroups and user_group_name in all_usergroups:
+            if self.has_user_group(user_group_name):
                 return UserGroup(self._commcell_object,
                                  user_group_name,
-                                 all_usergroups[user_group_name])
+                                 self._user_groups[user_group_name])
 
             raise SDKException('UserGroup',
                                '104',
                                'No user group exists with name: {0}'.format(user_group_name))
+
+    def delete(self, user_group_name):
+        """Deletes the usergroup from the commcell.
+
+            Args:
+                user_group_name (str)  --  name of the usergroup to remove from the commcell
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if type of the usergroup name argument is not string
+                    if response is empty
+                    if response is not success
+                    if no usergroup exists with the given name
+        """
+
+        if not isinstance(user_group_name, str):
+            raise SDKException('UserGroup', '103')
+        else:
+            user_group_name = str(user_group_name).lower()
+
+            if self.has_user_group(user_group_name):
+                usergroup_id = self._user_groups[user_group_name]
+
+                delete_usergroup = self._commcell_object._services.USERGROUP % (usergroup_id)
+
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    'DELETE', delete_usergroup
+                )
+
+                if flag:
+                    if response.json():
+                        if 'response' in response.json():
+                            response_value = response.json()['response'][0]
+                            error_code = str(response_value['errorCode'])
+                            error_message = None
+
+                            if 'errorString' in response_value:
+                                error_message = str(response_value['errorString'])
+
+                            if error_message:
+                                o_str = 'Failed to delete user group with error code: "{0}", error: "{1}"'
+                                print o_str.format(error_code, error_message)
+                            else:
+                                if error_code is '0':
+                                    print 'User Group "{0}" deleted successfully'.format(
+                                        user_group_name
+                                    )
+
+                                    # initialize the usergroup again
+                                    # so the usergroups object has all the usergroups
+                                    self._user_groups = self._get_user_groups()
+                                else:
+                                    o_str = 'Failed to delete usergroup with error code: "{0}"'
+                                    print o_str.format(error_code)
+                                    print 'Please check the documentation for more details on the error'
+                        else:
+                            print response.json()
+                    else:
+                        raise SDKException('Response', '102')
+                else:
+                    response_string = self._commcell_object._update_response_(response.text)
+                    raise SDKException(
+                        'UserGroup',
+                        '104',
+                        'Failed to delete the usergroup: {0}, reason: {1}'.format(
+                            user_group_name, response_string
+                        )
+                    )
+            else:
+                raise SDKException(
+                    'UserGroup',
+                    '104',
+                    'No usergroup exists with name: {0}'.format(user_group_name))
 
 
 class UserGroup(object):
@@ -141,9 +236,9 @@ class UserGroup(object):
         """Initialise the UserGroup class instance.
 
             Args:
-                commcell_object (object) - instance of the Commcell class
-                user_group_name (str) - name of the user group
-                user_group_id (str) - id of the user group
+                commcell_object (object)  --  instance of the Commcell class
+                user_group_name (str)     --  name of the user group
+                user_group_id (str)       --  id of the user group
                     default: None
 
             Returns:
@@ -157,7 +252,7 @@ class UserGroup(object):
         else:
             self._user_group_id = self._get_usergroup_id()
 
-        self._USERGROUP = self._commcell_object._services.USERGROUP % (self.usergroup_id)
+        self._USERGROUP = self._commcell_object._services.USERGROUP % (self.user_group_id)
         self.properties = self._get_usergroup_properties()
 
     def __repr__(self):
@@ -199,12 +294,13 @@ class UserGroup(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', response.text)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def user_group_id(self):
         """Treats the usergroup id as a read-only attribute."""
-        return self._usergroup_id
+        return self._user_group_id
 
     @property
     def user_group_name(self):
