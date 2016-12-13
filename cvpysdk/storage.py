@@ -19,7 +19,8 @@ StoragePolicies:  Class for all the Storage Policies associated to the commcell.
 
 MediaAgents:
     __init__(commcell_object)   --  initialize the MediaAgents class instance for the commcell
-    __repr__()                  --  returns a string of all the media agents associated
+    __str__()                   --  returns all the media agents associated with the commcell
+    __repr__()                  --  returns the string for the instance of the MediaAgents class
     _get_media_agents()         --  gets all the media agents of the commcell
     has_media_agent()           --  checks if a media agent exists with the given name or not
     get(media_agent_name)       --  returns the instance of MediaAgent class
@@ -35,7 +36,8 @@ MediaAgent:
 
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
-    __repr__()                  --  returns a string of all the disk libraries associated
+    __str__()                   --  returns all the disk libraries associated with the commcell
+    __repr__()                  --  returns the string for the instance of the DiskLibraries class
     _get_libraries()            --  gets all the disk libraries of the commcell
     has_library(library_name)   --  checks if a disk library exists with the given name or not
     get(library_name)           --  returns the instance of the DiskLibrary class
@@ -51,18 +53,20 @@ DiskLibrary:
     _get_library_id()           --  gets the id of the DiskLibrary instance from commcell
 
 StoragePolicies:
-    __init__(commcell_object)       --  initialize the StoragePolicies instance for the commcell
-    __repr__()                      --  returns a string of all the storage policies associated
-    _get_policies()                 --  gets all the storage policies of the commcell
-    has_policy(policy_name)         --  checks if a storage policy exists with the given name
-    add()                           --  adds a new storage policy to the commcell
-    delete(storage_policy_name)     --  removes the specified storage policy from the commcell
+    __init__(commcell_object)    --  initialize the StoragePolicies instance for the commcell
+    __str__()                    --  returns all the storage policies associated with the commcell
+    __repr__()                   --  returns a string for the instance of the StoragePolicies class
+    _get_policies()              --  gets all the storage policies of the commcell
+    has_policy(policy_name)      --  checks if a storage policy exists with the given name
+    add()                        --  adds a new storage policy to the commcell
+    delete(storage_policy_name)  --  removes the specified storage policy from the commcell
 
 SchedulePolicies:
-    __init__(commcell_object)       --  initialize the SchedulePolicies instance for the commcell
-    __repr__()                      --  returns a string of all the schedule policies associated
-    _get_policies()                 --  gets all the schedule policies of the commcell
-    has_policy(policy_name)         --  checks if a schedule policy exists with the given name
+    __init__(commcell_object)    --  initialize the SchedulePolicies instance for the commcell
+    __str__()                    --  returns all the schedule policies associated with the commcell
+    __repr__()                   --  returns a string for instance of the SchedulePolicies class
+    _get_policies()              --  gets all the schedule policies of the commcell
+    has_policy(policy_name)      --  checks if a schedule policy exists with the given name
 
 """
 
@@ -87,20 +91,25 @@ class MediaAgents(object):
         self._MEDIA_AGENTS = self._commcell_object._services.GET_MEDIA_AGENTS
         self._media_agents = self._get_media_agents()
 
-    def __repr__(self):
-        """Returns all the media agents associated with the commcell.
+    def __str__(self):
+        """Representation string consisting of all media agents of the commcell.
 
             Returns:
-                str - string consisting of all the media agents of the commcell
+                str - string of all the media agents associated with the commcell
         """
-        representation_string = ''
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Media Agent')
 
-        for media_agent_name, media_agent_id in self._media_agents.items():
-            sub_str = 'Media Agent "{0}" of Commcell: "{1}"\n'
-            sub_str = sub_str.format(media_agent_name, self._commcell_object._headers['Host'])
+        for index, media_agent in enumerate(self._media_agents):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, media_agent)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the MediaAgents class."""
+        return "MediaAgents class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_media_agents(self):
         """Gets all the media agents associated to the commcell specified by commcell object.
@@ -207,12 +216,8 @@ class MediaAgent(object):
             self._media_agent_id = self._get_media_agent_id()
 
     def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string containing the details of this media agent
-        """
-        representation_string = 'Media Agent Instance for media agent: "{0}", of Commcell: "{1}"'
+        """String representation of the instance of this class."""
+        representation_string = 'MediaAgent class instance for MA: "{0}", of Commcell: "{1}"'
 
         return representation_string.format(self.media_agent_name,
                                             self._commcell_object._headers['Host'])
@@ -253,20 +258,25 @@ class DiskLibraries(object):
         self._LIBRARY = self._commcell_object._services.LIBRARY
         self._libraries = self._get_libraries()
 
-    def __repr__(self):
-        """Returns all the disk libraries associated with the commcell.
+    def __str__(self):
+        """Representation string consisting of all disk libraries of the commcell.
 
             Returns:
-                str - string consisting of all the disk libraries of the commcell
+                str - string of all the disk libraries associated with the commcell
         """
-        representation_string = ''
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Disk Library')
 
-        for library_name, library_id in self._libraries.items():
-            sub_str = 'Disk Library "{0}" of Commcell: "{1}"\n'
-            sub_str = sub_str.format(library_name, self._commcell_object._headers['Host'])
+        for index, library in enumerate(self._libraries):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, library)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the DiskLibraries class."""
+        return "DiskLibraries class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_libraries(self):
         """Gets all the disk libraries associated to the commcell specified by commcell object.
@@ -453,12 +463,8 @@ class DiskLibrary(object):
             self._library_id = self._get_library_id()
 
     def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string containing the details of this library
-        """
-        representation_string = 'Disk Library Instance for library: "{0}" of Commcell: "{1}"'
+        """String representation of the instance of this class."""
+        representation_string = 'DiskLibrary class instance for library: "{0}" of Commcell: "{1}"'
         return representation_string.format(self.library_name,
                                             self._commcell_object._headers['Host'])
 
@@ -498,19 +504,25 @@ class StoragePolicies(object):
         self._POLICY = self._commcell_object._services.STORAGE_POLICY
         self._policies = self._get_policies()
 
-    def __repr__(self):
-        """Returns all the storage policies associated with the commcell.
+    def __str__(self):
+        """Representation string consisting of all storage policies of the commcell.
 
             Returns:
-                str - string consisting of all the storage policies of the commcell
+                str - string of all the storage policies associated with the commcell
         """
-        representation_string = ''
-        for policy_name, policy_id in self._policies.items():
-            sub_str = 'Storage Policy "{0}" of Commcell: "{1}"\n'
-            sub_str = sub_str.format(policy_name, self._commcell_object._headers['Host'])
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Storage Policy')
+
+        for index, policy in enumerate(self._policies):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, policy)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the Clients class."""
+        return "StoragePolicies class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_policies(self):
         """Gets all the storage policies associated to the commcell specified by commcell object.
@@ -755,19 +767,25 @@ class SchedulePolicies(object):
         self._POLICY = self._commcell_object._services.SCHEDULE_POLICY
         self._policies = self._get_policies()
 
-    def __repr__(self):
-        """Returns all the storage policies associated with the commcell.
+    def __str__(self):
+        """Representation string consisting of all schedule policies of the commcell.
 
             Returns:
-                str - string consisting of all the storage policies of the commcell
+                str - string of all the schedule policies associated with the commcell
         """
-        representation_string = ''
-        for policy_name, policy_id in self._policies.items():
-            sub_str = 'Schedule Policy "{0}" of Commcell: "{1}"\n'
-            sub_str = sub_str.format(policy_name, self._commcell_object._headers['Host'])
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Schedule Policy')
+
+        for index, policy in enumerate(self._policies):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, policy)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the SchedulePolicies class."""
+        return "SchedulePolicies class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_policies(self):
         """Gets all the schedule policies associated to the commcell specified by commcell object.

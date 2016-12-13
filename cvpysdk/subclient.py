@@ -19,7 +19,8 @@ Subclient: Class for representing a single subclient, and to perform operations 
 Subclients:
     __init__(backupset_object)  --  initialise object of subclients object associated with
                                         the specified backup set.
-    __repr__()                  --  return all the subclients associated with the backupset
+    __str__()                   --  returns all the subclients associated with the backupset
+    __repr__()                  --  returns the string for the instance of the Subclients class
     _get_subclients()           --  gets all the subclients associated with the backupset specified
     has_subclient()             --  checks if a subclient exists with the given name or not
     get(subclient_name)         --  returns the subclient object of the input subclient name
@@ -74,23 +75,30 @@ class Subclients(object):
 
         self._subclients = self._get_subclients()
 
-    def __repr__(self):
-        """Representation string for the instance of the Subclients class.
+    def __str__(self):
+        """Representation string consisting of all subclients of the backupset.
 
             Returns:
-                str - string of all the subclients in the backupset selected of a client
+                str - string of all the subclients of th backupset of an agent of a client
         """
-        representation_string = ''
-        for subclient_name, subclient_id in self._subclients.items():
-            sub_str = 'Subclient "{0}" for Backupset: "{1}" of Agent: "{2}" of Client: "{3}"\n'
-            sub_str = sub_str.format(
-                subclient_name,
+        representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
+            'S. No.', 'Subclient', 'Backupset', 'Agent', 'Client')
+
+        for index, subclient in enumerate(self._subclients):
+            sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\n'.format(
+                index + 1,
+                subclient,
                 self._backupset_object.backupset_name,
                 self._backupset_object._agent_object.agent_name,
                 self._backupset_object._agent_object._client_object.client_name)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the Subclients class."""
+        return "Subclients class instance for Backupset: '{0}'".format(
+            self._backupset_object.backupset_name)
 
     def _get_subclients(self):
         """Gets all the subclients associated to the client specified by the backupset object.
@@ -111,7 +119,7 @@ class Subclients(object):
                                                                             self._ALL_SUBCLIENTS)
 
         if flag:
-            if response.json() and 'subClientProperties' in response.json().keys():
+            if response.json() and 'subClientProperties' in response.json():
                 return_dict = {}
 
                 for dictionary in response.json()['subClientProperties']:
@@ -269,20 +277,13 @@ class Subclient(object):
         self._BROWSE = self._commcell_object._services.BROWSE
         self._RESTORE = self._commcell_object._services.RESTORE
 
-        self.schedules = Schedules(self).schedules
+        self.schedules = Schedules(self)
 
     def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string containing the details of this subclient
-        """
-        representation_string = 'Subclient class instance for Subclient: "{0}" for Backupset: "{1}" of Agent: "{2}" of Client: "{3}"'
+        """String representation of the instance of this class."""
+        representation_string = 'Subclient class instance for Subclient: "{0}" of Backupset: "{1}"'
         return representation_string.format(
-            self.subclient_name,
-            self._backupset_object.backupset_name,
-            self._backupset_object._agent_object.agent_name,
-            self._backupset_object._agent_object._client_object.client_name)
+            self.subclient_name, self._backupset_object.backupset_name)
 
     def _get_subclient_id(self):
         """Gets the subclient id associated to the specified backupset name and client name.

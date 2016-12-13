@@ -19,7 +19,8 @@ Alert: Class for a single alert selected
 Alerts:
     __init__(commcell_object)   -- initialise object of Alerts class associated with
                                     the specified commcell
-    __repr__()                  -- return all the alerts associated with the specified commcell
+    __str__()                   -- returns all the alerts associated with the commcell
+    __repr__()                  -- returns the string for the instance of the Alerts class
     _get_alert()                -- gets all the alerts associated with the commcell specified
     has_alert(alert_name)       -- checks whether the alert exists or not
     get(alert_name)             -- returns the alert class object of the input alert name
@@ -62,23 +63,33 @@ class Alerts(object):
         self._ALERTS = self._commcell_object._services.GET_ALL_ALERTS
         self._alerts = self._get_alerts()
 
-    def __repr__(self):
-        """Representation string for the instance of the Alerts class.
+    def __str__(self):
+        """Representation string consisting of all alerts of the Commcell.
 
             Returns:
-                str - string of all the alerts associated with the commcell
+                str - string of all the alerts for a commcell
         """
-        representation_string = ""
+        representation_string = "{:^5}\t{:^50}\t{:^50}\t{:^30}\n\n".format(
+            'S. No.', 'Alert', 'Description', 'Category')
 
-        for alert_name in self._alerts:
+        for index, alert_name in enumerate(self._alerts):
             alert_description = self._alerts[alert_name]['description']
             alert_category = self._alerts[alert_name]['category']
-            sub_str = 'Alert "{0}" for: "{1}" with Category: "{2}"\n'.format(alert_name,
-                                                                             alert_description,
-                                                                             alert_category)
+            sub_str = '{:^5}\t{:50}\t{:^50}\t{:^30}\n'.format(
+                index + 1,
+                alert_name,
+                alert_description,
+                alert_category
+            )
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the Alerts class."""
+        return "Alerts class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_alerts(self):
         """Gets all the alerts associated with the commcell
@@ -197,13 +208,14 @@ class Alerts(object):
             if response.json() and 'totalNoOfAlerts' in response.json():
                 print "Total Console Alerts found: {0}".format(response.json()['totalNoOfAlerts'])
 
-                for dictionary in response.json()['feedsList']:
-                    print "Alert Name: {0}".format(dictionary['alertName'])
-                    print "Alert Type: {0}".format(dictionary['alertType'])
-                    print "Alert Criteria: {0}".format(dictionary['alertcriteria'])
+                o_str = "{:^5}\t{:^50}\t{:^50}\t{:^50}\n\n".format(
+                    'S. No.', 'Alert', 'Type', 'Criteria')
 
-                    if 'clientName' in dictionary['client']:
-                        print "Client Name: {0}".format(str(dictionary['client']['clientName']))
+                for index, dictionary in enumerate(response.json()['feedsList']):
+                    o_str += '{:^5}\t{:50}\t{:^50}\t{:^50}\n'.format(
+                        index + 1, dictionary['alertName'], dictionary['alertType'], dictionary['alertcriteria'])
+
+                print o_str
             else:
                 raise SDKException('Response', '102')
         else:
@@ -306,13 +318,9 @@ class Alert(object):
         }
 
     def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string containing the details of this alert
-        """
-        representation_string = 'Alert instance for Alert: "{0}", with Alert ID: "{1}" and Notification Type ID: "{2}"'
-        return representation_string.format(self.alert_name, self.alert_id, self.alert_category)
+        """String representation of the instance of this class."""
+        representation_string = 'Alert class instance for Alert: "{0}", Notification Type: "{1}"'
+        return representation_string.format(self.alert_name, self.alert_category)
 
     def _get_alert_id(self):
         """Gets the alert id associated with this alert.
@@ -321,7 +329,7 @@ class Alert(object):
                 str - id associated with this alert
         """
         alerts = Alerts(self._commcell_object)
-        return alerts.get(self.alert_name).id
+        return alerts.get(self.alert_name).alert_id
 
     def _get_alert_category(self):
         """Gets the alert category associated with this alert.
@@ -330,7 +338,7 @@ class Alert(object):
                 str - alert category name associated with this alert
         """
         alerts = Alerts(self._commcell_object)
-        return alerts.get(self.alert_name).category
+        return alerts.get(self.alert_name).alert_category
 
     def _get_alert_properties(self):
         """Gets the alert properties of this alert.

@@ -39,37 +39,61 @@ class WorkFlow(object):
 
         self._workflows = self._get_workflows()
 
-    def __repr__(self):
-        """Representation string for the instance of the WorkFlow class.
+    def __str__(self):
+        """Representation string consisting of all workflows of the Commcell.
 
             Returns:
                 str - string of all the workflows associated with the commcell
         """
-        representation_string = ''
-        for workflow_name, workflow_details in self._workflows.items():
-            sub_str = 'WorkFlow Name: "{0}"\n'.format(workflow_name)
-            sub_str += '\tWorkFlow Description: "{0}"\n'.format(workflow_details[0])
+        representation_string = '{:^5}\t{:^50}\t{:^60}\t{:^30}\n\n'.format(
+            'S. No.', 'Workflow Name', 'Description', 'Client')
 
-            if len(workflow_details) > 1:
-                sub_str += '\tWorkFlow Client: "%s"\n' % (workflow_details[1])
-
-                if workflow_details[2]:
-                    sub_str += '\tWorkFlow Inputs:\n'
-
-                    sub_str += '{0}S. No.{0}Input Name{0}Display Name{0}Description{0}Default Value{0}Is Required\n'.format(
-                        '\t\t')
-
-                    for index, wf_input in enumerate(workflow_details[2]):
-                        sub_str += '{0}  {1}  '.format('\t\t', index + 1)
-                        for a_input in wf_input:
-                            sub_str += '{0}{1}'.format('\t\t', a_input)
-                        sub_str += '\n'
-
-            sub_str += '\n'
+        for index, workflow in enumerate(self._workflows.items()):
+            sub_str = '{:^5}\t{:50}\t{:60}\t{:^30}\n'.format(
+                index + 1,
+                workflow[0],
+                workflow[1][0],
+                workflow[1][1] if len(workflow[1]) > 1 else "  --  ")
 
             representation_string += sub_str
 
+            if len(workflow[1]) > 1:
+                workflow_inputs = workflow[1][2]
+                sub_str = '\n\t\tWorkFlow Inputs:\n\n'
+
+                sub_str += '\t\t{:^5}\t{:^35}\t{:^35}\t{:^70}\t{:^20}\t{:^20}\n\n'.format(
+                    'S. No.',
+                    'Input Name',
+                    'Display Name',
+                    'Description',
+                    'Default Value',
+                    'Is Required'
+                )
+
+                for index, wf_input in enumerate(workflow_inputs):
+                    input_name, display_name, description, default_value, is_required = wf_input
+                    sub_str += '\t\t{:^5}\t{:35}\t{:35}\t{:70}\t{:20}\t{:^20}\n'.format(
+                        index + 1,
+                        input_name,
+                        display_name,
+                        description,
+                        default_value,
+                        str(bool(is_required))
+                    )
+
+                    sub_str += '\n'
+
+                representation_string += sub_str
+
+            representation_string += "\n\n"
+
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the WorkFlow class."""
+        return "WorkFlow class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_workflows(self):
         """Gets all the workflows associated to the commcell.

@@ -18,7 +18,8 @@ Client: Class for a single client of the commcell
 
 Clients:
     __init__(commcell_object) -- initialise object of Clients class associated with the commcell
-    __repr__()                -- return all the clients associated with the commcell
+    __str__()                 -- returns all the clients associated with the commcell
+    __repr__()                -- returns the string to represent the instance of the Clients class
     _get_clients()            -- gets all the clients associated with the commcell
     has_client(client_name)   -- checks if a client exists with the given name or not
     get(client_name)          -- returns the Client class object of the input client name
@@ -58,19 +59,25 @@ class Clients(object):
         self._CLIENTS = self._commcell_object._services.GET_ALL_CLIENTS
         self._clients = self._get_clients()
 
-    def __repr__(self):
-        """Representation string for the instance of the Clients class.
+    def __str__(self):
+        """Representation string consisting of all clients of the commcell.
 
             Returns:
                 str - string of all the clients associated with the commcell
         """
-        representation_string = ''
-        for client_name, client_id in self._clients.items():
-            sub_str = 'Client "{0}" of Commcell: "{1}"\n'
-            sub_str = sub_str.format(client_name, self._commcell_object._headers['Host'])
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Client')
+
+        for index, client in enumerate(self._clients):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, client)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the Clients class."""
+        return "Clients class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_clients(self):
         """Gets all the clients associated with the commcell
@@ -243,18 +250,12 @@ class Client(object):
         self.properties = self._get_client_properties()
 
         self.agents = Agents(self)
-        self.schedules = Schedules(self).schedules
+        self.schedules = Schedules(self)
 
     def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string containing the details of this client
-        """
-        representation_string = 'Client instance for Client: "{0}", of Commcell: "{1}"'
-
-        return representation_string.format(self.client_name,
-                                            self._commcell_object._headers['Host'])
+        """String representation of the instance of this class."""
+        representation_string = 'Client class instance for Client: "{0}"'
+        return representation_string.format(self.client_name)
 
     def _get_client_id(self):
         """Gets the client id associated with this client.

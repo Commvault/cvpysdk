@@ -18,10 +18,10 @@ Commcell:
              port=81,
              commcell_username,
              commcell_password)  --  initialise object of the Commcell class
+    __repr__()                   --  return the name of the commcell, user is connected to,
+                                        along with the user name of the connected user
     __enter__()                  --  returns the current instance, using the "with" context manager
     __exit__()                   --  logs out the user associated with the current instance
-    __repr__()                   --  return the name of the commcell, user is connected to,
-                                        along with the user name of the connected user.
     _update_response_()          --  returns only the relevant response for the response received
                                         from the server.
     _remove_attribs_()           --  removes all the attributs associated with the commcell
@@ -41,6 +41,7 @@ from storage import DiskLibraries
 from storage import StoragePolicies
 from storage import SchedulePolicies
 from usergroup import UserGroups
+from workflow import WorkFlow
 from exception import SDKException
 
 
@@ -106,11 +107,21 @@ class Commcell(object):
             DiskLibraries(self),
             StoragePolicies(self),
             SchedulePolicies(self),
-            UserGroups(self)
+            UserGroups(self),
+            WorkFlow(self)
         ]
 
         self.clients, self.alerts, self.media_agents, self.disk_libraries, self.storage_policies, \
-            self.schedule_policies, self.user_groups = commcell_entities
+            self.schedule_policies, self.user_groups, self.workflows = commcell_entities
+
+    def __repr__(self):
+        """String representation of the instance of this class.
+
+            Returns:
+                str - string about the details of the Commcell class instance
+        """
+        representation_string = 'Commcell class instance of Commcell: "{0}", for User: "{1}"'
+        return representation_string.format(self._headers['Host'], self._user)
 
     def __enter__(self):
         """Returns the current instance.
@@ -124,15 +135,6 @@ class Commcell(object):
         """Logs out the user associated with the current instance."""
         print self._cvpysdk_object._logout_()
         self._remove_attribs_()
-
-    def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string about the details of the Commcell class instance
-        """
-        representation_string = 'Commcell instance for Commcell: "{0}", for User: "{1}"'
-        return representation_string.format(self._headers['Host'], self._user)
 
     def _update_response_(self, input_string):
         """Returns only the relevant response from the response received from the server.

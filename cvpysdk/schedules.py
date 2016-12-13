@@ -13,7 +13,8 @@ Schedules: Initializes instance of all schedules for a commcell entity.
 
 Schedules:
     __init__(class_object)          --  initialise object of the Schedules class
-    __repr__()                      --  string of all schedules associated with the commcell entity
+    __str__()                       --  string of all schedules associated with the commcell entity
+    __repr__()                      --  returns the string for the instance of the Schedules class
     _get_schedules()                --  gets all the schedules associated with the commcell entity
     has_schedule(schedule_name)     --  checks if schedule exists for the comcell entity or not
 
@@ -47,21 +48,26 @@ class Schedules(object):
 
         self._commcell_object = class_object._commcell_object
 
+        self._repr_str = ""
+
         if isinstance(class_object, Client):
             self._SCHEDULES = self._commcell_object._services.CLIENT_SCHEDULES % (
                 class_object.client_id
             )
+            self._repr_str = "Client: {0}".format(class_object.client_name)
         elif isinstance(class_object, Agent):
             self._SCHEDULES = self._commcell_object._services.AGENT_SCHEDULES % (
                 class_object._client_object.client_id,
                 class_object.agent_id
             )
+            self._repr_str = "Agent: {0}".format(class_object.agent_name)
         elif isinstance(class_object, Backupset):
             self._SCHEDULES = self._commcell_object._services.BACKUPSET_SCHEDULES % (
                 class_object._agent_object._client_object.client_id,
                 class_object._agent_object.agent_id,
                 class_object.backupset_id
             )
+            self._repr_str = "Backupset: {0}".format(class_object.backupset_name)
         elif isinstance(class_object, Subclient):
             self._SCHEDULES = self._commcell_object._services.SUBCLIENT_SCHEDULES % (
                 class_object._backupset_object._agent_object._client_object.client_id,
@@ -69,25 +75,29 @@ class Schedules(object):
                 class_object._backupset_object.backupset_id,
                 class_object.subclient_id
             )
+            self._repr_str = "Subclient: {0}".format(class_object.subclient_name)
         else:
             raise SDKException('Schedules', '101')
 
         self.schedules = self._get_schedules()
 
-    def __repr__(self):
-        """Representation string for the instance of the Schedules class.
+    def __str__(self):
+        """Representation string consisting of all schedules of the commcell entity.
 
             Returns:
-                str - string of all the schedules of a commcell entity
+                str - string of all the schedules associated with the commcell entity
         """
-        representation_string = ''
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Schedule')
 
-        for schedule_name, _ in self.schedules.items():
-            sub_str = 'Schedule: "{0}"\n'
-            sub_str = sub_str.format(schedule_name)
+        for index, schedule in enumerate(self.schedules):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, schedule)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the Schedules class."""
+        return "Schedules class instance for {0}".format(self._repr_str)
 
     def _get_schedules(self):
         """Gets the schedules associated with the input commcell entity.

@@ -18,6 +18,8 @@ UserGroup:  Class for representing a single User Group of the commcell
 UserGroups:
     __init__(commcell_object)  --  initialise instance of the UserGroups associated with
                                        the specified commcell
+    __str__()                  --  returns all the user groups associated with the commcell
+    __repr__()                 --  returns the string for the instance of the UserGroups class
     __repr__()                 --  return all the usergroups associated with the specified commcell
     _get_usergroups()          --  gets all the usergroups associated with the commcell specified
     has_user_group()           --  checks if a user group exists with the given name or not
@@ -54,20 +56,25 @@ class UserGroups(object):
         self._USER_GROUPS = self._commcell_object._services.USERGROUPS
         self._user_groups = self._get_user_groups()
 
-    def __repr__(self):
-        """Representation string for the instance of the UserGroups class.
+    def __str__(self):
+        """Representation string consisting of all usergroups of the Commcell.
 
             Returns:
-                str - string of all the user groups associated with the commcell
+                str - string of all the usergroups for a commcell
         """
-        representation_string = ""
+        representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'User Group')
 
-        for user_group_name, _ in self._user_groups.items():
-            sub_str = 'User Group "{0}" of Commcell: "{1}"\n'
-            sub_str = sub_str.format(user_group_name, self._commcell_object._headers['Host'])
+        for index, user_group in enumerate(self._user_groups):
+            sub_str = '{:^5}\t{:30}\n'.format(index + 1, user_group)
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the UserGroups class."""
+        return "UserGroups class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
 
     def _get_user_groups(self):
         """Gets all the user groups associated with the commcell
@@ -256,11 +263,7 @@ class UserGroup(object):
         self.properties = self._get_usergroup_properties()
 
     def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string containing the details of this user group
-        """
+        """String representation of the instance of this class."""
         representation_string = 'User Group instance for UserGroup: "{0}", of Commcell: "{1}"'
 
         return representation_string.format(self.user_group_name,

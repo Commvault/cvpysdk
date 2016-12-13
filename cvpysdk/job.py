@@ -89,7 +89,7 @@ class Job(object):
             Returns:
                 str - string for instance of this class
         """
-        representation_string = 'Job instance for job id: "{0}"'
+        representation_string = 'Job class instance for job id: "{0}"'
         return representation_string.format(self.job_id)
 
     def _is_valid_job(self):

@@ -19,7 +19,8 @@ Agent: Class for a single agent selected for a client, and to perform operations
 Agents:
     __init__(client_object)     -- initialise object of Agents class associated with
                                     the specified client
-    __repr__()                  -- return all the agents associated with the specified client
+    __str__()                   -- returns all the agents associated with the client
+    __repr__()                  -- returns the string for the instance of the Agents class
     _get_agents()               -- gets all the agents associated with the client specified
     has_agent(agent_name)       -- checks if an agent exists with the given name
     get(agent_name)             -- returns the Agent class object of the input agent name
@@ -62,20 +63,27 @@ class Agents(object):
 
         self._agents = self._get_agents()
 
-    def __repr__(self):
-        """Representation string for the instance of the Agents class.
+    def __str__(self):
+        """Representation string consisting of all agents of the client.
 
             Returns:
                 str - string of all the agents of a client
         """
-        representation_string = ''
+        representation_string = '{:^5}\t{:^20}\t{:^20}\n\n'.format('S. No.', 'Agent', 'Client')
 
-        for agent_name, agent_id in self._agents.items():
-            sub_str = 'Agent: "{0}" for Client: "{1}"\n'
-            sub_str = sub_str.format(agent_name, self._client_object.client_name)
+        for index, agent in enumerate(self._agents):
+            sub_str = '{:^5}\t{:20}\t{:20}\n'.format(
+                index + 1,
+                agent,
+                self._client_object.client_name
+            )
             representation_string += sub_str
 
         return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the Clients class."""
+        return "Agents class instance for Client: '{0}'".format(self._client_object.client_name)
 
     def _get_agents(self):
         """Gets all the agents associated to the client specified with this client object.
@@ -183,14 +191,10 @@ class Agent(object):
             self._agent_id = self._get_agent_id()
 
         self.backupsets = Backupsets(self)
-        self.schedules = Schedules(self).schedules
+        self.schedules = Schedules(self)
 
     def __repr__(self):
-        """String representation of the instance of this class.
-
-            Returns:
-                str - string containing the details of this agent
-        """
+        """String representation of the instance of this class."""
         representation_string = '"{0}" Agent instance for Client: "{1}"'
 
         return representation_string.format(string.capwords(self.agent_name),
