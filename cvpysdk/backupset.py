@@ -436,14 +436,23 @@ class Backupset(object):
                 self._is_default = bool(properties["commonBackupSet"]["isDefaultBackupSet"])
 
                 o_str = '\nProperties of Backupset: "{0}"'.format(self.backupset_name)
-                o_str += '\n\tClient: \t{0}'.format(properties["backupSetEntity"]["clientName"])
-                o_str += '\n\tAgent: \t\t{0}\n'.format(properties["backupSetEntity"]["appName"])
-                o_str += '\tInstance: \t{0}'.format(properties["backupSetEntity"]["instanceName"])
+                o_str += '\n\tClient: \t\t{0}'.format(properties["backupSetEntity"]["clientName"])
+                o_str += '\n\tAgent: \t\t\t{0}\n'.format(properties["backupSetEntity"]["appName"])
+                o_str += '\tInstance: \t\t{0}'.format(
+                    properties["backupSetEntity"]["instanceName"]
+                )
+
+                o_str += '\n\tDefault Backup Set: \t{0}'.format(
+                    "Yes" if self.is_default_backupset else "No"
+                )
+                o_str += '\n\tOn Demand Backup Set: \t{0}'.format(
+                    "Yes" if properties["commonBackupSet"]["onDemandBackupset"] else "No"
+                )
 
                 if self.description:
-                    o_str += '\n\n\tDescription: \t{0}'.format(self.description)
+                    o_str += '\n\n\tDescription: \t\t{0}'.format(self.description)
                 else:
-                    o_str += '\n\n\tDescription: \t  ----  '
+                    o_str += '\n\n\tDescription: \t\t  ----  '
 
                 return o_str.strip()
             else:

@@ -346,7 +346,7 @@ class Subclient(object):
 
     def backup(
             self,
-            backup_level="Full",
+            backup_level="Incremental",
             incremental_backup=False,
             incremental_level='BEFORE_SYNTH'):
         """Runs a backup job for the subclient of the level specified.
@@ -354,7 +354,7 @@ class Subclient(object):
             Args:
                 backup_level (str)         --  level of backup the user wish to run
                         Full / Incremental / Synthetic_full
-                    default: Full
+                    default: Incremental
 
                 incremental_backup (bool)  --  run incremental backup
                         only applicable in case of Synthetic_full backup
@@ -401,9 +401,10 @@ class Subclient(object):
                     time.sleep(1)
                     return Job(self._commcell_object, response.json()['jobIds'][0])
                 elif "errorCode" in response.json():
-                    print "Initializing backup failed with error code: %s" % \
+                    o_str = "Initializing backup failed with error code: %s" % \
                         (response.json()['errorCode'])
-                    print "Error message: %s" % (response.json()['errorMessage'])
+                    o_str += "\nError message: %s" % (response.json()['errorMessage'])
+                    raise SDKException('Subclient', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -757,10 +758,11 @@ class Subclient(object):
                     error_code = response.json()['errList'][0]['errorCode']
                     error_message = response.json()['errList'][0]['errLogMessage']
 
-                    print "Restore job failed with error code: %s" % (error_code)
-                    print "Error message: %s" % (error_message)
+                    o_str = "Restore job failed with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Subclient', '102', o_str)
                 else:
-                    print 'Failed to run the restore job'
+                    raise SDKException('Subclient', '102', 'Failed to run the restore job')
             else:
                 raise SDKException('Response', '102')
         else:
@@ -889,8 +891,11 @@ class Subclient(object):
                     error_code = response.json()['errorList'][0]['errorCode']
                     error_message = response.json()['errorList'][0]['errLogMessage']
 
-                    print "Restore job failed with error code: %s" % (error_code)
-                    print "Error message: %s" % (error_message)
+                    o_str = "Restore job failed with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Subclient', '102', o_str)
+                else:
+                    raise SDKException('Subclient', '102', 'Failed to run the restore job')
             else:
                 raise SDKException('Response', '102')
         else:
