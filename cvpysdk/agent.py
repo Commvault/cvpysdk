@@ -17,21 +17,21 @@ Agent: Class for a single agent selected for a client, and to perform operations
 
 
 Agents:
-    __init__(client_object)     -- initialise object of Agents class associated with
-                                    the specified client
-    __str__()                   -- returns all the agents associated with the client
-    __repr__()                  -- returns the string for the instance of the Agents class
-    _get_agents()               -- gets all the agents associated with the client specified
-    has_agent(agent_name)       -- checks if an agent exists with the given name
-    get(agent_name)             -- returns the Agent class object of the input agent name
+    __init__(client_object)     --  initialise object of Agents class associated with
+                                        the specified client
+    __str__()                   --  returns all the agents associated with the client
+    __repr__()                  --  returns the string for the instance of the Agents class
+    _get_agents()               --  gets all the agents associated with the client specified
+    has_agent(agent_name)       --  checks if an agent exists with the given name
+    get(agent_name)             --  returns the Agent class object of the input agent name
 
 Agent:
     __init__(client_object,
              agent_name,
-             agent_id=None)    -- initialise object of Agent with the specified agent name
-                                     and id, and associated to the specified client
-    __repr__()                 -- return the agent name, the instance is associated with
-    _get_agent_id()            -- method to get the agent id, if not specified in __init__ method
+             agent_id=None)     --   initialise object of Agent with the specified agent name
+                                         and id, and associated to the specified client
+    __repr__()                  --   return the agent name, the instance is associated with
+    _get_agent_id()             --   method to get the agent id
 
 """
 

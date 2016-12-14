@@ -17,30 +17,30 @@ Alert: Class for a single alert selected
 
 
 Alerts:
-    __init__(commcell_object)   -- initialise object of Alerts class associated with
-                                    the specified commcell
-    __str__()                   -- returns all the alerts associated with the commcell
-    __repr__()                  -- returns the string for the instance of the Alerts class
-    _get_alert()                -- gets all the alerts associated with the commcell specified
-    has_alert(alert_name)       -- checks whether the alert exists or not
-    get(alert_name)             -- returns the alert class object of the input alert name
-    delete(alert_name)          -- removes the alerts from the commcell of the specified alert
-    console_alerts()            -- returns the list of all console alerts
+    __init__(commcell_object)   --  initialise object of Alerts class associated with
+                                        the specified commcell
+    __str__()                   --  returns all the alerts associated with the commcell
+    __repr__()                  --  returns the string for the instance of the Alerts class
+    _get_alert()                --  gets all the alerts associated with the commcell specified
+    has_alert(alert_name)       --  checks whether the alert exists or not
+    get(alert_name)             --  returns the alert class object of the input alert name
+    delete(alert_name)          --  removes the alerts from the commcell of the specified alert
+    console_alerts()            --  returns the list of all console alerts
 
 Alert:
     __init__(commcell_object,
              alert_name,
-             alert_id=None)     -- initialise object of alert with the specified commcell name
-                                     and id, and associated to the specified commcell
-    __repr__()                  -- return the alert name with description and category,
-                                    the alert is associated with
-    _get_alert_id()             -- method to get the alert id, if not specified in __init__
-    _get_alert_properties()     -- get the properties of this alert
-    _get_alert_category()       -- return the category of the alert
-    enable()                    -- enables the alert
-    disable()                   -- disables the alert
-    enable_notification_type    -- enables notification type of alert
-    disable_notification_type   -- disables notification type of alert
+             alert_id=None)     --  initialise object of alert with the specified commcell name
+                                        and id, and associated to the specified commcell
+    __repr__()                  --  return the alert name with description and category,
+                                        the alert is associated with
+    _get_alert_id()             --  method to get the alert id, if not specified in __init__
+    _get_alert_properties()     --  get the properties of this alert
+    _get_alert_category()       --  return the category of the alert
+    enable()                    --  enables the alert
+    disable()                   --  disables the alert
+    enable_notification_type    --  enables notification type of alert
+    disable_notification_type   --  disables notification type of alert
 
 """
 

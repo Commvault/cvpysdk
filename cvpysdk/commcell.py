@@ -15,9 +15,9 @@ Commcell: Initializes a connection to the commcell and is a wrapper for the enti
 
 Commcell:
     __init__(commcell_name,
-             port=81,
              commcell_username,
-             commcell_password)  --  initialise object of the Commcell class
+             commcell_password,
+             port=81)            --  initialise object of the Commcell class
     __repr__()                   --  return the name of the commcell, user is connected to,
                                         along with the user name of the connected user
     __enter__()                  --  returns the current instance, using the "with" context manager
