@@ -37,7 +37,7 @@ Login to Commcell::
     >>> commcell_object = commcell.Commcell(commcell_name, commcell_username, commcell_password, port)
 
 Print all clients:
-	>>> print commcell_object.clients
+    >>> print commcell_object.clients
 
 Get a client:
 	>>> client_object = commcell_object.clients.get(client_name)
