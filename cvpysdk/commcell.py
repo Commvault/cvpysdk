@@ -22,6 +22,9 @@ Commcell:
                                         along with the user name of the connected user
     __enter__()                  --  returns the current instance, using the "with" context manager
     __exit__()                   --  logs out the user associated with the current instance
+    _attribs_()                  --  initializes the objects of the classes given in the input list
+    _init_attrib_()              --  initializes the object of the class given as input and stores
+                                        in the given input dictionary with class name as key
     _update_response_()          --  returns only the relevant response for the response received
                                         from the server.
     _remove_attribs_()           --  removes all the attributs associated with the commcell
@@ -30,7 +33,9 @@ Commcell:
 
 """
 
-import base64
+from base64 import b64encode
+from Queue import Queue
+from threading import Thread
 
 from services import ApiLibrary
 from cvpysdk import CVPySDK
@@ -74,7 +79,7 @@ class Commcell(object):
         self._user = commcell_username
 
         # encodes the plain text password using base64 encoding
-        self._password = base64.b64encode(commcell_password)
+        self._password = b64encode(commcell_password)
 
         self._headers = {
             'Host': commcell_name,
@@ -100,19 +105,19 @@ class Commcell(object):
         if not self._headers['Authtoken']:
             raise SDKException('CVPySDK', '101')
 
-        commcell_entities = [
-            Clients(self),
-            Alerts(self),
-            MediaAgents(self),
-            DiskLibraries(self),
-            StoragePolicies(self),
-            SchedulePolicies(self),
-            UserGroups(self),
-            WorkFlow(self)
-        ]
+        sdk_classes = [Clients, Alerts, MediaAgents, DiskLibraries, StoragePolicies,
+                       SchedulePolicies, UserGroups, WorkFlow]
 
-        self.clients, self.alerts, self.media_agents, self.disk_libraries, self.storage_policies, \
-            self.schedule_policies, self.user_groups, self.workflows = commcell_entities
+        sdk_dict = self._attribs_(sdk_classes)
+
+        self.clients = sdk_dict[Clients]
+        self.alerts = sdk_dict[Alerts]
+        self.media_agents = sdk_dict[MediaAgents]
+        self.disk_libraries = sdk_dict[DiskLibraries]
+        self.storage_policies = sdk_dict[StoragePolicies]
+        self.schedule_policies = sdk_dict[SchedulePolicies]
+        self.user_groups = sdk_dict[UserGroups]
+        self.workflows = sdk_dict[WorkFlow]
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -135,6 +140,40 @@ class Commcell(object):
         """Logs out the user associated with the current instance."""
         print self._cvpysdk_object._logout_()
         self._remove_attribs_()
+
+    def _attribs_(self, sdk_classes):
+        """Initializes the objects of the classes in the sdk_classes list given as input.
+
+            Args:
+                sdk_classes (list)  --  list containing the classes to initialize the object of
+
+            Returns:
+                dict - dict consisting of the class name as key and the class object as its value
+        """
+        sdk_dict = {}
+
+        self._queue = Queue()
+
+        for sdk_class in sdk_classes:
+            thread = Thread(target=self._init_attrib_, args=(sdk_class, sdk_dict))
+            thread.start()
+            self._queue.put(thread)
+
+        self._queue.join()
+
+        return sdk_dict
+
+    def _init_attrib_(self, sdk_class, sdk_dict):
+        """Initializes the object of the sdk_class given as input, and stores it
+            with the class name as the key to the sdk_dict.
+
+            Args:
+                sdk_class (class)  --  sdk class to initialize the object of
+                sdk_dict  (dict)   --  dict to store the class object as value,
+                                        with the class name as key
+        """
+        sdk_dict[sdk_class] = sdk_class(self)
+        self._queue.task_done()
 
     def _update_response_(self, input_string):
         """Returns only the relevant response from the response received from the server.
@@ -161,6 +200,7 @@ class Commcell(object):
         del self.storage_policies
         del self.schedule_policies
         del self.user_groups
+        del self.workflows
         del self.__user_guid
         del self._commcell_service
         del self._cvpysdk_object

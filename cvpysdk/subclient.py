@@ -222,7 +222,8 @@ class Subclients(object):
                             error_message = str(response_value['errorString'])
 
                         if error_message:
-                            o_str = 'Failed to delete subclient with error code: "{0}", error: "{1}"'
+                            o_str = ('Failed to delete subclient with '
+                                     'error code: "{0}", error: "{1}"')
                             print o_str.format(error_code, error_message)
                         else:
                             if error_code is '0':
@@ -234,7 +235,8 @@ class Subclients(object):
                             else:
                                 o_str = 'Failed to delete subclient with error code: "{0}"'
                                 print o_str.format(error_code)
-                                print 'Please check the documentation for more details on the error'
+                                print ('Please check the documentation for '
+                                       'more details on the error')
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -659,7 +661,8 @@ class Subclient(object):
                     error_code = message['errorCode']
                     error_message = message['errorMessage']
 
-                    print "Failed to browse for subclient backup content with error code: %s" % (error_code)
+                    print "Failed to browse for subclient backup content with error code: %s" % \
+                        (error_code)
                     print "Error message: %s" % (error_message)
                 else:
                     print 'No data found at the path specified.'

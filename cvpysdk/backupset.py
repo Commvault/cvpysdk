@@ -222,7 +222,8 @@ class Backupsets(object):
                             error_message = str(response_value['errorString'])
 
                         if error_message:
-                            o_str = 'Failed to create new backupset with error code: "{0}", error: "{1}"'
+                            o_str = ('Failed to create new backupset with '
+                                     'error code: "{0}", error: "{1}"')
                             print o_str.format(error_code, error_message)
                         else:
                             if error_code is '0':
@@ -241,11 +242,13 @@ class Backupsets(object):
                             else:
                                 o_str = 'Failed to create new backupset with error code: "{0}"'
                                 print o_str.format(error_code)
-                                print 'Please check the documentation for more details on the error'
+                                print ('Please check the documentation for '
+                                       'more details on the error')
                     else:
                         error_code = response.json()['errorCode']
                         error_message = response.json()['errorMessage']
-                        o_str = 'Failed to create new backupset with error code: "{0}", error: "{1}"'
+                        o_str = ('Failed to create new backupset with '
+                                 'error code: "{0}", error: "{1}"')
                         print o_str.format(error_code, error_message)
                 else:
                     raise SDKException('Response', '102')
@@ -326,7 +329,8 @@ class Backupsets(object):
                             error_message = str(response_value['errorString'])
 
                         if error_message:
-                            o_str = 'Failed to delete backupset with error code: "{0}", error: "{1}"'
+                            o_str = ('Failed to delete backupset with '
+                                     'error code: "{0}", error: "{1}"')
                             print o_str.format(error_code, error_message)
                         else:
                             if error_code is '0':
@@ -338,7 +342,8 @@ class Backupsets(object):
                             else:
                                 o_str = 'Failed to delete backupset with error code: "{0}"'
                                 print o_str.format(error_code)
-                                print 'Please check the documentation for more details on the error'
+                                print ('Please check the documentation for '
+                                       'more details on the error')
                     else:
                         error_code = response.json()['errorCode']
                         error_message = response.json()['errorMessage']
@@ -382,7 +387,7 @@ class Backupset(object):
         self._commcell_object = self._agent_object._commcell_object
 
         self._backupset_name = str(backupset_name).lower()
-        self._description = ""
+        self._description = None
         self._instance_id = instance_id
 
         if instance_name:
@@ -432,8 +437,10 @@ class Backupset(object):
                 properties = response.json()["backupsetProperties"][0]
 
                 self._backupset_name = str(properties["backupSetEntity"]["backupsetName"]).lower()
-                self._description = str(properties["commonBackupSet"]["userDescription"])
                 self._is_default = bool(properties["commonBackupSet"]["isDefaultBackupSet"])
+
+                if "userDescription" in properties["commonBackupSet"]:
+                    self._description = str(properties["commonBackupSet"]["userDescription"])
 
                 o_str = '\nProperties of Backupset: "{0}"'.format(self.backupset_name)
                 o_str += '\n\tClient: \t\t{0}'.format(properties["backupSetEntity"]["clientName"])
@@ -513,12 +520,15 @@ class Backupset(object):
                 "backupsetProperties": {
                     "commonBackupSet": {
                         "newBackupSetName": backupset_name,
-                        "userDescription": backupset_description,
                         "isDefaultBackupSet": default_backupset
                     }
                 }
             }
         }
+
+        if backupset_description is not None:
+            request_json["App_SetBackupsetPropertiesRequest"]["backupsetProperties"][
+                "commonBackupSet"]["userDescription"] = backupset_description
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._BACKUPSET,
@@ -594,23 +604,24 @@ class Backupset(object):
     @description.setter
     def description(self, value):
         """Sets the description of the backupset as the value provided as input."""
-        if isinstance(value, str):
-            output = self._update(
-                backupset_name=self.backupset_name,
-                backupset_description=value,
-                default_backupset=self.is_default_backupset)
+        if self.description is not None:
+            if isinstance(value, str):
+                output = self._update(
+                    backupset_name=self.backupset_name,
+                    backupset_description=value,
+                    default_backupset=self.is_default_backupset)
 
-            if output[0]:
-                print "Backupset Description updated successfully"
+                if output[0]:
+                    print "Backupset Description updated successfully"
+                else:
+                    print "Failed to update the description of the backupset."
+                    print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
+                    print "Please check the documentation for more details on the error"
             else:
-                print "Failed to update the description of the backupset."
-                print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
-                print "Please check the documentation for more details on the error"
-        else:
-            raise SDKException(
-                'Backupset',
-                '102',
-                'Backupset description should be a string value')
+                raise SDKException(
+                    'Backupset',
+                    '102',
+                    'Backupset description should be a string value')
 
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset

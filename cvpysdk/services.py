@@ -35,6 +35,7 @@ class ApiLibrary(object):
         self.CLIENT = '{0}Client/%s'
 
         self.GET_ALL_AGENTS = '{0}Agent?clientId=%s'
+        self.AGENT = '{0}Agent'
 
         self.GET_ALL_BACKUPSETS = '{0}Backupset?clientId=%s'
         self.BACKUPSET = '{0}Backupset/%s'
@@ -68,7 +69,8 @@ class ApiLibrary(object):
         self.CLIENT_SCHEDULES = '{0}Schedules?clientId=%s'
         self.AGENT_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s'
         self.BACKUPSET_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s'
-        self.SUBCLIENT_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s&subclientId=%s'
+        self.SUBCLIENT_SCHEDULES = ('{0}Schedules?clientId=%s&apptypeId=%s&'
+                                    'backupsetId=%s&subclientId=%s')
 
         self.CLIENTGROUPS = '{0}ClientGroup'
         self.CLIENTGROUP = '{0}ClientGroup/%s'

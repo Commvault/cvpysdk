@@ -213,7 +213,11 @@ class Alerts(object):
 
                 for index, dictionary in enumerate(response.json()['feedsList']):
                     o_str += '{:^5}\t{:50}\t{:^50}\t{:^50}\n'.format(
-                        index + 1, dictionary['alertName'], dictionary['alertType'], dictionary['alertcriteria'])
+                        index + 1,
+                        dictionary['alertName'],
+                        dictionary['alertType'],
+                        dictionary['alertcriteria']
+                    )
 
                 print o_str
             else:
@@ -222,7 +226,6 @@ class Alerts(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    # TODO: test this method
     def delete(self, alert_name):
         """Deletes the alert from the commcell.
 

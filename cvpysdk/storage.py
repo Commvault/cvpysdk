@@ -126,8 +126,8 @@ class MediaAgents(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._MEDIA_AGENTS)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
+                                                                            self._MEDIA_AGENTS)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -599,8 +599,8 @@ class StoragePolicies(object):
                     default: 5
 
             Returns:
-                object - instance of the DiskLibrary class, if created successfully
-                None - if failed to add disk library
+                object - instance of the StoragePolicies class, if created successfully
+                None   - if failed to add storage policy
 
             Raises:
                 SDKException:
@@ -652,7 +652,8 @@ class StoragePolicies(object):
                         if 'errorCode' in response.json() and 'errorMessage' in response.json():
                             error_code = str(response.json()['errorCode'])
                             error_message = str(response.json()['errorMessage']).split('\n')[0]
-                            o_str = 'Failed to add storage policy with error code: "{0}", error: "{1}"'
+                            o_str = ('Failed to add storage policy with '
+                                     'error code: "{0}", error: "{1}"')
                             print o_str.format(error_code, error_message)
                 except ValueError:
                     if response.text:
@@ -696,7 +697,8 @@ class StoragePolicies(object):
                     elif 'error' in response.json():
                         error_code = response.json()['error']['errorCode']
                         error_message = response.json()['error']['errorMessage']
-                        o_str = 'Failed to create storage policy with error code: "{0}", error: "{1}"'
+                        o_str = ('Failed to create storage policy with '
+                                 'error code: "{0}", error: "{1}"')
                         print o_str.format(error_code, error_message)
                 else:
                     raise SDKException('Response', '102')
@@ -734,7 +736,8 @@ class StoragePolicies(object):
                         if 'errorCode' in response.json() and 'errorMessage' in response.json():
                             error_code = str(response.json()['errorCode'])
                             error_message = str(response.json()['errorMessage'])
-                            o_str = 'Failed to delete storage policy with error code: "{0}", error: "{1}"'
+                            o_str = ('Failed to delete storage policy with '
+                                     'error code: "{0}", error: "{1}"')
                             print o_str.format(error_code, error_message)
                 except ValueError:
                     if response.text:

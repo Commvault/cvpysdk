@@ -42,7 +42,9 @@ EXCEPTION_DICT = {
     'Agent': {
         '101': 'Agent name should be specified',
         '102': '',
-        '103': 'Data type of the inputs is not valid'
+        '103': 'Data type of the inputs is not valid',
+        '104': 'Time Value should be greater than current time',
+        '105': 'Time Value entered is not of correct format'
     },
     'Backupset': {
         '101': 'Backupset name should be specified',

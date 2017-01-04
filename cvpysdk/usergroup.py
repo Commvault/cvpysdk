@@ -201,7 +201,8 @@ class UserGroups(object):
                                 error_message = str(response_value['errorString'])
 
                             if error_message:
-                                o_str = 'Failed to delete user group with error code: "{0}", error: "{1}"'
+                                o_str = ('Failed to delete user group with '
+                                         'error code: "{0}", error: "{1}"')
                                 print o_str.format(error_code, error_message)
                             else:
                                 if error_code is '0':
@@ -215,7 +216,8 @@ class UserGroups(object):
                                 else:
                                     o_str = 'Failed to delete usergroup with error code: "{0}"'
                                     print o_str.format(error_code)
-                                    print 'Please check the documentation for more details on the error'
+                                    print ('Please check the documentation for '
+                                           'more details on the error')
                         else:
                             print response.json()
                     else:

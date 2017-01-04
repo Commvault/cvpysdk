@@ -230,8 +230,7 @@ class Job(object):
                 SDKException:
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._SUSPEND)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._SUSPEND)
 
         if flag:
             if response.json() and 'errors' in response.json():
@@ -258,8 +257,7 @@ class Job(object):
                 SDKException:
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._RESUME)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._RESUME)
 
         if flag:
             if response.json() and 'errors' in response.json():

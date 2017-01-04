@@ -32,10 +32,17 @@ Agent:
                                          and id, and associated to the specified client
     __repr__()                  --   return the agent name, the instance is associated with
     _get_agent_id()             --   method to get the agent id
+    enable_backup()             --   enables the backup for the agent
+    enable_backup_at_time()     --   enables the backup for the agent at the input time specified
+    disble_backup()             --   disbles the backup for the agent
+    enable_restore()            --   enables the restore for the agent
+    enable_restore_at_time()    --   enables the restore for the agent at the input time specified
+    disble_restore()            --   disbles the restore for the agent
 
 """
 
 import string
+import time
 
 from backupset import Backupsets
 from schedules import Schedules
@@ -100,9 +107,8 @@ class Agents(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._client_object._commcell_object._cvpysdk_object.make_request(
-            'GET', self._ALL_AGENTS
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
+                                                                            self._ALL_AGENTS)
 
         if flag:
             if response.json():
@@ -183,6 +189,8 @@ class Agent(object):
         self._commcell_object = self._client_object._commcell_object
         self._agent_name = str(agent_name)
 
+        self._AGENT = self._commcell_object._services.AGENT
+
         if agent_id:
             # Use the agent id mentioned in the arguments
             self._agent_id = str(agent_id)
@@ -218,3 +226,343 @@ class Agent(object):
     def agent_name(self):
         """Treats the agent name as a read-only attribute."""
         return self._agent_name
+
+    def enable_backup(self):
+        """Enable Backup for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to enable backup
+                    if response is empty
+                    if response is not success
+        """
+        request_json = {
+            "App_SetAgentPropertiesRequest": {
+                "association": {
+                    "entity": {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                },
+                "agentProperties": {
+                    "idaActivityControl": {
+                        "activityControlOptions": {
+                            "activityType": 1,
+                            "enableAfterADelay": False,
+                            "enableActivityType": True
+                        }
+                    }
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._AGENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Backup enabled successfully'
+                elif 'errorString' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorString']
+
+                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Agent', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_backup_at_time(self, enable_time):
+        """Disables Backup if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+                    if time value entered is not of correct format
+                    if failed to enable backup
+                    if response is empty
+                    if response is not success
+        """
+        try:
+            time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
+            if time.mktime(time_tuple) < time.time():
+                raise SDKException('Agent', '104')
+        except ValueError:
+            raise SDKException('Agent', '105')
+
+        request_json = {
+            "App_SetAgentPropertiesRequest": {
+                "association": {
+                    "entity": {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                },
+                "agentProperties": {
+                    "idaActivityControl": {
+                        "activityControlOptions": {
+                            "activityType": 1,
+                            "enableAfterADelay": True,
+                            "enableActivityType": False,
+                            "dateTime": {
+                                "TimeZoneName": "(UTC) Coordinated Universal Time",
+                                "timeValue": enable_time
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._AGENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Backup will be enabled at the time specified'
+                elif 'errorString' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorString']
+
+                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Agent', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_backup(self):
+        """Disables Backup for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to disable backup
+                    if response is empty
+                    if response is not success
+        """
+        request_json = {
+            "App_SetAgentPropertiesRequest": {
+                "association": {
+                    "entity": {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                },
+                "agentProperties": {
+                    "idaActivityControl": {
+                        "activityControlOptions": {
+                            "activityType": 1,
+                            "enableAfterADelay": False,
+                            "enableActivityType": False
+                        }
+                    }
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._AGENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Backup disabled successfully'
+                elif 'errorString' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorString']
+
+                    o_str = "Failed to disable Backup with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Agent', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_restore(self):
+        """Enable Restore for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to enable restore
+                    if response is empty
+                    if response is not success
+        """
+        request_json = {
+            "App_SetAgentPropertiesRequest": {
+                "association": {
+                    "entity": {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                },
+                "agentProperties": {
+                    "idaActivityControl": {
+                        "activityControlOptions": {
+                            "activityType": 2,
+                            "enableAfterADelay": False,
+                            "enableActivityType": True
+                        }
+                    }
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._AGENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Restore enabled successfully'
+                elif 'errorString' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorString']
+
+                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Agent', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_restore_at_time(self, enable_time):
+        """Disables Restore if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+                    if time value entered is not of correct format
+                    if failed to enable restore
+                    if response is empty
+                    if response is not success
+        """
+        try:
+            time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
+            if time.mktime(time_tuple) < time.time():
+                raise SDKException('Agent', '104')
+        except ValueError:
+            raise SDKException('Agent', '105')
+
+        request_json = {
+            "App_SetAgentPropertiesRequest": {
+                "association": {
+                    "entity": {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                },
+                "agentProperties": {
+                    "idaActivityControl": {
+                        "activityControlOptions": {
+                            "activityType": 2,
+                            "enableAfterADelay": True,
+                            "enableActivityType": False,
+                            "dateTime": {
+                                "TimeZoneName": "(UTC) Coordinated Universal Time",
+                                "timeValue": enable_time
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._AGENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Restore will be enabled at the time specified'
+                elif 'errorString' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorString']
+
+                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Agent', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_restore(self):
+        """Disables Restore for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to disable restore
+                    if response is empty
+                    if response is not success
+        """
+        request_json = {
+            "App_SetAgentPropertiesRequest": {
+                "association": {
+                    "entity": {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                },
+                "agentProperties": {
+                    "idaActivityControl": {
+                        "activityControlOptions": {
+                            "activityType": 2,
+                            "enableAfterADelay": False,
+                            "enableActivityType": False
+                        }
+                    }
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._AGENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Restore disabled successfully'
+                elif 'errorString' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorString']
+
+                    o_str = "Failed to disable Restore with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Agent', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
