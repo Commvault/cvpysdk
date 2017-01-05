@@ -26,6 +26,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;__repr__()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;returns&nbsp;the&nbsp;string&nbsp;for&nbsp;the&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#Subclients">Subclients</a>&nbsp;class<br>
 &nbsp;&nbsp;&nbsp;&nbsp;_get_subclients()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;gets&nbsp;all&nbsp;the&nbsp;subclients&nbsp;associated&nbsp;with&nbsp;the&nbsp;backupset&nbsp;specified<br>
 &nbsp;&nbsp;&nbsp;&nbsp;has_subclient()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;checks&nbsp;if&nbsp;a&nbsp;subclient&nbsp;exists&nbsp;with&nbsp;the&nbsp;given&nbsp;name&nbsp;or&nbsp;not<br>
+&nbsp;&nbsp;&nbsp;&nbsp;add()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;adds&nbsp;a&nbsp;new&nbsp;subclient&nbsp;to&nbsp;the&nbsp;backupset<br>
 &nbsp;&nbsp;&nbsp;&nbsp;get(subclient_name)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;returns&nbsp;the&nbsp;subclient&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;of&nbsp;the&nbsp;input&nbsp;subclient&nbsp;name<br>
 &nbsp;&nbsp;&nbsp;&nbsp;delete(subclient_name)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;deletes&nbsp;the&nbsp;subclient&nbsp;(subclient&nbsp;name)&nbsp;from&nbsp;the&nbsp;backupset<br>
 &nbsp;<br>
@@ -175,13 +176,11 @@ Raises:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;empty<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;success</tt></dd></dl>
 
-<dl><dt><a name="Subclient-restore_in_place"><strong>restore_in_place</strong></a>(self, paths, overwrite<font color="#909090">=True</font>, restore_deleted_files<font color="#909090">=True</font>, restore_data_and_acl<font color="#909090">=True</font>)</dt><dd><tt>Restores&nbsp;the&nbsp;files/folders&nbsp;specified&nbsp;in&nbsp;the&nbsp;input&nbsp;paths&nbsp;list&nbsp;to&nbsp;the&nbsp;same&nbsp;location.<br>
+<dl><dt><a name="Subclient-restore_in_place"><strong>restore_in_place</strong></a>(self, paths, overwrite<font color="#909090">=True</font>, restore_data_and_acl<font color="#909090">=True</font>)</dt><dd><tt>Restores&nbsp;the&nbsp;files/folders&nbsp;specified&nbsp;in&nbsp;the&nbsp;input&nbsp;paths&nbsp;list&nbsp;to&nbsp;the&nbsp;same&nbsp;location.<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;paths&nbsp;(list)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;list&nbsp;of&nbsp;full&nbsp;paths&nbsp;of&nbsp;files/folders&nbsp;to&nbsp;restore<br>
 &nbsp;&nbsp;&nbsp;&nbsp;overwrite&nbsp;(bool)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;unconditional&nbsp;overwrite&nbsp;files&nbsp;during&nbsp;restore<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;True<br>
-&nbsp;&nbsp;&nbsp;&nbsp;restore_deleted_files&nbsp;(bool)&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;restore&nbsp;files&nbsp;that&nbsp;have&nbsp;been&nbsp;deleted&nbsp;on&nbsp;media<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;True<br>
 &nbsp;&nbsp;&nbsp;&nbsp;restore_data_and_acl&nbsp;(bool)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;restore&nbsp;data&nbsp;and&nbsp;ACL&nbsp;files<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;True<br>
@@ -195,7 +194,7 @@ Raises:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;empty<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;success</tt></dd></dl>
 
-<dl><dt><a name="Subclient-restore_out_of_place"><strong>restore_out_of_place</strong></a>(self, client, destination_path, paths, overwrite<font color="#909090">=True</font>, restore_deleted_files<font color="#909090">=True</font>, restore_data_and_acl<font color="#909090">=True</font>)</dt><dd><tt>Restores&nbsp;the&nbsp;files/folders&nbsp;specified&nbsp;in&nbsp;the&nbsp;input&nbsp;paths&nbsp;list&nbsp;to&nbsp;the&nbsp;input&nbsp;client,<br>
+<dl><dt><a name="Subclient-restore_out_of_place"><strong>restore_out_of_place</strong></a>(self, client, destination_path, paths, overwrite<font color="#909090">=True</font>, restore_data_and_acl<font color="#909090">=True</font>)</dt><dd><tt>Restores&nbsp;the&nbsp;files/folders&nbsp;specified&nbsp;in&nbsp;the&nbsp;input&nbsp;paths&nbsp;list&nbsp;to&nbsp;the&nbsp;input&nbsp;client,<br>
 at&nbsp;the&nbsp;specified&nbsp;destionation&nbsp;location.<br>
 &nbsp;<br>
 Args:<br>
@@ -204,8 +203,6 @@ Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;destination_path&nbsp;(str)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;full&nbsp;path&nbsp;of&nbsp;the&nbsp;restore&nbsp;location&nbsp;on&nbsp;client<br>
 &nbsp;&nbsp;&nbsp;&nbsp;paths&nbsp;(list)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;list&nbsp;of&nbsp;full&nbsp;paths&nbsp;of&nbsp;files/folders&nbsp;to&nbsp;restore<br>
 &nbsp;&nbsp;&nbsp;&nbsp;overwrite&nbsp;(bool)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;unconditional&nbsp;overwrite&nbsp;files&nbsp;during&nbsp;restore<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;True<br>
-&nbsp;&nbsp;&nbsp;&nbsp;restore_deleted_files&nbsp;(bool)&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;restore&nbsp;files&nbsp;that&nbsp;have&nbsp;been&nbsp;deleted&nbsp;on&nbsp;media<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;True<br>
 &nbsp;&nbsp;&nbsp;&nbsp;restore_data_and_acl&nbsp;(bool)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;restore&nbsp;data&nbsp;and&nbsp;ACL&nbsp;files<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:&nbsp;True<br>
@@ -259,6 +256,24 @@ Returns:<br>
 &nbsp;<br>
 Returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;str&nbsp;-&nbsp;string&nbsp;of&nbsp;all&nbsp;the&nbsp;subclients&nbsp;of&nbsp;th&nbsp;backupset&nbsp;of&nbsp;an&nbsp;agent&nbsp;of&nbsp;a&nbsp;client</tt></dd></dl>
+
+<dl><dt><a name="Subclients-add"><strong>add</strong></a>(self, subclient_name, content, storage_policy)</dt><dd><tt>Adds&nbsp;a&nbsp;new&nbsp;subclient&nbsp;to&nbsp;the&nbsp;backupset.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;subclient_name&nbsp;(str)&nbsp;--&nbsp;&nbsp;name&nbsp;of&nbsp;the&nbsp;new&nbsp;subclient&nbsp;to&nbsp;add<br>
+&nbsp;&nbsp;&nbsp;&nbsp;content&nbsp;(list)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;list&nbsp;of&nbsp;paths&nbsp;of&nbsp;the&nbsp;files/folders&nbsp;to&nbsp;add&nbsp;to&nbsp;the&nbsp;subclient<br>
+&nbsp;&nbsp;&nbsp;&nbsp;storage_policy&nbsp;(str)&nbsp;--&nbsp;&nbsp;name&nbsp;of&nbsp;the&nbsp;storage&nbsp;policy&nbsp;to&nbsp;associate&nbsp;with&nbsp;the&nbsp;subclient<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;-&nbsp;instance&nbsp;of&nbsp;the&nbsp;<a href="#Subclient">Subclient</a>&nbsp;class<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SDKException:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;subclient&nbsp;name&nbsp;argument&nbsp;is&nbsp;not&nbsp;of&nbsp;type&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;content&nbsp;argument&nbsp;is&nbsp;not&nbsp;of&nbsp;type&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;storage_policy&nbsp;argument&nbsp;is&nbsp;not&nbsp;of&nbsp;type&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;empty<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;success</tt></dd></dl>
 
 <dl><dt><a name="Subclients-delete"><strong>delete</strong></a>(self, subclient_name)</dt><dd><tt>Deletes&nbsp;the&nbsp;subclient&nbsp;specified&nbsp;by&nbsp;the&nbsp;subclient_name&nbsp;from&nbsp;the&nbsp;backupset.<br>
 &nbsp;<br>

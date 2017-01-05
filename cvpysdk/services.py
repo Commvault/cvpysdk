@@ -42,6 +42,7 @@ class ApiLibrary(object):
         self.ADD_BACKUPSET = '{0}Backupset'
 
         self.GET_ALL_SUBCLIENTS = '{0}Subclient?clientId=%s'
+        self.ADD_SUBCLIENT = '{0}Subclient'
         self.SUBCLIENT = '{0}Subclient/%s'
         self.SUBCLIENT_BACKUP = '{0}Subclient/%s/action/backup?backupLevel=%s'
 

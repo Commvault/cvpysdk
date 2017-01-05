@@ -237,21 +237,23 @@ class Agent(object):
                     if response is not success
         """
         request_json = {
-            "App_SetAgentPropertiesRequest": {
-                "association": {
-                    "entity": {
+            "association": {
+                "entity": [
+                    {
                         "clientName": self._client_object.client_name,
                         "appName": self.agent_name
                     }
-                },
-                "agentProperties": {
-                    "idaActivityControl": {
-                        "activityControlOptions": {
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
                             "activityType": 1,
                             "enableAfterADelay": False,
                             "enableActivityType": True
                         }
-                    }
+                    ]
                 }
             }
         }
@@ -301,16 +303,18 @@ class Agent(object):
             raise SDKException('Agent', '105')
 
         request_json = {
-            "App_SetAgentPropertiesRequest": {
-                "association": {
-                    "entity": {
+            "association": {
+                "entity": [
+                    {
                         "clientName": self._client_object.client_name,
                         "appName": self.agent_name
                     }
-                },
-                "agentProperties": {
-                    "idaActivityControl": {
-                        "activityControlOptions": {
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
                             "activityType": 1,
                             "enableAfterADelay": True,
                             "enableActivityType": False,
@@ -319,7 +323,7 @@ class Agent(object):
                                 "timeValue": enable_time
                             }
                         }
-                    }
+                    ]
                 }
             }
         }
@@ -356,21 +360,23 @@ class Agent(object):
                     if response is not success
         """
         request_json = {
-            "App_SetAgentPropertiesRequest": {
-                "association": {
-                    "entity": {
+            "association": {
+                "entity": [
+                    {
                         "clientName": self._client_object.client_name,
                         "appName": self.agent_name
                     }
-                },
-                "agentProperties": {
-                    "idaActivityControl": {
-                        "activityControlOptions": {
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
                             "activityType": 1,
                             "enableAfterADelay": False,
                             "enableActivityType": False
                         }
-                    }
+                    ]
                 }
             }
         }
@@ -407,21 +413,23 @@ class Agent(object):
                     if response is not success
         """
         request_json = {
-            "App_SetAgentPropertiesRequest": {
-                "association": {
-                    "entity": {
+            "association": {
+                "entity": [
+                    {
                         "clientName": self._client_object.client_name,
                         "appName": self.agent_name
                     }
-                },
-                "agentProperties": {
-                    "idaActivityControl": {
-                        "activityControlOptions": {
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
                             "activityType": 2,
                             "enableAfterADelay": False,
                             "enableActivityType": True
                         }
-                    }
+                    ]
                 }
             }
         }
@@ -471,16 +479,18 @@ class Agent(object):
             raise SDKException('Agent', '105')
 
         request_json = {
-            "App_SetAgentPropertiesRequest": {
-                "association": {
-                    "entity": {
+            "association": {
+                "entity": [
+                    {
                         "clientName": self._client_object.client_name,
                         "appName": self.agent_name
                     }
-                },
-                "agentProperties": {
-                    "idaActivityControl": {
-                        "activityControlOptions": {
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
                             "activityType": 2,
                             "enableAfterADelay": True,
                             "enableActivityType": False,
@@ -489,7 +499,7 @@ class Agent(object):
                                 "timeValue": enable_time
                             }
                         }
-                    }
+                    ]
                 }
             }
         }
@@ -526,21 +536,23 @@ class Agent(object):
                     if response is not success
         """
         request_json = {
-            "App_SetAgentPropertiesRequest": {
-                "association": {
-                    "entity": {
+            "association": {
+                "entity": [
+                    {
                         "clientName": self._client_object.client_name,
                         "appName": self.agent_name
                     }
-                },
-                "agentProperties": {
-                    "idaActivityControl": {
-                        "activityControlOptions": {
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
                             "activityType": 2,
                             "enableAfterADelay": False,
                             "enableActivityType": False
                         }
-                    }
+                    ]
                 }
             }
         }

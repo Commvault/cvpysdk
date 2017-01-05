@@ -191,19 +191,17 @@ class Backupsets(object):
             add_backupset_service = self._commcell_object._services.ADD_BACKUPSET
 
             request_json = {
-                "App_CreateBackupSetRequest": {
-                    "association": {
-                        "entity": {
-                            "appName": self._agent_object.agent_name,
-                            "backupsetName": backupset_name,
-                            "clientName": self._agent_object._client_object.client_name,
-                            "instanceName": self._instance_name
-                        }
-                    },
-                    "backupSetInfo": {
-                        "commonBackupSet": {
-                            "onDemandBackupset": 1 if on_demand_backupset else 0
-                        }
+                "association": {
+                    "entity": [{
+                        "clientName": self._agent_object._client_object.client_name,
+                        "appName": self._agent_object.agent_name,
+                        "backupsetName": backupset_name,
+                        "instanceName": self._instance_name
+                    }]
+                },
+                "backupSetInfo": {
+                    "commonBackupSet": {
+                        "onDemandBackupset": 1 if on_demand_backupset else 0
                     }
                 }
             }
@@ -452,9 +450,11 @@ class Backupset(object):
                 o_str += '\n\tDefault Backup Set: \t{0}'.format(
                     "Yes" if self.is_default_backupset else "No"
                 )
-                o_str += '\n\tOn Demand Backup Set: \t{0}'.format(
-                    "Yes" if properties["commonBackupSet"]["onDemandBackupset"] else "No"
-                )
+
+                if 'onDemandBackupset' in properties["commonBackupSet"]:
+                    o_str += '\n\tOn Demand Backup Set: \t{0}'.format(
+                        "Yes" if properties["commonBackupSet"]["onDemandBackupset"] else "No"
+                    )
 
                 if self.description:
                     o_str += '\n\n\tDescription: \t\t{0}'.format(self.description)
@@ -508,27 +508,25 @@ class Backupset(object):
         """
 
         request_json = {
-            "App_SetBackupsetPropertiesRequest": {
-                "association": {
-                    "entity": {
-                        "appName": self._agent_object.agent_name,
-                        "clientName": self._agent_object._client_object.client_name,
-                        "instanceName": self._instance_name,
-                        "backupsetName": self.backupset_name
-                    }
-                },
-                "backupsetProperties": {
-                    "commonBackupSet": {
-                        "newBackupSetName": backupset_name,
-                        "isDefaultBackupSet": default_backupset
-                    }
+            "association": {
+                "entity": [{
+                    "clientName": self._agent_object._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "backupsetName": self.backupset_name,
+                    "instanceName": self._instance_name
+                }]
+            },
+            "backupsetProperties": {
+                "commonBackupSet": {
+                    "newBackupSetName": backupset_name,
+                    "isDefaultBackupSet": default_backupset
                 }
             }
         }
 
         if backupset_description is not None:
-            request_json["App_SetBackupsetPropertiesRequest"]["backupsetProperties"][
-                "commonBackupSet"]["userDescription"] = backupset_description
+            request_json["backupsetProperties"]["commonBackupSet"][
+                "userDescription"] = backupset_description
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._BACKUPSET,
@@ -622,6 +620,8 @@ class Backupset(object):
                     'Backupset',
                     '102',
                     'Backupset description should be a string value')
+        else:
+            print 'Description for this Backupset cannot be modified'
 
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset

@@ -23,6 +23,7 @@ Subclients:
     __repr__()                  --  returns the string for the instance of the Subclients class
     _get_subclients()           --  gets all the subclients associated with the backupset specified
     has_subclient()             --  checks if a subclient exists with the given name or not
+    add()                       --  adds a new subclient to the backupset
     get(subclient_name)         --  returns the subclient object of the input subclient name
     delete(subclient_name)      --  deletes the subclient (subclient name) from the backupset
 
@@ -154,6 +155,77 @@ class Subclients(object):
             raise SDKException('Subclient', '101')
 
         return self._subclients and str(subclient_name).lower() in self._subclients
+
+    def add(self, subclient_name, content, storage_policy):
+        """Adds a new subclient to the backupset.
+
+            Args:
+                subclient_name (str) --  name of the new subclient to add
+                content (list)       --  list of paths of the files/folders to add to the subclient
+                storage_policy (str) --  name of the storage policy to associate with the subclient
+
+            Returns:
+                object - instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+                    if content argument is not of type list
+                    if storage_policy argument is not of type string
+                    if response is empty
+                    if response is not success
+        """
+        if not (isinstance(subclient_name, str) or
+                isinstance(content, list) or
+                isinstance(storage_policy, str)):
+            raise SDKException('Subclient', '101')
+
+        request_json = {
+            "subClientProperties": {
+                "contentOperationType": 2,
+                "subClientEntity": {
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "instanceName": self._backupset_object._instance_name,
+                    "subclientName": subclient_name
+                },
+                "content": [{"path": path} for path in content],
+                "commonProperties": {
+                    "enableBackup": True,
+                    "storageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
+                        }
+                    }
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._SUBCLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException('Subclient',
+                                       '102',
+                                       ('Failed to create subclient.\n'
+                                        'Error Message: {0}\n'
+                                        'Error Code: {1}').format(error_string, error_code))
+                else:
+                    subclient_id = response.json()['response']['entity']['subclientId']
+                    print 'Created Subclient: "{0}" successfully'.format(subclient_name)
+                    return Subclient(self._backupset_object, subclient_name, subclient_id)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def get(self, subclient_name):
         """Returns a subclient object of the specified backupset name.
@@ -675,15 +747,12 @@ class Subclient(object):
     def restore_in_place(self,
                          paths,
                          overwrite=True,
-                         restore_deleted_files=True,
                          restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
                 paths (list)                    --  list of full paths of files/folders to restore
                 overwrite (bool)                --  unconditional overwrite files during restore
-                    default: True
-                restore_deleted_files (bool)    --  restore files that have been deleted on media
                     default: True
                 restore_data_and_acl (bool)     --  restore data and ACL files
                     default: True
@@ -716,6 +785,56 @@ class Subclient(object):
             paths[index] = path
 
         request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "clientName": self._backupset_object._agent_object._client_object.client_name,
+                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                        "appName": self._backupset_object._agent_object.agent_name,
+                        "appTypeId": int(self._backupset_object._agent_object.agent_id),
+                        "backupsetName": self._backupset_object.backupset_name,
+                        "backupSetId": int(self._backupset_object.backupset_id),
+                        "instanceName": self._backupset_object._instance_name,
+                        "instanceId": int(self._backupset_object._instance_id),
+                        "subclientName": self.subclient_name,
+                        "subclientId": int(self.subclient_id),
+                    }
+                ],
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 3,
+                            "operationType": 1001
+                        },
+                        "options": {
+                            "restoreOptions": {
+                                "commonOptions": {
+                                    "unconditionalOverwrite": overwrite
+                                },
+                                "destination": {
+                                    "inPlace": True,
+                                    "destClient": {
+                                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                                        "clientName": self._backupset_object._agent_object._client_object.client_name,
+                                    }
+                                },
+                                "fileOption": {
+                                    "sourceItem": paths
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if restore_data_and_acl:
+            request_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]["restoreACLsType"] = 3
+
+        """
+        request_json = {
             "mode": 2,
             "serviceType": 1,
             "userInfo": {
@@ -742,6 +861,7 @@ class Subclient(object):
                 }
             }
         }
+        """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._RESTORE,
@@ -777,7 +897,6 @@ class Subclient(object):
                              destination_path,
                              paths,
                              overwrite=True,
-                             restore_deleted_files=True,
                              restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
@@ -788,8 +907,6 @@ class Subclient(object):
                 destination_path (str)          --  full path of the restore location on client
                 paths (list)                    --  list of full paths of files/folders to restore
                 overwrite (bool)                --  unconditional overwrite files during restore
-                    default: True
-                restore_deleted_files (bool)    --  restore files that have been deleted on media
                     default: True
                 restore_data_and_acl (bool)     --  restore data and ACL files
                     default: True
@@ -848,6 +965,57 @@ class Subclient(object):
                 destination_path = '\\'
 
         request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "clientName": self._backupset_object._agent_object._client_object.client_name,
+                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                        "appName": self._backupset_object._agent_object.agent_name,
+                        "appTypeId": int(self._backupset_object._agent_object.agent_id),
+                        "backupsetName": self._backupset_object.backupset_name,
+                        "backupSetId": int(self._backupset_object.backupset_id),
+                        "instanceName": self._backupset_object._instance_name,
+                        "instanceId": int(self._backupset_object._instance_id),
+                        "subclientName": self.subclient_name,
+                        "subclientId": int(self.subclient_id),
+                    }
+                ],
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 3,
+                            "operationType": 1001
+                        },
+                        "options": {
+                            "restoreOptions": {
+                                "commonOptions": {
+                                    "unconditionalOverwrite": overwrite
+                                },
+                                "destination": {
+                                    "inPlace": False,
+                                    "destPath": [destination_path],
+                                    "destClient": {
+                                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                                        "clientName": self._backupset_object._agent_object._client_object.client_name,
+                                    }
+                                },
+                                "fileOption": {
+                                    "sourceItem": paths
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if restore_data_and_acl:
+            request_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]["restoreACLsType"] = 3
+
+        """
+        request_json = {
             "mode": 2,
             "serviceType": 1,
             "userInfo": {
@@ -875,6 +1043,7 @@ class Subclient(object):
                 }
             }
         }
+        """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._RESTORE,

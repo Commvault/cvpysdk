@@ -30,17 +30,17 @@ Alerts:
 Alert:
     __init__(commcell_object,
              alert_name,
-             alert_id=None)     --  initialise object of alert with the specified commcell name
+             alert_id=None)       --  initialise object of alert with the specified commcell name
                                         and id, and associated to the specified commcell
-    __repr__()                  --  return the alert name with description and category,
+    __repr__()                    --  return the alert name with description and category,
                                         the alert is associated with
-    _get_alert_id()             --  method to get the alert id, if not specified in __init__
-    _get_alert_properties()     --  get the properties of this alert
-    _get_alert_category()       --  return the category of the alert
-    enable()                    --  enables the alert
-    disable()                   --  disables the alert
-    enable_notification_type    --  enables notification type of alert
-    disable_notification_type   --  disables notification type of alert
+    _get_alert_id()               --  method to get the alert id, if not specified in __init__
+    _get_alert_properties()       --  get the properties of this alert
+    _get_alert_category()         --  return the category of the alert
+    enable()                      --  enables the alert
+    disable()                     --  disables the alert
+    enable_notification_type()    --  enables notification type of alert
+    disable_notification_type()   --  disables notification type of alert
 
 """
 
