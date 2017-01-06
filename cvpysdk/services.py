@@ -80,7 +80,7 @@ class ApiLibrary(object):
         self.USERGROUP = '{0}UserGroup/%s'
 
         self.BROWSE = '{0}DoBrowse'
-        self.RESTORE = '{0}retrieveToClient'
+        self.RESTORE = '{0}CreateTask'
 
         self.GET_WORKFLOWS = '{0}Workflow'
         self.EXECUTE_WORKFLOW = '{0}Workflow/%s/Action/Execute'
