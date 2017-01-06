@@ -64,10 +64,10 @@ Browsing content of a subclient in a specific time range:
 	>>> paths, dictionary = subclient_object.browse_in_time(path, show_deleted_files, restore_index, from_date, to_date)
 
 Run restore in place job for a subclient:
-	>>> job = subclient_object.restore_in_place(paths, overwrite, restore_deleted_files, restore_data_and_acl)
+	>>> job = subclient_object.restore_in_place(paths, overwrite, restore_data_and_acl)
 
 Run restore out of place job for a subclient:
-	>>> job = subclient_object.restore_out_of_place(client, destination_path, paths, overwrite, restore_deleted_files, restore_data_and_acl)
+	>>> job = subclient_object.restore_out_of_place(client, destination_path, paths, overwrite, restore_data_and_acl)
 
 Job Operations:
 	>>> job.pause()		    # Suspends the Job
