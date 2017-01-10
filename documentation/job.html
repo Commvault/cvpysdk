@@ -24,8 +24,9 @@
 &nbsp;&nbsp;&nbsp;&nbsp;_check_finished()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;checks&nbsp;if&nbsp;the&nbsp;job&nbsp;has&nbsp;finished&nbsp;or&nbsp;not&nbsp;yet<br>
 &nbsp;&nbsp;&nbsp;&nbsp;_is_finished()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;checks&nbsp;for&nbsp;the&nbsp;status&nbsp;of&nbsp;the&nbsp;job.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns&nbsp;True&nbsp;if&nbsp;finished,&nbsp;else&nbsp;False<br>
-&nbsp;&nbsp;&nbsp;&nbsp;get_job_summary()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;gets&nbsp;the&nbsp;summary&nbsp;of&nbsp;the&nbsp;job&nbsp;with&nbsp;the&nbsp;given&nbsp;job&nbsp;id<br>
-&nbsp;&nbsp;&nbsp;&nbsp;get_job_details()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;gets&nbsp;the&nbsp;details&nbsp;of&nbsp;the&nbsp;job&nbsp;with&nbsp;the&nbsp;given&nbsp;job&nbsp;id<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_get_job_summary()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;gets&nbsp;the&nbsp;summary&nbsp;of&nbsp;the&nbsp;job&nbsp;with&nbsp;the&nbsp;given&nbsp;job&nbsp;id<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_get_job_details()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;gets&nbsp;the&nbsp;details&nbsp;of&nbsp;the&nbsp;job&nbsp;with&nbsp;the&nbsp;given&nbsp;job&nbsp;id<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_initialize_job_properties()--&nbsp;&nbsp;initializes&nbsp;the&nbsp;properties&nbsp;of&nbsp;the&nbsp;job<br>
 &nbsp;&nbsp;&nbsp;&nbsp;pause()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;suspend&nbsp;the&nbsp;job<br>
 &nbsp;&nbsp;&nbsp;&nbsp;resume()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;resumes&nbsp;the&nbsp;job<br>
 &nbsp;&nbsp;&nbsp;&nbsp;kill()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;&nbsp;kills&nbsp;the&nbsp;job<br>
@@ -87,26 +88,6 @@ Raises:<br>
 Returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;str&nbsp;-&nbsp;string&nbsp;for&nbsp;instance&nbsp;of&nbsp;this&nbsp;class</tt></dd></dl>
 
-<dl><dt><a name="Job-get_job_details"><strong>get_job_details</strong></a>(self)</dt><dd><tt>Gets&nbsp;the&nbsp;detailed&nbsp;properties&nbsp;of&nbsp;this&nbsp;job.<br>
-&nbsp;<br>
-Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dict&nbsp;-&nbsp;dict&nbsp;consisting&nbsp;of&nbsp;the&nbsp;detailed&nbsp;properties&nbsp;of&nbsp;the&nbsp;job<br>
-&nbsp;<br>
-Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;SDKException:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;empty<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;success</tt></dd></dl>
-
-<dl><dt><a name="Job-get_job_summary"><strong>get_job_summary</strong></a>(self)</dt><dd><tt>Gets&nbsp;the&nbsp;properties&nbsp;of&nbsp;this&nbsp;job.<br>
-&nbsp;<br>
-Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dict&nbsp;-&nbsp;dict&nbsp;that&nbsp;contains&nbsp;the&nbsp;summary&nbsp;of&nbsp;this&nbsp;job<br>
-&nbsp;<br>
-Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;SDKException:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;empty<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;response&nbsp;is&nbsp;not&nbsp;success</tt></dd></dl>
-
 <dl><dt><a name="Job-kill"><strong>kill</strong></a>(self)</dt><dd><tt>Kill&nbsp;the&nbsp;job.<br>
 &nbsp;<br>
 Returns:<br>
@@ -145,14 +126,26 @@ Data descriptors defined here:<br>
 <dl><dt><strong>agent_name</strong></dt>
 <dd><tt>Treats&nbsp;the&nbsp;agent&nbsp;name&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
 </dl>
+<dl><dt><strong>backup_level</strong></dt>
+<dd><tt>Treats&nbsp;the&nbsp;backup&nbsp;level&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
+</dl>
 <dl><dt><strong>backupset_name</strong></dt>
 <dd><tt>Treats&nbsp;the&nbsp;backupset&nbsp;name&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
 </dl>
 <dl><dt><strong>client_name</strong></dt>
 <dd><tt>Treats&nbsp;the&nbsp;client&nbsp;name&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
 </dl>
+<dl><dt><strong>end_time</strong></dt>
+<dd><tt>Treats&nbsp;the&nbsp;end&nbsp;time&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
+</dl>
 <dl><dt><strong>job_id</strong></dt>
 <dd><tt>Treats&nbsp;the&nbsp;job&nbsp;id&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
+</dl>
+<dl><dt><strong>job_type</strong></dt>
+<dd><tt>Treats&nbsp;the&nbsp;job&nbsp;type&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
+</dl>
+<dl><dt><strong>start_time</strong></dt>
+<dd><tt>Treats&nbsp;the&nbsp;start&nbsp;time&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>
 </dl>
 <dl><dt><strong>subclient_name</strong></dt>
 <dd><tt>Treats&nbsp;the&nbsp;subclient&nbsp;name&nbsp;as&nbsp;a&nbsp;read-only&nbsp;attribute.</tt></dd>

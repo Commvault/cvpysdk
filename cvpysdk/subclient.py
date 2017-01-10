@@ -17,8 +17,8 @@ Subclient: Class for representing a single subclient, and to perform operations 
 
 
 Subclients:
-    __init__(backupset_object)  --  initialise object of subclients object associated with
-                                        the specified backup set.
+    __init__(class_object)  --  initialise object of subclients object associated with
+                                        the specified backup set/instance.
     __str__()                   --  returns all the subclients associated with the backupset
     __repr__()                  --  returns the string for the instance of the Subclients class
     _get_subclients()           --  gets all the subclients associated with the backupset specified
@@ -35,6 +35,12 @@ Subclient:
     __repr__()                  --  return the subclient name, the instance is associated with
     _get_subclient_id()         --  method to get subclient id, if not specified in __init__ method
     _get_subclient_properties() --  get the properties of this subclient
+    _initialize_subclient_properties() --  initializes the properties of this subclient
+    description()               --  update the description of the subclient
+    content()                   --  update the content of the subclient
+    enable_backup()             --  enables the backup for the subclient
+    enable_backup_at_time()     --  enables backup for the subclient at the input time specified
+    disble_backup()             --  disbles the backup for the subclient
     backup()                    --  run a backup job for the subclient
     browse()                    --  gets the content of the backup for this subclient
                                         at the path specified
@@ -59,20 +65,34 @@ from exception import SDKException
 class Subclients(object):
     """Class for getting all the subclients associated with a client."""
 
-    def __init__(self, backupset_object):
+    def __init__(self, class_object):
         """Initialize the Sublcients object for the given backupset.
 
             Args:
-                backupset_object (object)  --  instance of the Backupset class
+                class_object (object)  --  instance of the Backupset/Instance class
 
             Returns:
                 object - instance of the Subclients class
         """
-        self._backupset_object = backupset_object
+        from instance import Instance
+        from backupset import Backupset
+
+        self._backupset_object = None
+        self._instance_object = None
+
+        if isinstance(class_object, Backupset):
+            self._backupset_object = class_object
+        elif isinstance(class_object, Instance):
+            self._instance_object = class_object
+            self._backupset_object = Backupset(class_object._agent_object, 'defaultBackupSet',
+                                               instance_id=class_object.instance_id,
+                                               instance_name=class_object.instance_name)
+
         self._commcell_object = self._backupset_object._commcell_object
 
         self._ALL_SUBCLIENTS = self._commcell_object._services.GET_ALL_SUBCLIENTS % (
-            self._backupset_object._agent_object._client_object.client_id)
+            self._backupset_object._agent_object._client_object.client_id
+        )
 
         self._subclients = self._get_subclients()
 
@@ -82,14 +102,15 @@ class Subclients(object):
             Returns:
                 str - string of all the subclients of th backupset of an agent of a client
         """
-        representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
-            'S. No.', 'Subclient', 'Backupset', 'Agent', 'Client')
+        representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
+            'S. No.', 'Subclient', 'Backupset', 'Instance', 'Agent', 'Client')
 
         for index, subclient in enumerate(self._subclients):
-            sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\n'.format(
+            sub_str = '{:^5}\t{:20}\t{:20}\t{:^20}\t{:20}\t{:20}\n'.format(
                 index + 1,
                 subclient,
                 self._backupset_object.backupset_name,
+                self._backupset_object._instance_name,
                 self._backupset_object._agent_object.agent_name,
                 self._backupset_object._agent_object._client_object.client_name)
             representation_string += sub_str
@@ -98,8 +119,9 @@ class Subclients(object):
 
     def __repr__(self):
         """Representation string for the instance of the Subclients class."""
-        return "Subclients class instance for Backupset: '{0}'".format(
-            self._backupset_object.backupset_name)
+        return "Subclients class instance for Backupset: '{0}', of Instance: '{1}'".format(
+            self._backupset_object.backupset_name,
+            self._backupset_object._instance_name)
 
     def _get_subclients(self):
         """Gets all the subclients associated to the client specified by the backupset object.
@@ -125,8 +147,15 @@ class Subclients(object):
 
                 for dictionary in response.json()['subClientProperties']:
                     backupset = str(dictionary['subClientEntity']['backupsetName']).lower()
+                    instance = str(dictionary['subClientEntity']['instanceName']).lower()
 
-                    if self._backupset_object.backupset_name in backupset:
+                    if self._instance_object is not None:
+                        if (self._instance_object.instance_name in instance and
+                                self._backupset_object.backupset_name in backupset):
+                            temp_name = str(dictionary['subClientEntity']['subclientName']).lower()
+                            temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
+                            return_dict[temp_name] = temp_id
+                    elif self._backupset_object.backupset_name in backupset:
                         temp_name = str(dictionary['subClientEntity']['subclientName']).lower()
                         temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
                         return_dict[temp_name] = temp_id
@@ -156,7 +185,7 @@ class Subclients(object):
 
         return self._subclients and str(subclient_name).lower() in self._subclients
 
-    def add(self, subclient_name, content, storage_policy):
+    def add(self, subclient_name, content, storage_policy, description=''):
         """Adds a new subclient to the backupset.
 
             Args:
@@ -192,6 +221,7 @@ class Subclients(object):
                 },
                 "content": [{"path": path} for path in content],
                 "commonProperties": {
+                    "description": description,
                     "enableBackup": True,
                     "storageDevice": {
                         "dataBackupStoragePolicy": {
@@ -345,7 +375,6 @@ class Subclient(object):
             self._subclient_id = self._get_subclient_id()
 
         self._SUBCLIENT = self._commcell_object._services.SUBCLIENT % (self.subclient_id)
-        self.properties = self._get_subclient_properties()
         self._BACKUP = None
 
         self._BROWSE = self._commcell_object._services.BROWSE
@@ -382,13 +411,37 @@ class Subclient(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._SUBCLIENT)
 
         if flag:
-            if response.json():
-                return response.json()
+            if response.json() and 'subClientProperties' in response.json():
+                return response.json()['subClientProperties'][0]
             else:
                 raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _initialize_subclient_properties(self):
+        """Initializes the common properties for the subclient.
+
+            Returns:
+                None
+        """
+        subclient_props = self._get_subclient_properties()
+
+        self._description = str(subclient_props['commonProperties']['description'])
+        self._on_demand_subclient = subclient_props['commonProperties']['onDemandSubClient']
+        self._last_backup_time = time.ctime(subclient_props['commonProperties']['lastBackupTime'])
+
+        if subclient_props['commonProperties']['nextBackupTime'] == 0:
+            self._next_backup = ' -- '
+        else:
+            self._next_backup = time.ctime(subclient_props['commonProperties']['nextBackupTime'])
+
+        self._backup = subclient_props['commonProperties']['enableBackup']
+
+        self._content = []
+
+        for path in subclient_props['content']:
+            self._content.append(path['path'])
 
     @staticmethod
     def _convert_size(input_size):
@@ -408,6 +461,114 @@ class Subclient(object):
         size = round(input_size / power, 2)
         return '%s %s' % (size, size_name[i])
 
+    def _update(self, subclient_description, subclient_content, backup=True, enable_time=None):
+        """Updates the properties of the backupset.
+
+            Args:
+                subclient_description (str)     --  description of the subclient
+                subclient_content     (bool)    --  content of the subclient
+
+            Returns:
+                (bool, str, str):
+                    bool -  flag specifies whether success / failure
+                    str  -  error code received in the response
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        """
+        request_json1 = {
+            "association": {
+                "entity": [{
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "instanceName": self._backupset_object._instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": self.subclient_name
+                }]
+            }, "subClientProperties": {
+                "contentOperationType": 1,
+                "subClientEntity": {
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "instanceName": self._backupset_object._instance_name,
+                    "subclientName": self.subclient_name
+                },
+                "content": [{"path": path} for path in subclient_content],
+                "commonProperties": {
+                    "description": subclient_description,
+                    "enableBackup": backup
+                }
+            }
+        }
+
+        request_json2 = {
+            "association": {
+                "entity": [{
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "instanceName": self._backupset_object._instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": self.subclient_name
+                }]
+            }, "subClientProperties": {
+                "contentOperationType": 1,
+                "subClientEntity": {
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "instanceName": self._backupset_object._instance_name,
+                    "subclientName": self.subclient_name
+                },
+                "content": [{"path": path} for path in subclient_content],
+                "commonProperties": {
+                    "description": subclient_description,
+                    "enableBackup": False,
+                    "enableBackupAfterDelay": True,
+                    "enableBackupAtDateTime": {
+                        "TimeZoneName": "(UTC) Coordinated Universal Time",
+                        "timeValue": enable_time
+                    }
+                }
+            }
+        }
+
+        if enable_time is None:
+            request_json = request_json1
+        else:
+            request_json = request_json2
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._SUBCLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and "response" in response.json():
+                error_code = str(response.json()["response"][0]["errorCode"])
+
+                self._initialize_subclient_properties()
+
+                if error_code == "0":
+                    return (True, "0", "")
+                else:
+                    error_string = ""
+
+                    if "errorString" in response.json()["response"][0]:
+                        error_string = response.json()["response"][0]["errorString"]
+
+                    if error_string:
+                        return (False, error_code, error_string)
+                    else:
+                        return (False, error_code, "")
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def subclient_id(self):
         """Treats the subclient id as a read-only attribute."""
@@ -417,6 +578,121 @@ class Subclient(object):
     def subclient_name(self):
         """Treats the subclient name as a read-only attribute."""
         return self._subclient_name
+
+    @property
+    def on_demand_subclient(self):
+        """Treats the on demand subclient as a read-only attribute."""
+        return self._on_demand_subclient
+
+    @property
+    def last_backup_time(self):
+        """Treats the last backup time as a read-only attribute."""
+        return self._last_backup_time
+
+    @property
+    def next_backup_time(self):
+        """Treats the next backup time as a read-only attribute."""
+        return self._next_backup
+
+    @property
+    def backup_enabled(self):
+        """Treats the backup as a read-only attribute."""
+        return self._backup
+
+    @property
+    def description(self):
+        """Treats the subclient description as a property of the Subclient class."""
+        return self._description
+
+    @property
+    def content(self):
+        """Treats the subclient content as a property of the Subclient class."""
+        return self._content
+
+    @description.setter
+    def description(self, value):
+        """Sets the description of the subclient as the value provided as input."""
+        if isinstance(value, str):
+            output = self._update(value, self.content, self.backup_enabled)
+
+            if output[0]:
+                print "Subclient description updated successfully"
+            else:
+                print "Failed to update the description of the subclient."
+                print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
+                print "Please check the documentation for more details on the error"
+        else:
+            raise SDKException('Subclient', '102',
+                               'Subclient description should be a string value')
+
+    @content.setter
+    def content(self, value):
+        """Sets the content of the subclient as the value provided as input."""
+        if isinstance(value, list):
+            output = self._update(self.description, value, self.backup_enabled)
+
+            if output[0]:
+                print "Subclient content updated successfully"
+            else:
+                print "Failed to update the content of the subclient."
+                print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
+                print "Please check the documentation for more details on the error"
+        else:
+            raise SDKException('Subclient', '102',
+                               'Subclient content should be a list value')
+
+    def enable_backup(self):
+        """Enables Backup for the subclient."""
+        output = self._update(self.description, self.content, True)
+
+        if output[0]:
+            print "Backup enabled successfully"
+        else:
+            print "Failed to enable backup for the subclient."
+            print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
+            print "Please check the documentation for more details on the error"
+
+    def enable_backup_at_time(self, enable_time):
+        """Disables Backup if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+                    if time value entered is not of correct format
+                    if failed to enable backup
+                    if response is empty
+                    if response is not success
+        """
+        try:
+            time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
+            if time.mktime(time_tuple) < time.time():
+                raise SDKException('Subclient', '108')
+        except ValueError:
+            raise SDKException('Subclient', '109')
+
+        output = self._update(self.description, self.content, False, enable_time)
+
+        if output[0]:
+            print "Backup will be enabled at the time specified"
+        else:
+            print "Failed to enable backup for the subclient."
+            print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
+            print "Please check the documentation for more details on the error"
+
+    def disable_backup(self):
+        """Disables Backup for the subclient."""
+        output = self._update(self.description, self.content, False)
+
+        if output[0]:
+            print "Backup disabled successfully"
+        else:
+            print "Failed to disable backup for the subclient."
+            print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
+            print "Please check the documentation for more details on the error"
 
     def backup(
             self,

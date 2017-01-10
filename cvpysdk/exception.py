@@ -37,7 +37,9 @@ EXCEPTION_DICT = {
         '102': 'Attribute name not provided',
         '103': 'Data type of the inputs is not valid',
         '104': '',
-        '105': 'Attribute\'s value not provided'
+        '105': 'Attribute\'s value not provided',
+        '106': 'Time Value should be greater than current time',
+        '107': 'Time Value entered is not of correct format'
     },
     'Agent': {
         '101': 'Agent name should be specified',
@@ -51,6 +53,10 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Data type of the inputs is not valid'
     },
+    'Instance': {
+        '101': 'Data type of the inputs is not valid',
+        '102': ''
+    },
     'Subclient': {
         '101': 'Data type of the inputs is not valid',
         '102': '',
@@ -58,7 +64,9 @@ EXCEPTION_DICT = {
         '104': 'Files/Folders to restore list is empty',
         '105': 'Type of client should either be the Client class instance or string',
         '106': 'Input date is incorrect',
-        '107': 'End Date should be greater than the Start Date'
+        '107': 'End Date should be greater than the Start Date',
+        '108': 'Time Value should be greater than current time',
+        '109': 'Time Value entered is not of correct format'
     },
     'Job': {
         '101': 'Incorrect JobId',

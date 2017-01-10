@@ -18,15 +18,15 @@ Backupset:  Class for a single backup set selected for an agent,
 
 
 Backupsets:
-    __init__(agent_object)          -- initialise object of Backupsets class associated with
-                                        the specified agent
+    __init__(class_object)          -- initialise object of Backupsets class associated with
+                                           the specified agent/instance
     __str__()                       -- returns all the backupsets associated with the agent
     __repr__()                      -- returns the string for the instance of the Backupsets class
     _get_backupsets()               -- gets all the backupsets associated with the agent specified
     has_backupset(backupset_name)   -- checks if a backupset exists with the given name or not
     add(backupset_name)             -- adds a new backupset to the agent of the specified client
     get(backupset_name)             -- returns the Backupset class object
-                                        of the input backup set name
+                                           of the input backup set name
     delete(backupset_name)          -- removes the backupset from the agent of the specified client
 
 Backupset:
@@ -34,8 +34,8 @@ Backupset:
              backupset_name,
              backupset_id=None,
              instance_id=1,
-             instance_name=None)    -- initialise object of Backupset with the specified agent name
-                                         and id, and associated to the specified agent
+             instance_name=None)    -- initialise object of Backupset with the specified backupset
+                                         name and id, and associated to the specified agent
     __repr__()                      -- return the backupset name, the instance is associated with
     _get_backupset_id()             -- method to get the backupset id, if not specified in __init__
     _get_backupset_properties()     -- get the properties of this backupset
@@ -61,23 +61,39 @@ from exception import SDKException
 class Backupsets(object):
     """Class for getting all the backupsets associated with a client."""
 
-    def __init__(self, agent_object):
+    def __init__(self, class_object):
         """Initialize object of the Backupsets class.
 
             Args:
-                agent_object (object)  --  instance of the Agent class
+                class_object (object)  --  instance of the Agent/Instance class
 
             Returns:
                 object - instance of the Backupsets class
         """
-        self._agent_object = agent_object
+        from agent import Agent
+        from instance import Instance
+
+        self._instance_id = None
+        self._instance_name = None
+        self._instance_object = None
+
+        if isinstance(class_object, Agent):
+            self._agent_object = class_object
+        elif isinstance(class_object, Instance):
+            self._instance_object = class_object
+            self._agent_object = class_object._agent_object
+            self._instance_name = class_object.instance_name
+            self._instance_id = class_object.instance_id
+
         self._commcell_object = self._agent_object._commcell_object
-        self._ALL_BACKUPSETS = self._commcell_object._services.GET_ALL_BACKUPSETS % (
+
+        self._ALL_BACKUPSETS = (self._commcell_object._services.GET_ALL_BACKUPSETS) % (
             self._agent_object._client_object.client_id
         )
 
-        self._instance_name = None
-        self._instance_id = None
+        if self._agent_object.agent_name in ['cloud apps', 'sql server']:
+            self._ALL_BACKUPSETS += '&excludeHidden=0'
+
         self._backupsets = self._get_backupsets()
 
     def __str__(self):
@@ -86,13 +102,14 @@ class Backupsets(object):
             Returns:
                 str - string of all the backupsets of an agent of a client
         """
-        representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
-            'S. No.', 'Backupset', 'Agent', 'Client')
+        representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
+            'S. No.', 'Backupset', 'Instance', 'Agent', 'Client')
 
         for index, backupset in enumerate(self._backupsets):
-            sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\n'.format(
+            sub_str = '{:^5}\t{:20}\t{:^20}\t{:20}\t{:20}\n'.format(
                 index + 1,
                 backupset,
+                self._instance_name,
                 self._agent_object.agent_name,
                 self._agent_object._client_object.client_name
             )
@@ -132,8 +149,15 @@ class Backupsets(object):
                         self._instance_id = str(dictionary['backupSetEntity']['instanceId'])
 
                     agent = str(dictionary['backupSetEntity']['appName']).lower()
+                    instance = str(dictionary['backupSetEntity']['instanceName']).lower()
 
-                    if self._agent_object.agent_name in agent:
+                    if self._instance_object is not None:
+                        if (self._instance_name in instance and
+                                self._agent_object.agent_name in agent):
+                            temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
+                            temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
+                            return_dict[temp_name] = temp_id
+                    elif self._agent_object.agent_name in agent:
                         temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
                         temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
                         return_dict[temp_name] = temp_id
@@ -377,6 +401,8 @@ class Backupset(object):
                     default: None
                 instance_id (str)      --  id of the instance associated with the backupset
                     default: 1, for File System iDA
+                instance_name (str)    --  name of the instance associated with the backupset
+                    default: None
 
             Returns:
                 object - instance of the Backupset class
@@ -578,7 +604,7 @@ class Backupset(object):
 
     @property
     def is_default_backupset(self):
-        """Treats the backupset default flag as a property of the Backupset class."""
+        """Treats the is default backupset as a read-only attribute."""
         return self._is_default
 
     @backupset_name.setter

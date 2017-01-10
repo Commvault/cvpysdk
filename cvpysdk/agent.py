@@ -45,6 +45,7 @@ import string
 import time
 
 from backupset import Backupsets
+from instance import Instances
 from schedules import Schedules
 from exception import SDKException
 
@@ -198,6 +199,7 @@ class Agent(object):
             # Get the agent id if agent id is not provided
             self._agent_id = self._get_agent_id()
 
+        self.instances = Instances(self)
         self.backupsets = Backupsets(self)
         self.schedules = Schedules(self)
 
@@ -216,6 +218,74 @@ class Agent(object):
         """
         agents = Agents(self._client_object)
         return agents.get(self.agent_name).agent_id
+
+    def _request_json_(self, option, enable=True, enable_time=None):
+        """Returns the JSON request to pass to the API as per the options selected by the user.
+
+            Args:
+                option (str)  --  string option for which to run the API for
+                    e.g.; Backup / Restore
+
+            Returns:
+                dict - JSON request to pass to the API
+        """
+        options_dict = {
+            "Backup": 1,
+            "Restore": 2
+        }
+
+        request_json1 = {
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": False,
+                            "enableActivityType": enable
+                        }
+                    ]
+                }
+            }
+        }
+
+        request_json2 = {
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self._client_object.client_name,
+                        "appName": self.agent_name
+                    }
+                ]
+            },
+            "agentProperties": {
+                "idaActivityControl": {
+                    "activityControlOptions": [
+                        {
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": True,
+                            "enableActivityType": False,
+                            "dateTime": {
+                                "TimeZoneName": "(UTC) Coordinated Universal Time",
+                                "timeValue": enable_time
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        if enable_time:
+            return request_json2
+        else:
+            return request_json1
 
     @property
     def agent_id(self):
@@ -236,27 +306,7 @@ class Agent(object):
                     if response is empty
                     if response is not success
         """
-        request_json = {
-            "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
-            },
-            "agentProperties": {
-                "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": 1,
-                            "enableAfterADelay": False,
-                            "enableActivityType": True
-                        }
-                    ]
-                }
-            }
-        }
+        request_json = self._request_json_('Backup')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._AGENT,
@@ -302,31 +352,7 @@ class Agent(object):
         except ValueError:
             raise SDKException('Agent', '105')
 
-        request_json = {
-            "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
-            },
-            "agentProperties": {
-                "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": 1,
-                            "enableAfterADelay": True,
-                            "enableActivityType": False,
-                            "dateTime": {
-                                "TimeZoneName": "(UTC) Coordinated Universal Time",
-                                "timeValue": enable_time
-                            }
-                        }
-                    ]
-                }
-            }
-        }
+        request_json = self._request_json_('Backup', False, enable_time)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._AGENT,
@@ -359,27 +385,7 @@ class Agent(object):
                     if response is empty
                     if response is not success
         """
-        request_json = {
-            "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
-            },
-            "agentProperties": {
-                "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": 1,
-                            "enableAfterADelay": False,
-                            "enableActivityType": False
-                        }
-                    ]
-                }
-            }
-        }
+        request_json = self._request_json_('Backup', False)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._AGENT,
@@ -412,27 +418,7 @@ class Agent(object):
                     if response is empty
                     if response is not success
         """
-        request_json = {
-            "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
-            },
-            "agentProperties": {
-                "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": 2,
-                            "enableAfterADelay": False,
-                            "enableActivityType": True
-                        }
-                    ]
-                }
-            }
-        }
+        request_json = self._request_json_('Restore')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._AGENT,
@@ -478,31 +464,7 @@ class Agent(object):
         except ValueError:
             raise SDKException('Agent', '105')
 
-        request_json = {
-            "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
-            },
-            "agentProperties": {
-                "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": 2,
-                            "enableAfterADelay": True,
-                            "enableActivityType": False,
-                            "dateTime": {
-                                "TimeZoneName": "(UTC) Coordinated Universal Time",
-                                "timeValue": enable_time
-                            }
-                        }
-                    ]
-                }
-            }
-        }
+        request_json = self._request_json_('Restore', False, enable_time)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._AGENT,
@@ -535,27 +497,7 @@ class Agent(object):
                     if response is empty
                     if response is not success
         """
-        request_json = {
-            "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
-            },
-            "agentProperties": {
-                "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": 2,
-                            "enableAfterADelay": False,
-                            "enableActivityType": False
-                        }
-                    ]
-                }
-            }
-        }
+        request_json = self._request_json_('Restore', False)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._AGENT,

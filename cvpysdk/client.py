@@ -29,14 +29,24 @@ Clients:
 Client:
     __init__(commcell_object,
              client_name,
-             client_id=None)  -- initialise object of Class with the specified client name
-                                     and id, and associated to the commcell
-    __repr__()                -- return the client name and id, the instance is associated with
-    _get_client_id()          -- method to get the client id, if not specified in __init__
-    _get_client_properties()  -- get the properties of this client
+             client_id=None)     --  initialise object of Class with the specified client name
+                                         and id, and associated to the commcell
+    __repr__()                   --  return the client name and id, the instance is associated with
+    _get_client_id()             --  method to get the client id, if not specified in __init__
+    _get_client_properties()     --  get the properties of this client
+    enable_backup()              --  enables the backup for the client
+    enable_backup_at_time()      --  enables the backup for the client at the input time specified
+    disble_backup()              --  disbles the backup for the client
+    enable_restore()             --  enables the restore for the client
+    enable_restore_at_time()     --  enables the restore for the client at the input time specified
+    disble_restore()             --  disbles the restore for the client
+    enable_data_aging()          --  enables the data aging for the client
+    enable_data_aging_at_time()  --  enables the data aging for the client at input time specified
+    disable_data_aging()         --  disbles the data aging for the clientt
 
 """
 
+import time
 
 from agent import Agents
 from schedules import Schedules
@@ -282,13 +292,130 @@ class Client(object):
 
         if flag:
             if response.json() and 'clientProperties' in response.json().keys():
-                if isinstance(response.json()['clientProperties'][0], dict):
-                    return response.json()['clientProperties'][0]
+                client_properties = response.json()['clientProperties'][0]
+
+                os_info = client_properties['client']['osInfo']
+                processor_type = os_info['OsDisplayInfo']['ProcessorType']
+                os_name = os_info['OsDisplayInfo']['OSName']
+
+                self._os_info = '{0} {1} {2}  --  {3}'.format(
+                    processor_type,
+                    os_info['Type'],
+                    os_info['SubType'],
+                    os_name
+                )
+
+                client_props = client_properties['clientProps']
+
+                if client_props['activityControl']['EnableDataRecovery'] is True:
+                    self._data_recovery = 'Enabled'
+                else:
+                    self._data_recovery = 'Disabled'
+
+                if client_props['activityControl']['EnableDataManagement'] is True:
+                    self._data_management = 'Enabled'
+                else:
+                    self._data_management = 'Disabled'
+
+                if client_props['activityControl']['EnableOnlineContentIndex'] is True:
+                    self._online_content_index = 'Enabled'
+                else:
+                    self._online_content_index = 'Disabled'
+
+                activities = client_props["clientActivityControl"]["activityControlOptions"]
+
+                for activity in activities:
+                    if activity["activityType"] == 1:
+                        if activity["enableActivityType"] is True:
+                            self._backup = 'Enabled'
+                        else:
+                            self._backup = 'Disabled'
+                    elif activity["activityType"] == 2:
+                        if activity["enableActivityType"] is True:
+                            self._restore = 'Enabled'
+                        else:
+                            self._restore = 'Disabled'
+                    elif activity["activityType"] == 16:
+                        if activity["enableActivityType"] is True:
+                            self._data_aging = 'Enabled'
+                        else:
+                            self._data_aging = 'Disabled'
             else:
                 raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _request_json_(self, option, enable=True, enable_time=None):
+        """Returns the JSON request to pass to the API as per the options selected by the user.
+
+            Args:
+                option (str)  --  string option for which to run the API for
+                    e.g.; Backup / Restore / Data Aging
+
+            Returns:
+                dict - JSON request to pass to the API
+        """
+        options_dict = {
+            "Backup": 1,
+            "Restore": 2,
+            "Data Aging": 16
+        }
+
+        request_json1 = {
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self.client_name
+                    }
+                ]
+            },
+            "clientProperties": {
+                "clientProps": {
+                    "clientActivityControl": {
+                        "activityControlOptions": [
+                            {
+                                "activityType": options_dict[option],
+                                "enableAfterADelay": False,
+                                "enableActivityType": enable
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        request_json2 = {
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self.client_name
+                    }
+                ]
+            },
+            "clientProperties": {
+                "clientProps": {
+                    "clientActivityControl": {
+                        "activityControlOptions": [
+                            {
+                                "activityType": options_dict[option],
+                                "enableAfterADelay": True,
+                                "enableActivityType": False,
+                                "dateTime": {
+                                    "TimeZoneName": "(UTC) Coordinated Universal Time",
+                                    "timeValue": enable_time
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        if enable_time:
+            return request_json2
+        else:
+            return request_json1
 
     @property
     def client_id(self):
@@ -299,3 +426,374 @@ class Client(object):
     def client_name(self):
         """Treats the client name as a read-only attribute."""
         return self._client_name
+
+    @property
+    def os_info(self):
+        """Treats the os information as a read-only attribute."""
+        return self._os_info
+
+    @property
+    def data_recovery(self):
+        """Treats the data recovery as a read-only attribute."""
+        return self._data_recovery
+
+    @property
+    def data_management(self):
+        """Treats the data management as a read-only attribute."""
+        return self._data_management
+
+    @property
+    def online_content_index(self):
+        """Treats the online content index as a read-only attribute."""
+        return self._online_content_index
+
+    @property
+    def backup(self):
+        """Treats the backup as a read-only attribute."""
+        return self._backup
+
+    @property
+    def restore(self):
+        """Treats the restore as a read-only attribute."""
+        return self._restore
+
+    @property
+    def data_aging(self):
+        """Treats the data aging as a read-only attribute."""
+        return self._data_aging
+
+    def enable_backup(self):
+        """Enable Backup for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to enable backup
+                    if response is empty
+                    if response is not success
+        """
+        request_json = self._request_json_('Backup')
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Backup enabled successfully'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_backup_at_time(self, enable_time):
+        """Disables Backup if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+                    if time value entered is not of correct format
+                    if failed to enable backup
+                    if response is empty
+                    if response is not success
+        """
+        try:
+            time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
+            if time.mktime(time_tuple) < time.time():
+                raise SDKException('Client', '106')
+        except ValueError:
+            raise SDKException('Client', '107')
+
+        request_json = self._request_json_('Backup', False, enable_time)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Backup will be enabled at the time specified'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_backup(self):
+        """Disables Backup for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to disable backup
+                    if response is empty
+                    if response is not success
+        """
+        request_json = self._request_json_('Backup', False)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Backup disabled successfully'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to disable Backup with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_restore(self):
+        """Enable Restore for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to enable restore
+                    if response is empty
+                    if response is not success
+        """
+        request_json = self._request_json_('Restore')
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Restore enabled successfully'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_restore_at_time(self, enable_time):
+        """Disables Restore if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+                    if time value entered is not of correct format
+                    if failed to enable restore
+                    if response is empty
+                    if response is not success
+        """
+        try:
+            time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
+            if time.mktime(time_tuple) < time.time():
+                raise SDKException('Client', '106')
+        except ValueError:
+            raise SDKException('Client', '107')
+
+        request_json = self._request_json_('Restore', False, enable_time)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Restore will be enabled at the time specified'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_restore(self):
+        """Disables Restore for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to disable restore
+                    if response is empty
+                    if response is not success
+        """
+        request_json = self._request_json_('Restore', False)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Restore disabled successfully'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to disable Restore with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_data_aging(self):
+        """Enable Data Aging for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to enable data aging
+                    if response is empty
+                    if response is not success
+        """
+        request_json = self._request_json_('Data Aging')
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Data Aging enabled successfully'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to enable Data Aging with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_data_aging_at_time(self, enable_time):
+        """Disables Data Aging if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the data aging at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+                    if time value entered is not of correct format
+                    if failed to enable data aging
+                    if response is empty
+                    if response is not success
+        """
+        try:
+            time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
+            if time.mktime(time_tuple) < time.time():
+                raise SDKException('Client', '106')
+        except ValueError:
+            raise SDKException('Client', '107')
+
+        request_json = self._request_json_('Data Aging', False, enable_time)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Data Aging will be enabled at the time specified'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to enable Data Aging with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_data_aging(self):
+        """Disables Data Aging for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to disable data aging
+                    if response is empty
+                    if response is not success
+        """
+        request_json = self._request_json_('Data Aging', False)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._CLIENT,
+                                                                            request_json)
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    print 'Data Aging disabled successfully'
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = "Failed to disable Data Aging with error code: %s" % (error_code)
+                    o_str += "\nError message: %s" % (error_message)
+                    raise SDKException('Client', '104', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

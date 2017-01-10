@@ -21,8 +21,9 @@ Job:
     _check_finished()           --  checks if the job has finished or not yet
     _is_finished()              --  checks for the status of the job.
                                         Returns True if finished, else False
-    get_job_summary()           --  gets the summary of the job with the given job id
-    get_job_details()           --  gets the details of the job with the given job id
+    _get_job_summary()          --  gets the summary of the job with the given job id
+    _get_job_details()          --  gets the details of the job with the given job id
+    _initialize_job_properties()--  initializes the properties of the job
     pause()                     --  suspend the job
     resume()                    --  resumes the job
     kill()                      --  kills the job
@@ -67,6 +68,7 @@ class Job(object):
         self._job_id = str(job_id)
 
         self._JOB = self._commcell_object._services.JOB % (self.job_id)
+
         if not self._is_valid_job():
             raise SDKException('Job', '102')
 
@@ -76,7 +78,7 @@ class Job(object):
         self._KILL = self._commcell_object._services.KILL_JOB % (self.job_id)
 
         self.finished = self._is_finished()
-        self.status = str(self.get_job_summary()['status'])
+        self.status = str(self._get_job_summary()['status'])
 
         self._initialize_job_properties()
 
@@ -98,7 +100,7 @@ class Job(object):
             Returns:
                 bool - boolean that represents whether the job is valid or not
         """
-        if self.get_job_summary() is False:
+        if self._get_job_summary() is False:
             return False
         else:
             return True
@@ -119,11 +121,70 @@ class Job(object):
             Returns:
                 bool - boolean that represents whether the job has finished or not
         """
-        self.status = str(self.get_job_summary()['status'])
+        job_summary = self._get_job_summary()
+
+        self.status = str(job_summary['status'])
+        if job_summary['lastUpdateTime'] != 0:
+            self._end_time = time.ctime(job_summary['lastUpdateTime'])
+        else:
+            self._end_time = ' -- '
 
         return ('completed' in self.status.lower() or
                 'killed' in self.status.lower() or
                 'failed' in self.status.lower())
+
+    def _get_job_summary(self):
+        """Gets the properties of this job.
+
+            Returns:
+                dict - dict that contains the summary of this job
+
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._JOB)
+
+        if flag:
+            if response.json():
+                if response.json()['totalRecordsWithoutPaging'] == 0:
+                    return False
+                if 'jobs' in response.json().keys():
+                    for job in response.json()['jobs']:
+                        return job['jobSummary']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_job_details(self):
+        """Gets the detailed properties of this job.
+
+            Returns:
+                dict - dict consisting of the detailed properties of the job
+
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        """
+        payload = {
+            "jobId": int(self.job_id)
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            self._JOB_DETAILS,
+                                                                            payload)
+
+        if flag:
+            if response.json() and 'job' in response.json().keys():
+                return response.json()['job']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def _initialize_job_properties(self):
         """Initializes the common properties for the job.
@@ -132,10 +193,21 @@ class Job(object):
             Returns:
                 None
         """
-        subclient_properties = self.get_job_summary()['subclient']
+        job_summary = self._get_job_summary()
+        subclient_properties = job_summary['subclient']
+
         self._client_name = str(subclient_properties['clientName'])
         self._agent_name = str(subclient_properties['appName'])
         self._backupset_name = str(subclient_properties['backupsetName'])
+
+        self._job_type = str(job_summary['jobType'])
+
+        if self._job_type == 'Backup' and 'backupLevelName' in job_summary:
+            self._backup_level = str(job_summary['backupLevelName'])
+        else:
+            self._backup_level = ' -- '
+
+        self._start_time = time.ctime(job_summary['jobStartTime'])
 
         if 'subclientName' in subclient_properties:
             self._subclient_name = str(subclient_properties['subclientName'])
@@ -167,58 +239,25 @@ class Job(object):
         """Treats the job id as a read-only attribute."""
         return self._job_id
 
-    def get_job_summary(self):
-        """Gets the properties of this job.
+    @property
+    def job_type(self):
+        """Treats the job type as a read-only attribute."""
+        return self._job_type
 
-            Returns:
-                dict - dict that contains the summary of this job
+    @property
+    def backup_level(self):
+        """Treats the backup level as a read-only attribute."""
+        return self._backup_level
 
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
-        """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._JOB)
+    @property
+    def start_time(self):
+        """Treats the start time as a read-only attribute."""
+        return self._start_time
 
-        if flag:
-            if response.json():
-                if response.json()['totalRecordsWithoutPaging'] == 0:
-                    return False
-                if 'jobs' in response.json().keys():
-                    for job in response.json()['jobs']:
-                        return job['jobSummary']
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def get_job_details(self):
-        """Gets the detailed properties of this job.
-
-            Returns:
-                dict - dict consisting of the detailed properties of the job
-
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
-        """
-        payload = {
-            "jobId": int(self.job_id)
-        }
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._JOB_DETAILS,
-                                                                            payload)
-
-        if flag:
-            if response.json() and 'job' in response.json().keys():
-                return response.json()['job']
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+    @property
+    def end_time(self):
+        """Treats the end time as a read-only attribute."""
+        return self._end_time
 
     def pause(self):
         """Suspend the job.
@@ -241,7 +280,7 @@ class Job(object):
                 print 'Job suspend failed with error message: "%s", and error code: "%s"' % \
                     (error_message, error_code)
             else:
-                self.status = str(self.get_job_summary()['status'])
+                self.status = str(self._get_job_summary()['status'])
                 print 'Job suspended successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
@@ -268,7 +307,7 @@ class Job(object):
                 print 'Job resume failed with error message: "%s", and error code: "%s"' % \
                     (error_message, error_code)
             else:
-                self.status = str(self.get_job_summary()['status'])
+                self.status = str(self._get_job_summary()['status'])
                 print 'Job resumed successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
@@ -295,7 +334,7 @@ class Job(object):
                 print 'Job kill failed with error message: "%s", and error code: "%s"' % \
                     (error_message, error_code)
             else:
-                self.status = str(self.get_job_summary()['status'])
+                self.status = str(self._get_job_summary()['status'])
                 self.finished = True
                 print 'Job killed successfully'
         else:

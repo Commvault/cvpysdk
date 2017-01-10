@@ -30,6 +30,8 @@ Commcell:
     _remove_attribs_()           --  removes all the attributs associated with the commcell
                                         object upon logout.
     logout()                     --  logs out the user associated with the current instance
+    request()                    --  runs a input HTTP request on the API specified,
+                                        and returns its response
 
 """
 
@@ -215,3 +217,27 @@ class Commcell(object):
         else:
             print self._cvpysdk_object._logout_()
             self._remove_attribs_()
+
+    def request(self, request_type, request_url, request_body=None):
+        """Runs the request of the type specified on the request URL, with the body passed
+            in the arguments.
+
+            Args:
+                request_type (str)  --  type of HTTP request to run on the Commcell
+                    e.g.; POST, GET, PUT, DELETE
+
+                request_url (str)   --  API name to run the request on with params, if any
+                    e.g.; Backupset, Agent, Client, Client/{clientId}, ..., etc.
+
+                request_body (dict) --  JSON request body to pass along with the request
+                    default: None
+
+            Returns:
+                object - the response received from the server
+        """
+        request_url = self._commcell_service + request_url
+        flag, response = self._cvpysdk_object.make_request(request_type.upper(),
+                                                           request_url,
+                                                           request_body)
+
+        return response
