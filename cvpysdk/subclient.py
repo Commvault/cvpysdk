@@ -1070,20 +1070,18 @@ class Subclient(object):
 
         request_json = {
             "taskInfo": {
-                "associations": [
-                    {
-                        "clientName": self._backupset_object._agent_object._client_object.client_name,
-                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                        "appName": self._backupset_object._agent_object.agent_name,
-                        "appTypeId": int(self._backupset_object._agent_object.agent_id),
-                        "backupsetName": self._backupset_object.backupset_name,
-                        "backupSetId": int(self._backupset_object.backupset_id),
-                        "instanceName": self._backupset_object._instance_name,
-                        "instanceId": int(self._backupset_object._instance_id),
-                        "subclientName": self.subclient_name,
-                        "subclientId": int(self.subclient_id),
-                    }
-                ],
+                "associations": [{
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "appTypeId": int(self._backupset_object._agent_object.agent_id),
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "backupSetId": int(self._backupset_object.backupset_id),
+                    "instanceName": self._backupset_object._instance_name,
+                    "instanceId": int(self._backupset_object._instance_id),
+                    "subclientName": self.subclient_name,
+                    "subclientId": int(self.subclient_id),
+                }],
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
@@ -1250,20 +1248,18 @@ class Subclient(object):
 
         request_json = {
             "taskInfo": {
-                "associations": [
-                    {
-                        "clientName": self._backupset_object._agent_object._client_object.client_name,
-                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                        "appName": self._backupset_object._agent_object.agent_name,
-                        "appTypeId": int(self._backupset_object._agent_object.agent_id),
-                        "backupsetName": self._backupset_object.backupset_name,
-                        "backupSetId": int(self._backupset_object.backupset_id),
-                        "instanceName": self._backupset_object._instance_name,
-                        "instanceId": int(self._backupset_object._instance_id),
-                        "subclientName": self.subclient_name,
-                        "subclientId": int(self.subclient_id),
-                    }
-                ],
+                "associations": [{
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "appTypeId": int(self._backupset_object._agent_object.agent_id),
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "backupSetId": int(self._backupset_object.backupset_id),
+                    "instanceName": self._backupset_object._instance_name,
+                    "instanceId": int(self._backupset_object._instance_id),
+                    "subclientName": self.subclient_name,
+                    "subclientId": int(self.subclient_id),
+                }],
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
