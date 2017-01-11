@@ -382,6 +382,8 @@ class Subclient(object):
         self._BROWSE = self._commcell_object._services.BROWSE
         self._RESTORE = self._commcell_object._services.RESTORE
 
+        self._initialize_subclient_properties()
+
         self.schedules = Schedules(self)
 
     def __repr__(self):
@@ -430,20 +432,24 @@ class Subclient(object):
         subclient_props = self._get_subclient_properties()
 
         self._description = str(subclient_props['commonProperties']['description'])
-        self._on_demand_subclient = subclient_props['commonProperties']['onDemandSubClient']
         self._last_backup_time = time.ctime(subclient_props['commonProperties']['lastBackupTime'])
+
+        if 'onDemandSubClient' in subclient_props['commonProperties']:
+            self._on_demand_subclient = subclient_props['commonProperties']['onDemandSubClient']
+        else:
+            self._on_demand_subclient = False
 
         if subclient_props['commonProperties']['nextBackupTime'] == 0:
             self._next_backup = ' -- '
         else:
             self._next_backup = time.ctime(subclient_props['commonProperties']['nextBackupTime'])
 
-        self._backup = subclient_props['commonProperties']['enableBackup']
+        self._is_backup_enabled = subclient_props['commonProperties']['enableBackup']
 
         self._content = []
 
         for path in subclient_props['content']:
-            self._content.append(path['path'])
+            self._content.append(str(path['path']))
 
     @staticmethod
     def _convert_size(input_size):
@@ -597,9 +603,9 @@ class Subclient(object):
         return self._next_backup
 
     @property
-    def backup_enabled(self):
-        """Treats the backup as a read-only attribute."""
-        return self._backup
+    def is_backup_enabled(self):
+        """Treats the is backup enabled as a read-only attribute."""
+        return self._is_backup_enabled
 
     @property
     def description(self):
@@ -615,7 +621,7 @@ class Subclient(object):
     def description(self, value):
         """Sets the description of the subclient as the value provided as input."""
         if isinstance(value, str):
-            output = self._update(value, self.content, self.backup_enabled)
+            output = self._update(value, self.content, self.is_backup_enabled)
 
             if output[0]:
                 print "Subclient description updated successfully"
@@ -631,7 +637,7 @@ class Subclient(object):
     def content(self, value):
         """Sets the content of the subclient as the value provided as input."""
         if isinstance(value, list):
-            output = self._update(self.description, value, self.backup_enabled)
+            output = self._update(self.description, value, self.is_backup_enabled)
 
             if output[0]:
                 print "Subclient content updated successfully"
@@ -1064,18 +1070,20 @@ class Subclient(object):
 
         request_json = {
             "taskInfo": {
-                "associations": [{
-                    "clientName": self._backupset_object._agent_object._client_object.client_name,
-                    "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                    "appName": self._backupset_object._agent_object.agent_name,
-                    "appTypeId": int(self._backupset_object._agent_object.agent_id),
-                    "backupsetName": self._backupset_object.backupset_name,
-                    "backupSetId": int(self._backupset_object.backupset_id),
-                    "instanceName": self._backupset_object._instance_name,
-                    "instanceId": int(self._backupset_object._instance_id),
-                    "subclientName": self.subclient_name,
-                    "subclientId": int(self.subclient_id),
-                }],
+                "associations": [
+                    {
+                        "clientName": self._backupset_object._agent_object._client_object.client_name,
+                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                        "appName": self._backupset_object._agent_object.agent_name,
+                        "appTypeId": int(self._backupset_object._agent_object.agent_id),
+                        "backupsetName": self._backupset_object.backupset_name,
+                        "backupSetId": int(self._backupset_object.backupset_id),
+                        "instanceName": self._backupset_object._instance_name,
+                        "instanceId": int(self._backupset_object._instance_id),
+                        "subclientName": self.subclient_name,
+                        "subclientId": int(self.subclient_id),
+                    }
+                ],
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
@@ -1242,18 +1250,20 @@ class Subclient(object):
 
         request_json = {
             "taskInfo": {
-                "associations": [{
-                    "clientName": self._backupset_object._agent_object._client_object.client_name,
-                    "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                    "appName": self._backupset_object._agent_object.agent_name,
-                    "appTypeId": int(self._backupset_object._agent_object.agent_id),
-                    "backupsetName": self._backupset_object.backupset_name,
-                    "backupSetId": int(self._backupset_object.backupset_id),
-                    "instanceName": self._backupset_object._instance_name,
-                    "instanceId": int(self._backupset_object._instance_id),
-                    "subclientName": self.subclient_name,
-                    "subclientId": int(self.subclient_id),
-                }],
+                "associations": [
+                    {
+                        "clientName": self._backupset_object._agent_object._client_object.client_name,
+                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                        "appName": self._backupset_object._agent_object.agent_name,
+                        "appTypeId": int(self._backupset_object._agent_object.agent_id),
+                        "backupsetName": self._backupset_object.backupset_name,
+                        "backupSetId": int(self._backupset_object.backupset_id),
+                        "instanceName": self._backupset_object._instance_name,
+                        "instanceId": int(self._backupset_object._instance_id),
+                        "subclientName": self.subclient_name,
+                        "subclientId": int(self.subclient_id),
+                    }
+                ],
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
