@@ -446,10 +446,7 @@ class Subclient(object):
 
         self._is_backup_enabled = subclient_props['commonProperties']['enableBackup']
 
-        self._content = []
-
-        for path in subclient_props['content']:
-            self._content.append(str(path['path']))
+        self._content = subclient_props['content']
 
     @staticmethod
     def _convert_size(input_size):
@@ -474,7 +471,9 @@ class Subclient(object):
 
             Args:
                 subclient_description (str)     --  description of the subclient
-                subclient_content     (bool)    --  content of the subclient
+                subclient_content     (list)    --  content of the subclient
+                backup                (bool)    --  enable backup or not
+                enable_time           (str)     --  time to re-enable the activity at
 
             Returns:
                 (bool, str, str):
@@ -505,7 +504,7 @@ class Subclient(object):
                     "instanceName": self._backupset_object._instance_name,
                     "subclientName": self.subclient_name
                 },
-                "content": [{"path": path} for path in subclient_content],
+                "content": subclient_content,
                 "commonProperties": {
                     "description": subclient_description,
                     "enableBackup": backup
@@ -1068,6 +1067,7 @@ class Subclient(object):
                     path = '\\'
             paths[index] = path
 
+        """
         request_json = {
             "taskInfo": {
                 "associations": [{
@@ -1124,7 +1124,7 @@ class Subclient(object):
             },
             "advanced": {
                 "restoreDataAndACL": restore_data_and_acl,
-                "restoreDeletedFiles": restore_deleted_files,
+                "restoreDeletedFiles": True,
                 "unconditionalOverwrite": overwrite
             },
             "header": {
@@ -1143,7 +1143,6 @@ class Subclient(object):
                 }
             }
         }
-        """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._RESTORE,
