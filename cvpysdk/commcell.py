@@ -232,12 +232,21 @@ class Commcell(object):
                 request_body (dict) --  JSON request body to pass along with the request
                     default: None
 
+                content_type (str)  --  type of the request body content
+                    e.g.; text, xml, json
+                    default: json
+
             Returns:
                 object - the response received from the server
         """
         request_url = self._commcell_service + request_url
+
+        self._headers['Content-type'] = "application/" + content_type
+
         flag, response = self._cvpysdk_object.make_request(request_type.upper(),
                                                            request_url,
                                                            request_body)
+
+        self._headers['Content-type'] = "application/json"
 
         return response
