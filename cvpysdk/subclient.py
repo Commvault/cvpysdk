@@ -1067,7 +1067,6 @@ class Subclient(object):
                     path = '\\'
             paths[index] = path
 
-        """
         request_json = {
             "taskInfo": {
                 "associations": [{
@@ -1124,7 +1123,7 @@ class Subclient(object):
             },
             "advanced": {
                 "restoreDataAndACL": restore_data_and_acl,
-                "restoreDeletedFiles": True,
+                "restoreDeletedFiles": restore_deleted_files,
                 "unconditionalOverwrite": overwrite
             },
             "header": {
@@ -1143,6 +1142,7 @@ class Subclient(object):
                 }
             }
         }
+        """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._RESTORE,
