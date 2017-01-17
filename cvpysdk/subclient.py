@@ -169,6 +169,40 @@ class Subclients(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _set_subclient_content_(self, subclient_content):
+        """Creates the list of content JSON to pass to the API to add a new Subclient
+            with the content passed in subclient content.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        """
+        content = []
+
+        if self._backupset_object._agent_object.agent_name == "file system":
+            for path in subclient_content:
+                file_system_dict = {
+                    "path": path
+                }
+
+                content.append(file_system_dict)
+        elif self._backupset_object._agent_object.agent_name == "cloud apps":
+            for account in subclient_content:
+                cloud_apps_dict = {
+                    "cloudconnectorContent": {
+                        "includeAccounts": {
+                            "contentName": account[0],
+                            "contentValue": account[1]
+                        }
+                    }
+                }
+
+                content.append(cloud_apps_dict)
+
+        return content
+
     def has_subclient(self, subclient_name):
         """Checks if a subclient exists in the commcell with the input subclient name.
 
@@ -206,10 +240,13 @@ class Subclients(object):
                     if response is empty
                     if response is not success
         """
-        if not (isinstance(subclient_name, str) or
-                isinstance(content, list) or
+        if not (isinstance(subclient_name, str) and
+                isinstance(content, list) and
                 isinstance(storage_policy, str)):
             raise SDKException('Subclient', '101')
+
+        if content == []:
+            raise SDKException('Subclient', '102', 'Subclient content can not be empty')
 
         request_json = {
             "subClientProperties": {
@@ -221,7 +258,7 @@ class Subclients(object):
                     "instanceName": self._backupset_object._instance_name,
                     "subclientName": subclient_name
                 },
-                "content": [{"path": path} for path in content],
+                "content": self._set_subclient_content_(content),
                 "commonProperties": {
                     "description": description,
                     "enableBackup": True,
@@ -252,6 +289,8 @@ class Subclients(object):
                 else:
                     subclient_id = response.json()['response']['entity']['subclientId']
                     print 'Created Subclient: "{0}" successfully'.format(subclient_name)
+                    self._subclients = self._get_subclients()
+
                     return Subclient(self._backupset_object, subclient_name, subclient_id)
             else:
                 raise SDKException('Response', '102')
@@ -423,6 +462,64 @@ class Subclient(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _get_subclient_content_(self, subclient_content):
+        """Gets the appropriate content from the Subclient relevant to the user.
+
+            Args:
+                subclient_content (list)  --  list of dictionaries containing the subclient content
+                                                  associated with the subclient
+
+            Returns:
+                list - list of content associated with the subclient
+        """
+        content = []
+
+        if self._backupset_object._agent_object.agent_name == "file system":
+            for path in subclient_content:
+                content.append(str(path["path"]))
+        elif self._backupset_object._agent_object.agent_name == "cloud apps":
+            for account in subclient_content:
+                temp_account = account["cloudconnectorContent"]["includeAccounts"]
+                account_name = temp_account["contentName"]
+                account_value = temp_account["contentValue"]
+                content.append((account_name, account_value))
+
+        return content
+
+    def _set_subclient_content_(self, subclient_content):
+        """Creates the list of content JSON to pass to the API to add a new Subclient
+            with the content passed in subclient content.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        """
+        content = []
+
+        if self._backupset_object._agent_object.agent_name == "file system":
+            for path in subclient_content:
+                file_system_dict = {
+                    "path": path
+                }
+
+                content.append(file_system_dict)
+        elif self._backupset_object._agent_object.agent_name == "cloud apps":
+            for account in subclient_content:
+                cloud_apps_dict = {
+                    "cloudconnectorContent": {
+                        "includeAccounts": {
+                            "contentName": account[0],
+                            "contentValue": account[1]
+                        }
+                    }
+                }
+
+                content.append(cloud_apps_dict)
+
+        return content
+
     def _initialize_subclient_properties(self):
         """Initializes the common properties for the subclient.
 
@@ -446,10 +543,7 @@ class Subclient(object):
 
         self._is_backup_enabled = subclient_props['commonProperties']['enableBackup']
 
-        self._content = []
-
-        for path in subclient_props['content']:
-            self._content.append(str(path['path']))
+        self._content = self._get_subclient_content_(subclient_props["content"])
 
     @staticmethod
     def _convert_size(input_size):
@@ -474,7 +568,9 @@ class Subclient(object):
 
             Args:
                 subclient_description (str)     --  description of the subclient
-                subclient_content     (bool)    --  content of the subclient
+                subclient_content     (list)    --  content of the subclient
+                backup                (bool)    --  enable backup or not
+                enable_time           (str)     --  time to re-enable the activity at
 
             Returns:
                 (bool, str, str):
@@ -505,7 +601,7 @@ class Subclient(object):
                     "instanceName": self._backupset_object._instance_name,
                     "subclientName": self.subclient_name
                 },
-                "content": [{"path": path} for path in subclient_content],
+                "content": self._set_subclient_content_(subclient_content),
                 "commonProperties": {
                     "description": subclient_description,
                     "enableBackup": backup
@@ -531,7 +627,7 @@ class Subclient(object):
                     "instanceName": self._backupset_object._instance_name,
                     "subclientName": self.subclient_name
                 },
-                "content": [{"path": path} for path in subclient_content],
+                "content": self._set_subclient_content_(subclient_content),
                 "commonProperties": {
                     "description": subclient_description,
                     "enableBackup": False,
@@ -636,7 +732,7 @@ class Subclient(object):
     @content.setter
     def content(self, value):
         """Sets the content of the subclient as the value provided as input."""
-        if isinstance(value, list):
+        if isinstance(value, list) and value != []:
             output = self._update(self.description, value, self.is_backup_enabled)
 
             if output[0]:
@@ -647,7 +743,7 @@ class Subclient(object):
                 print "Please check the documentation for more details on the error"
         else:
             raise SDKException('Subclient', '102',
-                               'Subclient content should be a list value')
+                               'Subclient content should be a list value and not empty')
 
     def enable_backup(self):
         """Enables Backup for the subclient."""
