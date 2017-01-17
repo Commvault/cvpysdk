@@ -241,12 +241,13 @@ class Commcell(object):
         """
         request_url = self._commcell_service + request_url
 
-        self._headers['Content-type'] = "application/" + content_type
+        try:
+            self._headers['Content-type'] = "application/" + content_type
 
-        flag, response = self._cvpysdk_object.make_request(request_type.upper(),
-                                                           request_url,
-                                                           request_body)
-
-        self._headers['Content-type'] = "application/json"
+            flag, response = self._cvpysdk_object.make_request(request_type.upper(),
+                                                               request_url,
+                                                               request_body)
+        finally:
+            self._headers['Content-type'] = "application/json"
 
         return response
