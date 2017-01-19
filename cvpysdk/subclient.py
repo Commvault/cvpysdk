@@ -1474,22 +1474,6 @@ class CloudAppsSubclient(Subclient):
 
         return content
 
-    def _set_subclient_content_(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to add a new Subclient
-            with the content passed in subclient content.
-
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
-
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
-        """
-        agent_name = self._backupset_object._agent_object.agent_name
-
-        content = self._content_dict[agent_name](subclient_content)
-
-        return content
-
 
 def _file_system_subclient_content(subclient_content):
     """Creates a list of the content JSON to pass to the Subclient API to add the content
