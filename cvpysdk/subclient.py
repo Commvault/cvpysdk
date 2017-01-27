@@ -17,7 +17,7 @@ Subclient: Class for representing a single subclient, and to perform operations 
 
 
 Subclients:
-    __init__(class_object)  --  initialise object of subclients object associated with
+    __init__(class_object)      --  initialise object of subclients object associated with
                                         the specified backup set/instance.
     __str__()                   --  returns all the subclients associated with the backupset
     __repr__()                  --  returns the string for the instance of the Subclients class
@@ -84,9 +84,12 @@ class Subclients(object):
             self._backupset_object = class_object
         elif isinstance(class_object, Instance):
             self._instance_object = class_object
-            self._backupset_object = Backupset(class_object._agent_object, 'defaultBackupSet',
-                                               instance_id=class_object.instance_id,
-                                               instance_name=class_object.instance_name)
+            self._backupset_object = Backupset(
+                class_object._agent_object,
+                'defaultBackupSet',
+                instance_id=class_object.instance_id,
+                instance_name=class_object.instance_name
+            )
 
         self._commcell_object = self._backupset_object._commcell_object
 
@@ -105,7 +108,8 @@ class Subclients(object):
                 str - string of all the subclients of th backupset of an agent of a client
         """
         representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
-            'S. No.', 'Subclient', 'Backupset', 'Instance', 'Agent', 'Client')
+            'S. No.', 'Subclient', 'Backupset', 'Instance', 'Agent', 'Client'
+        )
 
         for index, subclient in enumerate(self._subclients):
             sub_str = '{:^5}\t{:20}\t{:20}\t{:^20}\t{:20}\t{:20}\n'.format(
@@ -114,7 +118,8 @@ class Subclients(object):
                 self._backupset_object.backupset_name,
                 self._backupset_object._instance_name,
                 self._backupset_object._agent_object.agent_name,
-                self._backupset_object._agent_object._client_object.client_name)
+                self._backupset_object._agent_object._client_object.client_name
+            )
             representation_string += sub_str
 
         return representation_string.strip()
@@ -122,8 +127,8 @@ class Subclients(object):
     def __repr__(self):
         """Representation string for the instance of the Subclients class."""
         return "Subclients class instance for Backupset: '{0}', of Instance: '{1}'".format(
-            self._backupset_object.backupset_name,
-            self._backupset_object._instance_name)
+            self._backupset_object.backupset_name, self._backupset_object._instance_name
+        )
 
     def _get_subclients(self):
         """Gets all the subclients associated to the client specified by the backupset object.
@@ -140,8 +145,9 @@ class Subclients(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._ALL_SUBCLIENTS)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._ALL_SUBCLIENTS
+        )
 
         if flag:
             if response.json() and 'subClientProperties' in response.json():
@@ -191,9 +197,9 @@ class Subclients(object):
         """Adds a new subclient to the backupset.
 
             Args:
-                subclient_name (str) --  name of the new subclient to add
-                content (list)       --  list of paths of the files/folders to add to the subclient
-                storage_policy (str) --  name of the storage policy to associate with the subclient
+                subclient_name  (str)   --  name of the new subclient to add
+                content         (list)  --  list of paths of the files/folders to add to subclient
+                storage_policy  (str)   --  name of the storage policy to associate with subclient
 
             Returns:
                 object - instance of the Subclient class
@@ -206,58 +212,72 @@ class Subclients(object):
                     if response is empty
                     if response is not success
         """
-        if not (isinstance(subclient_name, str) or
-                isinstance(content, list) or
+        if not (isinstance(subclient_name, str) and
+                isinstance(content, list) and
                 isinstance(storage_policy, str)):
             raise SDKException('Subclient', '101')
 
-        request_json = {
-            "subClientProperties": {
-                "contentOperationType": 2,
-                "subClientEntity": {
-                    "clientName": self._backupset_object._agent_object._client_object.client_name,
-                    "appName": self._backupset_object._agent_object.agent_name,
-                    "backupsetName": self._backupset_object.backupset_name,
-                    "instanceName": self._backupset_object._instance_name,
-                    "subclientName": subclient_name
-                },
-                "content": [{"path": path} for path in content],
-                "commonProperties": {
-                    "description": description,
-                    "enableBackup": True,
-                    "storageDevice": {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": storage_policy
+        if content == []:
+            raise SDKException('Subclient', '102', 'Subclient content can not be empty')
+
+        if not self.has_subclient(subclient_name):
+            request_json = {
+                "subClientProperties": {
+                    "contentOperationType": 2,
+                    "subClientEntity": {
+                        "clientName": self._backupset_object._agent_object._client_object.client_name,
+                        "appName": self._backupset_object._agent_object.agent_name,
+                        "backupsetName": self._backupset_object.backupset_name,
+                        "instanceName": self._backupset_object._instance_name,
+                        "subclientName": subclient_name
+                    },
+                    "content": [{"path": path} for path in content],
+                    "commonProperties": {
+                        "description": description,
+                        "enableBackup": True,
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy
+                            }
                         }
                     }
                 }
             }
-        }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._ADD_SUBCLIENT,
-                                                                            request_json)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', self._ADD_SUBCLIENT, request_json
+            )
 
-        if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response']['errorCode']
+            if flag:
+                if response.json() and 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
 
-                if error_code != 0:
-                    error_string = response.json()['response']['errorString']
-                    raise SDKException('Subclient',
-                                       '102',
-                                       ('Failed to create subclient.\n'
-                                        'Error Message: {0}\n'
-                                        'Error Code: {1}').format(error_string, error_code))
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        raise SDKException(
+                            'Subclient',
+                            '102',
+                            ('Failed to create subclient.\n'
+                             'Error Message: {0}\n'
+                             'Error Code: {1}').format(error_string, error_code)
+                        )
+                    else:
+                        subclient_id = response.json()['response']['entity']['subclientId']
+                        print 'Created Subclient: "{0}" successfully'.format(subclient_name)
+
+                        # initialize the subclients again
+                        # so the subclient object has all the subclients
+                        self._subclients = self._get_subclients()
+                        return Subclient(self._backupset_object, subclient_name, subclient_id)
                 else:
-                    subclient_id = response.json()['response']['entity']['subclientId']
-                    print 'Created Subclient: "{0}" successfully'.format(subclient_name)
-                    return Subclient(self._backupset_object, subclient_name, subclient_id)
+                    raise SDKException('Response', '102')
             else:
-                raise SDKException('Response', '102')
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(subclient_name)
+            )
 
     def get(self, subclient_name):
         """Returns a subclient object of the specified backupset name.
@@ -283,9 +303,9 @@ class Subclients(object):
                                  subclient_name,
                                  self._subclients[subclient_name])
 
-            raise SDKException('Subclient',
-                               '102',
-                               'No subclient exists with name: {0}'.format(subclient_name))
+            raise SDKException(
+                'Subclient', '102', 'No subclient exists with name: {0}'.format(subclient_name)
+            )
 
     def delete(self, subclient_name):
         """Deletes the subclient specified by the subclient_name from the backupset.
@@ -309,11 +329,13 @@ class Subclients(object):
             subclient_name = str(subclient_name).lower()
 
         if self.has_subclient(subclient_name):
-            delete_subclient_service = self._commcell_object._services.SUBCLIENT % \
-                (self._subclients[subclient_name])
+            delete_subclient_service = self._commcell_object._services.SUBCLIENT % (
+                self._subclients[subclient_name]
+            )
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'DELETE', delete_subclient_service)
+                'DELETE', delete_subclient_service
+            )
 
             if flag:
                 if response.json():
@@ -347,9 +369,9 @@ class Subclients(object):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         else:
-            raise SDKException('Subclient',
-                               '102',
-                               'No subclient exists with name: {0}'.format(subclient_name))
+            raise SDKException(
+                'Subclient', '102', 'No subclient exists with name: {0}'.format(subclient_name)
+            )
 
 
 class Subclient(object):
@@ -360,8 +382,8 @@ class Subclient(object):
 
             Args:
                 backupset_object (object)  --  instance of the Backupset class
-                subclient_name (str)       --  name of the subclient
-                subclient_id (str)         --  id of the subclient
+                subclient_name   (str)     --  name of the subclient
+                subclient_id     (str)     --  id of the subclient
                     default: None
 
             Returns:
@@ -390,7 +412,8 @@ class Subclient(object):
         """String representation of the instance of this class."""
         representation_string = 'Subclient class instance for Subclient: "{0}" of Backupset: "{1}"'
         return representation_string.format(
-            self.subclient_name, self._backupset_object.backupset_name)
+            self.subclient_name, self._backupset_object.backupset_name
+        )
 
     def _get_subclient_id(self):
         """Gets the subclient id associated to the specified backupset name and client name.
@@ -431,20 +454,40 @@ class Subclient(object):
         """
         subclient_props = self._get_subclient_properties()
 
-        self._description = str(subclient_props['commonProperties']['description'])
-        self._last_backup_time = time.ctime(subclient_props['commonProperties']['lastBackupTime'])
+        if 'description' in subclient_props['commonProperties']:
+            self._description = str(subclient_props['commonProperties']['description'])
+        else:
+            self._description = ' -- '
+
+        if 'lastBackupTime' in subclient_props['commonProperties']:
+            if subclient_props['commonProperties']['nextBackupTime'] == 0:
+                self._last_backup_time = ' -- '
+            else:
+                self._last_backup_time = time.ctime(
+                    subclient_props['commonProperties']['lastBackupTime']
+                )
+        else:
+            self._last_backup_time = ' -- '
 
         if 'onDemandSubClient' in subclient_props['commonProperties']:
             self._on_demand_subclient = subclient_props['commonProperties']['onDemandSubClient']
         else:
             self._on_demand_subclient = False
 
-        if subclient_props['commonProperties']['nextBackupTime'] == 0:
-            self._next_backup = ' -- '
+        if 'nextBackupTime' in subclient_props['commonProperties']:
+            if subclient_props['commonProperties']['nextBackupTime'] == 0:
+                self._next_backup = ' -- '
+            else:
+                self._next_backup = time.ctime(
+                    subclient_props['commonProperties']['nextBackupTime']
+                )
         else:
-            self._next_backup = time.ctime(subclient_props['commonProperties']['nextBackupTime'])
+            self._next_backup = ' -- '
 
-        self._is_backup_enabled = subclient_props['commonProperties']['enableBackup']
+        if 'enableBackup' in subclient_props['commonProperties']:
+            self._is_backup_enabled = subclient_props['commonProperties']['enableBackup']
+        else:
+            self._is_backup_enabled = False
 
         self._content = []
 
@@ -474,7 +517,9 @@ class Subclient(object):
 
             Args:
                 subclient_description (str)     --  description of the subclient
-                subclient_content     (bool)    --  content of the subclient
+                subclient_content     (list)    --  content of the subclient
+                backup                (bool)    --  enable backup or not
+                enable_time           (str)     --  time to re-enable the activity at
 
             Returns:
                 (bool, str, str):
@@ -549,9 +594,9 @@ class Subclient(object):
         else:
             request_json = request_json2
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._SUBCLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._SUBCLIENT, request_json
+        )
 
         if flag:
             if response.json() and "response" in response.json():
@@ -630,13 +675,14 @@ class Subclient(object):
                 print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
                 print "Please check the documentation for more details on the error"
         else:
-            raise SDKException('Subclient', '102',
-                               'Subclient description should be a string value')
+            raise SDKException(
+                'Subclient', '102', 'Subclient description should be a string value'
+            )
 
     @content.setter
     def content(self, value):
         """Sets the content of the subclient as the value provided as input."""
-        if isinstance(value, list):
+        if isinstance(value, list) and value != []:
             output = self._update(self.description, value, self.is_backup_enabled)
 
             if output[0]:
@@ -646,8 +692,9 @@ class Subclient(object):
                 print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
                 print "Please check the documentation for more details on the error"
         else:
-            raise SDKException('Subclient', '102',
-                               'Subclient content should be a list value')
+            raise SDKException(
+                'Subclient', '102', 'Subclient content should be a list value and not empty'
+            )
 
     def enable_backup(self):
         """Enables Backup for the subclient."""
@@ -710,15 +757,15 @@ class Subclient(object):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
-                backup_level (str)         --  level of backup the user wish to run
+                backup_level        (str)   --  level of backup the user wish to run
                         Full / Incremental / Synthetic_full
                     default: Incremental
 
-                incremental_backup (bool)  --  run incremental backup
+                incremental_backup  (bool)  --  run incremental backup
                         only applicable in case of Synthetic_full backup
                     default: False
 
-                incremental_level (str)    --  run incremental backup before / after synthetic full
+                incremental_level   (str)   --  run incremental backup before/after synthetic full
                         BEFORE_SYNTH / AFTER_SYNTH
                         only applicable in case of Synthetic_full backup
                     default: BEFORE_SYNTH
@@ -737,7 +784,8 @@ class Subclient(object):
             raise SDKException('Subclient', '103')
 
         self._BACKUP = self._commcell_object._services.SUBCLIENT_BACKUP % (
-            self.subclient_id, backup_level)
+            self.subclient_id, backup_level
+        )
 
         if backup_level == 'synthetic_full':
             if incremental_backup:
@@ -746,21 +794,22 @@ class Subclient(object):
             else:
                 self._BACKUP += '&runIncrementalBackup=False'
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._BACKUP)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._BACKUP)
         if flag:
             if response.json():
                 if "jobIds" in response.json():
                     print '{0} Backup job started for subclient: "{1}" with job id: "{2}"'.format(
                         str(backup_level).capitalize(),
                         self.subclient_name,
-                        response.json()['jobIds'][0])
+                        response.json()['jobIds'][0]
+                    )
 
                     time.sleep(1)
                     return Job(self._commcell_object, response.json()['jobIds'][0])
                 elif "errorCode" in response.json():
-                    o_str = "Initializing backup failed with error code: %s" % \
-                        (response.json()['errorCode'])
+                    o_str = "Initializing backup failed with error code: %s" % (
+                        response.json()['errorCode']
+                    )
                     o_str += "\nError message: %s" % (response.json()['errorMessage'])
                     raise SDKException('Subclient', '102', o_str)
             else:
@@ -773,14 +822,14 @@ class Subclient(object):
         """Gets the content of the backup for this subclient at the path specified.
 
             Args:
-                path (str)                  --  folder path to get the contents of
-                show_deleted_files (bool)   --  include deleted files in the content or not
+                path                (str)   --  folder path to get the contents of
+                show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: False
-                vm_file_browse (bool)       --  browse files and folders inside
+                vm_file_browse      (bool)  --  browse files and folders inside
                                                     a guest virtual machine
                     only applicable when browsing content inside a guest virtual machine
                     default: False
-                vm_disk_browse (bool)       --  browse virtual machine files
+                vm_disk_browse      (bool)  --  browse virtual machine files
                                                     e.g.; .vmdk files, etc.
                     only applicable when browsing content inside a guest virtual machine
                     default: False
@@ -808,42 +857,53 @@ class Subclient(object):
 
         if flag:
             if response.json() and 'browseResponses' in response.json():
-                browse_result = response.json()['browseResponses'][0]['browseResult']
+                if 'messages' in response.json()['browseResponses'][0]:
+                    error = response.json()['browseResponses'][0]['messages'][0]
+                    error_code = error['errorCode']
+                    error_message = error['errorMessage']
+                    print "Failed to browse for subclient backup content with error code: %s" % (
+                        error_code
+                    )
+                    print "Error message: %s" % (error_message)
+                elif 'browseResult' in response.json()['browseResponses'][0]:
+                    browse_result = response.json()['browseResponses'][0]['browseResult']
 
-                if 'dataResultSet' in browse_result:
-                    result_set = browse_result['dataResultSet']
-                    full_result = []
-                    paths = []
+                    if 'dataResultSet' in browse_result:
+                        result_set = browse_result['dataResultSet']
+                        full_result = []
+                        paths = []
 
-                    for result in result_set:
-                        name = str(result['displayName'])
-                        path = str(result['path'])
-                        mod_time = time.localtime(result['modificationTime'])
-                        mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
+                        for result in result_set:
+                            name = str(result['displayName'])
+                            path = str(result['path'])
+                            mod_time = time.localtime(result['modificationTime'])
+                            mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
 
-                        if 'file' in result['flags']:
-                            file_or_folder = 'File'
-                        else:
-                            file_or_folder = 'Folder'
+                            if 'file' in result['flags']:
+                                file_or_folder = 'File'
+                            else:
+                                file_or_folder = 'Folder'
 
-                        # convert bits to bytes and then pass to convert_size
-                        size = self._convert_size(float(result['size']) / 8.0)
+                            # convert bits to bytes and then pass to convert_size
+                            size = self._convert_size(float(result['size']) / 8.0)
 
-                        temp = {
-                            path: [name, file_or_folder, size, mod_time]
-                        }
+                            temp = {
+                                path: [name, file_or_folder, size, mod_time]
+                            }
 
-                        paths.append(path)
-                        full_result.append(temp)
+                            paths.append(path)
+                            full_result.append(temp)
 
-                    return paths, full_result
-                elif 'aggrResultSet' in browse_result:
-                    aggr_result_set = browse_result['aggrResultSet']
-                    if aggr_result_set[0]['count'] == 0:
-                        print 'No data found at the path specified.'
+                        return paths, full_result
+                    elif 'aggrResultSet' in browse_result:
+                        aggr_result_set = browse_result['aggrResultSet']
+                        if aggr_result_set[0]['count'] == 0:
+                            print 'No data found at the path specified.'
+                    else:
+                        print 'Did not get the expected data'
+                        print response.json()
                 else:
-                    print 'Did not get the expected data'
-                    print response.json()
+                    raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')
         else:
@@ -860,16 +920,16 @@ class Subclient(object):
             at the path specified in the time range specified.
 
             Args:
-                path (str)                  --  folder path to get the contents of
-                show_deleted_files (bool)   --  include deleted files in the content or not
+                path                (str)   --  folder path to get the contents of
+                show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: True
-                restore_index (bool)        --  restore index if it is not cached
+                restore_index       (bool)  --  restore index if it is not cached
                     default: True
-                from_date (str)             --  date to get the contents after
+                from_date           (str)   --  date to get the contents after
                         format: dd/MM/YYYY
                         gets contents from 01/01/1970 if not specified
                     default: None
-                to_date (str)               --  date to get the contents before
+                to_date             (str)  --  date to get the contents before
                         format: dd/MM/YYYY
                         gets contents till current day if not specified
                     default: None
@@ -936,26 +996,22 @@ class Subclient(object):
 
         request_json = {
             "opType": 0,
-            "queries": [
-                {
-                    "type": 0,
-                    "queryId": "dataQuery",
-                    "dataParam": {
-                        "sortParam": {
-                            "ascending": False,
-                            "sortBy": [0]
-                        }
+            "queries": [{
+                "type": 0,
+                "queryId": "dataQuery",
+                "dataParam": {
+                    "sortParam": {
+                        "ascending": False,
+                        "sortBy": [0]
                     }
                 }
-            ],
+            }],
             "mode": {
                 "mode": 2
             },
-            "paths": [
-                {
-                    "path": path
-                }
-            ],
+            "paths": [{
+                "path": path
+            }],
             "options": {
                 "showDeletedFiles": show_deleted_files,
                 "restoreIndex": restore_index
@@ -974,9 +1030,9 @@ class Subclient(object):
             }
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._BROWSE,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._BROWSE, request_json
+        )
 
         if flag:
             if response.json() and 'browseResponses' in response.json():
@@ -1017,8 +1073,9 @@ class Subclient(object):
                     error_code = message['errorCode']
                     error_message = message['errorMessage']
 
-                    print "Failed to browse for subclient backup content with error code: %s" % \
-                        (error_code)
+                    print "Failed to browse for subclient backup content with error code: %s" % (
+                        error_code
+                    )
                     print "Error message: %s" % (error_message)
                 else:
                     print 'No data found at the path specified.'
@@ -1028,17 +1085,14 @@ class Subclient(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def restore_in_place(self,
-                         paths,
-                         overwrite=True,
-                         restore_data_and_acl=True):
+    def restore_in_place(self, paths, overwrite=True, restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
-                paths (list)                    --  list of full paths of files/folders to restore
-                overwrite (bool)                --  unconditional overwrite files during restore
+                paths                   (list)  --  list of full paths of files/folders to restore
+                overwrite               (bool)  --  unconditional overwrite files during restore
                     default: True
-                restore_data_and_acl (bool)     --  restore data and ACL files
+                restore_data_and_acl    (bool)  --  restore data and ACL files
                     default: True
 
             Returns:
@@ -1082,32 +1136,30 @@ class Subclient(object):
                     "subclientName": self.subclient_name,
                     "subclientId": int(self.subclient_id),
                 }],
-                "subTasks": [
-                    {
-                        "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 3,
-                            "operationType": 1001
-                        },
-                        "options": {
-                            "restoreOptions": {
-                                "commonOptions": {
-                                    "unconditionalOverwrite": overwrite
-                                },
-                                "destination": {
-                                    "inPlace": True,
-                                    "destClient": {
-                                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                                        "clientName": self._backupset_object._agent_object._client_object.client_name,
-                                    }
-                                },
-                                "fileOption": {
-                                    "sourceItem": paths
+                "subTasks": [{
+                    "subTaskOperation": 1,
+                    "subTask": {
+                        "subTaskType": 3,
+                        "operationType": 1001
+                    },
+                    "options": {
+                        "restoreOptions": {
+                            "commonOptions": {
+                                "unconditionalOverwrite": overwrite
+                            },
+                            "destination": {
+                                "inPlace": True,
+                                "destClient": {
+                                    "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                                    "clientName": self._backupset_object._agent_object._client_object.client_name,
                                 }
+                            },
+                            "fileOption": {
+                                "sourceItem": paths
                             }
                         }
                     }
-                ]
+                }]
             }
         }
 
@@ -1145,9 +1197,9 @@ class Subclient(object):
         }
         """
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._RESTORE,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._RESTORE, request_json
+        )
 
         if flag:
             if response.json():
@@ -1184,13 +1236,14 @@ class Subclient(object):
             at the specified destionation location.
 
             Args:
-                client (str/object)             --  either the name of the client or
-                                                        the instance of the Client
-                destination_path (str)          --  full path of the restore location on client
-                paths (list)                    --  list of full paths of files/folders to restore
-                overwrite (bool)                --  unconditional overwrite files during restore
+                client                (str/object) --  either the name of the client or
+                                                           the instance of the Client
+                destination_path      (str)        --  full path of the restore location on client
+                paths                 (list)       --  list of full paths of
+                                                           files/folders to restore
+                overwrite             (bool)       --  unconditional overwrite files during restore
                     default: True
-                restore_data_and_acl (bool)     --  restore data and ACL files
+                restore_data_and_acl  (bool)       --  restore data and ACL files
                     default: True
 
             Returns:
@@ -1260,33 +1313,31 @@ class Subclient(object):
                     "subclientName": self.subclient_name,
                     "subclientId": int(self.subclient_id),
                 }],
-                "subTasks": [
-                    {
-                        "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 3,
-                            "operationType": 1001
-                        },
-                        "options": {
-                            "restoreOptions": {
-                                "commonOptions": {
-                                    "unconditionalOverwrite": overwrite
-                                },
-                                "destination": {
-                                    "inPlace": False,
-                                    "destPath": [destination_path],
-                                    "destClient": {
-                                        "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                                        "clientName": self._backupset_object._agent_object._client_object.client_name,
-                                    }
-                                },
-                                "fileOption": {
-                                    "sourceItem": paths
+                "subTasks": [{
+                    "subTaskOperation": 1,
+                    "subTask": {
+                        "subTaskType": 3,
+                        "operationType": 1001
+                    },
+                    "options": {
+                        "restoreOptions": {
+                            "commonOptions": {
+                                "unconditionalOverwrite": overwrite
+                            },
+                            "destination": {
+                                "inPlace": False,
+                                "destPath": [destination_path],
+                                "destClient": {
+                                    "clientId": int(self._backupset_object._agent_object._client_object.client_id),
+                                    "clientName": self._backupset_object._agent_object._client_object.client_name,
                                 }
+                            },
+                            "fileOption": {
+                                "sourceItem": paths
                             }
                         }
                     }
-                ]
+                }]
             }
         }
 
@@ -1325,9 +1376,9 @@ class Subclient(object):
         }
         """
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._RESTORE,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._RESTORE, request_json
+        )
 
         if flag:
             if response.json():

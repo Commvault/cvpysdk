@@ -162,9 +162,9 @@ class Clients(object):
             if self.has_client(client_name):
                 return Client(self._commcell_object, client_name, self._clients[client_name])
 
-            raise SDKException('Client',
-                               '104',
-                               'No client exists with name: {0}'.format(client_name))
+            raise SDKException(
+                'Client', '104', 'No client exists with name: {0}'.format(client_name)
+            )
 
     def delete(self, client_name):
         """Deletes the client from the commcell.
@@ -192,8 +192,9 @@ class Clients(object):
                 CLIENT = self._commcell_object._services.CLIENT % (client_id)
                 CLIENT += "?forceDelete=1"
 
-                flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE',
-                                                                                    CLIENT)
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    'DELETE', CLIENT
+                )
 
                 error_code = warning_code = 0
 
@@ -205,6 +206,7 @@ class Clients(object):
                                 print o_str.format(client_name)
                             else:
                                 print response.text
+
                             self._clients = self._get_clients()
                         else:
                             if 'errorCode' in response.json():
@@ -224,13 +226,11 @@ class Clients(object):
                     response_string = self._commcell_object._update_response_(response.text)
                     exception_message += "\n" + response_string
 
-                    raise SDKException('Client',
-                                       '104',
-                                       exception_message)
+                    raise SDKException('Client', '104', exception_message)
             else:
-                raise SDKException('Client',
-                                   '104',
-                                   'No client exists with name: {0}'.format(client_name))
+                raise SDKException(
+                    'Client', '104', 'No client exists with name: {0}'.format(client_name)
+                )
 
 
 class Client(object):
@@ -241,8 +241,8 @@ class Client(object):
 
             Args:
                 commcell_object (object)  --  instance of the Commcell class
-                client_name (str)         --  name of the client
-                client_id (str)           --  id of the client
+                client_name     (str)     --  name of the client
+                client_id       (str)     --  id of the client
                     default: None
 
             Returns:
@@ -287,8 +287,7 @@ class Client(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._CLIENT)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._CLIENT)
 
         if flag:
             if response.json() and 'clientProperties' in response.json().keys():
@@ -364,22 +363,18 @@ class Client(object):
 
         request_json1 = {
             "association": {
-                "entity": [
-                    {
-                        "clientName": self.client_name
-                    }
-                ]
+                "entity": [{
+                    "clientName": self.client_name
+                }]
             },
             "clientProperties": {
                 "clientProps": {
                     "clientActivityControl": {
-                        "activityControlOptions": [
-                            {
-                                "activityType": options_dict[option],
-                                "enableAfterADelay": False,
-                                "enableActivityType": enable
-                            }
-                        ]
+                        "activityControlOptions": [{
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": False,
+                            "enableActivityType": enable
+                        }]
                     }
                 }
             }
@@ -387,26 +382,22 @@ class Client(object):
 
         request_json2 = {
             "association": {
-                "entity": [
-                    {
-                        "clientName": self.client_name
-                    }
-                ]
+                "entity": [{
+                    "clientName": self.client_name
+                }]
             },
             "clientProperties": {
                 "clientProps": {
                     "clientActivityControl": {
-                        "activityControlOptions": [
-                            {
-                                "activityType": options_dict[option],
-                                "enableAfterADelay": True,
-                                "enableActivityType": False,
-                                "dateTime": {
-                                    "TimeZoneName": "(UTC) Coordinated Universal Time",
-                                    "timeValue": enable_time
-                                }
+                        "activityControlOptions": [{
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": True,
+                            "enableActivityType": False,
+                            "dateTime": {
+                                "TimeZoneName": "(UTC) Coordinated Universal Time",
+                                "timeValue": enable_time
                             }
-                        ]
+                        }]
                     }
                 }
             }
@@ -473,9 +464,9 @@ class Client(object):
         """
         request_json = self._request_json_('Backup')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -519,9 +510,9 @@ class Client(object):
 
         request_json = self._request_json_('Backup', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -552,9 +543,9 @@ class Client(object):
         """
         request_json = self._request_json_('Backup', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -585,9 +576,9 @@ class Client(object):
         """
         request_json = self._request_json_('Restore')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -631,9 +622,9 @@ class Client(object):
 
         request_json = self._request_json_('Restore', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -664,9 +655,9 @@ class Client(object):
         """
         request_json = self._request_json_('Restore', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -697,9 +688,9 @@ class Client(object):
         """
         request_json = self._request_json_('Data Aging')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -743,9 +734,9 @@ class Client(object):
 
         request_json = self._request_json_('Data Aging', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -776,9 +767,9 @@ class Client(object):
         """
         request_json = self._request_json_('Data Aging', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._CLIENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():

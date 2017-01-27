@@ -126,8 +126,9 @@ class MediaAgents(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._MEDIA_AGENTS)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._MEDIA_AGENTS
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -188,9 +189,9 @@ class MediaAgents(object):
                                   media_agent_name,
                                   self._media_agents[media_agent_name])
 
-            raise SDKException('Storage',
-                               '101',
-                               'No media agent exists with name: {0}'.format(media_agent_name))
+            raise SDKException(
+                'Storage', '101', 'No media agent exists with name: {0}'.format(media_agent_name)
+            )
 
 
 class MediaAgent(object):
@@ -200,9 +201,9 @@ class MediaAgent(object):
         """Initialise the MediaAgent object.
 
             Args:
-                commcell_object (object)    --  instance of the Commcell class
-                media_agent_name (str)      --  name of the media agent
-                media_agent_id (str)        --  id of the media agent
+                commcell_object   (object)  --  instance of the Commcell class
+                media_agent_name  (str)     --  name of the media agent
+                media_agent_id    (str)     --  id of the media agent
                     default: None
 
             Returns:
@@ -219,8 +220,9 @@ class MediaAgent(object):
         """String representation of the instance of this class."""
         representation_string = 'MediaAgent class instance for MA: "{0}", of Commcell: "{1}"'
 
-        return representation_string.format(self.media_agent_name,
-                                            self._commcell_object._headers['Host'])
+        return representation_string.format(
+            self.media_agent_name, self._commcell_object._headers['Host']
+        )
 
     def _get_media_agent_id(self):
         """Gets the media agent id associated with this media agent.
@@ -293,8 +295,7 @@ class DiskLibraries(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._LIBRARY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._LIBRARY)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -336,11 +337,11 @@ class DiskLibraries(object):
 
             Args:
                 library_name (str)        --  name of the new library to add
-                media_agent (str/object)  --  name or instance of media agent to add the library to
-                mount_path (str)          --  full path of the folder to mount the library at
-                username (str)            --  username to access the mount path
+                media_agent  (str/object) --  name or instance of media agent to add the library to
+                mount_path   (str)        --  full path of the folder to mount the library at
+                username     (str)        --  username to access the mount path
                     default: ""
-                password (str)            --  password to access the mount path
+                password     (str)        --  password to access the mount path
                     default: ""
 
             Returns:
@@ -371,22 +372,20 @@ class DiskLibraries(object):
             raise SDKException('Storage', '103')
 
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq": {
-                "isConfigRequired": 1,
-                "library": {
-                    "mediaAgentId": int(media_agent.media_agent_id),
-                    "libraryName": library_name,
-                    "mountPath": mount_path,
-                    "loginName": username,
-                    "password": password,
-                    "opType": 1
-                }
+            "isConfigRequired": 1,
+            "library": {
+                "mediaAgentId": int(media_agent.media_agent_id),
+                "libraryName": library_name,
+                "mountPath": mount_path,
+                "loginName": username,
+                "password": password,
+                "opType": 1
             }
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._LIBRARY,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._LIBRARY, request_json
+        )
 
         if flag:
             if response.json():
@@ -435,9 +434,9 @@ class DiskLibraries(object):
                                    library_name,
                                    self._libraries[library_name])
 
-            raise SDKException('Storage',
-                               '101',
-                               'No disk library exists with name: {0}'.format(library_name))
+            raise SDKException(
+                'Storage', '101', 'No disk library exists with name: {0}'.format(library_name)
+            )
 
 
 class DiskLibrary(object):
@@ -447,9 +446,9 @@ class DiskLibrary(object):
         """Initialise the DiskLibrary object.
 
             Args:
-                commcell_object (object)    --  instance of the Commcell class
-                library_name (str)          --  name of the disk library
-                library_id (str)            --  id of the disk library
+                commcell_object  (object)  --  instance of the Commcell class
+                library_name     (str)     --  name of the disk library
+                library_id       (str)     --  id of the disk library
                     default: None
 
             Returns:
@@ -465,8 +464,9 @@ class DiskLibrary(object):
     def __repr__(self):
         """String representation of the instance of this class."""
         representation_string = 'DiskLibrary class instance for library: "{0}" of Commcell: "{1}"'
-        return representation_string.format(self.library_name,
-                                            self._commcell_object._headers['Host'])
+        return representation_string.format(
+            self.library_name, self._commcell_object._headers['Host']
+        )
 
     def _get_library_id(self):
         """Gets the library id associated with this disk library.
@@ -539,8 +539,7 @@ class StoragePolicies(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._POLICY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._POLICY)
 
         if flag:
             if response.json() and 'policies' in response.json():
@@ -587,15 +586,18 @@ class StoragePolicies(object):
         """Adds a new Storage Policy to the Commcell.
 
             Args:
-                storage_policy_name (str) --  name of the new storage policy to add
-                library (str/object)      --  name or instance of the library to add the policy to
-                media_agent (str/object)  --  name or instance of media agent to add the policy to
-                dedup_path (str)          --  the path of the deduplication database
+                storage_policy_name (str)         --  name of the new storage policy to add
+                library             (str/object)  --  name or instance of the library
+                                                        to add the policy to
+                media_agent         (str/object)  --  name or instance of media agent
+                                                        to add the policy to
+                dedup_path          (str)         --  the path of the deduplication database
                     default: None
-                incremental_sp (str)      --  the name of the incremental storage policy
-                                                  associated with the storage policy
+                incremental_sp      (str)         --  the name of the incremental storage policy
+                                                        associated with the storage policy
                     default: None
-                retention_period (int)    --  time period in days to retain the data backup for
+                retention_period    (int)         --  time period in days to retain
+                                                        the data backup for
                     default: 5
 
             Returns:
@@ -680,9 +682,9 @@ class StoragePolicies(object):
                 "storagePolicyName": storage_policy_name
             }
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                                self._POLICY,
-                                                                                request_json)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', self._POLICY, request_json
+            )
 
             if flag:
                 if response.json():
@@ -728,7 +730,8 @@ class StoragePolicies(object):
             policy_delete_service = self._POLICY + '/{0}'.format(storage_policy_name)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'DELETE', policy_delete_service)
+                'DELETE', policy_delete_service
+            )
 
             if flag:
                 try:
@@ -749,9 +752,9 @@ class StoragePolicies(object):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         else:
-            raise SDKException('Storage',
-                               '101',
-                               'No policy exists with name: {0}'.format(storage_policy_name))
+            raise SDKException(
+                'Storage', '101', 'No policy exists with name: {0}'.format(storage_policy_name)
+            )
 
 
 class SchedulePolicies(object):
@@ -805,8 +808,7 @@ class SchedulePolicies(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._POLICY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._POLICY)
 
         if flag:
             if response.json() and 'taskDetail' in response.json():

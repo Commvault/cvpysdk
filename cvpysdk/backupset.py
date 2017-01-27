@@ -136,8 +136,9 @@ class Backupsets(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._ALL_BACKUPSETS)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._ALL_BACKUPSETS
+        )
 
         if flag:
             if response.json() and 'backupsetProperties' in response.json().keys():
@@ -191,7 +192,7 @@ class Backupsets(object):
         """Adds a new backup set to the agent.
 
             Args:
-                backupset_name (str)        --  name of the new backupset to add
+                backupset_name      (str)   --  name of the new backupset to add
                 on_demand_backupset (bool)  --  flag to specify whether the backupset to be added
                                                     is normal backupset or an on-demand backupset
 
@@ -225,7 +226,7 @@ class Backupsets(object):
                 },
                 "backupSetInfo": {
                     "commonBackupSet": {
-                        "onDemandBackupset": 1 if on_demand_backupset else 0
+                        "onDemandBackupset": True if on_demand_backupset else False
                     }
                 }
             }
@@ -257,10 +258,13 @@ class Backupsets(object):
                                 # so the backupsets object has all the backupsets
                                 self._backupsets = self._get_backupsets()
 
-                                return Backupset(self._agent_object,
-                                                 backupset_name,
-                                                 backupset_id,
-                                                 self._instance_id)
+                                return Backupset(
+                                    self._agent_object,
+                                    backupset_name,
+                                    backupset_id,
+                                    self._instance_id,
+                                    self._instance_name
+                                )
                             else:
                                 o_str = 'Failed to create new backupset with error code: "{0}"'
                                 print o_str.format(error_code)
@@ -278,9 +282,9 @@ class Backupsets(object):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         else:
-            raise SDKException('Backupset',
-                               '102',
-                               'Backupset "{0}" already exists.'.format(backupset_name))
+            raise SDKException(
+                'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name)
+            )
 
     def get(self, backupset_name):
         """Returns a backupset object of the specified backupset name.
@@ -308,9 +312,9 @@ class Backupsets(object):
                                  self._instance_id,
                                  self._instance_name)
 
-            raise SDKException('Backupset',
-                               '102',
-                               'No backupset exists with name: "{0}"'.format(backupset_name))
+            raise SDKException(
+                'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
+            )
 
     def delete(self, backupset_name):
         """Deletes the backup set from the agent.
@@ -334,11 +338,13 @@ class Backupsets(object):
             backupset_name = str(backupset_name).lower()
 
         if self.has_backupset(backupset_name):
-            delete_backupset_service = self._commcell_object._services.BACKUPSET % \
-                (self._backupsets[backupset_name])
+            delete_backupset_service = self._commcell_object._services.BACKUPSET % (
+                self._backupsets[backupset_name]
+            )
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'DELETE', delete_backupset_service)
+                'DELETE', delete_backupset_service
+            )
 
             if flag:
                 if response.json():
@@ -377,9 +383,9 @@ class Backupsets(object):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         else:
-            raise SDKException('Backupset',
-                               '102',
-                               'No backupset exists with name: "{0}"'.format(backupset_name))
+            raise SDKException(
+                'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
+            )
 
 
 class Backupset(object):
@@ -395,13 +401,13 @@ class Backupset(object):
         """Initialise the backupset object.
 
             Args:
-                agent_object (object)  --  instance of the Agent class
-                backupset_name (str)   --  name of the backupset
-                backupset_id (str)     --  id of the backupset
+                agent_object   (object)  --  instance of the Agent class
+                backupset_name (str)     --  name of the backupset
+                backupset_id   (str)     --  id of the backupset
                     default: None
-                instance_id (str)      --  id of the instance associated with the backupset
+                instance_id    (str)     --  id of the instance associated with the backupset
                     default: 1, for File System iDA
-                instance_name (str)    --  name of the instance associated with the backupset
+                instance_name  (str)     --  name of the instance associated with the backupset
                     default: None
 
             Returns:
@@ -453,8 +459,7 @@ class Backupset(object):
             Returns:
                 str - properties of the backupset
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._BACKUPSET)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._BACKUPSET)
 
         if flag:
             if response.json() and "backupsetProperties" in response.json():
@@ -498,8 +503,8 @@ class Backupset(object):
         """Triggers full backup job for the given subclient, and appeds its job object to the list.
 
             Args:
-                subclient_name (str)  --  name of the subclient to trigger the backup for
-                return_list (list)    --  list to append the job object to
+                subclient_name (str)   --  name of the subclient to trigger the backup for
+                return_list    (list)  --  list to append the job object to
 
             Returns:
                 None
@@ -517,9 +522,9 @@ class Backupset(object):
         """Updates the properties of the backupset.
 
             Args:
-                backupset_name        (str)     --  new name of the backupset
-                backupset_description (str)     --  description of the backupset
-                default_backupset     (bool)    --  default backupset property
+                backupset_name        (str)   --  new name of the backupset
+                backupset_description (str)   --  description of the backupset
+                default_backupset     (bool)  --  default backupset property
 
             Returns:
                 (bool, str, str):
@@ -554,9 +559,9 @@ class Backupset(object):
             request_json["backupsetProperties"]["commonBackupSet"][
                 "userDescription"] = backupset_description
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._BACKUPSET,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._BACKUPSET, request_json
+        )
 
         if flag:
             if response.json() and "response" in response.json():

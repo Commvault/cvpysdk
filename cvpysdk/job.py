@@ -48,8 +48,8 @@ class Job(object):
         """Initialise the Job class instance.
 
             Args:
-                commcell_object (object)  --  instance of the Commcell class
-                job_id (str / int)        --  id of the job
+                commcell_object (object)     --  instance of the Commcell class
+                job_id          (str / int)  --  id of the job
 
             Returns:
                 object - instance of the Job class
@@ -69,6 +69,8 @@ class Job(object):
 
         self._JOB = self._commcell_object._services.JOB % (self.job_id)
 
+        time.sleep(3)
+
         if not self._is_valid_job():
             raise SDKException('Job', '102')
 
@@ -79,6 +81,9 @@ class Job(object):
 
         self.finished = self._is_finished()
         self.status = str(self._get_job_summary()['status'])
+
+        self._delay_reason = ' -- '
+        self._pending_reason = ' -- '
 
         self._initialize_job_properties()
 
@@ -122,12 +127,22 @@ class Job(object):
                 bool - boolean that represents whether the job has finished or not
         """
         job_summary = self._get_job_summary()
+        job_details = self._get_job_details()
 
         self.status = str(job_summary['status'])
+
         if job_summary['lastUpdateTime'] != 0:
             self._end_time = time.ctime(job_summary['lastUpdateTime'])
         else:
             self._end_time = ' -- '
+
+        if 'pendingReason' in job_summary:
+            if job_summary['pendingReason']:
+                self._pending_reason = job_summary['pendingReason']
+
+        if 'reasonForJobDelay' in job_details['jobDetail']['progressInfo']:
+            if job_details['jobDetail']['progressInfo']['reasonForJobDelay']:
+                self._delay_reason = job_details['jobDetail']['progressInfo']['reasonForJobDelay']
 
         return ('completed' in self.status.lower() or
                 'killed' in self.status.lower() or
@@ -173,9 +188,10 @@ class Job(object):
         payload = {
             "jobId": int(self.job_id)
         }
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._JOB_DETAILS,
-                                                                            payload)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._JOB_DETAILS, payload
+        )
 
         if flag:
             if response.json() and 'job' in response.json().keys():
@@ -194,6 +210,8 @@ class Job(object):
                 None
         """
         job_summary = self._get_job_summary()
+        job_details = self._get_job_details()
+
         subclient_properties = job_summary['subclient']
 
         self._client_name = str(subclient_properties['clientName'])
@@ -213,6 +231,14 @@ class Job(object):
             self._subclient_name = str(subclient_properties['subclientName'])
         else:
             self._subclient_name = 'Not provided in Job details'
+
+        if 'pendingReason' in job_summary:
+            if job_summary['pendingReason']:
+                self._pending_reason = job_summary['pendingReason']
+
+        if 'reasonForJobDelay' in job_details['jobDetail']['progressInfo']:
+            if job_details['jobDetail']['progressInfo']['reasonForJobDelay']:
+                self._delay_reason = job_details['jobDetail']['progressInfo']['reasonForJobDelay']
 
     @property
     def client_name(self):
@@ -258,6 +284,16 @@ class Job(object):
     def end_time(self):
         """Treats the end time as a read-only attribute."""
         return self._end_time
+
+    @property
+    def delay_reason(self):
+        """Treats the job delay reason as a read-only attribute."""
+        return self._delay_reason
+
+    @property
+    def pending_reason(self):
+        """Treats the job pending reason as a read-only attribute."""
+        return self._pending_reason
 
     def pause(self):
         """Suspend the job.

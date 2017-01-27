@@ -69,7 +69,8 @@ class Instances(object):
                 str - string of all the instances of an agent of a client
         """
         representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
-            'S. No.', 'Instance', 'Agent', 'Client')
+            'S. No.', 'Instance', 'Agent', 'Client'
+        )
 
         for index, instance in enumerate(self._instances):
             sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\n'.format(
@@ -101,8 +102,9 @@ class Instances(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._ALL_INSTANCES)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._ALL_INSTANCES
+        )
 
         if flag:
             if response.json() and 'instanceProperties' in response.json().keys():
@@ -162,13 +164,11 @@ class Instances(object):
             instance_name = str(instance_name).lower()
 
             if self.has_instance(instance_name):
-                return Instance(self._agent_object,
-                                instance_name,
-                                self._instances[instance_name])
+                return Instance(self._agent_object, instance_name, self._instances[instance_name])
 
-            raise SDKException('Instance',
-                               '102',
-                               'No instance exists with name: "{0}"'.format(instance_name))
+            raise SDKException(
+                'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
+            )
 
 
 class Instance(object):
@@ -178,9 +178,9 @@ class Instance(object):
         """Initialise the instance object.
 
             Args:
-                agent_object (object)  --  instance of the Agent class
-                instance_name (str)   --  name of the instance
-                instance_id (str)     --  id of the instance
+                agent_object    (object)  --  instance of the Agent class
+                instance_name   (str)     --  name of the instance
+                instance_id     (str)     --  id of the instance
                     default: None
 
             Returns:

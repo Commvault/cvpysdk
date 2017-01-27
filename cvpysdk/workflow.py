@@ -144,11 +144,15 @@ class WorkFlow(object):
                                 else:
                                     required = False
 
-                                workflow_inputs.append([input_name,
-                                                        display_name,
-                                                        documentation,
-                                                        default_value,
-                                                        required])
+                                workflow_inputs.append(
+                                    [
+                                        input_name,
+                                        display_name,
+                                        documentation,
+                                        default_value,
+                                        required
+                                    ]
+                                )
                         else:
                             workflow_inputs = []
 

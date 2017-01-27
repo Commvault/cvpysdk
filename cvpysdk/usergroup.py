@@ -91,8 +91,9 @@ class UserGroups(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._USER_GROUPS)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._USER_GROUPS
+        )
 
         if flag:
             if response.json():
@@ -151,13 +152,15 @@ class UserGroups(object):
             user_group_name = str(user_group_name).lower()
 
             if self.has_user_group(user_group_name):
-                return UserGroup(self._commcell_object,
-                                 user_group_name,
-                                 self._user_groups[user_group_name])
+                return UserGroup(
+                    self._commcell_object,
+                    user_group_name,
+                    self._user_groups[user_group_name]
+                )
 
-            raise SDKException('UserGroup',
-                               '104',
-                               'No user group exists with name: {0}'.format(user_group_name))
+            raise SDKException(
+                'UserGroup', '104', 'No user group exists with name: {0}'.format(user_group_name)
+            )
 
     def delete(self, user_group_name):
         """Deletes the usergroup from the commcell.
@@ -235,7 +238,8 @@ class UserGroups(object):
                 raise SDKException(
                     'UserGroup',
                     '104',
-                    'No usergroup exists with name: {0}'.format(user_group_name))
+                    'No usergroup exists with name: {0}'.format(user_group_name)
+                )
 
 
 class UserGroup(object):
@@ -245,9 +249,9 @@ class UserGroup(object):
         """Initialise the UserGroup class instance.
 
             Args:
-                commcell_object (object)  --  instance of the Commcell class
-                user_group_name (str)     --  name of the user group
-                user_group_id (str)       --  id of the user group
+                commcell_object     (object)  --  instance of the Commcell class
+                user_group_name     (str)     --  name of the user group
+                user_group_id       (str)     --  id of the user group
                     default: None
 
             Returns:
@@ -268,8 +272,9 @@ class UserGroup(object):
         """String representation of the instance of this class."""
         representation_string = 'User Group instance for UserGroup: "{0}", of Commcell: "{1}"'
 
-        return representation_string.format(self.user_group_name,
-                                            self._commcell_object._headers['Host'])
+        return representation_string.format(
+            self.user_group_name, self._commcell_object._headers['Host']
+        )
 
     def _get_usergroup_id(self):
         """Gets the user group id associated with this user group.
@@ -291,7 +296,9 @@ class UserGroup(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._USERGROUP)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._USERGROUP
+        )
 
         if flag:
             if response.json():

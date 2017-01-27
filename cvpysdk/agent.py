@@ -108,8 +108,9 @@ class Agents(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET',
-                                                                            self._ALL_AGENTS)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._ALL_AGENTS
+        )
 
         if flag:
             if response.json():
@@ -166,9 +167,7 @@ class Agents(object):
             if self.has_agent(agent_name):
                 return Agent(self._client_object, agent_name, self._agents[agent_name])
 
-            raise SDKException('Agent',
-                               '102',
-                               'No agent exists with name: {0}'.format(agent_name))
+            raise SDKException('Agent', '102', 'No agent exists with name: {0}'.format(agent_name))
 
 
 class Agent(object):
@@ -179,8 +178,8 @@ class Agent(object):
 
             Args:
                 client_object (object)  --  instance of the Client class to which the agent belongs
-                agent_name (str)        --  name of the agent (File System, Virtual Server, etc.)
-                agent_id (str)          --  id of the associated agent
+                agent_name    (str)     --  name of the agent (File System, Virtual Server, etc.)
+                agent_id      (str)     --  id of the associated agent
                     default: None
 
             Returns:
@@ -236,48 +235,40 @@ class Agent(object):
 
         request_json1 = {
             "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
+                "entity": [{
+                    "clientName": self._client_object.client_name,
+                    "appName": self.agent_name
+                }]
             },
             "agentProperties": {
                 "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": options_dict[option],
-                            "enableAfterADelay": False,
-                            "enableActivityType": enable
-                        }
-                    ]
+                    "activityControlOptions": [{
+                        "activityType": options_dict[option],
+                        "enableAfterADelay": False,
+                        "enableActivityType": enable
+                    }]
                 }
             }
         }
 
         request_json2 = {
             "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": self.agent_name
-                    }
-                ]
+                "entity": [{
+                    "clientName": self._client_object.client_name,
+                    "appName": self.agent_name
+                }]
             },
             "agentProperties": {
                 "idaActivityControl": {
-                    "activityControlOptions": [
-                        {
-                            "activityType": options_dict[option],
-                            "enableAfterADelay": True,
-                            "enableActivityType": False,
-                            "dateTime": {
-                                "TimeZoneName": "(UTC) Coordinated Universal Time",
-                                "timeValue": enable_time
-                            }
+                    "activityControlOptions": [{
+                        "activityType": options_dict[option],
+                        "enableAfterADelay": True,
+                        "enableActivityType": False,
+                        "dateTime": {
+                            "TimeZoneName": "(UTC) Coordinated Universal Time",
+                            "timeValue": enable_time
                         }
-                    ]
+                    }]
                 }
             }
         }
@@ -308,9 +299,9 @@ class Agent(object):
         """
         request_json = self._request_json_('Backup')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._AGENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._AGENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -354,9 +345,9 @@ class Agent(object):
 
         request_json = self._request_json_('Backup', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._AGENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._AGENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -387,9 +378,9 @@ class Agent(object):
         """
         request_json = self._request_json_('Backup', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._AGENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._AGENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -420,9 +411,9 @@ class Agent(object):
         """
         request_json = self._request_json_('Restore')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._AGENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._AGENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -466,9 +457,9 @@ class Agent(object):
 
         request_json = self._request_json_('Restore', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._AGENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._AGENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -499,9 +490,9 @@ class Agent(object):
         """
         request_json = self._request_json_('Restore', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            self._AGENT,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._AGENT, request_json
+        )
 
         if flag:
             if response.json() and 'response' in response.json():

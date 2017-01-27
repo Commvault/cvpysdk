@@ -38,6 +38,7 @@ Commcell:
 from base64 import b64encode
 from Queue import Queue
 from threading import Thread
+from requests.exceptions import ConnectionError, SSLError
 
 from services import ApiLibrary
 from cvpysdk import CVPySDK
@@ -55,16 +56,15 @@ from exception import SDKException
 class Commcell(object):
     """Class for creating a session to the commcell via rest api."""
 
-    def __init__(self, commcell_name, commcell_username='', commcell_password='', port=81):
+    def __init__(self, commcell_name, commcell_username, commcell_password='', port=81):
         """Initialize the Commcell object with the values required for doing the api operations.
 
             Args:
-                commcell_name (str)      --  name of the server; name@domain.com
-                commcell_username (str)  --  username of the user to log in to webconsole
+                commcell_name       (str)  --  name of the server; name@domain.com
+                commcell_username   (str)  --  username of the user to log in to webconsole
+                commcell_password   (str)  --  plain text password to log in to webconsole
                     default: ''
-                commcell_password (str)  --  plain text password to log in to webconsole
-                    default: ''
-                port (int)               --  port, the server is reachable at
+                port                (int)  --  port, the server is reachable at
                     default: 81
 
             Returns:
@@ -75,8 +75,12 @@ class Commcell(object):
                     if the web service is down or not reachable
                     if not token is received upon log in
         """
-        self._commcell_service = r'http://{0}:{1}/SearchSvc/CVWebService.svc/'
-        self._commcell_service = self._commcell_service.format(commcell_name, port)
+        commcell_service = [
+            r'https://{0}:{1}/SearchSvc/CVWebService.svc/'.format(commcell_name, port),
+            r'https://{0}/webconsole/api/'.format(commcell_name),
+            r'http://{0}:{1}/SearchSvc/CVWebService.svc/'.format(commcell_name, port),
+            r'http://{0}/webconsole/api/'.format(commcell_name)
+        ]
 
         self._user = commcell_username
 
@@ -93,10 +97,15 @@ class Commcell(object):
         self._cvpysdk_object = CVPySDK(self)
 
         # Checks if the service is running or not
-        if not self._cvpysdk_object._is_valid_service_():
-            self._commcell_service = r'http://{0}/webconsole/api/'.format(commcell_name)
-            if not self._cvpysdk_object._is_valid_service_():
-                raise SDKException('Commcell', '101')
+        for service in commcell_service:
+            self._commcell_service = service
+            try:
+                if self._cvpysdk_object._is_valid_service_():
+                    break
+            except (ConnectionError, SSLError):
+                continue
+        else:
+            raise SDKException('Commcell', '101')
 
         # Initialize all the services with this commcell service
         self._services = ApiLibrary(self._commcell_service)
@@ -107,8 +116,16 @@ class Commcell(object):
         if not self._headers['Authtoken']:
             raise SDKException('CVPySDK', '101')
 
-        sdk_classes = [Clients, Alerts, MediaAgents, DiskLibraries, StoragePolicies,
-                       SchedulePolicies, UserGroups, WorkFlow]
+        sdk_classes = [
+            Clients,
+            Alerts,
+            MediaAgents,
+            DiskLibraries,
+            StoragePolicies,
+            SchedulePolicies,
+            UserGroups,
+            WorkFlow
+        ]
 
         sdk_dict = self._attribs_(sdk_classes)
 
@@ -223,21 +240,22 @@ class Commcell(object):
             in the arguments.
 
             Args:
-                request_type (str)  --  type of HTTP request to run on the Commcell
+                request_type (str)   --  type of HTTP request to run on the Commcell
                     e.g.; POST, GET, PUT, DELETE
 
-                request_url (str)   --  API name to run the request on with params, if any
+                request_url  (str)   --  API name to run the request on with params, if any
                     e.g.; Backupset, Agent, Client, Client/{clientId}, ..., etc.
 
-                request_body (dict) --  JSON request body to pass along with the request
+                request_body (dict)  --  JSON request body to pass along with the request
                     default: None
 
             Returns:
                 object - the response received from the server
         """
         request_url = self._commcell_service + request_url
-        flag, response = self._cvpysdk_object.make_request(request_type.upper(),
-                                                           request_url,
-                                                           request_body)
+
+        flag, response = self._cvpysdk_object.make_request(
+            request_type.upper(), request_url, request_body
+        )
 
         return response

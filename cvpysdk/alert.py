@@ -179,9 +179,7 @@ class Alerts(object):
                              self._alerts[alert_name]['id'],
                              self._alerts[alert_name]['category'])
 
-            raise SDKException('Alert',
-                               '104',
-                               'No Alert exists with name: {0}'.format(alert_name))
+            raise SDKException('Alert', '104', 'No Alert exists with name: {0}'.format(alert_name))
 
     def console_alerts(self, page_number=1, page_count=1):
         """Prints the console alerts from page_number to the number of pages asked for page_count
@@ -209,7 +207,8 @@ class Alerts(object):
                 print "Total Console Alerts found: {0}".format(response.json()['totalNoOfAlerts'])
 
                 o_str = "{:^5}\t{:^50}\t{:^50}\t{:^50}\n\n".format(
-                    'S. No.', 'Alert', 'Type', 'Criteria')
+                    'S. No.', 'Alert', 'Type', 'Criteria'
+                )
 
                 for index, dictionary in enumerate(response.json()['feedsList']):
                     o_str += '{:^5}\t{:50}\t{:^50}\t{:^50}\n'.format(
@@ -250,8 +249,9 @@ class Alerts(object):
                 alert_id = self._alerts[alert_name]
                 alert = self._commcell_object._services.ALERT % (alert_id)
 
-                flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE',
-                                                                                    alert)
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    'DELETE', alert
+                )
 
                 if flag:
                     if response.json():
@@ -271,9 +271,9 @@ class Alerts(object):
 
                     raise SDKException('Alert', '104', exception_message)
             else:
-                raise SDKException('Alert',
-                                   '104',
-                                   'No alert exists with name: {0}'.format(alert_name))
+                raise SDKException(
+                    'Alert', '104', 'No alert exists with name: {0}'.format(alert_name)
+                )
 
 
 class Alert(object):
@@ -284,10 +284,10 @@ class Alert(object):
 
             Args:
                 commcell_object (object)  --  instance of the Commcell class
-                alert_name (str)          --  name of the alert
-                alert_id (str)            --  id of the alert
+                alert_name      (str)     --  name of the alert
+                alert_id        (str)     --  id of the alert
                     default: None
-                alert_category (str)      --  name of the alert category
+                alert_category  (str)     --  name of the alert category
                     default: None
 
             Returns:
@@ -407,8 +407,9 @@ class Alert(object):
                 self.alert_id, alert_notification_type_id
             )
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                                enable_request)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', enable_request
+            )
 
             if flag:
                 if response.json():
@@ -455,8 +456,9 @@ class Alert(object):
                 self.alert_id, alert_notification_type_id
             )
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                                disable_request)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', disable_request
+            )
 
             if flag:
                 if response.json():
@@ -513,8 +515,9 @@ class Alert(object):
         """
         disable_request = self._commcell_object._services.DISABLE_ALERT % (self.alert_id)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            disable_request)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', disable_request
+        )
 
         if flag:
             if response.json():

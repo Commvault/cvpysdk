@@ -64,7 +64,7 @@ class CVPySDK(object):
             else:
                 return False
         except requests.exceptions.ConnectionError as con_err:
-            raise con_err.message
+            raise con_err
 
     def _login_(self):
         """Posts a login request to the server
@@ -86,9 +86,9 @@ class CVPySDK(object):
                 "password": self._commcell_object._password
             }
 
-            flag, response = self.make_request('POST',
-                                               self._commcell_object._services.LOGIN,
-                                               json_login_request)
+            flag, response = self.make_request(
+                'POST', self._commcell_object._services.LOGIN, json_login_request
+            )
 
             if flag:
                 if response.json():
@@ -98,8 +98,9 @@ class CVPySDK(object):
                     else:
                         error_message = response.json()['errList'][0]['errLogMessage']
                         error_code = response.json()['errList'][0]['errorCode']
-                        err_msg = 'Login Failed with error message: "%s" and error code: "%s"' % \
-                            (error_message, error_code)
+                        err_msg = 'Login Failed with error message: "%s" and error code: "%s"' % (
+                            error_message, error_code
+                        )
                         raise SDKException('CVPySDK', '101', err_msg)
                 else:
                     raise SDKException('Response', '102')
@@ -130,11 +131,11 @@ class CVPySDK(object):
         """Makes the request of the type specified in the argument 'method'
 
             Args:
-                method (str)          --  http operation to perform, e.g.; GET, POST, PUT, DELETE
-                url (str)             --  the web url or service to run the HTTP request on
-                payload (dict / str)  --  data to be passed along with the request
+                method    (str)         --  http operation to perform, e.g.; GET, POST, PUT, DELETE
+                url       (str)         --  the web url or service to run the HTTP request on
+                payload   (dict / str)  --  data to be passed along with the request
                     default: None
-                attempts (int)        --  number of attempts made with the same request
+                attempts  (int)         --  number of attempts made with the same request
                     default: 0
 
             Returns:
