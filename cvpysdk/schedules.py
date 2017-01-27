@@ -87,11 +87,14 @@ class Schedules(object):
             Returns:
                 str - string of all the schedules associated with the commcell entity
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Schedule')
+        if self.schedules:
+            representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Schedule')
 
-        for index, schedule in enumerate(self.schedules):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, schedule)
-            representation_string += sub_str
+            for index, schedule in enumerate(self.schedules):
+                sub_str = '{:^5}\t{:20}\n'.format(index + 1, schedule)
+                representation_string += sub_str
+        else:
+            representation_string = 'No Schedules are associated to this Commcell Entity'
 
         return representation_string.strip()
 
