@@ -41,7 +41,7 @@ setup(
     version=get_version(),
     author='Commvault Systems Inc.',
     author_email='Dev-PythonSDK@commvault.com',
-    description='Python SDK for Commvault',
+    description='Commvault SDK for Python',
     license=get_license(),
     long_description=readme(),
     url='https://github.com/CommvaultEngg/cvpysdk',
