@@ -848,7 +848,8 @@ class Subclient(object):
             'path': path,
             'showDeletedFiles': show_deleted_files,
             'vsFileBrowse': vm_file_browse,
-            'vsDiskBrowse': vm_disk_browse
+            'vsDiskBrowse': vm_disk_browse,
+            'mode': 2
         }
 
         web_service += urllib.urlencode(encode_dict)
