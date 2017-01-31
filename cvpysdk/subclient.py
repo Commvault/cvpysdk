@@ -803,8 +803,8 @@ class Subclient(object):
                         self.subclient_name,
                         response.json()['jobIds'][0]
                     )
-
                     time.sleep(1)
+
                     return Job(self._commcell_object, response.json()['jobIds'][0])
                 elif "errorCode" in response.json():
                     o_str = "Initializing backup failed with error code: %s" % (
@@ -818,11 +818,16 @@ class Subclient(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def browse(self, path, show_deleted_files=False, vm_file_browse=False, vm_disk_browse=False):
+    def browse(self,
+               path='',
+               show_deleted_files=False,
+               vm_file_browse=False,
+               vm_disk_browse=False):
         """Gets the content of the backup for this subclient at the path specified.
 
             Args:
                 path                (str)   --  folder path to get the contents of
+                    default: ''; returns the root of the Backup content
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: False
                 vm_file_browse      (bool)  --  browse files and folders inside
@@ -912,7 +917,7 @@ class Subclient(object):
             raise SDKException('Response', '101', response_string)
 
     def browse_in_time(self,
-                       path,
+                       path='',
                        show_deleted_files=True,
                        restore_index=True,
                        from_date=None,
@@ -922,6 +927,7 @@ class Subclient(object):
 
             Args:
                 path                (str)   --  folder path to get the contents of
+                    default: ''; returns the root of the Backup content
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: True
                 restore_index       (bool)  --  restore index if it is not cached

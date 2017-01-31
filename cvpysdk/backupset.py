@@ -207,7 +207,7 @@ class Backupsets(object):
                     if response is not success
                     if backupset with same name already exists
         """
-        if not isinstance(backupset_name, str):
+        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException('Backupset', '103')
         else:
             backupset_name = str(backupset_name).lower()
@@ -226,13 +226,14 @@ class Backupsets(object):
                 },
                 "backupSetInfo": {
                     "commonBackupSet": {
-                        "onDemandBackupset": True if on_demand_backupset else False
+                        "onDemandBackupset": on_demand_backupset
                     }
                 }
             }
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', add_backupset_service, request_json)
+                'POST', add_backupset_service, request_json
+            )
 
             if flag:
                 if response.json():
@@ -306,11 +307,13 @@ class Backupsets(object):
             backupset_name = str(backupset_name).lower()
 
             if self.has_backupset(backupset_name):
-                return Backupset(self._agent_object,
-                                 backupset_name,
-                                 self._backupsets[backupset_name],
-                                 self._instance_id,
-                                 self._instance_name)
+                return Backupset(
+                    self._agent_object,
+                    backupset_name,
+                    self._backupsets[backupset_name],
+                    self._instance_id,
+                    self._instance_name
+                )
 
             raise SDKException(
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)

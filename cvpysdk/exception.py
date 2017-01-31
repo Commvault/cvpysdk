@@ -70,7 +70,8 @@ EXCEPTION_DICT = {
     },
     'Job': {
         '101': 'Incorrect JobId',
-        '102': 'No job exists with the specified job id'
+        '102': 'No job exists with the specified Job ID',
+        '103': 'No records found for this Job'
     },
     'Storage': {
         '101': '',

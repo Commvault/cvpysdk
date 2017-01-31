@@ -118,6 +118,7 @@ class Job(object):
         """
         while not self._is_finished():
             time.sleep(5)
+
         self.finished = self._is_finished()
 
     def _is_finished(self):
@@ -164,7 +165,8 @@ class Job(object):
         if flag:
             if response.json():
                 if response.json()['totalRecordsWithoutPaging'] == 0:
-                    return False
+                    raise SDKException('Job', '103')
+
                 if 'jobs' in response.json().keys():
                     for job in response.json()['jobs']:
                         return job['jobSummary']
