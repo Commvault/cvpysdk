@@ -7,9 +7,9 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""Service urls for rest api operations.
+"""Service URSL for REST API operations.
 
-ApiLibrary: class having all the REST API services initialized with the commcell
+ApiLibrary: Class having all the REST API services initialized with the commcell
 
 ApiLibrary:
     __init__(commcell_service)      --  initialize all the API services with the commcell service
@@ -17,9 +17,11 @@ ApiLibrary:
 
 """
 
+from __future__ import absolute_import
+
 
 class ApiLibrary(object):
-    """Class ApiLibrary for defining all the rest api urls."""
+    """Class ApiLibrary for defining all the REST API URLs."""
 
     def __init__(self, commcell_service):
         """Initializes the instance of the class ApiLibrary.

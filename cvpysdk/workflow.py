@@ -19,7 +19,9 @@ WorkFlow:
 
 """
 
-from exception import SDKException
+from __future__ import absolute_import
+
+from .exception import SDKException
 
 
 class WorkFlow(object):

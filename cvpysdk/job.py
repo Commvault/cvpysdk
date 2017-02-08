@@ -35,10 +35,12 @@ job.finished                    --  Tells whether the job is finished or not. (T
 
 """
 
+from __future__ import absolute_import
+
 import time
 import threading
 
-from exception import SDKException
+from .exception import SDKException
 
 
 class Job(object):
@@ -69,7 +71,7 @@ class Job(object):
 
         self._JOB = self._commcell_object._services.JOB % (self.job_id)
 
-        time.sleep(3)
+        time.sleep(1.5)
 
         if not self._is_valid_job():
             raise SDKException('Job', '102')
@@ -313,13 +315,11 @@ class Job(object):
             if response.json() and 'errors' in response.json():
                 error_list = response.json()['errors'][0]['errList'][0]
                 error_message = str(error_list['errLogMessage']).strip()
-                error_code = str(error_list['errorCode']).strip()
 
-                print 'Job suspend failed with error message: "%s", and error code: "%s"' % \
-                    (error_message, error_code)
+                return 'Job suspend failed\nError: "{0}"'.format(error_message)
             else:
                 self.status = str(self._get_job_summary()['status'])
-                print 'Job suspended successfully'
+                return 'Job suspended successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -340,13 +340,11 @@ class Job(object):
             if response.json() and 'errors' in response.json():
                 error_list = response.json()['errors'][0]['errList'][0]
                 error_message = str(error_list['errLogMessage']).strip()
-                error_code = str(error_list['errorCode']).strip()
 
-                print 'Job resume failed with error message: "%s", and error code: "%s"' % \
-                    (error_message, error_code)
+                return 'Job resume failed\nError: "{0}"'.format(error_message)
             else:
                 self.status = str(self._get_job_summary()['status'])
-                print 'Job resumed successfully'
+                return 'Job resumed successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -367,14 +365,12 @@ class Job(object):
             if response.json() and 'errors' in response.json():
                 error_list = response.json()['errors'][0]['errList'][0]
                 error_message = str(error_list['errLogMessage']).strip()
-                error_code = str(error_list['errorCode']).strip()
 
-                print 'Job kill failed with error message: "%s", and error code: "%s"' % \
-                    (error_message, error_code)
+                return 'Job kill failed\nError: "{0}"'.format(error_message)
             else:
                 self.status = str(self._get_job_summary()['status'])
                 self.finished = True
-                print 'Job killed successfully'
+                return 'Job killed successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

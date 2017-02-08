@@ -16,6 +16,8 @@ SDKException:       Class inheriting the "Exception" Base class for raising
                         a specific exception for the CVPySDK python package.
 """
 
+from __future__ import absolute_import
+
 # Common dictionary for all exceptions among the python package
 EXCEPTION_DICT = {
     'Response': {
@@ -27,46 +29,41 @@ EXCEPTION_DICT = {
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
-        '102': 'Connection Error. Please check your network connection',
-        '103': '',
-        '104': 'Did not receive the Auth token',
-        '105': 'Reached the maximum attempts limit'
+        '102': '',
+        '103': 'Reached the maximum attempts limit'
     },
     'Client': {
-        '101': 'Client name should be specified',
-        '102': 'Attribute name not provided',
-        '103': 'Data type of the inputs is not valid',
-        '104': '',
-        '105': 'Attribute\'s value not provided',
-        '106': 'Time Value should be greater than current time',
-        '107': 'Time Value entered is not of correct format'
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Time Value should be greater than current time',
+        '104': 'Time Value entered is not of correct format'
     },
     'Agent': {
-        '101': 'Agent name should be specified',
+        '101': 'Data type of the input(s) is not valid',
         '102': '',
-        '103': 'Data type of the inputs is not valid',
-        '104': 'Time Value should be greater than current time',
-        '105': 'Time Value entered is not of correct format'
+        '103': 'Time Value should be greater than current time',
+        '104': 'Time Value entered is not of correct format'
     },
     'Backupset': {
-        '101': 'Backupset name should be specified',
+        '101': 'Data type of the input(s) is not valid',
         '102': '',
-        '103': 'Data type of the inputs is not valid'
     },
     'Instance': {
-        '101': 'Data type of the inputs is not valid',
+        '101': 'Data type of the input(s) is not valid',
         '102': ''
     },
     'Subclient': {
-        '101': 'Data type of the inputs is not valid',
+        '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Backup Level not identified. Please check the backup level again',
-        '104': 'Files/Folders to restore list is empty',
+        '104': 'File/Folder(s) to restore list is empty',
         '105': 'Type of client should either be the Client class instance or string',
         '106': 'Input date is incorrect',
         '107': 'End Date should be greater than the Start Date',
         '108': 'Time Value should be greater than current time',
-        '109': 'Time Value entered is not of correct format'
+        '109': 'Time Value entered is not of correct format',
+        '110': 'No data found at the path specified',
+        '111': 'No File/Folder matched the input value'
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -74,38 +71,32 @@ EXCEPTION_DICT = {
         '103': 'No records found for this Job'
     },
     'Storage': {
-        '101': '',
-        '102': 'Data type of the inputs is not valid',
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
         '103': 'Type of media agent should either be the MediaAgent class instance or string',
         '104': 'Type of library should either be the DiskLibrary class instance or string'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',
-        '102': 'Data type of the input is not valid'
+        '102': 'Data type of the input(s) is not valid'
     },
     'ClientGroup': {
         '101': 'Client Group name should be specified',
         '102': 'Attribute name not provided',
-        '103': 'Data type of the inputs is not valid',
+        '103': 'Data type of the input(s) is not valid',
         '104': '',
         '105': 'Attribute\'s value not provided'
     },
     'UserGroup': {
-        '101': 'User Group name should be specified',
-        '102': 'Attribute name not provided',
-        '103': 'Data type of the inputs is not valid',
-        '104': '',
-        '105': 'Attribute\'s value not provided'
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     },
     'Alert': {
-        '101': 'Alert name should be specified',
-        '102': 'Attribute name not provided',
-        '103': 'Data type of the inputs is not valid',
-        '104': '',
-        '105': 'Attribute\'s value not provided'
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     },
     'Workflow': {
-        '101': 'Data type of the input is not valid'
+        '101': 'Data type of the input(s) is not valid'
     }
 }
 

@@ -35,22 +35,31 @@ Commcell:
 
 """
 
+from __future__ import absolute_import
+
 from base64 import b64encode
-from Queue import Queue
 from threading import Thread
 from requests.exceptions import ConnectionError, SSLError
 
-from services import ApiLibrary
-from cvpysdk import CVPySDK
-from client import Clients
-from alert import Alerts
-from storage import MediaAgents
-from storage import DiskLibraries
-from storage import StoragePolicies
-from storage import SchedulePolicies
-from usergroup import UserGroups
-from workflow import WorkFlow
-from exception import SDKException
+try:
+    # Python 2 import
+    from Queue import Queue
+except ImportError:
+    # Python 3 import
+    from queue import Queue
+
+
+from .services import ApiLibrary
+from .cvpysdk import CVPySDK
+from .client import Clients
+from .alert import Alerts
+from .storage import MediaAgents
+from .storage import DiskLibraries
+from .storage import StoragePolicies
+from .storage import SchedulePolicies
+from .usergroup import UserGroups
+from .workflow import WorkFlow
+from .exception import SDKException
 
 
 class Commcell(object):
@@ -85,7 +94,7 @@ class Commcell(object):
         self._user = commcell_username
 
         # encodes the plain text password using base64 encoding
-        self._password = b64encode(commcell_password)
+        self._password = b64encode(commcell_password.encode()).decode()
 
         self._headers = {
             'Host': commcell_name,
@@ -157,8 +166,9 @@ class Commcell(object):
 
     def __exit__(self, exception_type, exception_value, traceback):
         """Logs out the user associated with the current instance."""
-        print self._cvpysdk_object._logout_()
+        output = self._cvpysdk_object._logout_()
         self._remove_attribs_()
+        return output
 
     def _attribs_(self, sdk_classes):
         """Initializes the objects of the classes in the sdk_classes list given as input.
@@ -194,7 +204,8 @@ class Commcell(object):
         sdk_dict[sdk_class] = sdk_class(self)
         self._queue.task_done()
 
-    def _update_response_(self, input_string):
+    @staticmethod
+    def _update_response_(input_string):
         """Returns only the relevant response from the response received from the server.
 
             Args:
@@ -230,10 +241,11 @@ class Commcell(object):
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
-            print 'User already logged out.'
+            return 'User already logged out.'
         else:
-            print self._cvpysdk_object._logout_()
+            output = self._cvpysdk_object._logout_()
             self._remove_attribs_()
+            return output
 
     def request(self, request_type, request_url, request_body=None):
         """Runs the request of the type specified on the request URL, with the body passed

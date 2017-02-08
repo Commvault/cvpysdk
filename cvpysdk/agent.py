@@ -41,13 +41,15 @@ Agent:
 
 """
 
+from __future__ import absolute_import
+
 import string
 import time
 
-from backupset import Backupsets
-from instance import Instances
-from schedules import Schedules
-from exception import SDKException
+from .backupset import Backupsets
+from .instance import Instances
+from .schedules import Schedules
+from .exception import SDKException
 
 
 class Agents(object):
@@ -65,7 +67,7 @@ class Agents(object):
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
 
-        self._ALL_AGENTS = self._commcell_object._services.GET_ALL_AGENTS % (
+        self._AGENTS = self._commcell_object._services.GET_ALL_AGENTS % (
             self._client_object.client_id
         )
 
@@ -109,7 +111,7 @@ class Agents(object):
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._ALL_AGENTS
+            'GET', self._AGENTS
         )
 
         if flag:
@@ -141,7 +143,7 @@ class Agents(object):
                     if type of the agent name argument is not string
         """
         if not isinstance(agent_name, str):
-            raise SDKException('Agent', '103')
+            raise SDKException('Agent', '101')
 
         return self._agents and str(agent_name).lower() in self._agents
 
@@ -160,7 +162,7 @@ class Agents(object):
                     if no agent exists with the given name
         """
         if not isinstance(agent_name, str):
-            raise SDKException('Agent', '103')
+            raise SDKException('Agent', '101')
         else:
             agent_name = str(agent_name).lower()
 
@@ -308,12 +310,11 @@ class Agent(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Backup enabled successfully'
+                    return
                 elif 'errorString' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorString']
 
-                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
+                    o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
                     raise SDKException('Agent', '102', o_str)
             else:
                 raise SDKException('Response', '102')
@@ -339,9 +340,9 @@ class Agent(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Agent', '104')
+                raise SDKException('Agent', '103')
         except ValueError:
-            raise SDKException('Agent', '105')
+            raise SDKException('Agent', '104')
 
         request_json = self._request_json_('Backup', False, enable_time)
 
@@ -354,12 +355,11 @@ class Agent(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Backup will be enabled at the time specified'
+                    return
                 elif 'errorString' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorString']
 
-                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
+                    o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
                     raise SDKException('Agent', '102', o_str)
             else:
                 raise SDKException('Response', '102')
@@ -387,12 +387,11 @@ class Agent(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Backup disabled successfully'
+                    return
                 elif 'errorString' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorString']
 
-                    o_str = "Failed to disable Backup with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
+                    o_str = 'Failed to disable Backup\nError: "{0}"'.format(error_message)
                     raise SDKException('Agent', '102', o_str)
             else:
                 raise SDKException('Response', '102')
@@ -420,12 +419,11 @@ class Agent(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Restore enabled successfully'
+                    return
                 elif 'errorString' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorString']
 
-                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
+                    o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
                     raise SDKException('Agent', '102', o_str)
             else:
                 raise SDKException('Response', '102')
@@ -451,9 +449,9 @@ class Agent(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Agent', '104')
+                raise SDKException('Agent', '103')
         except ValueError:
-            raise SDKException('Agent', '105')
+            raise SDKException('Agent', '104')
 
         request_json = self._request_json_('Restore', False, enable_time)
 
@@ -466,12 +464,11 @@ class Agent(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Restore will be enabled at the time specified'
+                    return
                 elif 'errorString' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorString']
 
-                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
+                    o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
                     raise SDKException('Agent', '102', o_str)
             else:
                 raise SDKException('Response', '102')
@@ -499,12 +496,11 @@ class Agent(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Restore disabled successfully'
+                    return
                 elif 'errorString' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorString']
 
-                    o_str = "Failed to disable Restore with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
+                    o_str = 'Failed to disable Backup\nError: "{0}"'.format(error_message)
                     raise SDKException('Agent', '102', o_str)
             else:
                 raise SDKException('Response', '102')

@@ -49,6 +49,6 @@ setup(
     packages=find_packages(),
     keywords='commvault , cv , simpana , commcell',
     include_package_data=True,
-    install_requires='requests',
+    install_requires=['requests', 'future'],
     zip_safe=False
 )

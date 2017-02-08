@@ -22,10 +22,18 @@ CVPySDK:
 
 """
 
-import httplib
+from __future__ import absolute_import
+
 import requests
 
-from exception import SDKException
+try:
+    # Python 2 import
+    import httplib as httplib
+except ImportError:
+    # Python 3 import
+    import http.client as httplib
+
+from .exception import SDKException
 
 
 class CVPySDK(object):
@@ -59,10 +67,7 @@ class CVPySDK(object):
             response = requests.get(self._commcell_object._commcell_service)
 
             # Valid service if the status code is 200 and response is True
-            if response.status_code == httplib.OK and response.ok:
-                return True
-            else:
-                return False
+            return response.status_code == httplib.OK and response.ok
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 
@@ -93,20 +98,15 @@ class CVPySDK(object):
             if flag:
                 if response.json():
                     if "userName" in response.json() and "token" in response.json():
-                        print 'Login Successful'
                         return str(response.json()['token']), str(response.json()['userGUID'])
                     else:
                         error_message = response.json()['errList'][0]['errLogMessage']
-                        error_code = response.json()['errList'][0]['errorCode']
-                        err_msg = 'Login Failed with error message: "%s" and error code: "%s"' % (
-                            error_message, error_code
-                        )
+                        err_msg = 'Login Failed\nError: "{0}"'.format(error_message)
                         raise SDKException('CVPySDK', '101', err_msg)
                 else:
                     raise SDKException('Response', '102')
             else:
                 raise SDKException('CVPySDK', '101')
-
         except requests.exceptions.ConnectionError as con_err:
             raise con_err.message
 
@@ -164,7 +164,7 @@ class CVPySDK(object):
             elif method == 'DELETE':
                 response = requests.delete(url, headers=headers)
             else:
-                raise SDKException('CVPySDK', '103', 'HTTP method {} not supported'.format(method))
+                raise SDKException('CVPySDK', '102', 'HTTP method {} not supported'.format(method))
 
             if response.status_code == httplib.UNAUTHORIZED and headers['Authtoken'] is not None:
                 if attempts < 3:
@@ -172,7 +172,7 @@ class CVPySDK(object):
                     return self.make_request(method, url, payload, attempts + 1)
                 else:
                     # Raise max attempts exception, if attempts exceeds 3
-                    raise SDKException('CVPySDK', '105')
+                    raise SDKException('CVPySDK', '103')
 
             if response.status_code == httplib.OK and response.ok:
                 return (True, response)

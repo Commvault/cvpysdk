@@ -70,9 +70,12 @@ SchedulePolicies:
 
 """
 
-import urllib
+from __future__ import absolute_import
+from future.standard_library import install_aliases
 
-from exception import SDKException
+from .exception import SDKException
+
+install_aliases()
 
 
 class MediaAgents(object):
@@ -161,7 +164,7 @@ class MediaAgents(object):
                     if type of the media agent name argument is not string
         """
         if not isinstance(media_agent_name, str):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
 
         return self._media_agents and str(media_agent_name).lower() in self._media_agents
 
@@ -180,7 +183,7 @@ class MediaAgents(object):
                     if no media agent exists with the given name
         """
         if not isinstance(media_agent_name, str):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
         else:
             media_agent_name = str(media_agent_name).lower()
 
@@ -190,7 +193,7 @@ class MediaAgents(object):
                                   self._media_agents[media_agent_name])
 
             raise SDKException(
-                'Storage', '101', 'No media agent exists with name: {0}'.format(media_agent_name)
+                'Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)
             )
 
 
@@ -328,7 +331,7 @@ class DiskLibraries(object):
                     if type of the library name argument is not string
         """
         if not isinstance(library_name, str):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
 
         return self._libraries and str(library_name).lower() in self._libraries
 
@@ -362,7 +365,7 @@ class DiskLibraries(object):
                 isinstance(mount_path, str) and
                 isinstance(username, str) and
                 isinstance(password, str)):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
@@ -391,7 +394,6 @@ class DiskLibraries(object):
             if response.json():
                 if 'library' in response.json():
                     library = response.json()['library']
-                    print 'Created library: "{0}" successfully.'.format(library['libraryName'])
 
                     # initialize the libraries again
                     # so the libraries object has all the libraries
@@ -399,11 +401,10 @@ class DiskLibraries(object):
 
                     return DiskLibrary(self._commcell_object, library['libraryName'])
                 elif 'errorCode' in response.json():
-                    error_code = response.json()['errorCode']
                     error_message = response.json()['errorMessage']
-                    o_str = 'Failed to create disk library with error code: "{0}", error: "{1}"'
-                    print o_str.format(error_code, error_message)
-                    return None
+                    o_str = 'Failed to create disk library\nError: "{0}"'.format(error_message)
+
+                    raise SDKException('Storage', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -425,7 +426,7 @@ class DiskLibraries(object):
                     if no disk library exists with the given name
         """
         if not isinstance(library_name, str):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
         else:
             library_name = str(library_name).lower()
 
@@ -435,7 +436,7 @@ class DiskLibraries(object):
                                    self._libraries[library_name])
 
             raise SDKException(
-                'Storage', '101', 'No disk library exists with name: {0}'.format(library_name)
+                'Storage', '102', 'No disk library exists with name: {0}'.format(library_name)
             )
 
 
@@ -572,7 +573,7 @@ class StoragePolicies(object):
                     if type of the storage policy name argument is not string
         """
         if not isinstance(policy_name, str):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
 
         return self._policies and str(policy_name).lower() in self._policies
 
@@ -613,11 +614,13 @@ class StoragePolicies(object):
                     if response is empty
                     if response is not success
         """
+        from urllib.parse import urlencode
+
         if ((dedup_path is not None and not isinstance(dedup_path, str)) or
                 (not (isinstance(storage_policy_name, str) and
                       isinstance(retention_period, int))) or
                 (incremental_sp is not None and not isinstance(incremental_sp, str))):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
 
         if isinstance(library, DiskLibrary):
             disk_library = library
@@ -644,7 +647,7 @@ class StoragePolicies(object):
             if incremental_sp:
                 encode_dict["incstoragepolicy"] = incremental_sp
 
-            web_service = self._POLICY + '?' + urllib.urlencode(encode_dict)
+            web_service = self._POLICY + '?' + urlencode(encode_dict)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', web_service)
 
@@ -652,15 +655,14 @@ class StoragePolicies(object):
                 try:
                     if response.json():
                         if 'errorCode' in response.json() and 'errorMessage' in response.json():
-                            error_code = str(response.json()['errorCode'])
                             error_message = str(response.json()['errorMessage']).split('\n')[0]
-                            o_str = ('Failed to add storage policy with '
-                                     'error code: "{0}", error: "{1}"')
-                            print o_str.format(error_code, error_message)
+                            o_str = 'Failed to add storage policy\nError: "{0}"'
+
+                            raise SDKException('Storage', '102', o_str.format(error_message))
                 except ValueError:
                     if response.text:
-                        print response.text.strip()
                         self._policies = self._get_policies()
+                        return response.text.strip()
                     else:
                         raise SDKException('Response', '102')
             else:
@@ -689,19 +691,14 @@ class StoragePolicies(object):
             if flag:
                 if response.json():
                     if 'archiveGroupCopy' in response.json():
-                        policy = response.json()['archiveGroupCopy']
-                        policy_name = policy['storagePolicyName']
-                        print 'Created Storage Policy: "{0}" successfully.'.format(policy_name)
-
                         # initialize the policies again
                         # so the policies object has all the policies
                         self._policies = self._get_policies()
                     elif 'error' in response.json():
-                        error_code = response.json()['error']['errorCode']
                         error_message = response.json()['error']['errorMessage']
-                        o_str = ('Failed to create storage policy with '
-                                 'error code: "{0}", error: "{1}"')
-                        print o_str.format(error_code, error_message)
+                        o_str = 'Failed to create storage policy\nError: "{0}"'
+
+                        raise SDKException('Storage', '102', o_str.format(error_message))
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -724,7 +721,7 @@ class StoragePolicies(object):
                     if response is not success
         """
         if not isinstance(storage_policy_name, str):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
 
         if self.has_policy(storage_policy_name):
             policy_delete_service = self._POLICY + '/{0}'.format(storage_policy_name)
@@ -737,15 +734,14 @@ class StoragePolicies(object):
                 try:
                     if response.json():
                         if 'errorCode' in response.json() and 'errorMessage' in response.json():
-                            error_code = str(response.json()['errorCode'])
                             error_message = str(response.json()['errorMessage'])
-                            o_str = ('Failed to delete storage policy with '
-                                     'error code: "{0}", error: "{1}"')
-                            print o_str.format(error_code, error_message)
+                            o_str = 'Failed to delete storage policy\nError: "{0}"'
+
+                            raise SDKException('Storage', '102', o_str.format(error_message))
                 except ValueError:
                     if response.text:
-                        print response.text
                         self._policies = self._get_policies()
+                        return response.text.strip()
                     else:
                         raise SDKException('Response', '102')
             else:
@@ -753,7 +749,7 @@ class StoragePolicies(object):
                 raise SDKException('Response', '101', response_string)
         else:
             raise SDKException(
-                'Storage', '101', 'No policy exists with name: {0}'.format(storage_policy_name)
+                'Storage', '102', 'No policy exists with name: {0}'.format(storage_policy_name)
             )
 
 
@@ -841,6 +837,6 @@ class SchedulePolicies(object):
                     if type of the schedule policy name argument is not string
         """
         if not isinstance(policy_name, str):
-            raise SDKException('Storage', '102')
+            raise SDKException('Storage', '101')
 
         return self._policies and str(policy_name).lower() in self._policies

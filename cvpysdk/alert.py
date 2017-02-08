@@ -44,7 +44,9 @@ Alert:
 
 """
 
-from exception import SDKException
+from __future__ import absolute_import
+
+from .exception import SDKException
 
 
 class Alerts(object):
@@ -151,7 +153,7 @@ class Alerts(object):
                     if type of the alert name argument is not string
         """
         if not isinstance(alert_name, str):
-            raise SDKException('Alert', '103')
+            raise SDKException('Alert', '101')
 
         return self._alerts and str(alert_name).lower() in self._alerts
 
@@ -170,7 +172,7 @@ class Alerts(object):
                     if no alert exists with the given name
         """
         if not isinstance(alert_name, str):
-            raise SDKException('Alert', '103')
+            raise SDKException('Alert', '101')
         else:
             alert_name = str(alert_name).lower()
 
@@ -179,10 +181,10 @@ class Alerts(object):
                              self._alerts[alert_name]['id'],
                              self._alerts[alert_name]['category'])
 
-            raise SDKException('Alert', '104', 'No Alert exists with name: {0}'.format(alert_name))
+            raise SDKException('Alert', '102', 'No Alert exists with name: {0}'.format(alert_name))
 
     def console_alerts(self, page_number=1, page_count=1):
-        """Prints the console alerts from page_number to the number of pages asked for page_count
+        """Returns the console alerts from page_number to the number of pages asked for page_count
 
             Args:
                 page_number (int)  --  page number to get the alerts from
@@ -195,7 +197,7 @@ class Alerts(object):
                     if response is not success
         """
         if not (isinstance(page_number, int) and isinstance(page_count, int)):
-            raise SDKException('Alert', '103')
+            raise SDKException('Alert', '101')
 
         console_alerts = self._commcell_object._services.GET_ALL_CONSOLE_ALERTS % (
             page_number, page_count)
@@ -204,9 +206,11 @@ class Alerts(object):
 
         if flag:
             if response.json() and 'totalNoOfAlerts' in response.json():
-                print "Total Console Alerts found: {0}".format(response.json()['totalNoOfAlerts'])
+                o_str = "Total Console Alerts found: {0}".format(
+                    response.json()['totalNoOfAlerts']
+                )
 
-                o_str = "{:^5}\t{:^50}\t{:^50}\t{:^50}\n\n".format(
+                o_str += "\n{:^5}\t{:^50}\t{:^50}\t{:^50}\n\n".format(
                     'S. No.', 'Alert', 'Type', 'Criteria'
                 )
 
@@ -218,7 +222,7 @@ class Alerts(object):
                         dictionary['alertcriteria']
                     )
 
-                print o_str
+                return o_str
             else:
                 raise SDKException('Response', '102')
         else:
@@ -241,7 +245,7 @@ class Alerts(object):
                     if no alert exists with the given name
         """
         if not isinstance(alert_name, str):
-            raise SDKException('Alert', '103')
+            raise SDKException('Alert', '101')
         else:
             alert_name = str(alert_name).lower()
 
@@ -257,22 +261,23 @@ class Alerts(object):
                     if response.json():
                         if 'errorCode' in response.json():
                             if response.json()['errorCode'] == 0:
-                                o_str = 'Alert: "{0}" deleted successfully'
-                                print o_str.format(alert_name)
+                                # initialize the alerts again
+                                # to refresh with the latest alerts
                                 self._alerts = self._get_alerts()
                             else:
-                                print response.json()['errorMessage']
+                                raise SDKException('Alert', '102', response.json()['errorMessage'])
                     else:
                         raise SDKException('Response', '102')
                 else:
-                    exception_message = 'Failed to delete the Alert: {0}'.format(alert_name)
                     response_string = self._commcell_object._update_response_(response.text)
-                    exception_message += "\n" + response_string
+                    exception_message = 'Failed to delete alert\nError: "{0}"'.format(
+                        response_string
+                    )
 
-                    raise SDKException('Alert', '104', exception_message)
+                    raise SDKException('Alert', '102', exception_message)
             else:
                 raise SDKException(
-                    'Alert', '104', 'No alert exists with name: {0}'.format(alert_name)
+                    'Alert', '102', 'No alert exists with name: {0}'.format(alert_name)
                 )
 
 
@@ -397,7 +402,7 @@ class Alert(object):
                     if no notification type exists with the name provided
         """
         if not isinstance(alert_notification_type, str):
-            raise SDKException('Alert', '103')
+            raise SDKException('Alert', '101')
 
         if alert_notification_type.lower() in self._all_notification_types:
             alert_notification_type_id = self._all_notification_types[
@@ -415,9 +420,9 @@ class Alert(object):
                 if response.json():
                     error_code = str(response.json()['errorCode'])
                     if error_code is '0':
-                        print "Notification Type enabled successfully"
+                        return
                     else:
-                        print str(response.json()['errorMessage'])
+                        raise SDKException('Alert', '102', str(response.json()['errorMessage']))
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -426,7 +431,7 @@ class Alert(object):
         else:
             raise SDKException(
                 'Alert',
-                '104',
+                '102',
                 'No notification type with name {0} exists'.format(alert_notification_type))
 
     def disable_notification_type(self, alert_notification_type):
@@ -446,7 +451,7 @@ class Alert(object):
                     if no notification type exists with the name provided
         """
         if not isinstance(alert_notification_type, str):
-            raise SDKException('Alert', '103')
+            raise SDKException('Alert', '101')
 
         if alert_notification_type.lower() in self._all_notification_types:
             alert_notification_type_id = self._all_notification_types[
@@ -464,9 +469,9 @@ class Alert(object):
                 if response.json():
                     error_code = str(response.json()['errorCode'])
                     if error_code is '0':
-                        print "Notification Type disabled successfully"
+                        return
                     else:
-                        print str(response.json()['errorMessage'])
+                        raise SDKException('Alert', '102', str(response.json()['errorMessage']))
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -475,7 +480,7 @@ class Alert(object):
         else:
             raise SDKException(
                 'Alert',
-                '104',
+                '102',
                 'No notification type with name {0} exists'.format(alert_notification_type))
 
     def enable(self):
@@ -495,7 +500,7 @@ class Alert(object):
 
         if flag:
             if response.json():
-                print str(response.json()['errorMessage'])
+                raise SDKException('Alert', '102', str(response.json()['errorMessage']))
             else:
                 raise SDKException('Response', '102')
         else:
@@ -521,7 +526,7 @@ class Alert(object):
 
         if flag:
             if response.json():
-                print str(response.json()['errorMessage'])
+                raise SDKException('Alert', '102', str(response.json()['errorMessage']))
             else:
                 raise SDKException('Response', '102')
         else:

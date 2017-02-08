@@ -46,11 +46,13 @@ Client:
 
 """
 
+from __future__ import absolute_import
+
 import time
 
-from agent import Agents
-from schedules import Schedules
-from exception import SDKException
+from .agent import Agents
+from .schedules import Schedules
+from .exception import SDKException
 
 
 class Clients(object):
@@ -136,7 +138,7 @@ class Clients(object):
                     if type of the client name argument is not string
         """
         if not isinstance(client_name, str):
-            raise SDKException('Client', '103')
+            raise SDKException('Client', '101')
 
         return self._clients and str(client_name).lower() in self._clients
 
@@ -155,7 +157,7 @@ class Clients(object):
                     if no client exists with the given name
         """
         if not isinstance(client_name, str):
-            raise SDKException('Client', '103')
+            raise SDKException('Client', '101')
         else:
             client_name = str(client_name).lower()
 
@@ -163,7 +165,7 @@ class Clients(object):
                 return Client(self._commcell_object, client_name, self._clients[client_name])
 
             raise SDKException(
-                'Client', '104', 'No client exists with name: {0}'.format(client_name)
+                'Client', '102', 'No client exists with name: {0}'.format(client_name)
             )
 
     def delete(self, client_name):
@@ -183,17 +185,17 @@ class Clients(object):
                     if no client exists with the given name
         """
         if not isinstance(client_name, str):
-            raise SDKException('Client', '103')
+            raise SDKException('Client', '101')
         else:
             client_name = str(client_name).lower()
 
             if self.has_client(client_name):
                 client_id = self._clients[client_name]
-                CLIENT = self._commcell_object._services.CLIENT % (client_id)
-                CLIENT += "?forceDelete=1"
+                client_delete_service = self._commcell_object._services.CLIENT % (client_id)
+                client_delete_service += "?forceDelete=1"
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
-                    'DELETE', CLIENT
+                    'DELETE', client_delete_service
                 )
 
                 error_code = warning_code = 0
@@ -202,12 +204,9 @@ class Clients(object):
                     if response.json():
                         if 'response' in response.json():
                             if response.json()['response'][0]['errorCode'] == 0:
-                                o_str = 'Client: "{0}" deleted successfully'
-                                print o_str.format(client_name)
-                            else:
-                                print response.text
-
-                            self._clients = self._get_clients()
+                                # initialize the clients again
+                                # so the client object has all the clients
+                                self._clients = self._get_clients()
                         else:
                             if 'errorCode' in response.json():
                                 error_code = response.json()['errorCode']
@@ -215,21 +214,28 @@ class Clients(object):
                             if 'warningCode' in response.json():
                                 warning_code = response.json()['warningCode']
 
+                            o_str = 'Failed to delete client'
+
                             if error_code != 0:
-                                print response.json()['errorMessage']
+                                error_message = response.json()['errorMessage']
+                                if error_message:
+                                    o_str += '\nError: "{0}"'.format(error_message)
                             elif warning_code != 0:
-                                print response.json()['warningMessage']
+                                warning_message = response.json()['warningMessage']
+                                if warning_message:
+                                    o_str += '\nWarning: "{0}"'.format(warning_message)
+
+                            raise SDKException('Client', '102', o_str)
                     else:
                         raise SDKException('Response', '102')
                 else:
-                    exception_message = 'Failed to delete the client: {0}'.format(client_name)
                     response_string = self._commcell_object._update_response_(response.text)
-                    exception_message += "\n" + response_string
+                    exception_message = 'Failed to delete the client\nError: "{0}"'
 
-                    raise SDKException('Client', '104', exception_message)
+                    raise SDKException('Client', '102', exception_message.format(response_string))
             else:
                 raise SDKException(
-                    'Client', '104', 'No client exists with name: {0}'.format(client_name)
+                    'Client', '102', 'No client exists with name: {0}'.format(client_name)
                 )
 
 
@@ -473,13 +479,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Backup enabled successfully'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -504,9 +509,9 @@ class Client(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Client', '106')
+                raise SDKException('Client', '103')
         except ValueError:
-            raise SDKException('Client', '107')
+            raise SDKException('Client', '104')
 
         request_json = self._request_json_('Backup', False, enable_time)
 
@@ -519,13 +524,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Backup will be enabled at the time specified'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to enable Backup with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -552,13 +556,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Backup disabled successfully'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to disable Backup with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to disable Backup\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -585,13 +588,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Restore enabled successfully'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -616,9 +618,9 @@ class Client(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Client', '106')
+                raise SDKException('Client', '103')
         except ValueError:
-            raise SDKException('Client', '107')
+            raise SDKException('Client', '104')
 
         request_json = self._request_json_('Restore', False, enable_time)
 
@@ -631,13 +633,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Restore will be enabled at the time specified'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to enable Restore with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -664,13 +665,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Restore disabled successfully'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to disable Restore with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to disable Restore\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -697,13 +697,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Data Aging enabled successfully'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to enable Data Aging with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to enable Data Aging\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -728,9 +727,9 @@ class Client(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Client', '106')
+                raise SDKException('Client', '103')
         except ValueError:
-            raise SDKException('Client', '107')
+            raise SDKException('Client', '104')
 
         request_json = self._request_json_('Data Aging', False, enable_time)
 
@@ -743,13 +742,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Data Aging will be enabled at the time specified'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to enable Data Aging with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to enable Data Aging\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -776,13 +774,12 @@ class Client(object):
                 error_code = response.json()['response'][0]['errorCode']
 
                 if error_code == 0:
-                    print 'Data Aging disabled successfully'
+                    return
                 elif 'errorMessage' in response.json()['response'][0]:
                     error_message = response.json()['response'][0]['errorMessage']
 
-                    o_str = "Failed to disable Data Aging with error code: %s" % (error_code)
-                    o_str += "\nError message: %s" % (error_message)
-                    raise SDKException('Client', '104', o_str)
+                    o_str = 'Failed to disable Data Aging\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:

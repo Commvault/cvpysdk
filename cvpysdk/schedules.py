@@ -20,7 +20,9 @@ Schedules:
 
 """
 
-from exception import SDKException
+from __future__ import absolute_import
+
+from .exception import SDKException
 
 
 class Schedules(object):
@@ -41,10 +43,10 @@ class Schedules(object):
                         Subclient class
         """
         # imports inside the __init__ method definition to avoid cyclic imports
-        from client import Client
-        from agent import Agent
-        from backupset import Backupset
-        from subclient import Subclient
+        from .client import Client
+        from .agent import Agent
+        from .backupset import Backupset
+        from .subclient import Subclient
 
         self._commcell_object = class_object._commcell_object
 

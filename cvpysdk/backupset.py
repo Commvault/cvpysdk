@@ -50,12 +50,13 @@ Backupset:
 
 """
 
-import string
+from __future__ import absolute_import
+
 import threading
 
-from subclient import Subclients
-from schedules import Schedules
-from exception import SDKException
+from .subclient import Subclients
+from .schedules import Schedules
+from .exception import SDKException
 
 
 class Backupsets(object):
@@ -70,8 +71,8 @@ class Backupsets(object):
             Returns:
                 object - instance of the Backupsets class
         """
-        from agent import Agent
-        from instance import Instance
+        from .agent import Agent
+        from .instance import Instance
 
         self._instance_id = None
         self._instance_name = None
@@ -87,12 +88,12 @@ class Backupsets(object):
 
         self._commcell_object = self._agent_object._commcell_object
 
-        self._ALL_BACKUPSETS = (self._commcell_object._services.GET_ALL_BACKUPSETS) % (
+        self._BACKUPSETS = (self._commcell_object._services.GET_ALL_BACKUPSETS) % (
             self._agent_object._client_object.client_id
         )
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server']:
-            self._ALL_BACKUPSETS += '&excludeHidden=0'
+            self._BACKUPSETS += '&excludeHidden=0'
 
         self._backupsets = self._get_backupsets()
 
@@ -137,7 +138,7 @@ class Backupsets(object):
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._ALL_BACKUPSETS
+            'GET', self._BACKUPSETS
         )
 
         if flag:
@@ -184,7 +185,7 @@ class Backupsets(object):
                     if type of the backupset name argument is not string
         """
         if not isinstance(backupset_name, str):
-            raise SDKException('Backupset', '103')
+            raise SDKException('Backupset', '101')
 
         return self._backupsets and str(backupset_name).lower() in self._backupsets
 
@@ -208,7 +209,7 @@ class Backupsets(object):
                     if backupset with same name already exists
         """
         if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
-            raise SDKException('Backupset', '103')
+            raise SDKException('Backupset', '101')
         else:
             backupset_name = str(backupset_name).lower()
 
@@ -246,15 +247,13 @@ class Backupsets(object):
                             error_message = str(response_value['errorString'])
 
                         if error_message:
-                            o_str = ('Failed to create new backupset with '
-                                     'error code: "{0}", error: "{1}"')
-                            print o_str.format(error_code, error_message)
+                            o_str = 'Failed to create new backupset\nError: "{0}"'.format(
+                                error_message
+                            )
+                            raise SDKException('Backupset', '102', o_str)
                         else:
                             if error_code is '0':
-                                print 'Backupset "{0}" created successfully'.format(backupset_name)
-
                                 backupset_id = response_value['entity']['backupsetId']
-
                                 # initialize the backupsets again
                                 # so the backupsets object has all the backupsets
                                 self._backupsets = self._get_backupsets()
@@ -267,16 +266,18 @@ class Backupsets(object):
                                     self._instance_name
                                 )
                             else:
-                                o_str = 'Failed to create new backupset with error code: "{0}"'
-                                print o_str.format(error_code)
-                                print ('Please check the documentation for '
-                                       'more details on the error')
+                                o_str = ('Failed to create new backupset with error code: "{0}"\n'
+                                         'Please check the documentation for '
+                                         'more details on the error').format(error_code)
+
+                                raise SDKException('Backupset', '102', o_str)
                     else:
                         error_code = response.json()['errorCode']
                         error_message = response.json()['errorMessage']
-                        o_str = ('Failed to create new backupset with '
-                                 'error code: "{0}", error: "{1}"')
-                        print o_str.format(error_code, error_message)
+                        o_str = 'Failed to create new backupset\nError: "{0}"'.format(
+                            error_message
+                        )
+                        raise SDKException('Backupset', '102', o_str)
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -302,7 +303,7 @@ class Backupsets(object):
                     if no backupset exists with the given name
         """
         if not isinstance(backupset_name, str):
-            raise SDKException('Backupset', '103')
+            raise SDKException('Backupset', '101')
         else:
             backupset_name = str(backupset_name).lower()
 
@@ -336,7 +337,7 @@ class Backupsets(object):
                     if no backupset exists with the given name
         """
         if not isinstance(backupset_name, str):
-            raise SDKException('Backupset', '103')
+            raise SDKException('Backupset', '101')
         else:
             backupset_name = str(backupset_name).lower()
 
@@ -360,26 +361,23 @@ class Backupsets(object):
                             error_message = str(response_value['errorString'])
 
                         if error_message:
-                            o_str = ('Failed to delete backupset with '
-                                     'error code: "{0}", error: "{1}"')
-                            print o_str.format(error_code, error_message)
+                            o_str = 'Failed to delete backupset\nError: "{0}"'
+                            raise SDKException('Backupset', '102', o_str.format(error_message))
                         else:
                             if error_code is '0':
-                                print 'Backupset "{0}" deleted successfully'.format(backupset_name)
-
                                 # initialize the backupsets again
                                 # so the backupsets object has all the backupsets
                                 self._backupsets = self._get_backupsets()
                             else:
-                                o_str = 'Failed to delete backupset with error code: "{0}"'
-                                print o_str.format(error_code)
-                                print ('Please check the documentation for '
-                                       'more details on the error')
+                                o_str = ('Failed to delete backupset with error code: "{0}"\n'
+                                         'Please check the documentation for '
+                                         'more details on the error').format(error_code)
+                                raise SDKException('Backupset', '102', o_str)
                     else:
                         error_code = response.json()['errorCode']
                         error_message = response.json()['errorMessage']
-                        o_str = 'Failed to delete backupset with error code: "{0}", error: "{1}"'
-                        print o_str.format(error_code, error_message)
+                        o_str = 'Failed to delete backupset\nError: "{0}"'.format(error_message)
+                        raise SDKException('Backupset', '102', o_str)
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -503,7 +501,9 @@ class Backupset(object):
             raise SDKException('Response', '101', response_string)
 
     def _run_backup(self, subclient_name, return_list):
-        """Triggers full backup job for the given subclient, and appeds its job object to the list.
+        """Triggers full backup job for the given subclient, and appends its Job object to the list.
+            The SDKExcpetion class instance is appended to the list,
+            if any exception is raised while running the backup job for the Subclient.
 
             Args:
                 subclient_name (str)   --  name of the subclient to trigger the backup for
@@ -511,15 +511,13 @@ class Backupset(object):
 
             Returns:
                 None
-
-            Prints the exception message in case any exception is raised.
         """
         try:
             job = self.subclients.get(subclient_name).backup()
             if job:
                 return_list.append(job)
         except SDKException as excp:
-            print excp.exception_message
+            return_list.append(excp)
 
     def _update(self, backupset_name, backupset_description, default_backupset):
         """Updates the properties of the backupset.
@@ -622,14 +620,14 @@ class Backupset(object):
             output = self._update(
                 backupset_name=value,
                 backupset_description=self.description,
-                default_backupset=self.is_default_backupset)
+                default_backupset=self.is_default_backupset
+            )
 
             if output[0]:
-                print "Backupset Name updated successfully"
+                return
             else:
-                print "Failed to update the name of the backupset."
-                print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
-                print "Please check the documentation for more details on the error"
+                o_str = 'Failed to update the name of the backupset\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(output[2]))
         else:
             raise SDKException('Backupset', '102', 'Backupset name should be a string value')
 
@@ -641,21 +639,20 @@ class Backupset(object):
                 output = self._update(
                     backupset_name=self.backupset_name,
                     backupset_description=value,
-                    default_backupset=self.is_default_backupset)
+                    default_backupset=self.is_default_backupset
+                )
 
                 if output[0]:
-                    print "Backupset Description updated successfully"
+                    return
                 else:
-                    print "Failed to update the description of the backupset."
-                    print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
-                    print "Please check the documentation for more details on the error"
+                    o_str = 'Failed to update the description of the backupset\nError: "{0}"'
+                    raise SDKException('Backupset', '102', o_str.format(output[2]))
             else:
                 raise SDKException(
-                    'Backupset',
-                    '102',
-                    'Backupset description should be a string value')
+                    'Backupset', '102', 'Backupset description should be a string value'
+                )
         else:
-            print 'Description for this Backupset cannot be modified'
+            raise SDKException('Backupset', '102', 'Description cannot be modified')
 
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset
@@ -664,19 +661,14 @@ class Backupset(object):
             output = self._update(
                 backupset_name=self.backupset_name,
                 backupset_description=self.description,
-                default_backupset=True)
+                default_backupset=True
+            )
 
             if output[0]:
-                o_str = 'Backupset: "{0}" set to DefaultBackupSet for "{1}" agent of Client: "{2}"'
-                print o_str.format(
-                    self.backupset_name,
-                    string.capwords(self._agent_object.agent_name),
-                    self._agent_object._client_object.client_name
-                )
+                return
             else:
-                print "Failed to set this backupset as the default backup set."
-                print "Error Code: {0}, Error Message: {1}".format(output[1], output[2])
-                print "Please check the documentation for more details on the error"
+                o_str = 'Failed to set this as the Default Backup Set\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(output[2]))
 
     def backup(self):
         """Run full backup job for all subclients in this backupset.
@@ -687,7 +679,9 @@ class Backupset(object):
         """
         return_list = []
         thread_list = []
+
         all_subclients = self.subclients._subclients
+
         if all_subclients:
             for subclient in all_subclients:
                 thread = threading.Thread(

@@ -37,8 +37,10 @@ Instance:
 
 """
 
-from subclient import Subclients
-from exception import SDKException
+from __future__ import absolute_import
+
+from .subclient import Subclients
+from .exception import SDKException
 
 
 class Instances(object):
@@ -56,7 +58,7 @@ class Instances(object):
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
-        self._ALL_INSTANCES = self._commcell_object._services.GET_ALL_INSTANCES % (
+        self._INSTANCES = self._commcell_object._services.GET_ALL_INSTANCES % (
             self._agent_object._client_object.client_id
         )
 
@@ -103,7 +105,7 @@ class Instances(object):
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._ALL_INSTANCES
+            'GET', self._INSTANCES
         )
 
         if flag:
@@ -186,7 +188,7 @@ class Instance(object):
             Returns:
                 object - instance of the Backupset class
         """
-        from backupset import Backupsets
+        from .backupset import Backupsets
 
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object

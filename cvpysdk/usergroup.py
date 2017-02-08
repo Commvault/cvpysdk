@@ -37,7 +37,9 @@ UserGroup:
 
 """
 
-from exception import SDKException
+from __future__ import absolute_import
+
+from .exception import SDKException
 
 
 class UserGroups(object):
@@ -53,7 +55,7 @@ class UserGroups(object):
                 object - instance of the UserGroups class
         """
         self._commcell_object = commcell_object
-        self._USER_GROUPS = self._commcell_object._services.USERGROUPS
+        self._USERGROUPS = self._commcell_object._services.USERGROUPS
         self._user_groups = self._get_user_groups()
 
     def __str__(self):
@@ -92,7 +94,7 @@ class UserGroups(object):
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._USER_GROUPS
+            'GET', self._USERGROUPS
         )
 
         if flag:
@@ -128,7 +130,7 @@ class UserGroups(object):
                     if type of the user group name argument is not string
         """
         if not isinstance(user_group_name, str):
-            raise SDKException('UserGroup', '103')
+            raise SDKException('UserGroup', '101')
 
         return self._user_groups and str(user_group_name).lower() in self._user_groups
 
@@ -147,7 +149,7 @@ class UserGroups(object):
                     if no user group exists with the given name
         """
         if not isinstance(user_group_name, str):
-            raise SDKException('UserGroup', '103')
+            raise SDKException('UserGroup', '101')
         else:
             user_group_name = str(user_group_name).lower()
 
@@ -159,7 +161,7 @@ class UserGroups(object):
                 )
 
             raise SDKException(
-                'UserGroup', '104', 'No user group exists with name: {0}'.format(user_group_name)
+                'UserGroup', '102', 'No user group exists with name: {0}'.format(user_group_name)
             )
 
     def delete(self, user_group_name):
@@ -180,7 +182,7 @@ class UserGroups(object):
         """
 
         if not isinstance(user_group_name, str):
-            raise SDKException('UserGroup', '103')
+            raise SDKException('UserGroup', '101')
         else:
             user_group_name = str(user_group_name).lower()
 
@@ -194,50 +196,40 @@ class UserGroups(object):
                 )
 
                 if flag:
-                    if response.json():
-                        if 'response' in response.json():
-                            response_value = response.json()['response'][0]
-                            error_code = str(response_value['errorCode'])
-                            error_message = None
+                    if response.json() and 'response' in response.json():
+                        response_value = response.json()['response'][0]
+                        error_code = str(response_value['errorCode'])
+                        error_message = None
 
-                            if 'errorString' in response_value:
-                                error_message = str(response_value['errorString'])
+                        if 'errorString' in response_value:
+                            error_message = str(response_value['errorString'])
 
-                            if error_message:
-                                o_str = ('Failed to delete user group with '
-                                         'error code: "{0}", error: "{1}"')
-                                print o_str.format(error_code, error_message)
-                            else:
-                                if error_code is '0':
-                                    print 'User Group "{0}" deleted successfully'.format(
-                                        user_group_name
-                                    )
-
-                                    # initialize the usergroup again
-                                    # so the usergroups object has all the usergroups
-                                    self._user_groups = self._get_user_groups()
-                                else:
-                                    o_str = 'Failed to delete usergroup with error code: "{0}"'
-                                    print o_str.format(error_code)
-                                    print ('Please check the documentation for '
-                                           'more details on the error')
+                        if error_message:
+                            o_str = 'Failed to delete user group\nError: "{0}"'
+                            raise SDKException(
+                                'UserGroup', '102', o_str.format(error_message)
+                            )
                         else:
-                            print response.json()
+                            if error_code is '0':
+                                # initialize the usergroup again
+                                # so the usergroups object has all the usergroups
+                                self._user_groups = self._get_user_groups()
+                            else:
+                                o_str = ('Failed to delete usergroup with error code: "{0}"'
+                                         '\nPlease check the documentation for '
+                                         'more details on the error')
+                                raise SDKException(
+                                    'UserGroup', '102', o_str.format(error_code)
+                                )
                     else:
                         raise SDKException('Response', '102')
                 else:
                     response_string = self._commcell_object._update_response_(response.text)
-                    raise SDKException(
-                        'UserGroup',
-                        '104',
-                        'Failed to delete the usergroup: {0}, reason: {1}'.format(
-                            user_group_name, response_string
-                        )
-                    )
+                    raise SDKException('Response', '101', response_string)
             else:
                 raise SDKException(
                     'UserGroup',
-                    '104',
+                    '102',
                     'No usergroup exists with name: {0}'.format(user_group_name)
                 )
 
