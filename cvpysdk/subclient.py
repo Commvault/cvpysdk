@@ -722,15 +722,17 @@ class Subclient(object):
 
         return request_json
 
-    def _process_browse_request(self, option, request_json):
+    def _process_browse_request(self, option, flag, response):
         """Runs the DoBrowse API with the request JSON provided for the operation specified,
             and returns the contents after parsing the response.
 
             Args:
-                option          (str)   --  string option for which to process the response for
+                option      (str)   --  string option for which to process the response for
                     e.g.; Browse / Find
 
-                request_json    (dict)  --  JSON request to run for the API
+                flag        (bool)  --  boolean to specify whether the response was success or not
+
+                response    (dict)  --  JSON response received for the request from the Server
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
@@ -748,10 +750,6 @@ class Subclient(object):
 
         exception_code = options_dict[option][0]
         exception_message = options_dict[option][1]
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._BROWSE, request_json
-        )
 
         if flag:
             if response.json() and 'browseResponses' in response.json():
@@ -1152,58 +1150,7 @@ class Subclient(object):
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', web_service)
 
-        if flag:
-            if response.json() and 'browseResponses' in response.json():
-                if 'messages' in response.json()['browseResponses'][0]:
-                    error = response.json()['browseResponses'][0]['messages'][0]
-                    error_message = error['errorMessage']
-
-                    o_str = 'Failed to browse for subclient backup content\nError: "{0}"'
-                    raise SDKException('Subclient', '102', o_str.format(error_message))
-                elif 'browseResult' in response.json()['browseResponses'][0]:
-                    browse_result = response.json()['browseResponses'][0]['browseResult']
-
-                    if 'dataResultSet' in browse_result:
-                        result_set = browse_result['dataResultSet']
-                        full_result = []
-                        paths = []
-
-                        for result in result_set:
-                            name = str(result['displayName'])
-                            path = str(result['path'])
-                            mod_time = time.localtime(result['modificationTime'])
-                            mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
-
-                            if 'file' in result['flags']:
-                                file_or_folder = 'File'
-                            else:
-                                file_or_folder = 'Folder'
-
-                            # convert bits to bytes and then pass to convert_size
-                            size = self._convert_size(float(result['size']) / 8.0)
-
-                            temp = {
-                                path: [name, file_or_folder, size, mod_time]
-                            }
-
-                            paths.append(path)
-                            full_result.append(temp)
-
-                        return paths, full_result
-                    elif 'aggrResultSet' in browse_result:
-                        aggr_result_set = browse_result['aggrResultSet']
-                        if aggr_result_set[0]['count'] == 0:
-                            raise SDKException('Subclient', '110')
-                    else:
-                        o_str = 'Did not get the expected data\nResponse Received: "{0}"'
-                        raise SDKException('Subclient', '102', o_str.format(response.json()))
-                else:
-                    raise SDKException('Response', '102')
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+        return self._process_browse_request('Browse', flag, response)
 
     def browse_in_time(self,
                        path='',
@@ -1299,7 +1246,11 @@ class Subclient(object):
             to_date=to_date
         )
 
-        return self._process_browse_request('Browse', request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._BROWSE, request_json
+        )
+
+        return self._process_browse_request('Browse', flag, response)
 
     def find(self,
              file_or_folder_name,
@@ -1330,7 +1281,11 @@ class Subclient(object):
             restore_index=restore_index
         )
 
-        return self._process_browse_request('Find', request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._BROWSE, request_json
+        )
+
+        return self._process_browse_request('Find', flag, response)
 
     def restore_in_place(self, paths, overwrite=True, restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the same location.
