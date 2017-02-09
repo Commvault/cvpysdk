@@ -4,16 +4,17 @@ CVPySDK
 
 CVPySDK is a Python Package for Commvault Software.
 
-CVPySDK uses REST API to perform operations on a Commcell.
+CVPySDK uses Commvault REST API to perform operations on a Commcell.
 
 
 ------------
 Requirements
 ------------
 
-- Python 2.7
-- requests Python package (https://github.com/kennethreitz/requests)
-- Commvault Software v11 SP6 or later release
+- Python 2.7 or above
+- requests Python package (https://pypi.python.org/pypi/requests/)
+- future Python package (https://pypi.python.org/pypi/future)
+- Commvault Software v11 SP7 or later release
 
 
 ------------------
@@ -31,13 +32,13 @@ It can be installed from source. After downloading, from within the ``cvpysdk`` 
 Using CVPySDK
 -------------
 
-Login to Commcell::
+Login to Commcell:
 
     >>> from cvpysdk import commcell
     >>> commcell_object = commcell.Commcell(commcell_name, commcell_username, commcell_password, port)
 
 Print all clients:
-    >>> print commcell_object.clients
+    >>> print(commcell_object.clients)
 
 Get a client:
 	>>> client_object = commcell_object.clients.get(client_name)
@@ -63,6 +64,9 @@ Browsing content of a subclient:
 Browsing content of a subclient in a specific time range:
 	>>> paths, dictionary = subclient_object.browse_in_time(path, show_deleted_files, restore_index, from_date, to_date)
 
+Searching a file in subclient backup content:
+	>>> paths, dictionary = subclient_object.find(file_or_folder_name, show_deleted_files, restore_index)
+
 Run restore in place job for a subclient:
 	>>> job = subclient_object.restore_in_place(paths, overwrite, restore_data_and_acl)
 
@@ -75,6 +79,8 @@ Job Operations:
 	>>> job.kill()		    # Kills the Job
 	>>> job.status		    # Current Status the Job  --  Completed / Pending / Failed / .... / etc.
 	>>> job.finished	    # Job finished or not     --  True / False
+	>>> job.delay_reason	    # Job delay reason (if any)
+	>>> job.pending_reason	    # Job pending reason (if any)
 
 
 ------------
