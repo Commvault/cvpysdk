@@ -101,7 +101,7 @@ class CVPySDK(object):
                         return str(response.json()['token']), str(response.json()['userGUID'])
                     else:
                         error_message = response.json()['errList'][0]['errLogMessage']
-                        err_msg = 'Login Failed\nError: "{0}"'.format(error_message)
+                        err_msg = 'Error: "{0}"'.format(error_message)
                         raise SDKException('CVPySDK', '101', err_msg)
                 else:
                     raise SDKException('Response', '102')

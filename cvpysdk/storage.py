@@ -601,10 +601,6 @@ class StoragePolicies(object):
                                                         the data backup for
                     default: 5
 
-            Returns:
-                object - instance of the StoragePolicies class, if created successfully
-                None   - if failed to add storage policy
-
             Raises:
                 SDKException:
                     if type of the storage policy name argument is not string
@@ -661,6 +657,8 @@ class StoragePolicies(object):
                             raise SDKException('Storage', '102', o_str.format(error_message))
                 except ValueError:
                     if response.text:
+                        # initialize the policies again
+                        # so the policies object has all the policies
                         self._policies = self._get_policies()
                         return response.text.strip()
                     else:
