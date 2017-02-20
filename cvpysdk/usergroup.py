@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -98,16 +98,14 @@ class UserGroups(object):
         )
 
         if flag:
-            if response.json():
+            if response.json() and 'userGroups' in response.json():
+                response_value = response.json()['userGroups']
                 user_groups_dict = {}
 
-                if 'userGroups' in response.json():
-                    response_value = response.json()['userGroups']
-
-                    for temp in response_value:
-                        temp_name = str(temp['userGroupEntity']['userGroupName']).lower()
-                        temp_id = str(temp['userGroupEntity']['userGroupId']).lower()
-                        user_groups_dict[temp_name] = temp_id
+                for temp in response_value:
+                    temp_name = str(temp['userGroupEntity']['userGroupName']).lower()
+                    temp_id = str(temp['userGroupEntity']['userGroupId']).lower()
+                    user_groups_dict[temp_name] = temp_id
 
                 return user_groups_dict
             else:

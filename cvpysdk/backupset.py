@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -142,7 +142,7 @@ class Backupsets(object):
         )
 
         if flag:
-            if response.json() and 'backupsetProperties' in response.json().keys():
+            if response.json() and 'backupsetProperties' in response.json():
                 return_dict = {}
 
                 for dictionary in response.json()['backupsetProperties']:

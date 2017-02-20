@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -117,7 +117,7 @@ class Alerts(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._ALERTS)
 
         if flag:
-            if response.json():
+            if response.json() and 'alertList' in response.json():
                 alerts_dict = {}
                 alert_dict = {}
 
@@ -362,7 +362,7 @@ class Alert(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._ALERT)
 
         if flag:
-            if response.json() and 'alertDetail' in response.json().keys():
+            if response.json() and 'alertDetail' in response.json():
                 return response.json()['alertDetail']
             else:
                 raise SDKException('Response', '102')

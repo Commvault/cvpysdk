@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -32,8 +32,8 @@ def readme():
 
 
 def get_license():
-    """Reads the License.txt file and returns its contents."""
-    with open('License.txt') as file_object:
+    """Reads the LICENSE.txt file and returns its contents."""
+    with open('LICENSE.txt') as file_object:
         return file_object.read()
 
 setup(
@@ -47,7 +47,7 @@ setup(
     url='https://github.com/CommvaultEngg/cvpysdk',
     scripts=[],
     packages=find_packages(),
-    keywords='commvault , cv , simpana , commcell',
+    keywords='commvault python sdk cv simpana commcell cvlt webconsole',
     include_package_data=True,
     install_requires=['requests', 'future'],
     zip_safe=False

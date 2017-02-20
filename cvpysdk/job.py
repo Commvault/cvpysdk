@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -71,8 +71,6 @@ class Job(object):
 
         self._JOB = self._commcell_object._services.JOB % (self.job_id)
 
-        time.sleep(1.5)
-
         if not self._is_valid_job():
             raise SDKException('Job', '102')
 
@@ -84,8 +82,8 @@ class Job(object):
         self.finished = self._is_finished()
         self.status = str(self._get_job_summary()['status'])
 
-        self._delay_reason = ' -- '
-        self._pending_reason = ' -- '
+        self._delay_reason = None
+        self._pending_reason = None
 
         self._initialize_job_properties()
 
@@ -107,10 +105,18 @@ class Job(object):
             Returns:
                 bool - boolean that represents whether the job is valid or not
         """
-        if self._get_job_summary() is False:
-            return False
-        else:
-            return True
+        for i in range(3):
+            try:
+                self._get_job_summary()
+                return True
+            except SDKException as excp:
+                if excp.exception_module == 'Job' and excp.exception_id == '103':
+                    continue
+                else:
+                    raise excp
+            time.sleep(5)
+
+        return False
 
     def _check_finished(self):
         """Checks whether the job has finished or not.
@@ -137,7 +143,7 @@ class Job(object):
         if job_summary['lastUpdateTime'] != 0:
             self._end_time = time.ctime(job_summary['lastUpdateTime'])
         else:
-            self._end_time = ' -- '
+            self._end_time = None
 
         if 'pendingReason' in job_summary:
             if job_summary['pendingReason']:
@@ -169,7 +175,7 @@ class Job(object):
                 if response.json()['totalRecordsWithoutPaging'] == 0:
                     raise SDKException('Job', '103')
 
-                if 'jobs' in response.json().keys():
+                if 'jobs' in response.json():
                     for job in response.json()['jobs']:
                         return job['jobSummary']
             else:
@@ -198,7 +204,7 @@ class Job(object):
         )
 
         if flag:
-            if response.json() and 'job' in response.json().keys():
+            if response.json() and 'job' in response.json():
                 return response.json()['job']
             else:
                 raise SDKException('Response', '102')
@@ -220,14 +226,23 @@ class Job(object):
 
         self._client_name = str(subclient_properties['clientName'])
         self._agent_name = str(subclient_properties['appName'])
-        self._backupset_name = str(subclient_properties['backupsetName'])
+
+        if 'backupsetName' in subclient_properties:
+            self._backupset_name = str(subclient_properties['backupsetName'])
+        else:
+            self._backupset_name = None
+
+        if 'instanceName' in subclient_properties:
+            self._instance_name = str(subclient_properties['instanceName'])
+        else:
+            self._instance_name = None
 
         self._job_type = str(job_summary['jobType'])
 
         if self._job_type == 'Backup' and 'backupLevelName' in job_summary:
             self._backup_level = str(job_summary['backupLevelName'])
         else:
-            self._backup_level = ' -- '
+            self._backup_level = None
 
         self._start_time = time.ctime(job_summary['jobStartTime'])
 
@@ -258,6 +273,11 @@ class Job(object):
     def backupset_name(self):
         """Treats the backupset name as a read-only attribute."""
         return self._backupset_name
+
+    @property
+    def instance_name(self):
+        """Treats the instance name as a read-only attribute."""
+        return self._instance_name
 
     @property
     def subclient_name(self):

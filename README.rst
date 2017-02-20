@@ -12,9 +12,9 @@ Requirements
 ------------
 
 - Python 2.7 or above
-- requests Python package (https://pypi.python.org/pypi/requests/)
-- future Python package (https://pypi.python.org/pypi/future)
-- Commvault Software v11 SP7 or later release
+- **requests** Python package (https://pypi.python.org/pypi/requests/)
+- **future** Python package (https://pypi.python.org/pypi/future)
+- Commvault Software v11 SP7 or later release with WebConsole installed
 
 
 ------------------
@@ -32,46 +32,45 @@ It can be installed from source. After downloading, from within the ``cvpysdk`` 
 Using CVPySDK
 -------------
 
-Login to Commcell::
-
-    >>> from cvpysdk import commcell
-    >>> commcell_object = commcell.Commcell(commcell_name, commcell_username, commcell_password, port)
+Login to Commcell:
+    >>> from cvpysdk.commcell import Commcell
+    >>> commcell = Commcell(webconsole_hostname, commcell_username, commcell_password)
 
 Print all clients:
-    >>> print(commcell_object.clients)
+    >>> print(commcell.clients)
 
 Get a client:
-	>>> client_object = commcell_object.clients.get(client_name)
+	>>> client = commcell.clients.get(client_name)
 
 Get an agent:
-	>>> agent_object = client_object.agents.get(agent_name)
+	>>> agent = client.agents.get(agent_name)
 
 Get a backupset:
-	>>> backupset_object = agent_object.backupsets.get(backupset_name)
+	>>> backupset = agent.backupsets.get(backupset_name)
 
 Get a subclient:
-	>>> subclient_object = backupset_object.subclients.get(subclient_name)
+	>>> subclient = backupset.subclients.get(subclient_name)
 
 Run backup for a backupset:
-	>>> job = backupset_object.backup()
+	>>> job = backupset.backup()
 
 Run backup for a subclient:
-	>>> job = subclient_object.backup(backup_level, incremental_backup, incremental_level)
+	>>> job = subclient.backup(backup_level, incremental_backup, incremental_level)
 
 Browsing content of a subclient:
-	>>> paths, dictionary = subclient_object.browse(path, show_deleted_files, vm_file_browse, vm_disk_browse)
+	>>> paths, dictionary = subclient.browse(path, show_deleted_files, vm_file_browse, vm_disk_browse)
 
 Browsing content of a subclient in a specific time range:
-	>>> paths, dictionary = subclient_object.browse_in_time(path, show_deleted_files, restore_index, from_date, to_date)
+	>>> paths, dictionary = subclient.browse_in_time(path, show_deleted_files, restore_index, from_date, to_date)
 
 Searching a file in subclient backup content:
-	>>> paths, dictionary = subclient_object.find(file_or_folder_name, show_deleted_files, restore_index)
+	>>> paths, dictionary = subclient.find(file_or_folder_name, show_deleted_files, restore_index)
 
 Run restore in place job for a subclient:
-	>>> job = subclient_object.restore_in_place(paths, overwrite, restore_data_and_acl)
+	>>> job = subclient.restore_in_place(paths, overwrite, restore_data_and_acl)
 
 Run restore out of place job for a subclient:
-	>>> job = subclient_object.restore_out_of_place(client, destination_path, paths, overwrite, restore_data_and_acl)
+	>>> job = subclient.restore_out_of_place(client, destination_path, paths, overwrite, restore_data_and_acl)
 
 Job Operations:
 	>>> job.pause()		    # Suspends the Job

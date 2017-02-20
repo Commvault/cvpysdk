@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -109,19 +109,26 @@ class Instances(object):
         )
 
         if flag:
-            if response.json() and 'instanceProperties' in response.json().keys():
-                return_dict = {}
+            if response.json():
+                if 'instanceProperties' in response.json():
+                    return_dict = {}
 
-                for dictionary in response.json()['instanceProperties']:
+                    for dictionary in response.json()['instanceProperties']:
 
-                    agent = str(dictionary['instance']['appName']).lower()
+                        agent = str(dictionary['instance']['appName']).lower()
 
-                    if self._agent_object.agent_name in agent:
-                        temp_name = str(dictionary['instance']['instanceName']).lower()
-                        temp_id = str(dictionary['instance']['instanceId']).lower()
-                        return_dict[temp_name] = temp_id
+                        if self._agent_object.agent_name in agent:
+                            temp_name = str(dictionary['instance']['instanceName']).lower()
+                            temp_id = str(dictionary['instance']['instanceId']).lower()
+                            return_dict[temp_name] = temp_id
 
-                return return_dict
+                    return return_dict
+                elif 'errors' in response.json():
+                    error = response.json()['errors'][0]
+                    error_string = error['errorString']
+                    raise SDKException('Instance', '102', error_string)
+                else:
+                    raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')
         else:

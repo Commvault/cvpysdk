@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -63,7 +63,8 @@ EXCEPTION_DICT = {
         '108': 'Time Value should be greater than current time',
         '109': 'Time Value entered is not of correct format',
         '110': 'No data found at the path specified',
-        '111': 'No File/Folder matched the input value'
+        '111': 'No File/Folder matched the input value',
+        '112': 'Method Not Implemented'
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -74,7 +75,8 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Type of media agent should either be the MediaAgent class instance or string',
-        '104': 'Type of library should either be the DiskLibrary class instance or string'
+        '104': 'Type of library should either be the DiskLibrary class instance or string',
+        '105': 'No storage policies exist for this user'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',

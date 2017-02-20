@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -14,10 +14,9 @@ Commcell is the main class for the CVPySDK python package.
 Commcell: Initializes a connection to the commcell and is a wrapper for the entire commcell ops.
 
 Commcell:
-    __init__(commcell_name,
+    __init__(webconsole_hostname,
              commcell_username,
-             commcell_password,
-             port=81)            --  initialise object of the Commcell class
+             commcell_password)  --  initialise object of the Commcell class
     __repr__()                   --  return the name of the commcell, user is connected to,
                                         along with the user name of the connected user
     __enter__()                  --  returns the current instance, using the "with" context manager
@@ -65,16 +64,14 @@ from .exception import SDKException
 class Commcell(object):
     """Class for creating a session to the commcell via rest api."""
 
-    def __init__(self, commcell_name, commcell_username, commcell_password='', port=81):
+    def __init__(self, webconsole_hostname, commcell_username, commcell_password=''):
         """Initialize the Commcell object with the values required for doing the api operations.
 
             Args:
-                commcell_name       (str)  --  name of the server; name@domain.com
-                commcell_username   (str)  --  username of the user to log in to webconsole
-                commcell_password   (str)  --  plain text password to log in to webconsole
+                webconsole_hostname  (str)  --  webconsole host name/ip; webclient.company.com
+                commcell_username    (str)  --  username of the user to log in to commcell console
+                commcell_password    (str)  --  plain text password to log in to commcell console
                     default: ''
-                port                (int)  --  port, the server is reachable at
-                    default: 81
 
             Returns:
                 object - instance of this class
@@ -84,11 +81,9 @@ class Commcell(object):
                     if the web service is down or not reachable
                     if not token is received upon log in
         """
-        commcell_service = [
-            r'https://{0}:{1}/SearchSvc/CVWebService.svc/'.format(commcell_name, port),
-            r'https://{0}/webconsole/api/'.format(commcell_name),
-            r'http://{0}:{1}/SearchSvc/CVWebService.svc/'.format(commcell_name, port),
-            r'http://{0}/webconsole/api/'.format(commcell_name)
+        web_service = [
+            r'https://{0}/webconsole/api/'.format(webconsole_hostname),
+            r'http://{0}/webconsole/api/'.format(webconsole_hostname)
         ]
 
         self._user = commcell_username
@@ -97,7 +92,7 @@ class Commcell(object):
         self._password = b64encode(commcell_password.encode()).decode()
 
         self._headers = {
-            'Host': commcell_name,
+            'Host': webconsole_hostname,
             'Accept': 'application/json',
             'Content-type': 'application/json',
             'Authtoken': None
@@ -106,8 +101,8 @@ class Commcell(object):
         self._cvpysdk_object = CVPySDK(self)
 
         # Checks if the service is running or not
-        for service in commcell_service:
-            self._commcell_service = service
+        for service in web_service:
+            self._web_service = service
             try:
                 if self._cvpysdk_object._is_valid_service_():
                     break
@@ -117,7 +112,7 @@ class Commcell(object):
             raise SDKException('Commcell', '101')
 
         # Initialize all the services with this commcell service
-        self._services = ApiLibrary(self._commcell_service)
+        self._services = ApiLibrary(self._web_service)
 
         # Login to the commcell with the credentials provided and store the token in the headers.
         self._headers['Authtoken'], self.__user_guid = self._cvpysdk_object._login_()
@@ -201,11 +196,14 @@ class Commcell(object):
                 sdk_dict  (dict)   --  dict to store the class object as value,
                                         with the class name as key
         """
-        sdk_dict[sdk_class] = sdk_class(self)
-        self._queue.task_done()
+        try:
+            sdk_dict[sdk_class] = sdk_class(self)
+        except SDKException:
+            sdk_dict[sdk_class] = None
+        finally:
+            self._queue.task_done()
 
-    @staticmethod
-    def _update_response_(input_string):
+    def _update_response_(self, input_string):
         """Returns only the relevant response from the response received from the server.
 
             Args:
@@ -232,7 +230,7 @@ class Commcell(object):
         del self.user_groups
         del self.workflows
         del self.__user_guid
-        del self._commcell_service
+        del self._web_service
         del self._cvpysdk_object
         del self._password
         del self._services
@@ -264,7 +262,7 @@ class Commcell(object):
             Returns:
                 object - the response received from the server
         """
-        request_url = self._commcell_service + request_url
+        request_url = self._web_service + request_url
 
         flag, response = self._cvpysdk_object.make_request(
             request_type.upper(), request_url, request_body

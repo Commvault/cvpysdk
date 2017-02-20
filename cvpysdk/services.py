@@ -3,17 +3,17 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
-"""Service URSL for REST API operations.
+"""Service URLs for REST API operations.
 
 ApiLibrary: Class having all the REST API services initialized with the commcell
 
 ApiLibrary:
-    __init__(commcell_service)      --  initialize all the API services with the commcell service
-    __repr__()                      --  retuns string representation for this class
+    __init__(web_service)   --  initialize all the API services with the web service
+    __repr__()              --  retuns string representation for this class
 
 """
 
@@ -23,11 +23,11 @@ from __future__ import absolute_import
 class ApiLibrary(object):
     """Class ApiLibrary for defining all the REST API URLs."""
 
-    def __init__(self, commcell_service):
+    def __init__(self, web_service):
         """Initializes the instance of the class ApiLibrary.
 
             Args:
-                commcell_service (str)  --  the url of the commcell service for the API
+                web_service (str)  --  web service URI for the API
         """
         self.LOGIN = '{0}Login'
         self.LOGOUT = '{0}Logout'
@@ -63,13 +63,13 @@ class ApiLibrary(object):
         self.STORAGE_POLICY = '{0}StoragePolicy'
         self.SCHEDULE_POLICY = '{0}SchedulePolicy'
 
-        self.GET_ALL_ALERTS = '{0}/AlertRule'
-        self.ALERT = '{0}/AlertRule/%s'
-        self.GET_ALL_CONSOLE_ALERTS = '{0}/Alert?pageNo=%s&pageCount=%s'
-        self.ENABLE_ALERT_NOTIFICATION = '{0}/AlertRule/%s/notificationType/%s/Action/Enable'
-        self.DISABLE_ALERT_NOTIFICATION = '{0}/AlertRule/%s/notificationType/%s/Action/Disable'
-        self.ENABLE_ALERT = '{0}/AlertRule/%s/Action/Enable'
-        self.DISABLE_ALERT = '{0}/AlertRule/%s/Action/Disable'
+        self.GET_ALL_ALERTS = '{0}AlertRule'
+        self.ALERT = '{0}AlertRule/%s'
+        self.GET_ALL_CONSOLE_ALERTS = '{0}Alert?pageNo=%s&pageCount=%s'
+        self.ENABLE_ALERT_NOTIFICATION = '{0}AlertRule/%s/notificationType/%s/Action/Enable'
+        self.DISABLE_ALERT_NOTIFICATION = '{0}AlertRule/%s/notificationType/%s/Action/Disable'
+        self.ENABLE_ALERT = '{0}AlertRule/%s/Action/Enable'
+        self.DISABLE_ALERT = '{0}AlertRule/%s/Action/Disable'
 
         self.CLIENT_SCHEDULES = '{0}Schedules?clientId=%s'
         self.AGENT_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s'
@@ -90,7 +90,7 @@ class ApiLibrary(object):
         self.EXECUTE_WORKFLOW = '{0}Workflow/%s/Action/Execute'
 
         for key, value in vars(self).items():
-            setattr(self, key, value.format(commcell_service))
+            setattr(self, key, value.format(web_service))
 
     def __repr__(self):
         """Representation string for this class instance."""

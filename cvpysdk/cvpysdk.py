@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ class CVPySDK(object):
                 Error returned by the requests package
         """
         try:
-            response = requests.get(self._commcell_object._commcell_service)
+            response = requests.get(self._commcell_object._web_service)
 
             # Valid service if the status code is 200 and response is True
             return response.status_code == httplib.OK and response.ok

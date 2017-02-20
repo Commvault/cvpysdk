@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -545,6 +545,10 @@ class StoragePolicies(object):
         if flag:
             if response.json() and 'policies' in response.json():
                 policies = response.json()['policies']
+
+                if policies == []:
+                    raise SDKException('Storage', '105')
+
                 policies_dict = {}
 
                 for policy in policies:

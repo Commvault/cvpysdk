@@ -3,7 +3,7 @@
 
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
-# See License.txt in the project root for
+# See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
 
@@ -467,13 +467,14 @@ class Subclient(object):
             raise SDKException('Response', '101', response_string)
 
     # Abstract method to be overridden
-    @staticmethod
-    def _get_subclient_content_(subclient_content):
-        return []
+    # Raises `Method Not Implemented` Exception if not implemented
+    def _get_subclient_content_(self, subclient_content):
+        raise SDKException('Subclient', '112')
 
     # Abstract method to be overridden
+    # Raises `Method Not Implemented` Exception if not implemented
     def _set_subclient_content_(self, subclient_content):
-        return []
+        raise SDKException('Subclient', '112')
 
     def _initialize_subclient_properties(self):
         """Initializes the common properties for the subclient.
@@ -486,17 +487,17 @@ class Subclient(object):
         if 'description' in subclient_props['commonProperties']:
             self._description = str(subclient_props['commonProperties']['description'])
         else:
-            self._description = ' -- '
+            self._description = None
 
         if 'lastBackupTime' in subclient_props['commonProperties']:
             if subclient_props['commonProperties']['nextBackupTime'] == 0:
-                self._last_backup_time = ' -- '
+                self._last_backup_time = None
             else:
                 self._last_backup_time = time.ctime(
                     subclient_props['commonProperties']['lastBackupTime']
                 )
         else:
-            self._last_backup_time = ' -- '
+            self._last_backup_time = None
 
         if 'onDemandSubClient' in subclient_props['commonProperties']:
             self._on_demand_subclient = subclient_props['commonProperties']['onDemandSubClient']
@@ -505,13 +506,13 @@ class Subclient(object):
 
         if 'nextBackupTime' in subclient_props['commonProperties']:
             if subclient_props['commonProperties']['nextBackupTime'] == 0:
-                self._next_backup = ' -- '
+                self._next_backup = None
             else:
                 self._next_backup = time.ctime(
                     subclient_props['commonProperties']['nextBackupTime']
                 )
         else:
-            self._next_backup = ' -- '
+            self._next_backup = None
 
         if 'enableBackup' in subclient_props['commonProperties']:
             self._is_backup_enabled = subclient_props['commonProperties']['enableBackup']
@@ -645,6 +646,43 @@ class Subclient(object):
                         return (False, error_code, error_string)
                     else:
                         return (False, error_code, "")
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _process_backup_request(self, backup_request):
+        """Runs the Backup for a subclient with the request provided and returns the Job object.
+
+            Args:
+                backup_request  (str)  --  backup request specifying the backup level,
+                                               to run for the subclient
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if job initialization failed
+                    if response is empty
+                    if response is not success
+        """
+        self._BACKUP = self._commcell_object._services.SUBCLIENT_BACKUP % (
+            self.subclient_id, backup_request
+        )
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._BACKUP)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    o_str = 'Initializing backup failed\nError: "{0}"'.format(
+                        response.json()['errorMessage']
+                    )
+                    raise SDKException('Subclient', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -904,8 +942,6 @@ class Subclient(object):
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    time.sleep(1)
-
                     return Job(self._commcell_object, response.json()['jobIds'][0])
                 elif "errorCode" in response.json():
                     error_message = response.json()['errorMessage']
@@ -1051,7 +1087,7 @@ class Subclient(object):
 
             Args:
                 backup_level        (str)   --  level of backup the user wish to run
-                        Full / Incremental / Synthetic_full
+                        Full / Incremental / Differential / Synthetic_full
                     default: Incremental
 
                 incremental_backup  (bool)  --  run incremental backup
@@ -1073,37 +1109,20 @@ class Subclient(object):
                     if response is not success
         """
         backup_level = backup_level.lower()
-        if backup_level not in ['full', 'incremental', 'synthetic_full']:
+
+        if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
             raise SDKException('Subclient', '103')
 
-        self._BACKUP = self._commcell_object._services.SUBCLIENT_BACKUP % (
-            self.subclient_id, backup_level
-        )
+        backup_request = backup_level
 
         if backup_level == 'synthetic_full':
             if incremental_backup:
-                self._BACKUP += '&runIncrementalBackup=True'
-                self._BACKUP += '&incLevel=%s' % (incremental_level.lower())
+                backup_request += '&runIncrementalBackup=True'
+                backup_request += '&incLevel=%s' % (incremental_level.lower())
             else:
-                self._BACKUP += '&runIncrementalBackup=False'
+                backup_request += '&runIncrementalBackup=False'
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._BACKUP)
-        if flag:
-            if response.json():
-                if "jobIds" in response.json():
-                    time.sleep(1)
-
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
-                elif "errorCode" in response.json():
-                    o_str = 'Initializing backup failed\nError: "{0}"'.format(
-                        response.json()['errorMessage']
-                    )
-                    raise SDKException('Subclient', '102', o_str)
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+        return self._process_backup_request(backup_request)
 
     def browse(self,
                path='',
@@ -1237,6 +1256,8 @@ class Subclient(object):
             else:
                 path = '\\'
 
+            path = '/' + path
+
         request_json = self._browse_and_find_json(
             option='Browse',
             path=path,
@@ -1324,6 +1345,8 @@ class Subclient(object):
                     path = path.replace('\\', '/')
                 else:
                     path = '\\'
+                path = '/' + path
+
             paths[index] = path
 
         if paths == []:
@@ -1395,6 +1418,8 @@ class Subclient(object):
                     path = path.replace('\\', '/')
                 else:
                     path = '\\'
+                path = '/' + path
+
             paths[index] = path
 
         if int(self._backupset_object._agent_object.agent_id) == 33:
@@ -1409,6 +1434,8 @@ class Subclient(object):
                 destination_path = destination_path.replace('\\', '/')
             else:
                 destination_path = '\\'
+
+            destination_path = '/' + destination_path
 
         if paths == []:
             raise SDKException('Subclient', '104')
@@ -1429,8 +1456,7 @@ class FileSystemSubclient(Subclient):
     """Derived class from Subclient Base class, representing a file system subclient,
         and to perform operations on that subclient."""
 
-    @staticmethod
-    def _get_subclient_content_(subclient_content):
+    def _get_subclient_content_(self, subclient_content):
         """Gets the appropriate content from the Subclient relevant to the user.
 
             Args:
