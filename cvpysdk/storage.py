@@ -12,61 +12,99 @@
 This file has all the classes related to Storage operations.
 
 MediaAgents:      Class for representing all the media agents attached to the commcell.
+
 MediaAgent:       Class for representing a single media agent attached to the commcell.
+
 DiskLibraries:    Class for representing all the disk libraries attached to the commcell.
+
 DiskLibrary:      Class for representing a single disk library associated with the commcell.
-StoragePolicies:  Class for all the Storage Policies associated to the commcell.
+
+StoragePolicies:  Class for representing all the Storage Policies associated to the commcell.
+
+SchedulePolicies: Class for representing all the Schedule Policies associated to the commcell.
+
 
 MediaAgents:
     __init__(commcell_object)   --  initialize the MediaAgents class instance for the commcell
+
     __str__()                   --  returns all the media agents associated with the commcell
+
     __repr__()                  --  returns the string for the instance of the MediaAgents class
+
     _get_media_agents()         --  gets all the media agents of the commcell
+
     has_media_agent()           --  checks if a media agent exists with the given name or not
+
     get(media_agent_name)       --  returns the instance of MediaAgent class
                                         of the media agent specified
+
 
 MediaAgent:
     __init__(commcell_object,
              media_agent_name,
              media_agent_id)    --  initialize the instance of MediaAgent class for a specific
                                         media agent of the commcell
+
     __repr__()                  --  returns a string representation of the MediaAgent instance
+
     _get_media_agent_id()       --  gets the id of the MediaAgent instance from commcell
+
 
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
+
     __str__()                   --  returns all the disk libraries associated with the commcell
+
     __repr__()                  --  returns the string for the instance of the DiskLibraries class
+
     _get_libraries()            --  gets all the disk libraries of the commcell
+
     has_library(library_name)   --  checks if a disk library exists with the given name or not
+
     add()                       --  adds a new disk library to the commcell
+
     get(library_name)           --  returns the instance of the DiskLibrary class
                                         for the library specified
+
 
 DiskLibrary:
     __init__(commcell_object,
              library_name,
              library_id)        --  initialize the instance of DiskLibrary class for a specific
                                         disk library of the commcell
+
     __repr__()                  --  returns a string representation of the DiskLibrary instance
+
     _get_library_id()           --  gets the id of the DiskLibrary instance from commcell
+
 
 StoragePolicies:
     __init__(commcell_object)    --  initialize the StoragePolicies instance for the commcell
+
     __str__()                    --  returns all the storage policies associated with the commcell
+
     __repr__()                   --  returns a string for the instance of the StoragePolicies class
+
     _get_policies()              --  gets all the storage policies of the commcell
+
     has_policy(policy_name)      --  checks if a storage policy exists with the given name
+
     add()                        --  adds a new storage policy to the commcell
+
     delete(storage_policy_name)  --  removes the specified storage policy from the commcell
+
 
 SchedulePolicies:
     __init__(commcell_object)    --  initialize the SchedulePolicies instance for the commcell
+
     __str__()                    --  returns all the schedule policies associated with the commcell
+
     __repr__()                   --  returns a string for instance of the SchedulePolicies class
+
     _get_policies()              --  gets all the schedule policies of the commcell
+
     has_policy(policy_name)      --  checks if a schedule policy exists with the given name
+
 
 """
 
@@ -349,7 +387,6 @@ class DiskLibraries(object):
 
             Returns:
                 object - instance of the DiskLibrary class, if created successfully
-                None - if failed to add disk library
 
             Raises:
                 SDKException:
@@ -358,6 +395,7 @@ class DiskLibraries(object):
                     if type of the username argument is not string
                     if type of the password argument is not string
                     if type of the media agent argument is not either string or MediaAgent instance
+                    if failed to create disk library
                     if response is empty
                     if response is not success
         """
@@ -611,6 +649,7 @@ class StoragePolicies(object):
                     if type of the retention period argument is not int
                     if type of the library argument is not either string or DiskLibrary instance
                     if type of the media agent argument is not either string or MediaAgent instance
+                    if failed to create storage policy
                     if response is empty
                     if response is not success
         """
@@ -713,12 +752,10 @@ class StoragePolicies(object):
             Args:
                 storage_policy_name (str)  --  name of the storage policy to delete
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of the storage policy name argument is not string
+                    if failed to delete storage policy
                     if response is empty
                     if response is not success
         """

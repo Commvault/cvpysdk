@@ -21,46 +21,74 @@ FileSystemSubclient: Derived class from Subclient Base class, representing a fil
 Subclients:
     __init__(class_object)      --  initialise object of subclients object associated with
                                         the specified backup set/instance.
+
     __str__()                   --  returns all the subclients associated with the backupset
+
     __repr__()                  --  returns the string for the instance of the Subclients class
+
     _get_subclients()           --  gets all the subclients associated with the backupset specified
+
     has_subclient()             --  checks if a subclient exists with the given name or not
+
     add()                       --  adds a new subclient to the backupset
+
     get(subclient_name)         --  returns the subclient object of the input subclient name
+
     delete(subclient_name)      --  deletes the subclient (subclient name) from the backupset
+
 
 Subclient:
     __init__(backupset_object,
              subclient_name,
              subclient_id)      --  initialise instance of the Subclient class,
                                         associated to the specified backupset
+
     __repr__()                  --  return the subclient name, the instance is associated with
+
     _get_subclient_id()         --  method to get subclient id, if not specified in __init__ method
+
     _get_subclient_properties() --  get the properties of this subclient
+
     _initialize_subclient_properties() --  initializes the properties of this subclient
+
     _browse_and_find_json()     --  returns the appropriate JSON request to pass for either
                                         Browse operation or Find operation
+
     _process_browse_request()   --  processes response received for both Browse and Find request
+
     _restore_json()             --  returns the apppropriate JSON request to pass for either
                                         Restore In-Place or Out-of-Place operation
+
     _process_restore_request()  --  processes response received for the Restore request
+
     description()               --  update the description of the subclient
+
     content()                   --  update the content of the subclient
+
     enable_backup()             --  enables the backup for the subclient
+
     enable_backup_at_time()     --  enables backup for the subclient at the input time specified
+
     disble_backup()             --  disbles the backup for the subclient
+
     backup()                    --  run a backup job for the subclient
+
     browse()                    --  gets the content of the backup for this subclient
                                         at the path specified
+
     browse_in_time()            --  gets the content of the backup for this subclient
                                         at the input path in the time range specified
+
     restore_in_place()          --  Restores the files/folders specified in the
                                         input paths list to the same location
+
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
                                         to the input client, at the specified destionation location
 
+
 FileSystemSubclient:
     _get_subclient_content_()   --  gets the content of a file system subclient
+
     _set_subclient_content_()   --  sets the content of a file system subclient
 
 """
@@ -111,7 +139,7 @@ class Subclients(object):
 
         self._commcell_object = self._backupset_object._commcell_object
 
-        self._ALL_SUBCLIENTS = self._commcell_object._services.GET_ALL_SUBCLIENTS % (
+        self._SUBCLIENTS = self._commcell_object._services.GET_ALL_SUBCLIENTS % (
             self._backupset_object._agent_object._client_object.client_id
         )
 
@@ -170,7 +198,7 @@ class Subclients(object):
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._ALL_SUBCLIENTS
+            'GET', self._SUBCLIENTS
         )
 
         if flag:
@@ -231,13 +259,16 @@ class Subclients(object):
             Raises:
                 SDKException:
                     if subclient name argument is not of type string
-                    if content argument is not of type list
-                    if storage_policy argument is not of type string
+                    if storage policy argument is not of type string
+                    if description argument is not of type string
+                    if failed to create subclient
                     if response is empty
                     if response is not success
+                    if subclient already exists with the given name
         """
         if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str)):
+                isinstance(storage_policy, str) and
+                isinstance(description, str)):
             raise SDKException('Subclient', '101')
 
         if not self.has_subclient(subclient_name):
@@ -336,12 +367,10 @@ class Subclients(object):
             Args:
                 subclient_name (str)  --  name of the subclient to remove from the backupset
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of the subclient name argument is not string
+                    if failed to delete subclient
                     if response is empty
                     if response is not success
                     if no subclient exists with the given name
@@ -477,50 +506,48 @@ class Subclient(object):
         raise SDKException('Subclient', '112')
 
     def _initialize_subclient_properties(self):
-        """Initializes the common properties for the subclient.
+        """Initializes the common properties for the subclient."""
+        self._subclient_properties = self._get_subclient_properties()
 
-            Returns:
-                None
-        """
-        subclient_props = self._get_subclient_properties()
-
-        if 'description' in subclient_props['commonProperties']:
-            self._description = str(subclient_props['commonProperties']['description'])
+        if 'description' in self._subclient_properties['commonProperties']:
+            self._description = str(self._subclient_properties['commonProperties']['description'])
         else:
             self._description = None
 
-        if 'lastBackupTime' in subclient_props['commonProperties']:
-            if subclient_props['commonProperties']['nextBackupTime'] == 0:
+        if 'lastBackupTime' in self._subclient_properties['commonProperties']:
+            if self._subclient_properties['commonProperties']['nextBackupTime'] == 0:
                 self._last_backup_time = None
             else:
                 self._last_backup_time = time.ctime(
-                    subclient_props['commonProperties']['lastBackupTime']
+                    self._subclient_properties['commonProperties']['lastBackupTime']
                 )
         else:
             self._last_backup_time = None
 
-        if 'onDemandSubClient' in subclient_props['commonProperties']:
-            self._on_demand_subclient = subclient_props['commonProperties']['onDemandSubClient']
+        if 'onDemandSubClient' in self._subclient_properties['commonProperties']:
+            self._on_demand_subclient = self._subclient_properties[
+                'commonProperties']['onDemandSubClient']
         else:
             self._on_demand_subclient = False
 
-        if 'nextBackupTime' in subclient_props['commonProperties']:
-            if subclient_props['commonProperties']['nextBackupTime'] == 0:
+        if 'nextBackupTime' in self._subclient_properties['commonProperties']:
+            if self._subclient_properties['commonProperties']['nextBackupTime'] == 0:
                 self._next_backup = None
             else:
                 self._next_backup = time.ctime(
-                    subclient_props['commonProperties']['nextBackupTime']
+                    self._subclient_properties['commonProperties']['nextBackupTime']
                 )
         else:
             self._next_backup = None
 
-        if 'enableBackup' in subclient_props['commonProperties']:
-            self._is_backup_enabled = subclient_props['commonProperties']['enableBackup']
+        if 'enableBackup' in self._subclient_properties['commonProperties']:
+            self._is_backup_enabled = self._subclient_properties[
+                'commonProperties']['enableBackup']
         else:
             self._is_backup_enabled = False
 
-        if 'content' in subclient_props:
-            self._content = self._get_subclient_content_(subclient_props['content'])
+        if 'content' in self._subclient_properties:
+            self._content = self._get_subclient_content_(self._subclient_properties['content'])
         else:
             self._content = []
 
@@ -536,6 +563,7 @@ class Subclient(object):
         """
         if input_size == 0:
             return '0B'
+
         size_name = ("KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
         i = int(math.floor(math.log(input_size, 1024)))
         power = math.pow(1024, i)
@@ -543,7 +571,7 @@ class Subclient(object):
         return '%s %s' % (size, size_name[i])
 
     def _update(self, subclient_description, subclient_content, backup=True, enable_time=None):
-        """Updates the properties of the backupset.
+        """Updates the properties of the subclient.
 
             Args:
                 subclient_description (str)     --  description of the subclient
@@ -628,11 +656,11 @@ class Subclient(object):
             'POST', self._SUBCLIENT, request_json
         )
 
+        self._initialize_subclient_properties()
+
         if flag:
             if response.json() and "response" in response.json():
                 error_code = str(response.json()["response"][0]["errorCode"])
-
-                self._initialize_subclient_properties()
 
                 if error_code == "0":
                     return (True, "0", "")
@@ -778,6 +806,7 @@ class Subclient(object):
 
             Raises:
                 SDKException:
+                    if failed to browse/search for content
                     if response is empty
                     if response is not success
         """
@@ -998,7 +1027,13 @@ class Subclient(object):
 
     @description.setter
     def description(self, value):
-        """Sets the description of the subclient as the value provided as input."""
+        """Sets the description of the subclient as the value provided as input.
+
+            Raises:
+                SDKException:
+                    if failed to update description of subclient
+                    if the type of value input is not string
+        """
         if isinstance(value, str):
             output = self._update(value, self.content, self.is_backup_enabled)
 
@@ -1014,7 +1049,14 @@ class Subclient(object):
 
     @content.setter
     def content(self, value):
-        """Sets the content of the subclient as the value provided as input."""
+        """Sets the content of the subclient as the value provided as input.
+
+            Raises:
+                SDKException:
+                    if failed to update content of subclient
+                    if the type of value input is not list
+                    if value list is empty
+        """
         if isinstance(value, list) and value != []:
             output = self._update(self.description, value, self.is_backup_enabled)
 
@@ -1029,7 +1071,12 @@ class Subclient(object):
             )
 
     def enable_backup(self):
-        """Enables Backup for the subclient."""
+        """Enables Backup for the subclient.
+
+            Raises:
+                SDKException:
+                    if failed to enable backup of subclient
+        """
         output = self._update(self.description, self.content, True)
 
         if output[0]:
@@ -1069,7 +1116,12 @@ class Subclient(object):
             raise SDKException('Subclient', '102', o_str.format(output[2]))
 
     def disable_backup(self):
-        """Disables Backup for the subclient."""
+        """Disables Backup for the subclient.
+
+            Raises:
+                SDKException:
+                    if failed to disable backup of subclient
+        """
         output = self._update(self.description, self.content, False)
 
         if output[0]:
@@ -1151,6 +1203,7 @@ class Subclient(object):
 
             Raises:
                 SDKException:
+                    if failed to browse content
                     if response is empty
                     if response is not success
         """
@@ -1205,6 +1258,7 @@ class Subclient(object):
                     if from date value is incorrect
                     if to date value is incorrect
                     if to date is less than from date
+                    if failed to browse content
                     if response is empty
                     if response is not success
         """
@@ -1292,6 +1346,7 @@ class Subclient(object):
 
             Raises:
                 SDKException:
+                    if failed to search file/folder
                     if response is empty
                     if response is not success
         """
@@ -1324,6 +1379,7 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if paths is not a list
+                    if failed to initialize job
                     if response is empty
                     if response is not success
         """
@@ -1386,6 +1442,7 @@ class Subclient(object):
                     if client is not a string or Client instance
                     if destination_path is not a string
                     if paths is not a list
+                    if failed to initialize job
                     if response is empty
                     if response is not success
         """

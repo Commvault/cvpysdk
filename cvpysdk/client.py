@@ -17,13 +17,19 @@ Client: Class for a single client of the commcell
 
 
 Clients:
-    __init__(commcell_object) -- initialise object of Clients class associated with the commcell
-    __str__()                 -- returns all the clients associated with the commcell
-    __repr__()                -- returns the string to represent the instance of the Clients class
-    _get_clients()            -- gets all the clients associated with the commcell
-    has_client(client_name)   -- checks if a client exists with the given name or not
-    get(client_name)          -- returns the Client class object of the input client name
-    delete(client_name)       -- deletes the client specified by the client name from the commcell
+    __init__(commcell_object) --  initialise object of Clients class associated with the commcell
+
+    __str__()                 --  returns all the clients associated with the commcell
+
+    __repr__()                --  returns the string to represent the instance of the Clients class
+
+    _get_clients()            --  gets all the clients associated with the commcell
+
+    has_client(client_name)   --  checks if a client exists with the given name or not
+
+    get(client_name)          --  returns the Client class object of the input client name
+
+    delete(client_name)       --  deletes the client specified by the client name from the commcell
 
 
 Client:
@@ -31,17 +37,29 @@ Client:
              client_name,
              client_id=None)     --  initialise object of Class with the specified client name
                                          and id, and associated to the commcell
+
     __repr__()                   --  return the client name and id, the instance is associated with
+
     _get_client_id()             --  method to get the client id, if not specified in __init__
+
     _get_client_properties()     --  get the properties of this client
+
     enable_backup()              --  enables the backup for the client
+
     enable_backup_at_time()      --  enables the backup for the client at the input time specified
+
     disble_backup()              --  disbles the backup for the client
+
     enable_restore()             --  enables the restore for the client
+
     enable_restore_at_time()     --  enables the restore for the client at the input time specified
+
     disble_restore()             --  disbles the restore for the client
+
     enable_data_aging()          --  enables the data aging for the client
+
     enable_data_aging_at_time()  --  enables the data aging for the client at input time specified
+
     disable_data_aging()         --  disbles the data aging for the clientt
 
 """
@@ -174,12 +192,10 @@ class Clients(object):
             Args:
                 client_name (str)  --  name of the client to remove from the commcell
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of the client name argument is not string
+                    if failed to delete client
                     if response is empty
                     if response is not success
                     if no client exists with the given name
@@ -201,7 +217,7 @@ class Clients(object):
                 error_code = warning_code = 0
 
                 if flag:
-                    if response.json():
+                    if response.json() and 'response' in response.json():
                         if 'response' in response.json():
                             if response.json()['response'][0]['errorCode'] == 0:
                                 # initialize the clients again
@@ -230,9 +246,7 @@ class Clients(object):
                         raise SDKException('Response', '102')
                 else:
                     response_string = self._commcell_object._update_response_(response.text)
-                    exception_message = 'Failed to delete the client\nError: "{0}"'
-
-                    raise SDKException('Client', '102', exception_message.format(response_string))
+                    raise SDKException('Response', '101', response_string)
             else:
                 raise SDKException(
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
@@ -312,39 +326,23 @@ class Client(object):
 
                 client_props = client_properties['clientProps']
 
-                if client_props['activityControl']['EnableDataRecovery'] is True:
-                    self._data_recovery = 'Enabled'
-                else:
-                    self._data_recovery = 'Disabled'
+                self._is_data_recovery_enabled = client_props[
+                    'activityControl']['EnableDataRecovery']
 
-                if client_props['activityControl']['EnableDataManagement'] is True:
-                    self._data_management = 'Enabled'
-                else:
-                    self._data_management = 'Disabled'
+                self._is_data_management_enabled = client_props[
+                    'activityControl']['EnableDataManagement']
 
-                if client_props['activityControl']['EnableOnlineContentIndex'] is True:
-                    self._online_content_index = 'Enabled'
-                else:
-                    self._online_content_index = 'Disabled'
+                self._is_ci_enabled = client_props['activityControl']['EnableOnlineContentIndex']
 
                 activities = client_props["clientActivityControl"]["activityControlOptions"]
 
                 for activity in activities:
                     if activity["activityType"] == 1:
-                        if activity["enableActivityType"] is True:
-                            self._backup = 'Enabled'
-                        else:
-                            self._backup = 'Disabled'
+                        self._is_backup_enabled = activity["enableActivityType"]
                     elif activity["activityType"] == 2:
-                        if activity["enableActivityType"] is True:
-                            self._restore = 'Enabled'
-                        else:
-                            self._restore = 'Disabled'
+                        self._is_restore_enabled = activity["enableActivityType"]
                     elif activity["activityType"] == 16:
-                        if activity["enableActivityType"] is True:
-                            self._data_aging = 'Enabled'
-                        else:
-                            self._data_aging = 'Disabled'
+                        self._is_data_aging_enabled = activity["enableActivityType"]
             else:
                 raise SDKException('Response', '102')
         else:
@@ -430,34 +428,34 @@ class Client(object):
         return self._os_info
 
     @property
-    def data_recovery(self):
-        """Treats the data recovery as a read-only attribute."""
-        return self._data_recovery
+    def is_data_recovery_enabled(self):
+        """Treats the is data recovery enabled as a read-only attribute."""
+        return self._is_data_recovery_enabled
 
     @property
-    def data_management(self):
-        """Treats the data management as a read-only attribute."""
-        return self._data_management
+    def is_data_management_enabled(self):
+        """Treats the is data management enabled as a read-only attribute."""
+        return self._is_data_management_enabled
 
     @property
-    def online_content_index(self):
-        """Treats the online content index as a read-only attribute."""
-        return self._online_content_index
+    def is_ci_enabled(self):
+        """Treats the is online content index enabled as a read-only attribute."""
+        return self._is_ci_enabled
 
     @property
-    def backup(self):
-        """Treats the backup as a read-only attribute."""
-        return self._backup
+    def is_backup_enabled(self):
+        """Treats the is backup enabled as a read-only attribute."""
+        return self._is_backup_enabled
 
     @property
-    def restore(self):
-        """Treats the restore as a read-only attribute."""
-        return self._restore
+    def is_restore_enabled(self):
+        """Treats the is restore enabled as a read-only attribute."""
+        return self._is_restore_enabled
 
     @property
-    def data_aging(self):
-        """Treats the data aging as a read-only attribute."""
-        return self._data_aging
+    def is_data_aging_enabled(self):
+        """Treats the is data aging enabled as a read-only attribute."""
+        return self._is_data_aging_enabled
 
     def enable_backup(self):
         """Enable Backup for this Client.

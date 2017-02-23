@@ -19,24 +19,38 @@ Agent: Class for a single agent selected for a client, and to perform operations
 Agents:
     __init__(client_object)     --  initialise object of Agents class associated with
                                         the specified client
+
     __str__()                   --  returns all the agents associated with the client
+
     __repr__()                  --  returns the string for the instance of the Agents class
+
     _get_agents()               --  gets all the agents associated with the client specified
+
     has_agent(agent_name)       --  checks if an agent exists with the given name
+
     get(agent_name)             --  returns the Agent class object of the input agent name
+
 
 Agent:
     __init__(client_object,
              agent_name,
              agent_id=None)     --   initialise object of Agent with the specified agent name
                                          and id, and associated to the specified client
+
     __repr__()                  --   return the agent name, the instance is associated with
+
     _get_agent_id()             --   method to get the agent id
+
     enable_backup()             --   enables the backup for the agent
+
     enable_backup_at_time()     --   enables the backup for the agent at the input time specified
+
     disble_backup()             --   disbles the backup for the agent
+
     enable_restore()            --   enables the restore for the agent
+
     enable_restore_at_time()    --   enables the restore for the agent at the input time specified
+
     disble_restore()            --   disbles the restore for the agent
 
 """
@@ -92,7 +106,7 @@ class Agents(object):
         return representation_string.strip()
 
     def __repr__(self):
-        """Representation string for the instance of the Clients class."""
+        """Representation string for the instance of the Agents class."""
         return "Agents class instance for Client: '{0}'".format(self._client_object.client_name)
 
     def _get_agents(self):
@@ -110,13 +124,12 @@ class Agents(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._AGENTS
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._AGENTS)
 
         if flag:
-            if response.json():
+            if response.json() and 'agentProperties' in response.json():
                 agent_dict = {}
+
                 for dictionary in response.json()['agentProperties']:
                     temp_name = str(dictionary['idaEntity']['appName']).lower()
                     temp_id = str(dictionary['idaEntity']['applicationId']).lower()
@@ -208,8 +221,9 @@ class Agent(object):
         """String representation of the instance of this class."""
         representation_string = '"{0}" Agent instance for Client: "{1}"'
 
-        return representation_string.format(string.capwords(self.agent_name),
-                                            self._client_object.client_name)
+        return representation_string.format(
+            string.capwords(self.agent_name), self._client_object.client_name
+        )
 
     def _get_agent_id(self):
         """Gets the agent id associated with this agent.

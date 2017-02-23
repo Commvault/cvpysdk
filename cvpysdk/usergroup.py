@@ -18,21 +18,32 @@ UserGroup:  Class for representing a single User Group of the commcell
 UserGroups:
     __init__(commcell_object)  --  initialise instance of the UserGroups associated with
                                        the specified commcell
+
     __str__()                  --  returns all the user groups associated with the commcell
+
     __repr__()                 --  returns the string for the instance of the UserGroups class
+
     __repr__()                 --  return all the usergroups associated with the specified commcell
+
     _get_usergroups()          --  gets all the usergroups associated with the commcell specified
+
     has_user_group()           --  checks if a user group exists with the given name or not
+
     get(user_group_name)       --  returns the instance of the UserGroup class,
                                        for the the input user group name
+
     delete(user_group_name)    --  deletes the user group from the commcell
+
 
 UserGroup:
     __init__(commcell_object,
              usergroup_name,
              usergroup_id=None)  -- initialise instance of the UserGroup for the commcell
+
     __repr__()                   -- return the usergroup name, the instance is associated with
+
     _get_usergroup_id()          -- method to get the usergroup id, if not specified in __init__
+
     _get_usergroup_properties()  -- get the properties of this usergroup
 
 """
@@ -168,12 +179,10 @@ class UserGroups(object):
             Args:
                 user_group_name (str)  --  name of the usergroup to remove from the commcell
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of the usergroup name argument is not string
+                    if failed to delete usergroup
                     if response is empty
                     if response is not success
                     if no usergroup exists with the given name
@@ -256,7 +265,13 @@ class UserGroup(object):
             self._user_group_id = self._get_usergroup_id()
 
         self._USERGROUP = self._commcell_object._services.USERGROUP % (self.user_group_id)
-        self.properties = self._get_usergroup_properties()
+
+        self._description = None
+        self._email = None
+        self._users = []
+        self._security_associations = {}
+
+        self._get_usergroup_properties()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -286,13 +301,63 @@ class UserGroup(object):
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._USERGROUP
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._USERGROUP)
 
         if flag:
-            if response.json():
-                return response.json()
+            if response.json() and 'userGroups' in response.json():
+                usergroup_properties = response.json()['userGroups'][0]
+
+                if 'description' in usergroup_properties:
+                    self._description = str(usergroup_properties['description'])
+
+                if 'email' in usergroup_properties:
+                    self._email = str(usergroup_properties['email'])
+
+                if 'users' in usergroup_properties:
+                    for user in usergroup_properties['users']:
+                        self._users.append(str(user['userName']))
+
+                if 'securityAssociations' in usergroup_properties:
+                    if 'associations' in usergroup_properties['securityAssociations']:
+                        associations = usergroup_properties['securityAssociations']['associations']
+
+                        for association in associations:
+                            entity = association['entities']['entity'][0]
+
+                            if 'commCellName' in entity:
+                                name = str(entity['commCellName'])
+                            elif 'userGroupName' in entity:
+                                name = str(entity['userGroupName'])
+                            else:
+                                return
+
+                            properties = association['properties']
+
+                            if name not in self._security_associations:
+                                self._security_associations[name] = {
+                                    'permissions': set([]),
+                                    'roles': set([])
+                                }
+
+                            permission = None
+                            role = None
+
+                            if 'categoryPermission' in properties:
+                                permissions = properties['categoryPermission']
+                                permission_list = permissions['categoriesPermissionList'][0]
+                                permission = str(permission_list['permissionName'])
+                            elif 'permissions' in properties:
+                                permission = str(properties['permissions'][0]['permissionName'])
+                            elif 'role' in properties:
+                                role = str(properties['role']['roleName'])
+
+                            if permission is not None:
+                                self._security_associations[name]['permissions'].add(
+                                    permission
+                                )
+
+                            if role is not None:
+                                self._security_associations[name]['roles'].add(role)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -308,3 +373,23 @@ class UserGroup(object):
     def user_group_name(self):
         """Treats the usergroup name as a read-only attribute."""
         return self._user_group_name
+
+    @property
+    def description(self):
+        """Treats the usergroup description as a read-only attribute."""
+        return self._description
+
+    @property
+    def email(self):
+        """Treats the usergroup email as a read-only attribute."""
+        return self._email
+
+    @property
+    def users(self):
+        """Treats the usergroup users as a read-only attribute."""
+        return self._users
+
+    @property
+    def associations(self):
+        """Treats the usergroup security associations as a read-only attribute."""
+        return self._security_associations

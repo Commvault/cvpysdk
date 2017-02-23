@@ -25,7 +25,8 @@ EXCEPTION_DICT = {
         '102': 'Response received is empty'
     },
     'Commcell': {
-        '101': 'Commcell is not reachable. Please check the commcell name again'
+        '101': 'Commcell is not reachable. Please check the commcell name again',
+        '102': 'Authtoken not received. Please try again.'
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
@@ -68,8 +69,9 @@ EXCEPTION_DICT = {
     },
     'Job': {
         '101': 'Incorrect JobId',
-        '102': 'No job exists with the specified Job ID',
-        '103': 'No records found for this Job'
+        '102': '',
+        '103': 'No job exists with the specified Job ID',
+        '104': 'No records found for this Job'
     },
     'Storage': {
         '101': 'Data type of the input(s) is not valid',
@@ -83,11 +85,10 @@ EXCEPTION_DICT = {
         '102': 'Data type of the input(s) is not valid'
     },
     'ClientGroup': {
-        '101': 'Client Group name should be specified',
-        '102': 'Attribute name not provided',
-        '103': 'Data type of the input(s) is not valid',
-        '104': '',
-        '105': 'Attribute\'s value not provided'
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Time Value should be greater than current time',
+        '104': 'Time Value entered is not of correct format'
     },
     'UserGroup': {
         '101': 'Data type of the input(s) is not valid',
@@ -98,7 +99,8 @@ EXCEPTION_DICT = {
         '102': ''
     },
     'Workflow': {
-        '101': 'Data type of the input(s) is not valid'
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     }
 }
 

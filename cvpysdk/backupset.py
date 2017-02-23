@@ -20,14 +20,22 @@ Backupset:  Class for a single backup set selected for an agent,
 Backupsets:
     __init__(class_object)          -- initialise object of Backupsets class associated with
                                            the specified agent/instance
+
     __str__()                       -- returns all the backupsets associated with the agent
+
     __repr__()                      -- returns the string for the instance of the Backupsets class
+
     _get_backupsets()               -- gets all the backupsets associated with the agent specified
+
     has_backupset(backupset_name)   -- checks if a backupset exists with the given name or not
+
     add(backupset_name)             -- adds a new backupset to the agent of the specified client
+
     get(backupset_name)             -- returns the Backupset class object
                                            of the input backup set name
+
     delete(backupset_name)          -- removes the backupset from the agent of the specified client
+
 
 Backupset:
     __init__(agent_object,
@@ -36,15 +44,22 @@ Backupset:
              instance_id=1,
              instance_name=None)    -- initialise object of Backupset with the specified backupset
                                          name and id, and associated to the specified agent
+
     __repr__()                      -- return the backupset name, the instance is associated with
+
     _get_backupset_id()             -- method to get the backupset id, if not specified in __init__
+
     _get_backupset_properties()     -- get the properties of this backupset
+
     _run_backup(subclient_name,
                 return_list)        -- runs full backup for the specified subclient,
                                         and appends the job object to the return list
+
     _update()                       -- updates the properties of the backupset
+
     set_default_backupset()         -- sets the backupset as the default backup set for the agent,
                                         if not already default
+
     backup()                        -- runs full backup for all subclients
                                         associated with this backupset
 
@@ -104,7 +119,8 @@ class Backupsets(object):
                 str - string of all the backupsets of an agent of a client
         """
         representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
-            'S. No.', 'Backupset', 'Instance', 'Agent', 'Client')
+            'S. No.', 'Backupset', 'Instance', 'Agent', 'Client'
+        )
 
         for index, backupset in enumerate(self._backupsets):
             sub_str = '{:^5}\t{:20}\t{:^20}\t{:20}\t{:20}\n'.format(
@@ -195,15 +211,15 @@ class Backupsets(object):
             Args:
                 backupset_name      (str)   --  name of the new backupset to add
                 on_demand_backupset (bool)  --  flag to specify whether the backupset to be added
-                                                    is normal backupset or an on-demand backupset
+                                                    is a simple backupset or an on-demand backupset
 
             Returns:
                 object - instance of the Backupset class, if created successfully
-                None - if failed to add new backup set
 
             Raises:
                 SDKException:
                     if type of the backupset name argument is not string
+                    if failed to create a backupset
                     if response is empty
                     if response is not success
                     if backupset with same name already exists
@@ -326,12 +342,10 @@ class Backupsets(object):
             Args:
                 backupset_name (str)  --  name of the backupset
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of the backupset name argument is not string
+                    if failed to delete the backupset
                     if response is empty
                     if response is not success
                     if no backupset exists with the given name
@@ -435,7 +449,7 @@ class Backupset(object):
 
         self._is_default = False
 
-        self._properties = self._get_backupset_properties()
+        self._get_backupset_properties()
 
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
@@ -464,36 +478,15 @@ class Backupset(object):
 
         if flag:
             if response.json() and "backupsetProperties" in response.json():
-                properties = response.json()["backupsetProperties"][0]
+                self._properties = response.json()["backupsetProperties"][0]
 
-                self._backupset_name = str(properties["backupSetEntity"]["backupsetName"]).lower()
-                self._is_default = bool(properties["commonBackupSet"]["isDefaultBackupSet"])
+                backupset_name = self._properties["backupSetEntity"]["backupsetName"]
+                self._backupset_name = str(backupset_name).lower()
 
-                if "userDescription" in properties["commonBackupSet"]:
-                    self._description = str(properties["commonBackupSet"]["userDescription"])
+                self._is_default = bool(self._properties["commonBackupSet"]["isDefaultBackupSet"])
 
-                o_str = '\nProperties of Backupset: "{0}"'.format(self.backupset_name)
-                o_str += '\n\tClient: \t\t{0}'.format(properties["backupSetEntity"]["clientName"])
-                o_str += '\n\tAgent: \t\t\t{0}\n'.format(properties["backupSetEntity"]["appName"])
-                o_str += '\tInstance: \t\t{0}'.format(
-                    properties["backupSetEntity"]["instanceName"]
-                )
-
-                o_str += '\n\tDefault Backup Set: \t{0}'.format(
-                    "Yes" if self.is_default_backupset else "No"
-                )
-
-                if 'onDemandBackupset' in properties["commonBackupSet"]:
-                    o_str += '\n\tOn Demand Backup Set: \t{0}'.format(
-                        "Yes" if properties["commonBackupSet"]["onDemandBackupset"] else "No"
-                    )
-
-                if self.description:
-                    o_str += '\n\n\tDescription: \t\t{0}'.format(self.description)
-                else:
-                    o_str += '\n\n\tDescription: \t\t  ----  '
-
-                return o_str.strip()
+                if "userDescription" in self._properties["commonBackupSet"]:
+                    self._description = str(self._properties["commonBackupSet"]["userDescription"])
             else:
                 raise SDKException('Response', '102')
         else:
@@ -508,9 +501,6 @@ class Backupset(object):
             Args:
                 subclient_name (str)   --  name of the subclient to trigger the backup for
                 return_list    (list)  --  list to append the job object to
-
-            Returns:
-                None
         """
         try:
             job = self.subclients.get(subclient_name).backup()
@@ -564,11 +554,11 @@ class Backupset(object):
             'POST', self._BACKUPSET, request_json
         )
 
+        self._get_backupset_properties()
+
         if flag:
             if response.json() and "response" in response.json():
                 error_code = str(response.json()["response"][0]["errorCode"])
-
-                self._properties = self._get_backupset_properties()
 
                 if error_code == "0":
                     return (True, "0", "")
@@ -587,11 +577,6 @@ class Backupset(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-
-    @property
-    def properties(self):
-        """Treats the backupset properties as a read-only attribute."""
-        return self._properties
 
     @property
     def backupset_id(self):
@@ -615,7 +600,13 @@ class Backupset(object):
 
     @backupset_name.setter
     def backupset_name(self, value):
-        """Sets the name of the backupset as the value provided as input."""
+        """Sets the name of the backupset as the value provided as input.
+
+            Raises:
+                SDKException:
+                    if failed to update the backupset name
+                    if type of value input is not string
+        """
         if isinstance(value, str):
             output = self._update(
                 backupset_name=value,
@@ -633,7 +624,14 @@ class Backupset(object):
 
     @description.setter
     def description(self, value):
-        """Sets the description of the backupset as the value provided as input."""
+        """Sets the description of the backupset as the value provided as input.
+
+            Raises:
+                SDKException:
+                    if failed to update the backupset description
+                    if type of value input is not string
+                    if description cannot be modified for this backupset
+        """
         if self.description is not None:
             if isinstance(value, str):
                 output = self._update(
@@ -656,7 +654,12 @@ class Backupset(object):
 
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset
-            if it is not the default backupset."""
+            if it is not the default backupset.
+
+            Raises:
+                SDKException:
+                    if failed to set this as the default backupset
+        """
         if self.is_default_backupset is False:
             output = self._update(
                 backupset_name=self.backupset_name,

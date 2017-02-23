@@ -13,9 +13,13 @@ Schedules: Initializes instance of all schedules for a commcell entity.
 
 Schedules:
     __init__(class_object)          --  initialise object of the Schedules class
+
     __str__()                       --  string of all schedules associated with the commcell entity
+
     __repr__()                      --  returns the string for the instance of the Schedules class
+
     _get_schedules()                --  gets all the schedules associated with the commcell entity
+
     has_schedule(schedule_name)     --  checks if schedule exists for the comcell entity or not
 
 """
@@ -127,13 +131,12 @@ class Schedules(object):
 
             Raises:
                 SDKException:
-                    if response is empty
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._SCHEDULES)
 
         if flag:
-            if response.json():
+            if response.json() and 'taskDetail' in response.json():
                 schedules_dict = {}
 
                 for schedule in response.json()['taskDetail']:

@@ -13,6 +13,7 @@ ApiLibrary: Class having all the REST API services initialized with the commcell
 
 ApiLibrary:
     __init__(web_service)   --  initialize all the API services with the web service
+
     __repr__()              --  retuns string representation for this class
 
 """
@@ -87,7 +88,7 @@ class ApiLibrary(object):
         self.RESTORE = '{0}CreateTask'
 
         self.GET_WORKFLOWS = '{0}Workflow'
-        self.EXECUTE_WORKFLOW = '{0}Workflow/%s/Action/Execute'
+        self.EXECUTE_WORKFLOW = '{0}wapi/%s'
 
         for key, value in vars(self).items():
             setattr(self, key, value.format(web_service))

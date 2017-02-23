@@ -15,23 +15,38 @@ Job:
     __init__(commcell_object,
              job_id)            --  initialises the instance of Job class associated with the
                                         specified commcell of job with id: 'job_id'
+
     __repr__()                  --  returns the string representation of the object of this class,
                                         with the job id it is associated with
+
     _is_valid_job()             --  checks if the job with the given id is a valid job or not.
+
     _check_finished()           --  checks if the job has finished or not yet
+
     _is_finished()              --  checks for the status of the job.
                                         Returns True if finished, else False
+
     _get_job_summary()          --  gets the summary of the job with the given job id
+
     _get_job_details()          --  gets the details of the job with the given job id
+
     _initialize_job_properties()--  initializes the properties of the job
+
     pause()                     --  suspend the job
+
     resume()                    --  resumes the job
+
     kill()                      --  kills the job
 
 
 job.status                      --  Gives the current status of the job.
                                         (Completed / Suspended / Waiting / ... / etc.)
+
 job.finished                    --  Tells whether the job is finished or not. (True / False)
+
+job.pending_reason              --  reason if job went into pending state
+
+job.delay_reason                --  reason why the job was delayed
 
 """
 
@@ -58,7 +73,7 @@ class Job(object):
 
             Raises:
                 SDKException:
-                    if job id is not of type int
+                    if job id is not an integer
                     if job is not a valid job, i.e., does not exist in the Commcell
         """
         try:
@@ -72,7 +87,7 @@ class Job(object):
         self._JOB = self._commcell_object._services.JOB % (self.job_id)
 
         if not self._is_valid_job():
-            raise SDKException('Job', '102')
+            raise SDKException('Job', '103')
 
         self._JOB_DETAILS = self._commcell_object._services.JOB_DETAILS
         self._SUSPEND = self._commcell_object._services.SUSPEND_JOB % (self.job_id)
@@ -105,25 +120,21 @@ class Job(object):
             Returns:
                 bool - boolean that represents whether the job is valid or not
         """
-        for i in range(3):
+        for i in range(10):
             try:
                 self._get_job_summary()
                 return True
             except SDKException as excp:
-                if excp.exception_module == 'Job' and excp.exception_id == '103':
+                if excp.exception_module == 'Job' and excp.exception_id == '104':
+                    time.sleep(1.5)
                     continue
                 else:
                     raise excp
-            time.sleep(5)
 
         return False
 
     def _check_finished(self):
-        """Checks whether the job has finished or not.
-
-            Returns:
-                None
-        """
+        """Checks whether the job has finished or not."""
         while not self._is_finished():
             time.sleep(5)
 
@@ -165,6 +176,7 @@ class Job(object):
 
             Raises:
                 SDKException:
+                    if no record found for this job
                     if response is empty
                     if response is not success
         """
@@ -173,7 +185,7 @@ class Job(object):
         if flag:
             if response.json():
                 if response.json()['totalRecordsWithoutPaging'] == 0:
-                    raise SDKException('Job', '103')
+                    raise SDKException('Job', '104')
 
                 if 'jobs' in response.json():
                     for job in response.json()['jobs']:
@@ -215,9 +227,6 @@ class Job(object):
     def _initialize_job_properties(self):
         """Initializes the common properties for the job.
             Adds the client, agent, backupset, subclient name to the job object.
-
-            Returns:
-                None
         """
         job_summary = self._get_job_summary()
         job_details = self._get_job_details()
@@ -249,7 +258,7 @@ class Job(object):
         if 'subclientName' in subclient_properties:
             self._subclient_name = str(subclient_properties['subclientName'])
         else:
-            self._subclient_name = 'Not provided in Job details'
+            self._subclient_name = None
 
         if 'pendingReason' in job_summary:
             if job_summary['pendingReason']:
@@ -322,11 +331,9 @@ class Job(object):
     def pause(self):
         """Suspend the job.
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
+                    if failed to suspend job
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._SUSPEND)
@@ -336,10 +343,12 @@ class Job(object):
                 error_list = response.json()['errors'][0]['errList'][0]
                 error_message = str(error_list['errLogMessage']).strip()
 
-                return 'Job suspend failed\nError: "{0}"'.format(error_message)
+                raise SDKException('Job', '102', 'Job suspend failed\nError: "{0}"'.format(
+                        error_message
+                    )
+                )
             else:
                 self.status = str(self._get_job_summary()['status'])
-                return 'Job suspended successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -347,11 +356,9 @@ class Job(object):
     def resume(self):
         """Resume the job.
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
+                    if failed to resume job
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._RESUME)
@@ -361,10 +368,12 @@ class Job(object):
                 error_list = response.json()['errors'][0]['errList'][0]
                 error_message = str(error_list['errLogMessage']).strip()
 
-                return 'Job resume failed\nError: "{0}"'.format(error_message)
+                raise SDKException('Job', '102', 'Job resume failed\nError: "{0}"'.format(
+                        error_message
+                    )
+                )
             else:
                 self.status = str(self._get_job_summary()['status'])
-                return 'Job resumed successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -372,11 +381,9 @@ class Job(object):
     def kill(self):
         """Kill the job.
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
+                    if failed to kill job
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._KILL)
@@ -386,11 +393,12 @@ class Job(object):
                 error_list = response.json()['errors'][0]['errList'][0]
                 error_message = str(error_list['errLogMessage']).strip()
 
-                return 'Job kill failed\nError: "{0}"'.format(error_message)
+                raise SDKException('Job', '102', 'Job kill failed\nError: "{0}"'.format(
+                        error_message
+                    )
+                )
             else:
                 self.status = str(self._get_job_summary()['status'])
-                self.finished = True
-                return 'Job killed successfully'
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

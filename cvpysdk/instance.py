@@ -7,7 +7,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""Main file for performing backup set operations.
+"""Main file for performing instance operations.
 
 Instances and Instance are 2 classes defined in this file.
 
@@ -20,19 +20,27 @@ Instance:  Class for a single instance selected for an agent,
 Instances:
     __init__(agent_object)          --  initialise object of Instances class associated with
                                             the specified agent
+
     __str__()                       --  returns all the instances associated with the agent
+
     __repr__()                      --  returns the string for the object of the Instances class
+
     _get_instances()                --  gets all the instances associated with the agent specified
+
     has_instance(instance_name)     --  checks if a instance exists with the given name or not
+
     get(instance_name)              --  returns the Instance class object
                                             of the input backup set name
+
 
 Instance:
     __init__(agent_object,
              instance_name,
              instance_id=None)      --  initialise object of Instance with the specified instance
                                              name and id, and associated to the specified agent
+
     __repr__()                      --  return the instance name, the object is associated with
+
     _get_instance_id()              --  method to get the instance id, if not specified in __init__
 
 """
@@ -101,15 +109,14 @@ class Instances(object):
 
             Raises:
                 SDKException:
+                    if failed to get instances
                     if response is empty
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._INSTANCES
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._INSTANCES)
 
         if flag:
-            if response.json():
+            if response.json() and 'instanceProperties' in response.json():
                 if 'instanceProperties' in response.json():
                     return_dict = {}
 

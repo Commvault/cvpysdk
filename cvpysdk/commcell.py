@@ -17,19 +17,28 @@ Commcell:
     __init__(webconsole_hostname,
              commcell_username,
              commcell_password)  --  initialise object of the Commcell class
+
     __repr__()                   --  return the name of the commcell, user is connected to,
                                         along with the user name of the connected user
+
     __enter__()                  --  returns the current instance, using the "with" context manager
+
     __exit__()                   --  logs out the user associated with the current instance
+
     _attribs_()                  --  initializes the objects of the classes given in the input list
+
     _init_attrib_()              --  initializes the object of the class given as input and stores
                                         in the given input dictionary with class name as key
+
     _update_response_()          --  returns only the relevant response for the response received
-                                        from the server.
+                                        from the server
+
     _remove_attribs_()           --  removes all the attributs associated with the commcell
-                                        object upon logout.
+                                        object upon logout
+
     logout()                     --  logs out the user associated with the current instance
-    request()                    --  runs a input HTTP request on the API specified,
+
+    request()                    --  runs an input HTTP request on the API specified,
                                         and returns its response
 
 """
@@ -62,7 +71,7 @@ from .exception import SDKException
 
 
 class Commcell(object):
-    """Class for creating a session to the commcell via rest api."""
+    """Class for establishing a session to the commcell via rest api."""
 
     def __init__(self, webconsole_hostname, commcell_username, commcell_password=''):
         """Initialize the Commcell object with the values required for doing the api operations.
@@ -79,7 +88,7 @@ class Commcell(object):
             Raises:
                 SDKException:
                     if the web service is down or not reachable
-                    if not token is received upon log in
+                    if no token is received upon log in
         """
         web_service = [
             r'https://{0}/webconsole/api/'.format(webconsole_hostname),
@@ -118,7 +127,7 @@ class Commcell(object):
         self._headers['Authtoken'], self.__user_guid = self._cvpysdk_object._login_()
 
         if not self._headers['Authtoken']:
-            raise SDKException('CVPySDK', '101')
+            raise SDKException('Commcell', '102')
 
         sdk_classes = [
             Clients,

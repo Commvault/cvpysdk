@@ -13,10 +13,14 @@ CVPySDK: Class for common operations for the CS, as well as the python package
 
 CVPySDK:
     __init__(commcell_object)   --  initialise object of the CVPySDK class and bind to the commcell
+
     _is_valid_service_()        --  checks if the service is valid and running or not
+
     _login_()                   --  sign in the user to the commcell with the credentials provided
+
     _logout_()                  --  sign out the current logged in user from the commcell,
                                         and end the session
+
     make_request()              --  run the http request specified on the URL/WebService provided,
                                         and return the flag specifying success/fail, and response
 
@@ -39,7 +43,7 @@ from .exception import SDKException
 class CVPySDK(object):
     """Helper class for login, and logout operations.
 
-        Also contains method for performing request of all types.
+        Also contains common method for running all HTTP requests.
     """
 
     def __init__(self, commcell_object):
@@ -61,7 +65,7 @@ class CVPySDK(object):
                 False - if the service url is invalid
 
             Raises:
-                Error returned by the requests package
+                requests Connection Error   --  requests.exceptions.ConnectionError
         """
         try:
             response = requests.get(self._commcell_object._web_service)
@@ -82,7 +86,7 @@ class CVPySDK(object):
                     if login failed
                     if response is empty
                     if response is not success
-                Error returned by the requests package
+                requests Connection Error   --  requests.exceptions.ConnectionError
         """
         try:
             json_login_request = {
@@ -106,7 +110,8 @@ class CVPySDK(object):
                 else:
                     raise SDKException('Response', '102')
             else:
-                raise SDKException('CVPySDK', '101')
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err.message
 
@@ -145,17 +150,18 @@ class CVPySDK(object):
 
             Raises:
                 SDKException:
-                    if the method passed is incorrect / not supported
+                    if the method passed is incorrect/not supported
                     if the number of attempts exceed 3
-                Error returned by the requests package
+                requests Connection Error   --  requests.exceptions.ConnectionError
         """
         try:
-            headers = self._commcell_object._headers
+            headers = self._commcell_object._headers.copy()
 
             if method == 'POST':
                 if isinstance(payload, dict):
                     response = requests.post(url, headers=headers, json=payload)
                 else:
+                    headers['Content-type'] = 'application/xml'
                     response = requests.post(url, headers=headers, data=payload)
             elif method == 'GET':
                 response = requests.get(url, headers=headers)

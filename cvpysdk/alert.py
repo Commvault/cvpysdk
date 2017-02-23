@@ -19,27 +19,43 @@ Alert: Class for a single alert selected
 Alerts:
     __init__(commcell_object)   --  initialise object of Alerts class associated with
                                         the specified commcell
+
     __str__()                   --  returns all the alerts associated with the commcell
+
     __repr__()                  --  returns the string for the instance of the Alerts class
+
     _get_alert()                --  gets all the alerts associated with the commcell specified
+
     has_alert(alert_name)       --  checks whether the alert exists or not
+
     get(alert_name)             --  returns the alert class object of the input alert name
+
     delete(alert_name)          --  removes the alerts from the commcell of the specified alert
+
     console_alerts()            --  returns the list of all console alerts
+
 
 Alert:
     __init__(commcell_object,
              alert_name,
              alert_id=None)       --  initialise object of alert with the specified commcell name
                                         and id, and associated to the specified commcell
+
     __repr__()                    --  return the alert name with description and category,
                                         the alert is associated with
+
     _get_alert_id()               --  method to get the alert id, if not specified in __init__
+
     _get_alert_properties()       --  get the properties of this alert
+
     _get_alert_category()         --  return the category of the alert
+
     enable()                      --  enables the alert
+
     disable()                     --  disables the alert
+
     enable_notification_type()    --  enables notification type of alert
+
     disable_notification_type()   --  disables notification type of alert
 
 """
@@ -71,13 +87,14 @@ class Alerts(object):
             Returns:
                 str - string of all the alerts for a commcell
         """
-        representation_string = "{:^5}\t{:^50}\t{:^50}\t{:^30}\n\n".format(
-            'S. No.', 'Alert', 'Description', 'Category')
+        representation_string = "{:^5}\t{:^50}\t{:^80}\t{:^30}\n\n".format(
+            'S. No.', 'Alert', 'Description', 'Category'
+        )
 
         for index, alert_name in enumerate(self._alerts):
             alert_description = self._alerts[alert_name]['description']
             alert_category = self._alerts[alert_name]['category']
-            sub_str = '{:^5}\t{:50}\t{:^50}\t{:^30}\n'.format(
+            sub_str = '{:^5}\t{:50}\t{:80}\t{:30}\n'.format(
                 index + 1,
                 alert_name,
                 alert_description,
@@ -119,9 +136,10 @@ class Alerts(object):
         if flag:
             if response.json() and 'alertList' in response.json():
                 alerts_dict = {}
-                alert_dict = {}
 
                 for dictionary in response.json()['alertList']:
+                    alert_dict = {}
+
                     temp_name = str(dictionary['alert']['name']).lower()
                     temp_id = str(dictionary['alert']['id']).lower()
                     temp_description = str(dictionary['description']).lower()
@@ -130,6 +148,7 @@ class Alerts(object):
                     alert_dict['id'] = temp_id
                     alert_dict['description'] = temp_description
                     alert_dict['category'] = temp_category
+
                     alerts_dict[temp_name] = alert_dict
 
                 return alerts_dict
@@ -235,9 +254,6 @@ class Alerts(object):
             Args:
                 alert_name (str)  --  name of the alert
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of the alert name argument is not string
@@ -250,7 +266,7 @@ class Alerts(object):
             alert_name = str(alert_name).lower()
 
             if self.has_alert(alert_name):
-                alert_id = self._alerts[alert_name]
+                alert_id = self._alerts[alert_name]['id']
                 alert = self._commcell_object._services.ALERT % (alert_id)
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -312,7 +328,6 @@ class Alert(object):
             self._alert_category = self._get_alert_category()
 
         self._ALERT = self._commcell_object._services.ALERT % (self.alert_id)
-        self.properties = self._get_alert_properties()
         self._all_notification_types = {
             'email': 1,
             'snmp': 4,
@@ -324,6 +339,12 @@ class Alert(object):
             'workflow': 65536,
             'content indexing': 131072
         }
+
+        self._criteria = {}
+        self._description = None
+        self._alert_type = None
+
+        self._get_alert_properties()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -362,8 +383,39 @@ class Alert(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._ALERT)
 
         if flag:
-            if response.json() and 'alertDetail' in response.json():
-                return response.json()['alertDetail']
+            if response.json() and 'alertDetail' in response.json().keys():
+                alert_detail = response.json()['alertDetail']
+
+                if 'criteria' in alert_detail:
+                    criteria = alert_detail['criteria'][0]
+
+                    criteria_value = None
+                    criteria_id = None
+                    escalation_level = None
+
+                    if 'value' in criteria:
+                        criteria_value = str(criteria['value'])
+
+                    if 'criteriaId' in criteria:
+                        criteria_id = str(criteria['criteriaId'])
+
+                    if 'esclationLevel' in criteria:
+                        escalation_level = str(criteria['esclationLevel'])
+
+                    self._criteria = {
+                        'criteria_value': criteria_value,
+                        'criteria_id': criteria_id,
+                        'esclation_level': escalation_level
+                    }
+
+                if 'alert' in alert_detail:
+                    alert = alert_detail['alert']
+
+                    if 'description' in alert:
+                        self._description = str(alert['description'])
+
+                    if 'alertType' in alert and 'name' in alert['alertType']:
+                        self._alert_type = str(alert['alertType']['name'])
             else:
                 raise SDKException('Response', '102')
         else:
@@ -371,9 +423,19 @@ class Alert(object):
             raise SDKException('Response', '101', response_string)
 
     @property
+    def alert_name(self):
+        """Treats the alert name as a read-only attribute."""
+        return self._alert_name
+
+    @property
     def alert_id(self):
         """Treats the alert id as a read-only attribute."""
         return self._alert_id
+
+    @property
+    def alert_type(self):
+        """Treats the alert type as a read-only attribute."""
+        return self._alert_type
 
     @property
     def alert_category(self):
@@ -381,9 +443,14 @@ class Alert(object):
         return self._alert_category
 
     @property
-    def alert_name(self):
-        """Treats the alert name as a read-only attribute."""
-        return self._alert_name
+    def description(self):
+        """Treats the alert description as a read-only attribute."""
+        return self._description
+
+    @property
+    def criteria(self):
+        """Treats the alert criteria as a read-only attribute."""
+        return self._criteria
 
     def enable_notification_type(self, alert_notification_type):
         """Enable the notification type.
@@ -391,12 +458,10 @@ class Alert(object):
             Args:
                 alert_notification_type (str)  --  alert notification to enable
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of alert notification argument is not string
+                    if failed to enable notification type
                     if response is empty
                     if response is not success
                     if no notification type exists with the name provided
@@ -432,7 +497,8 @@ class Alert(object):
             raise SDKException(
                 'Alert',
                 '102',
-                'No notification type with name {0} exists'.format(alert_notification_type))
+                'No notification type with name {0} exists'.format(alert_notification_type)
+            )
 
     def disable_notification_type(self, alert_notification_type):
         """Disable the notification type.
@@ -440,12 +506,10 @@ class Alert(object):
             Args:
                 alert_notification_type (str)  --  alert notification to disable
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
                     if type of alert notification argument is not string
+                    if failed to disable notification type
                     if response is empty
                     if response is not success
                     if no notification type exists with the name provided
@@ -457,7 +521,7 @@ class Alert(object):
             alert_notification_type_id = self._all_notification_types[
                 alert_notification_type.lower()]
 
-            disable_request = self._commcell_object._services.ENABLE_ALERT_NOTIFICATION % (
+            disable_request = self._commcell_object._services.DISABLE_ALERT_NOTIFICATION % (
                 self.alert_id, alert_notification_type_id
             )
 
@@ -481,16 +545,15 @@ class Alert(object):
             raise SDKException(
                 'Alert',
                 '102',
-                'No notification type with name {0} exists'.format(alert_notification_type))
+                'No notification type with name {0} exists'.format(alert_notification_type)
+            )
 
     def enable(self):
         """Enable an alert.
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
+                    if failed to enable alert
                     if response is empty
                     if response is not success
         """
@@ -500,7 +563,24 @@ class Alert(object):
 
         if flag:
             if response.json():
-                raise SDKException('Alert', '102', str(response.json()['errorMessage']))
+                error_code = str(response.json()['errorCode'])
+
+                if error_code is "0":
+                    return
+                else:
+                    error_message = ""
+
+                    if 'errorMessage' in response.json():
+                        error_message = response.json()['errorMessage']
+
+                    if error_message:
+                        raise SDKException(
+                            'Alert', '102', 'Failed to enable Alert\nError: "{0}"'.format(
+                                error_message
+                            )
+                        )
+                    else:
+                        raise SDKException('Alert', '102', "Failed to enable Alert")
             else:
                 raise SDKException('Response', '102')
         else:
@@ -510,11 +590,9 @@ class Alert(object):
     def disable(self):
         """Disable an alert.
 
-            Returns:
-                None
-
             Raises:
                 SDKException:
+                    if failed to disable alert
                     if response is empty
                     if response is not success
         """
@@ -526,7 +604,24 @@ class Alert(object):
 
         if flag:
             if response.json():
-                raise SDKException('Alert', '102', str(response.json()['errorMessage']))
+                error_code = str(response.json()['errorCode'])
+
+                if error_code is "0":
+                    return
+                else:
+                    error_message = ""
+
+                    if 'errorMessage' in response.json():
+                        error_message = response.json()['errorMessage']
+
+                    if error_message:
+                        raise SDKException(
+                            'Alert', '102', 'Failed to disable Alert\nError: "{0}"'.format(
+                                error_message
+                            )
+                        )
+                    else:
+                        raise SDKException('Alert', '102', "Failed to disable Alert")
             else:
                 raise SDKException('Response', '102')
         else:

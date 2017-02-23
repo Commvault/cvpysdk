@@ -14,6 +14,7 @@ Requirements
 - Python 2.7 or above
 - **requests** Python package (https://pypi.python.org/pypi/requests/)
 - **future** Python package (https://pypi.python.org/pypi/future)
+- **xmltodict** Python package (https://pypi.python.org/pypi/xmltodict)
 - Commvault Software v11 SP7 or later release with WebConsole installed
 
 
