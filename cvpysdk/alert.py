@@ -129,6 +129,7 @@ class Alerts(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._ALERTS)
@@ -188,6 +189,7 @@ class Alerts(object):
             Raises:
                 SDKException:
                     if type of the alert name argument is not string
+
                     if no alert exists with the given name
         """
         if not isinstance(alert_name, str):
@@ -207,12 +209,15 @@ class Alerts(object):
 
             Args:
                 page_number (int)  --  page number to get the alerts from
+
                 page_count  (int)  --  number of pages to get the alerts of
 
             Raises:
                 SDKException:
                     if type of the page number and page count argument is not int
+
                     if response is empty
+
                     if response is not success
         """
         if not (isinstance(page_number, int) and isinstance(page_count, int)):
@@ -257,7 +262,9 @@ class Alerts(object):
             Raises:
                 SDKException:
                     if type of the alert name argument is not string
+
                     if failed to delete the alert
+
                     if no alert exists with the given name
         """
         if not isinstance(alert_name, str):
@@ -305,9 +312,12 @@ class Alert(object):
 
             Args:
                 commcell_object (object)  --  instance of the Commcell class
+
                 alert_name      (str)     --  name of the alert
+
                 alert_id        (str)     --  id of the alert
                     default: None
+
                 alert_category  (str)     --  name of the alert category
                     default: None
 
@@ -378,6 +388,7 @@ class Alert(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._ALERT)
@@ -461,9 +472,13 @@ class Alert(object):
             Raises:
                 SDKException:
                     if type of alert notification argument is not string
+
                     if failed to enable notification type
+
                     if response is empty
+
                     if response is not success
+
                     if no notification type exists with the name provided
         """
         if not isinstance(alert_notification_type, str):
@@ -484,7 +499,7 @@ class Alert(object):
             if flag:
                 if response.json():
                     error_code = str(response.json()['errorCode'])
-                    if error_code is '0':
+                    if error_code == '0':
                         return
                     else:
                         raise SDKException('Alert', '102', str(response.json()['errorMessage']))
@@ -509,9 +524,13 @@ class Alert(object):
             Raises:
                 SDKException:
                     if type of alert notification argument is not string
+
                     if failed to disable notification type
+
                     if response is empty
+
                     if response is not success
+
                     if no notification type exists with the name provided
         """
         if not isinstance(alert_notification_type, str):
@@ -532,7 +551,7 @@ class Alert(object):
             if flag:
                 if response.json():
                     error_code = str(response.json()['errorCode'])
-                    if error_code is '0':
+                    if error_code == '0':
                         return
                     else:
                         raise SDKException('Alert', '102', str(response.json()['errorMessage']))
@@ -554,7 +573,9 @@ class Alert(object):
             Raises:
                 SDKException:
                     if failed to enable alert
+
                     if response is empty
+
                     if response is not success
         """
         enable_request = self._commcell_object._services.ENABLE_ALERT % (self.alert_id)
@@ -565,7 +586,7 @@ class Alert(object):
             if response.json():
                 error_code = str(response.json()['errorCode'])
 
-                if error_code is "0":
+                if error_code == "0":
                     return
                 else:
                     error_message = ""
@@ -593,7 +614,9 @@ class Alert(object):
             Raises:
                 SDKException:
                     if failed to disable alert
+
                     if response is empty
+
                     if response is not success
         """
         disable_request = self._commcell_object._services.DISABLE_ALERT % (self.alert_id)
@@ -606,7 +629,7 @@ class Alert(object):
             if response.json():
                 error_code = str(response.json()['errorCode'])
 
-                if error_code is "0":
+                if error_code == "0":
                     return
                 else:
                     error_message = ""

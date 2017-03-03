@@ -45,6 +45,8 @@ Commcell:
 
 from __future__ import absolute_import
 
+import getpass
+
 from base64 import b64encode
 from threading import Thread
 from requests.exceptions import ConnectionError, SSLError
@@ -71,16 +73,18 @@ from .exception import SDKException
 
 
 class Commcell(object):
-    """Class for establishing a session to the commcell via rest api."""
+    """Class for establishing a session to the Commcell via Commvault REST API."""
 
-    def __init__(self, webconsole_hostname, commcell_username, commcell_password=''):
+    def __init__(self, webconsole_hostname, commcell_username, commcell_password=None):
         """Initialize the Commcell object with the values required for doing the api operations.
 
             Args:
                 webconsole_hostname  (str)  --  webconsole host name/ip; webclient.company.com
+
                 commcell_username    (str)  --  username of the user to log in to commcell console
+
                 commcell_password    (str)  --  plain text password to log in to commcell console
-                    default: ''
+                    default: None
 
             Returns:
                 object - instance of this class
@@ -88,6 +92,7 @@ class Commcell(object):
             Raises:
                 SDKException:
                     if the web service is down or not reachable
+
                     if no token is received upon log in
         """
         web_service = [
@@ -96,6 +101,9 @@ class Commcell(object):
         ]
 
         self._user = commcell_username
+
+        if commcell_password is None:
+            commcell_password = getpass.getpass('Please enter the Commcell Password: ')
 
         # encodes the plain text password using base64 encoding
         self._password = b64encode(commcell_password.encode()).decode()
@@ -202,6 +210,7 @@ class Commcell(object):
 
             Args:
                 sdk_class (class)  --  sdk class to initialize the object of
+
                 sdk_dict  (dict)   --  dict to store the class object as value,
                                         with the class name as key
         """

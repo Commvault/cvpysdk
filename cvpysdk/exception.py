@@ -113,7 +113,9 @@ class SDKException(Exception):
 
             Args:
                 exception_module  (str)  --  name of the module where the exception was raised
+
                 exception_id      (str)  --  id of the exception specific to the exception_module
+
                 exception_message (str)  --  additional message about the exception
 
             Returns:

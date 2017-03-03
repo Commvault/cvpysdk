@@ -102,6 +102,7 @@ class UserGroups(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -155,6 +156,7 @@ class UserGroups(object):
             Raises:
                 SDKException:
                     if type of the user group name argument is not string
+
                     if no user group exists with the given name
         """
         if not isinstance(user_group_name, str):
@@ -182,9 +184,13 @@ class UserGroups(object):
             Raises:
                 SDKException:
                     if type of the usergroup name argument is not string
+
                     if failed to delete usergroup
+
                     if response is empty
+
                     if response is not success
+
                     if no usergroup exists with the given name
         """
 
@@ -217,7 +223,7 @@ class UserGroups(object):
                                 'UserGroup', '102', o_str.format(error_message)
                             )
                         else:
-                            if error_code is '0':
+                            if error_code == '0':
                                 # initialize the usergroup again
                                 # so the usergroups object has all the usergroups
                                 self._user_groups = self._get_user_groups()
@@ -249,7 +255,9 @@ class UserGroup(object):
 
             Args:
                 commcell_object     (object)  --  instance of the Commcell class
+
                 user_group_name     (str)     --  name of the user group
+
                 user_group_id       (str)     --  id of the user group
                     default: None
 
@@ -299,6 +307,7 @@ class UserGroup(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._USERGROUP)

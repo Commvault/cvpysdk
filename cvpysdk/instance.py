@@ -9,12 +9,15 @@
 
 """Main file for performing instance operations.
 
-Instances and Instance are 2 classes defined in this file.
+Instances, Instance, and VirtualServerInstance are 3 classes defined in this file.
 
 Instances: Class for representing all the instances associated with a specific agent
 
 Instance:  Class for a single instance selected for an agent,
                 and to perform operations on that instance
+
+VirtualServerInstance: Class for representing a Virtual Server Agent instance,
+                           derived from the Instance class
 
 
 Instances:
@@ -42,6 +45,13 @@ Instance:
     __repr__()                      --  return the instance name, the object is associated with
 
     _get_instance_id()              --  method to get the instance id, if not specified in __init__
+
+    _get_instance_properties()      --  method to get the properties of the instance
+
+
+VirtualServerInstance:
+    _get_instance_properties()      --  Instance class method overwritten to add virtual server
+                                            instance properties as well
 
 """
 
@@ -71,6 +81,11 @@ class Instances(object):
         )
 
         self._instances = self._get_instances()
+
+        self._instances_dict = {
+            'file system': Instance,
+            'virtual server': VirtualServerInstance
+        }
 
     def __str__(self):
         """Representation string consisting of all instances of the agent of a client.
@@ -110,13 +125,15 @@ class Instances(object):
             Raises:
                 SDKException:
                     if failed to get instances
+
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._INSTANCES)
 
         if flag:
-            if response.json() and 'instanceProperties' in response.json():
+            if response.json():
                 if 'instanceProperties' in response.json():
                     return_dict = {}
 
@@ -172,6 +189,7 @@ class Instances(object):
             Raises:
                 SDKException:
                     if type of the instance name argument is not string
+
                     if no instance exists with the given name
         """
         if not isinstance(instance_name, str):
@@ -179,8 +197,12 @@ class Instances(object):
         else:
             instance_name = str(instance_name).lower()
 
+            agent_name = self._agent_object.agent_name
+
             if self.has_instance(instance_name):
-                return Instance(self._agent_object, instance_name, self._instances[instance_name])
+                return self._instances_dict[agent_name](
+                    self._agent_object, instance_name, self._instances[instance_name]
+                )
 
             raise SDKException(
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
@@ -195,7 +217,9 @@ class Instance(object):
 
             Args:
                 agent_object    (object)  --  instance of the Agent class
+
                 instance_name   (str)     --  name of the instance
+
                 instance_id     (str)     --  id of the instance
                     default: None
 
@@ -216,6 +240,12 @@ class Instance(object):
             # Get the id associated with this instance
             self._instance_id = self._get_instance_id()
 
+        self._INSTANCE = self._commcell_object._services.INSTANCE % (self.instance_id)
+
+        self._properties = None
+
+        self._get_instance_properties()
+
         self.backupsets = Backupsets(self)
         self.subclients = Subclients(self)
 
@@ -233,6 +263,29 @@ class Instance(object):
         instances = Instances(self._agent_object)
         return instances.get(self.instance_name).instance_id
 
+    def _get_instance_properties(self):
+        """Gets the properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._INSTANCE)
+
+        if flag:
+            if response.json() and "instanceProperties" in response.json():
+                self._properties = response.json()["instanceProperties"][0]
+
+                instance_name = self._properties["instance"]["instanceName"]
+                self._instance_name = str(instance_name).lower()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def instance_id(self):
         """Treats the instance id as a read-only attribute."""
@@ -242,3 +295,79 @@ class Instance(object):
     def instance_name(self):
         """Treats the instance name as a read-only attribute."""
         return self._instance_name
+
+
+class VirtualServerInstance(Instance):
+    """Class for representing an Instance of the Virtual Server agent."""
+
+    def _get_instance_properties(self):
+        """Gets the properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        super()._get_instance_properties()
+
+        self._vs_instance_type = None
+        self._v_center_name = None
+        self._v_center_username = None
+        self._associated_clients = None
+
+        if 'virtualServerInstance' in self._properties:
+            virtual_server_instance = self._properties['virtualServerInstance']
+            self._vs_instance_type = str(virtual_server_instance['vsInstanceType'])
+
+            if 'vmwareVendor' in virtual_server_instance:
+                v_center = virtual_server_instance['vmwareVendor']['virtualCenter']
+
+                self._v_center_name = str(v_center['domainName'])
+                self._v_center_username = str(v_center['userName'])
+
+            if 'associatedClients' in virtual_server_instance:
+                associated_clients = virtual_server_instance['associatedClients']
+
+                self._associated_clients = {
+                    'Clients': [],
+                    'ClientGroups': []
+                }
+
+                for member in associated_clients['memberServers']:
+                    client = member['client']
+
+                    if 'clientName' in client:
+                        temp_dict = {
+                            'client_name': str(client['clientName']),
+                            'client_id': str(client['clientId'])
+                        }
+                        self._associated_clients['Clients'].append(temp_dict)
+                    elif 'clientGroupName' in client:
+                        temp_dict = {
+                            'client_group_name': str(client['clientGroupName']),
+                            'client_group_id': str(client['clientGroupId'])
+                        }
+                        self._associated_clients['ClientGroups'].append(temp_dict)
+                    else:
+                        continue
+
+    @property
+    def vs_instance_type(self):
+        """Treats the vs instance type as a read-only attribute."""
+        return self._vs_instance_type
+
+    @property
+    def v_center_name(self):
+        """Treats the v-center name as a read-only attribute."""
+        return self._v_center_name
+
+    @property
+    def v_center_username(self):
+        """Treats the v-center user name as a read-only attribute."""
+        return self._v_center_username
+
+    @property
+    def associated_clients(self):
+        """Treats the clients associated to this instance as a read-only attribute."""
+        return self._associated_clients

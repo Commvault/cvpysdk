@@ -145,6 +145,7 @@ class WorkFlow(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._WORKFLOWS)
@@ -275,6 +276,14 @@ class WorkFlow(object):
             Raises:
                 SDKException:
                     if type of the workflow name argument is not string
+
+                    if failed to execute workflow
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no workflow exists with the given name
         """
         if not isinstance(workflow_name, str):
             raise SDKException('Workflow', '101')

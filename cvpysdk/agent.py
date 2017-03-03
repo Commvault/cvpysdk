@@ -122,6 +122,7 @@ class Agents(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._AGENTS)
@@ -172,6 +173,7 @@ class Agents(object):
             Raises:
                 SDKException:
                     if type of the agent name argument is not string
+
                     if no agent exists with the given name
         """
         if not isinstance(agent_name, str):
@@ -193,7 +195,9 @@ class Agent(object):
 
             Args:
                 client_object (object)  --  instance of the Client class to which the agent belongs
+
                 agent_name    (str)     --  name of the agent (File System, Virtual Server, etc.)
+
                 agent_id      (str)     --  id of the associated agent
                     default: None
 
@@ -310,7 +314,9 @@ class Agent(object):
             Raises:
                 SDKException:
                     if failed to enable backup
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Backup')
@@ -346,9 +352,13 @@ class Agent(object):
             Raises:
                 SDKException:
                     if time value entered is less than the current time
+
                     if time value entered is not of correct format
+
                     if failed to enable backup
+
                     if response is empty
+
                     if response is not success
         """
         try:
@@ -387,7 +397,9 @@ class Agent(object):
             Raises:
                 SDKException:
                     if failed to disable backup
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Backup', False)
@@ -419,7 +431,9 @@ class Agent(object):
             Raises:
                 SDKException:
                     if failed to enable restore
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Restore')
@@ -455,9 +469,13 @@ class Agent(object):
             Raises:
                 SDKException:
                     if time value entered is less than the current time
+
                     if time value entered is not of correct format
+
                     if failed to enable restore
+
                     if response is empty
+
                     if response is not success
         """
         try:
@@ -496,7 +514,9 @@ class Agent(object):
             Raises:
                 SDKException:
                     if failed to disable restore
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Restore', False)

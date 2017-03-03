@@ -151,6 +151,7 @@ class Backupsets(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -210,8 +211,10 @@ class Backupsets(object):
 
             Args:
                 backupset_name      (str)   --  name of the new backupset to add
+
                 on_demand_backupset (bool)  --  flag to specify whether the backupset to be added
                                                     is a simple backupset or an on-demand backupset
+                    default: False
 
             Returns:
                 object - instance of the Backupset class, if created successfully
@@ -219,9 +222,13 @@ class Backupsets(object):
             Raises:
                 SDKException:
                     if type of the backupset name argument is not string
+
                     if failed to create a backupset
+
                     if response is empty
+
                     if response is not success
+
                     if backupset with same name already exists
         """
         if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
@@ -268,7 +275,7 @@ class Backupsets(object):
                             )
                             raise SDKException('Backupset', '102', o_str)
                         else:
-                            if error_code is '0':
+                            if error_code == '0':
                                 backupset_id = response_value['entity']['backupsetId']
                                 # initialize the backupsets again
                                 # so the backupsets object has all the backupsets
@@ -316,6 +323,7 @@ class Backupsets(object):
             Raises:
                 SDKException:
                     if type of the backupset name argument is not string
+
                     if no backupset exists with the given name
         """
         if not isinstance(backupset_name, str):
@@ -345,9 +353,13 @@ class Backupsets(object):
             Raises:
                 SDKException:
                     if type of the backupset name argument is not string
+
                     if failed to delete the backupset
+
                     if response is empty
+
                     if response is not success
+
                     if no backupset exists with the given name
         """
         if not isinstance(backupset_name, str):
@@ -378,7 +390,7 @@ class Backupsets(object):
                             o_str = 'Failed to delete backupset\nError: "{0}"'
                             raise SDKException('Backupset', '102', o_str.format(error_message))
                         else:
-                            if error_code is '0':
+                            if error_code == '0':
                                 # initialize the backupsets again
                                 # so the backupsets object has all the backupsets
                                 self._backupsets = self._get_backupsets()
@@ -417,11 +429,15 @@ class Backupset(object):
 
             Args:
                 agent_object   (object)  --  instance of the Agent class
+
                 backupset_name (str)     --  name of the backupset
+
                 backupset_id   (str)     --  id of the backupset
                     default: None
+
                 instance_id    (str)     --  id of the instance associated with the backupset
                     default: 1, for File System iDA
+
                 instance_name  (str)     --  name of the instance associated with the backupset
                     default: None
 
@@ -448,6 +464,7 @@ class Backupset(object):
         self._BACKUPSET = self._commcell_object._services.BACKUPSET % (self.backupset_id)
 
         self._is_default = False
+        self._properties = None
 
         self._get_backupset_properties()
 
@@ -471,8 +488,11 @@ class Backupset(object):
     def _get_backupset_properties(self):
         """Gets the properties of this backupset.
 
-            Returns:
-                str - properties of the backupset
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._BACKUPSET)
 
@@ -500,6 +520,7 @@ class Backupset(object):
 
             Args:
                 subclient_name (str)   --  name of the subclient to trigger the backup for
+
                 return_list    (list)  --  list to append the job object to
         """
         try:
@@ -514,18 +535,23 @@ class Backupset(object):
 
             Args:
                 backupset_name        (str)   --  new name of the backupset
+
                 backupset_description (str)   --  description of the backupset
+
                 default_backupset     (bool)  --  default backupset property
 
             Returns:
                 (bool, str, str):
                     bool -  flag specifies whether success / failure
+
                     str  -  error code received in the response
+
                     str  -  error message received
 
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
 
@@ -605,6 +631,7 @@ class Backupset(object):
             Raises:
                 SDKException:
                     if failed to update the backupset name
+
                     if type of value input is not string
         """
         if isinstance(value, str):
@@ -629,7 +656,9 @@ class Backupset(object):
             Raises:
                 SDKException:
                     if failed to update the backupset description
+
                     if type of value input is not string
+
                     if description cannot be modified for this backupset
         """
         if self.description is not None:

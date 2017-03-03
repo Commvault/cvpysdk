@@ -165,6 +165,7 @@ class MediaAgents(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -218,6 +219,7 @@ class MediaAgents(object):
             Raises:
                 SDKException:
                     if type of the media agent name argument is not string
+
                     if no media agent exists with the given name
         """
         if not isinstance(media_agent_name, str):
@@ -243,7 +245,9 @@ class MediaAgent(object):
 
             Args:
                 commcell_object   (object)  --  instance of the Commcell class
+
                 media_agent_name  (str)     --  name of the media agent
+
                 media_agent_id    (str)     --  id of the media agent
                     default: None
 
@@ -334,6 +338,7 @@ class DiskLibraries(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._LIBRARY)
@@ -350,7 +355,7 @@ class DiskLibraries(object):
 
                 return libraries_dict
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -378,10 +383,14 @@ class DiskLibraries(object):
 
             Args:
                 library_name (str)        --  name of the new library to add
+
                 media_agent  (str/object) --  name or instance of media agent to add the library to
+
                 mount_path   (str)        --  full path of the folder to mount the library at
+
                 username     (str)        --  username to access the mount path
                     default: ""
+
                 password     (str)        --  password to access the mount path
                     default: ""
 
@@ -391,12 +400,19 @@ class DiskLibraries(object):
             Raises:
                 SDKException:
                     if type of the library name argument is not string
+
                     if type of the mount path argument is not string
+
                     if type of the username argument is not string
+
                     if type of the password argument is not string
+
                     if type of the media agent argument is not either string or MediaAgent instance
+
                     if failed to create disk library
+
                     if response is empty
+
                     if response is not success
         """
         if not (isinstance(library_name, str) and
@@ -461,6 +477,7 @@ class DiskLibraries(object):
             Raises:
                 SDKException:
                     if type of the library name argument is not string
+
                     if no disk library exists with the given name
         """
         if not isinstance(library_name, str):
@@ -486,7 +503,9 @@ class DiskLibrary(object):
 
             Args:
                 commcell_object  (object)  --  instance of the Commcell class
+
                 library_name     (str)     --  name of the disk library
+
                 library_id       (str)     --  id of the disk library
                     default: None
 
@@ -576,6 +595,7 @@ class StoragePolicies(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._POLICY)
@@ -585,7 +605,7 @@ class StoragePolicies(object):
                 policies = response.json()['policies']
 
                 if policies == []:
-                    raise SDKException('Storage', '105')
+                    return {}
 
                 policies_dict = {}
 
@@ -596,7 +616,7 @@ class StoragePolicies(object):
 
                 return policies_dict
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -630,15 +650,20 @@ class StoragePolicies(object):
 
             Args:
                 storage_policy_name (str)         --  name of the new storage policy to add
+
                 library             (str/object)  --  name or instance of the library
                                                         to add the policy to
+
                 media_agent         (str/object)  --  name or instance of media agent
                                                         to add the policy to
+
                 dedup_path          (str)         --  the path of the deduplication database
                     default: None
+
                 incremental_sp      (str)         --  the name of the incremental storage policy
                                                         associated with the storage policy
                     default: None
+
                 retention_period    (int)         --  time period in days to retain
                                                         the data backup for
                     default: 5
@@ -646,11 +671,17 @@ class StoragePolicies(object):
             Raises:
                 SDKException:
                     if type of the storage policy name argument is not string
+
                     if type of the retention period argument is not int
+
                     if type of the library argument is not either string or DiskLibrary instance
+
                     if type of the media agent argument is not either string or MediaAgent instance
+
                     if failed to create storage policy
+
                     if response is empty
+
                     if response is not success
         """
         from urllib.parse import urlencode
@@ -755,8 +786,11 @@ class StoragePolicies(object):
             Raises:
                 SDKException:
                     if type of the storage policy name argument is not string
+
                     if failed to delete storage policy
+
                     if response is empty
+
                     if response is not success
         """
         if not isinstance(storage_policy_name, str):
@@ -841,6 +875,7 @@ class SchedulePolicies(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._POLICY)

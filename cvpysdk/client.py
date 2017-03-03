@@ -74,7 +74,7 @@ from .exception import SDKException
 
 
 class Clients(object):
-    """Class for getting all the clients associated with the commcell."""
+    """Class for representing all the clients associated with the commcell."""
 
     def __init__(self, commcell_object):
         """Initialize object of the Clients class.
@@ -122,6 +122,7 @@ class Clients(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._CLIENTS)
@@ -160,6 +161,9 @@ class Clients(object):
 
         return self._clients and str(client_name).lower() in self._clients
 
+    def add_virtualization_client(self, client_name):
+        pass
+
     def get(self, client_name):
         """Returns a client object of the specified client name.
 
@@ -172,6 +176,7 @@ class Clients(object):
             Raises:
                 SDKException:
                     if type of the client name argument is not string
+
                     if no client exists with the given name
         """
         if not isinstance(client_name, str):
@@ -195,9 +200,13 @@ class Clients(object):
             Raises:
                 SDKException:
                     if type of the client name argument is not string
+
                     if failed to delete client
+
                     if response is empty
+
                     if response is not success
+
                     if no client exists with the given name
         """
         if not isinstance(client_name, str):
@@ -261,7 +270,9 @@ class Client(object):
 
             Args:
                 commcell_object (object)  --  instance of the Commcell class
+
                 client_name     (str)     --  name of the client
+
                 client_id       (str)     --  id of the client
                     default: None
 
@@ -305,6 +316,7 @@ class Client(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._CLIENT)
@@ -463,7 +475,9 @@ class Client(object):
             Raises:
                 SDKException:
                     if failed to enable backup
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Backup')
@@ -499,9 +513,13 @@ class Client(object):
             Raises:
                 SDKException:
                     if time value entered is less than the current time
+
                     if time value entered is not of correct format
+
                     if failed to enable backup
+
                     if response is empty
+
                     if response is not success
         """
         try:
@@ -540,7 +558,9 @@ class Client(object):
             Raises:
                 SDKException:
                     if failed to disable backup
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Backup', False)
@@ -572,7 +592,9 @@ class Client(object):
             Raises:
                 SDKException:
                     if failed to enable restore
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Restore')
@@ -608,9 +630,13 @@ class Client(object):
             Raises:
                 SDKException:
                     if time value entered is less than the current time
+
                     if time value entered is not of correct format
+
                     if failed to enable restore
+
                     if response is empty
+
                     if response is not success
         """
         try:
@@ -649,7 +675,9 @@ class Client(object):
             Raises:
                 SDKException:
                     if failed to disable restore
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Restore', False)
@@ -681,7 +709,9 @@ class Client(object):
             Raises:
                 SDKException:
                     if failed to enable data aging
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Data Aging')
@@ -717,9 +747,13 @@ class Client(object):
             Raises:
                 SDKException:
                     if time value entered is less than the current time
+
                     if time value entered is not of correct format
+
                     if failed to enable data aging
+
                     if response is empty
+
                     if response is not success
         """
         try:
@@ -758,7 +792,9 @@ class Client(object):
             Raises:
                 SDKException:
                     if failed to disable data aging
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._request_json_('Data Aging', False)

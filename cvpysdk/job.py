@@ -66,6 +66,7 @@ class Job(object):
 
             Args:
                 commcell_object (object)     --  instance of the Commcell class
+
                 job_id          (str / int)  --  id of the job
 
             Returns:
@@ -74,6 +75,7 @@ class Job(object):
             Raises:
                 SDKException:
                     if job id is not an integer
+
                     if job is not a valid job, i.e., does not exist in the Commcell
         """
         try:
@@ -177,7 +179,9 @@ class Job(object):
             Raises:
                 SDKException:
                     if no record found for this job
+
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._JOB)
@@ -205,6 +209,7 @@ class Job(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         payload = {
@@ -334,6 +339,7 @@ class Job(object):
             Raises:
                 SDKException:
                     if failed to suspend job
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._SUSPEND)
@@ -359,6 +365,7 @@ class Job(object):
             Raises:
                 SDKException:
                     if failed to resume job
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._RESUME)
@@ -384,6 +391,7 @@ class Job(object):
             Raises:
                 SDKException:
                     if failed to kill job
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._KILL)

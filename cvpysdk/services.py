@@ -45,6 +45,7 @@ class ApiLibrary(object):
         self.ADD_BACKUPSET = '{0}Backupset'
 
         self.GET_ALL_INSTANCES = '{0}Instance?clientId=%s'
+        self.INSTANCE = '{0}Instance/%s'
 
         self.GET_ALL_SUBCLIENTS = '{0}Subclient?clientId=%s'
         self.ADD_SUBCLIENT = '{0}Subclient'

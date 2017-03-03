@@ -9,7 +9,8 @@
 
 """Main file for performing sublcient operations.
 
-Subclients, Subclient, and FileSystemSubclient are 3 classes defined in this file.
+Subclients, Subclient, FileSystemSubclient,
+and VirtualServerSubclient are 4 classes defined in this file.
 
 Subclients: Class for representing all the subclients associated with a backupset
 
@@ -17,6 +18,9 @@ Subclient: Base class consisting of all the common properties and operations for
 
 FileSystemSubclient: Derived class from Subclient Base class, representing a file system subclient,
                         and to perform operations on that subclient
+
+VirtualServerSubclient: Derived class from Subclient Base class, representing a
+                            virtual server subclient, and to perform operations on that subclient
 
 Subclients:
     __init__(class_object)      --  initialise object of subclients object associated with
@@ -79,6 +83,8 @@ Subclient:
     browse_in_time()            --  gets the content of the backup for this subclient
                                         at the input path in the time range specified
 
+    find()                      --  searches a given file/folder name in the subclient content
+
     restore_in_place()          --  Restores the files/folders specified in the
                                         input paths list to the same location
 
@@ -90,6 +96,12 @@ FileSystemSubclient:
     _get_subclient_content_()   --  gets the content of a file system subclient
 
     _set_subclient_content_()   --  sets the content of a file system subclient
+
+
+VirtualServerSubclient:
+    _get_subclient_content_()   --  gets the content of a virtual server subclient
+
+    _set_subclient_content_()   --  sets the content of a virtual server subclient
 
 """
 
@@ -150,7 +162,8 @@ class Subclients(object):
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._subclients_dict = {
-            'file system': FileSystemSubclient
+            'file system': FileSystemSubclient,
+            'virtual server': VirtualServerSubclient
         }
 
     def __str__(self):
@@ -195,6 +208,7 @@ class Subclients(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -250,7 +264,9 @@ class Subclients(object):
 
             Args:
                 subclient_name  (str)   --  name of the new subclient to add
+
                 storage_policy  (str)   --  name of the storage policy to associate with subclient
+
                 description     (str)   --  description for the subclient (optional)
 
             Returns:
@@ -259,11 +275,17 @@ class Subclients(object):
             Raises:
                 SDKException:
                     if subclient name argument is not of type string
+
                     if storage policy argument is not of type string
+
                     if description argument is not of type string
+
                     if failed to create subclient
+
                     if response is empty
+
                     if response is not success
+
                     if subclient already exists with the given name
         """
         if not (isinstance(subclient_name, str) and
@@ -343,6 +365,7 @@ class Subclients(object):
             Raises:
                 SDKException:
                     if type of the subclient name argument is not string
+
                     if no subclient exists with the given name
         """
         if not isinstance(subclient_name, str):
@@ -370,9 +393,13 @@ class Subclients(object):
             Raises:
                 SDKException:
                     if type of the subclient name argument is not string
+
                     if failed to delete subclient
+
                     if response is empty
+
                     if response is not success
+
                     if no subclient exists with the given name
         """
         if not isinstance(subclient_name, str):
@@ -403,7 +430,7 @@ class Subclients(object):
                             o_str = 'Failed to delete subclient\nError: "{0}"'
                             raise SDKException('Subclient', '102', o_str.format(error_message))
                         else:
-                            if error_code is '0':
+                            if error_code == '0':
                                 # initialize the subclients again
                                 # so the subclient object has all the subclients
                                 self._subclients = self._get_subclients()
@@ -431,7 +458,9 @@ class Subclient(object):
 
             Args:
                 backupset_object (object)  --  instance of the Backupset class
+
                 subclient_name   (str)     --  name of the subclient
+
                 subclient_id     (str)     --  id of the subclient
                     default: None
 
@@ -482,6 +511,7 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._SUBCLIENT)
@@ -546,14 +576,11 @@ class Subclient(object):
         else:
             self._is_backup_enabled = False
 
-        if 'content' in self._subclient_properties:
-            self._content = self._get_subclient_content_(self._subclient_properties['content'])
-        else:
-            self._content = []
+        self._content = self._get_subclient_content_(self._subclient_properties)
 
     @staticmethod
     def _convert_size(input_size):
-        """Converts the given float size to appropriate size in KB / MB / GB, etc.
+        """Converts the given float size to appropriate size in B / KB / MB / GB, etc.
 
             Args:
                 size (float)  --  float value to convert
@@ -564,7 +591,7 @@ class Subclient(object):
         if input_size == 0:
             return '0B'
 
-        size_name = ("KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+        size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
         i = int(math.floor(math.log(input_size, 1024)))
         power = math.pow(1024, i)
         size = round(input_size / power, 2)
@@ -575,19 +602,25 @@ class Subclient(object):
 
             Args:
                 subclient_description (str)     --  description of the subclient
+
                 subclient_content     (list)    --  content of the subclient
+
                 backup                (bool)    --  enable backup or not
+
                 enable_time           (str)     --  time to re-enable the activity at
 
             Returns:
                 (bool, str, str):
                     bool -  flag specifies whether success / failure
+
                     str  -  error code received in the response
+
                     str  -  error message received
 
             Raises:
                 SDKException:
                     if response is empty
+
                     if response is not success
         """
         request_json1 = {
@@ -693,7 +726,9 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if job initialization failed
+
                     if response is empty
+
                     if response is not success
         """
         self._BACKUP = self._commcell_object._services.SUBCLIENT_BACKUP % (
@@ -802,12 +837,15 @@ class Subclient(object):
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
+
                 dict - path along with the details like name, file/folder, size, modification time
 
             Raises:
                 SDKException:
                     if failed to browse/search for content
+
                     if response is empty
+
                     if response is not success
         """
         options_dict = {
@@ -839,8 +877,8 @@ class Subclient(object):
                             else:
                                 file_or_folder = 'Folder'
 
-                            # convert bits to bytes and then pass to convert_size
-                            size = self._convert_size(float(result['size']) / 8.0)
+                            # gets the size in human readable format
+                            size = self._convert_size(float(result['size']))
 
                             temp = {
                                 path: [name, file_or_folder, size, mod_time]
@@ -961,7 +999,9 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if restore job failed
+
                     if response is empty
+
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1032,6 +1072,7 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if failed to update description of subclient
+
                     if the type of value input is not string
         """
         if isinstance(value, str):
@@ -1054,7 +1095,9 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if failed to update content of subclient
+
                     if the type of value input is not list
+
                     if value list is empty
         """
         if isinstance(value, list) and value != []:
@@ -1095,9 +1138,13 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if time value entered is less than the current time
+
                     if time value entered is not of correct format
+
                     if failed to enable backup
+
                     if response is empty
+
                     if response is not success
         """
         try:
@@ -1148,6 +1195,7 @@ class Subclient(object):
 
                 incremental_level   (str)   --  run incremental backup before/after synthetic full
                         BEFORE_SYNTH / AFTER_SYNTH
+
                         only applicable in case of Synthetic_full backup
                     default: BEFORE_SYNTH
 
@@ -1157,7 +1205,9 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if backup level specified is not correct
+
                     if response is empty
+
                     if response is not success
         """
         backup_level = backup_level.lower()
@@ -1186,12 +1236,15 @@ class Subclient(object):
             Args:
                 path                (str)   --  folder path to get the contents of
                     default: ''; returns the root of the Backup content
+
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: False
+
                 vm_file_browse      (bool)  --  browse files and folders inside
                                                     a guest virtual machine
                     only applicable when browsing content inside a guest virtual machine
                     default: False
+
                 vm_disk_browse      (bool)  --  browse virtual machine files
                                                     e.g.; .vmdk files, etc.
                     only applicable when browsing content inside a guest virtual machine
@@ -1199,12 +1252,15 @@ class Subclient(object):
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
+
                 dict - path along with the details like name, file/folder, size, modification time
 
             Raises:
                 SDKException:
                     if failed to browse content
+
                     if response is empty
+
                     if response is not success
         """
         from urllib.parse import urlencode
@@ -1236,30 +1292,42 @@ class Subclient(object):
             Args:
                 path                (str)   --  folder path to get the contents of
                     default: ''; returns the root of the Backup content
+
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: True
+
                 restore_index       (bool)  --  restore index if it is not cached
                     default: True
+
                 from_date           (str)   --  date to get the contents after
                         format: dd/MM/YYYY
+
                         gets contents from 01/01/1970 if not specified
                     default: None
+
                 to_date             (str)  --  date to get the contents before
                         format: dd/MM/YYYY
+
                         gets contents till current day if not specified
                     default: None
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
+
                 dict - path along with the details like name, file/folder, size, modification time
 
             Raises:
                 SDKException:
                     if from date value is incorrect
+
                     if to date value is incorrect
+
                     if to date is less than from date
+
                     if failed to browse content
+
                     if response is empty
+
                     if response is not success
         """
         if from_date and (from_date != '01/01/1970' and from_date != '1/1/1970'):
@@ -1331,23 +1399,29 @@ class Subclient(object):
              file_or_folder_name,
              show_deleted_files=True,
              restore_index=True):
-        """Searches the file in the backup, and returns all the files matching the file name given.
+        """Searches a file/folder in the subclient backup content,
+            and returns all the files matching the file name given.
 
             Args:
                 file_or_folder_name (str)   --  name of the file or folder to search
+
                 show_deleted_files  (bool)  --  include deleted files in the search or not
                     default: True
+
                 restore_index       (bool)  --  restore index if it is not cached
                     default: True
 
             Returns:
                 list - list of all files or folders with their full paths matching the name
+
                 dict - path along with the details like name, file/folder, size, modification time
 
             Raises:
                 SDKException:
                     if failed to search file/folder
+
                     if response is empty
+
                     if response is not success
         """
         request_json = self._browse_and_find_json(
@@ -1368,8 +1442,10 @@ class Subclient(object):
 
             Args:
                 paths                   (list)  --  list of full paths of files/folders to restore
+
                 overwrite               (bool)  --  unconditional overwrite files during restore
                     default: True
+
                 restore_data_and_acl    (bool)  --  restore data and ACL files
                     default: True
 
@@ -1379,8 +1455,11 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if paths is not a list
+
                     if failed to initialize job
+
                     if response is empty
+
                     if response is not success
         """
         if not (isinstance(paths, list) and
@@ -1426,11 +1505,15 @@ class Subclient(object):
             Args:
                 client                (str/object) --  either the name of the client or
                                                            the instance of the Client
+
                 destination_path      (str)        --  full path of the restore location on client
+
                 paths                 (list)       --  list of full paths of
                                                            files/folders to restore
+
                 overwrite             (bool)       --  unconditional overwrite files during restore
                     default: True
+
                 restore_data_and_acl  (bool)       --  restore data and ACL files
                     default: True
 
@@ -1440,10 +1523,15 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if client is not a string or Client instance
+
                     if destination_path is not a string
+
                     if paths is not a list
+
                     if failed to initialize job
+
                     if response is empty
+
                     if response is not success
         """
         from .client import Client
@@ -1513,26 +1601,28 @@ class FileSystemSubclient(Subclient):
     """Derived class from Subclient Base class, representing a file system subclient,
         and to perform operations on that subclient."""
 
-    def _get_subclient_content_(self, subclient_content):
+    def _get_subclient_content_(self, subclient_properties):
         """Gets the appropriate content from the Subclient relevant to the user.
 
             Args:
-                subclient_content (list)  --  list of dictionaries containing the subclient content
-                                                  associated with the subclient
+                subclient_properties (dict)  --  dictionary contatining the properties of subclient
 
             Returns:
                 list - list of content associated with the subclient
         """
         content = []
 
-        for path in subclient_content:
-            content.append(str(path["path"]))
+        if 'content' in self._subclient_properties:
+            subclient_content = subclient_properties['content']
+
+            for path in subclient_content:
+                content.append(str(path["path"]))
 
         return content
 
     def _set_subclient_content_(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to add a new File System Subclient
-            with the content passed in subclient content.
+        """Creates the list of content JSON to pass to the API to add/update content of a
+            File System Subclient.
 
             Args:
                 subclient_content (list)  --  list of the content to add to the subclient
@@ -1547,5 +1637,88 @@ class FileSystemSubclient(Subclient):
                 "path": path
             }
             content.append(file_system_dict)
+
+        return content
+
+
+class VirtualServerSubclient(Subclient):
+    """Derived class from Subclient Base class, representing a virtual server subclient,
+        and to perform operations on that subclient."""
+
+    def _get_subclient_content_(self, subclient_properties):
+        """Gets the appropriate content from the Subclient relevant to the user.
+
+            Args:
+                subclient_properties (dict)  --  dictionary contatining the properties of subclient
+
+            Returns:
+                list - list of content associated with the subclient
+        """
+        content = []
+
+        content_types = {
+            '1': 'Host',
+            '2': 'Resource Pool',
+            '4': 'Datacenter',
+            '9': 'Virtual Machine',
+            '16': 'All unprotected VMs',
+            '17': 'Root'
+        }
+
+        if 'vmContent' in self._subclient_properties:
+            subclient_content = subclient_properties['vmContent']
+
+            if 'children' in subclient_content:
+                children = subclient_content['children']
+
+                for child in children:
+                    path = str(child['path']) if 'path' in child else None
+                    display_name = str(child['displayName'])
+                    content_type = content_types[str(child['type'])]
+
+                    temp_dict = {
+                        'path': path,
+                        'display_name': display_name,
+                        'type': content_type
+                    }
+
+                    content.append(temp_dict)
+
+        return content
+
+    def _set_subclient_content_(self, subclient_content):
+        """Creates the list of content JSON to pass to the API to add/update content of a
+            Virtual Server Subclient.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        """
+        content = []
+
+        content_types = {
+            'Host': '1',
+            'Root': '17',
+            'Datacenter': '4',
+            'Resource Pool': '2',
+            'Virtual Machine': '9',
+            'All unprotected VMs': '16'
+        }
+
+        try:
+            for temp_dict in subclient_content:
+                virtual_server_dict = {
+                    'allOrAnyChildren': True,
+                    'equalsOrNotEquals': True,
+                    'displayName': temp_dict['display_name'],
+                    'path': temp_dict['path'],
+                    'type': content_types[temp_dict['type']]
+                }
+
+                content.append(virtual_server_dict)
+        except KeyError as err:
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
         return content

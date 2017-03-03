@@ -62,6 +62,7 @@ class CVPySDK(object):
 
             Returns:
                 True - if the service url is valid
+
                 False - if the service url is invalid
 
             Raises:
@@ -84,8 +85,11 @@ class CVPySDK(object):
             Raises:
                 SDKException:
                     if login failed
+
                     if response is empty
+
                     if response is not success
+
                 requests Connection Error   --  requests.exceptions.ConnectionError
         """
         try:
@@ -137,21 +141,27 @@ class CVPySDK(object):
 
             Args:
                 method    (str)         --  http operation to perform, e.g.; GET, POST, PUT, DELETE
+
                 url       (str)         --  the web url or service to run the HTTP request on
+
                 payload   (dict / str)  --  data to be passed along with the request
                     default: None
+
                 attempts  (int)         --  number of attempts made with the same request
                     default: 0
 
             Returns:
                 tuple:
                     (True, response) - in case of success
+
                     (False, response) - in case of failure
 
             Raises:
                 SDKException:
                     if the method passed is incorrect/not supported
+
                     if the number of attempts exceed 3
+
                 requests Connection Error   --  requests.exceptions.ConnectionError
         """
         try:
