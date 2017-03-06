@@ -25,7 +25,7 @@ EXCEPTION_DICT = {
         '102': 'Response received is empty'
     },
     'Commcell': {
-        '101': 'Commcell is not reachable. Please check the commcell name again',
+        '101': 'Commcell is not reachable. Please check the commcell name/commcell services again',
         '102': 'Authtoken not received. Please try again.'
     },
     'CVPySDK': {

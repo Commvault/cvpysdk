@@ -8,101 +8,60 @@
 # --------------------------------------------------------------------------
 
 """Main file for performing sublcient operations.
-
 Subclients, Subclient, FileSystemSubclient,
 and VirtualServerSubclient are 4 classes defined in this file.
-
 Subclients: Class for representing all the subclients associated with a backupset
-
 Subclient: Base class consisting of all the common properties and operations for a Subclient
-
 FileSystemSubclient: Derived class from Subclient Base class, representing a file system subclient,
                         and to perform operations on that subclient
-
 VirtualServerSubclient: Derived class from Subclient Base class, representing a
                             virtual server subclient, and to perform operations on that subclient
-
 Subclients:
     __init__(class_object)      --  initialise object of subclients object associated with
                                         the specified backup set/instance.
-
     __str__()                   --  returns all the subclients associated with the backupset
-
     __repr__()                  --  returns the string for the instance of the Subclients class
-
     _get_subclients()           --  gets all the subclients associated with the backupset specified
-
     has_subclient()             --  checks if a subclient exists with the given name or not
-
     add()                       --  adds a new subclient to the backupset
-
     get(subclient_name)         --  returns the subclient object of the input subclient name
-
     delete(subclient_name)      --  deletes the subclient (subclient name) from the backupset
-
-
 Subclient:
     __init__(backupset_object,
              subclient_name,
              subclient_id)      --  initialise instance of the Subclient class,
                                         associated to the specified backupset
-
     __repr__()                  --  return the subclient name, the instance is associated with
-
     _get_subclient_id()         --  method to get subclient id, if not specified in __init__ method
-
     _get_subclient_properties() --  get the properties of this subclient
-
     _initialize_subclient_properties() --  initializes the properties of this subclient
-
     _browse_and_find_json()     --  returns the appropriate JSON request to pass for either
                                         Browse operation or Find operation
-
     _process_browse_request()   --  processes response received for both Browse and Find request
-
     _restore_json()             --  returns the apppropriate JSON request to pass for either
                                         Restore In-Place or Out-of-Place operation
-
     _process_restore_request()  --  processes response received for the Restore request
-
     description()               --  update the description of the subclient
-
     content()                   --  update the content of the subclient
-
     enable_backup()             --  enables the backup for the subclient
-
     enable_backup_at_time()     --  enables backup for the subclient at the input time specified
-
     disble_backup()             --  disbles the backup for the subclient
-
     backup()                    --  run a backup job for the subclient
-
     browse()                    --  gets the content of the backup for this subclient
                                         at the path specified
-
     browse_in_time()            --  gets the content of the backup for this subclient
                                         at the input path in the time range specified
-
     find()                      --  searches a given file/folder name in the subclient content
-
     restore_in_place()          --  Restores the files/folders specified in the
                                         input paths list to the same location
-
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
                                         to the input client, at the specified destionation location
-
-
 FileSystemSubclient:
     _get_subclient_content_()   --  gets the content of a file system subclient
-
     _set_subclient_content_()   --  sets the content of a file system subclient
-
-
 VirtualServerSubclient:
     _get_subclient_content_()   --  gets the content of a virtual server subclient
-
     _set_subclient_content_()   --  sets the content of a virtual server subclient
-
 """
 
 from __future__ import absolute_import
@@ -125,10 +84,8 @@ class Subclients(object):
 
     def __init__(self, class_object):
         """Initialize the Sublcients object for the given backupset.
-
             Args:
                 class_object (object)  --  instance of the Backupset/Instance class
-
             Returns:
                 object - instance of the Subclients class
         """
@@ -163,12 +120,12 @@ class Subclients(object):
         # the appropriate class object will be initialized based on the agent
         self._subclients_dict = {
             'file system': FileSystemSubclient,
-            'virtual server': VirtualServerSubclient
+            'virtual server': VirtualServerSubclient,
+            'cloud apps': CloudAppsSubclient
         }
 
     def __str__(self):
         """Representation string consisting of all subclients of the backupset.
-
             Returns:
                 str - string of all the subclients of th backupset of an agent of a client
         """
@@ -197,18 +154,15 @@ class Subclients(object):
 
     def _get_subclients(self):
         """Gets all the subclients associated to the client specified by the backupset object.
-
             Returns:
                 dict - consists of all subclients in the backupset
                     {
                          "subclient1_name": subclient1_id,
                          "subclient2_name": subclient2_id
                     }
-
             Raises:
                 SDKException:
                     if response is empty
-
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -243,13 +197,10 @@ class Subclients(object):
 
     def has_subclient(self, subclient_name):
         """Checks if a subclient exists in the commcell with the input subclient name.
-
             Args:
                 subclient_name (str)  --  name of the subclient
-
             Returns:
                 bool - boolean output whether the subclient exists in the backupset or not
-
             Raises:
                 SDKException:
                     if type of the subclient name argument is not string
@@ -261,31 +212,20 @@ class Subclients(object):
 
     def add(self, subclient_name, storage_policy, description=''):
         """Adds a new subclient to the backupset.
-
             Args:
                 subclient_name  (str)   --  name of the new subclient to add
-
                 storage_policy  (str)   --  name of the storage policy to associate with subclient
-
                 description     (str)   --  description for the subclient (optional)
-
             Returns:
                 object - instance of the Subclient class
-
             Raises:
                 SDKException:
                     if subclient name argument is not of type string
-
                     if storage policy argument is not of type string
-
                     if description argument is not of type string
-
                     if failed to create subclient
-
                     if response is empty
-
                     if response is not success
-
                     if subclient already exists with the given name
         """
         if not (isinstance(subclient_name, str) and
@@ -355,17 +295,13 @@ class Subclients(object):
 
     def get(self, subclient_name):
         """Returns a subclient object of the specified backupset name.
-
             Args:
                 subclient_name (str)  --  name of the subclient
-
             Returns:
                 object - instance of the Subclient class for the given subclient name
-
             Raises:
                 SDKException:
                     if type of the subclient name argument is not string
-
                     if no subclient exists with the given name
         """
         if not isinstance(subclient_name, str):
@@ -386,20 +322,14 @@ class Subclients(object):
 
     def delete(self, subclient_name):
         """Deletes the subclient specified by the subclient_name from the backupset.
-
             Args:
                 subclient_name (str)  --  name of the subclient to remove from the backupset
-
             Raises:
                 SDKException:
                     if type of the subclient name argument is not string
-
                     if failed to delete subclient
-
                     if response is empty
-
                     if response is not success
-
                     if no subclient exists with the given name
         """
         if not isinstance(subclient_name, str):
@@ -455,15 +385,11 @@ class Subclient(object):
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialise the Subclient object.
-
             Args:
                 backupset_object (object)  --  instance of the Backupset class
-
                 subclient_name   (str)     --  name of the subclient
-
                 subclient_id     (str)     --  id of the subclient
                     default: None
-
             Returns:
                 object - instance of the Subclient class
         """
@@ -495,7 +421,6 @@ class Subclient(object):
 
     def _get_subclient_id(self):
         """Gets the subclient id associated to the specified backupset name and client name.
-
             Returns:
                 str - id associated with this subclient
         """
@@ -504,14 +429,11 @@ class Subclient(object):
 
     def _get_subclient_properties(self):
         """Gets the subclient properties of this subclient.
-
             Returns:
                 dict - dictionary consisting of the properties of this subclient
-
             Raises:
                 SDKException:
                     if response is empty
-
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._SUBCLIENT)
@@ -581,10 +503,8 @@ class Subclient(object):
     @staticmethod
     def _convert_size(input_size):
         """Converts the given float size to appropriate size in B / KB / MB / GB, etc.
-
             Args:
                 size (float)  --  float value to convert
-
             Returns:
                 str - size converted to the specific type (B, KB, MB, GB, etc.)
         """
@@ -599,28 +519,19 @@ class Subclient(object):
 
     def _update(self, subclient_description, subclient_content, backup=True, enable_time=None):
         """Updates the properties of the subclient.
-
             Args:
                 subclient_description (str)     --  description of the subclient
-
                 subclient_content     (list)    --  content of the subclient
-
                 backup                (bool)    --  enable backup or not
-
                 enable_time           (str)     --  time to re-enable the activity at
-
             Returns:
                 (bool, str, str):
                     bool -  flag specifies whether success / failure
-
                     str  -  error code received in the response
-
                     str  -  error message received
-
             Raises:
                 SDKException:
                     if response is empty
-
                     if response is not success
         """
         request_json1 = {
@@ -715,20 +626,15 @@ class Subclient(object):
 
     def _process_backup_request(self, backup_request):
         """Runs the Backup for a subclient with the request provided and returns the Job object.
-
             Args:
                 backup_request  (str)  --  backup request specifying the backup level,
                                                to run for the subclient
-
             Returns:
                 object - instance of the Job class for this restore job
-
             Raises:
                 SDKException:
                     if job initialization failed
-
                     if response is empty
-
                     if response is not success
         """
         self._BACKUP = self._commcell_object._services.SUBCLIENT_BACKUP % (
@@ -763,11 +669,9 @@ class Subclient(object):
             to_date=time.time()):
         """Returns the JSON request to pass to the DoBrowse API,
             as per the options selected by the user.
-
             Args:
                 option (str)  --  string option for which to run the API for
                     e.g.; Browse / Find
-
             Returns:
                 dict - JSON request to pass to the API
         """
@@ -826,26 +730,18 @@ class Subclient(object):
     def _process_browse_request(self, option, flag, response):
         """Runs the DoBrowse API with the request JSON provided for the operation specified,
             and returns the contents after parsing the response.
-
             Args:
                 option      (str)   --  string option for which to process the response for
                     e.g.; Browse / Find
-
                 flag        (bool)  --  boolean to specify whether the response was success or not
-
                 response    (dict)  --  JSON response received for the request from the Server
-
             Returns:
                 list - list of all folders or files with their full paths inside the input path
-
                 dict - path along with the details like name, file/folder, size, modification time
-
             Raises:
                 SDKException:
                     if failed to browse/search for content
-
                     if response is empty
-
                     if response is not success
         """
         options_dict = {
@@ -913,10 +809,8 @@ class Subclient(object):
             overwrite=True,
             restore_data_and_acl=True):
         """Returns the JSON request to pass to the API as per the options selected by the user.
-
             Args:
                 paths   (list)  --  list of full paths of files/folders to restore
-
             Returns:
                 dict - JSON request to pass to the API
         """
@@ -989,19 +883,14 @@ class Subclient(object):
     def _process_restore_request(self, request_json):
         """Runs the CreateTask API with the request JSON provided for Restore,
             and returns the contents after parsing the response.
-
             Args:
                 request_json    (dict)  --  JSON request to run for the API
-
             Returns:
                 object - instance of the Job class for this restore job
-
             Raises:
                 SDKException:
                     if restore job failed
-
                     if response is empty
-
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1068,11 +957,9 @@ class Subclient(object):
     @description.setter
     def description(self, value):
         """Sets the description of the subclient as the value provided as input.
-
             Raises:
                 SDKException:
                     if failed to update description of subclient
-
                     if the type of value input is not string
         """
         if isinstance(value, str):
@@ -1091,13 +978,10 @@ class Subclient(object):
     @content.setter
     def content(self, value):
         """Sets the content of the subclient as the value provided as input.
-
             Raises:
                 SDKException:
                     if failed to update content of subclient
-
                     if the type of value input is not list
-
                     if value list is empty
         """
         if isinstance(value, list) and value != []:
@@ -1115,7 +999,6 @@ class Subclient(object):
 
     def enable_backup(self):
         """Enables Backup for the subclient.
-
             Raises:
                 SDKException:
                     if failed to enable backup of subclient
@@ -1130,21 +1013,15 @@ class Subclient(object):
 
     def enable_backup_at_time(self, enable_time):
         """Disables Backup if not already disabled, and enables at the time specified.
-
             Args:
                 enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
-
             Raises:
                 SDKException:
                     if time value entered is less than the current time
-
                     if time value entered is not of correct format
-
                     if failed to enable backup
-
                     if response is empty
-
                     if response is not success
         """
         try:
@@ -1164,7 +1041,6 @@ class Subclient(object):
 
     def disable_backup(self):
         """Disables Backup for the subclient.
-
             Raises:
                 SDKException:
                     if failed to disable backup of subclient
@@ -1183,31 +1059,23 @@ class Subclient(object):
             incremental_backup=False,
             incremental_level='BEFORE_SYNTH'):
         """Runs a backup job for the subclient of the level specified.
-
             Args:
                 backup_level        (str)   --  level of backup the user wish to run
                         Full / Incremental / Differential / Synthetic_full
                     default: Incremental
-
                 incremental_backup  (bool)  --  run incremental backup
                         only applicable in case of Synthetic_full backup
                     default: False
-
                 incremental_level   (str)   --  run incremental backup before/after synthetic full
                         BEFORE_SYNTH / AFTER_SYNTH
-
                         only applicable in case of Synthetic_full backup
                     default: BEFORE_SYNTH
-
             Returns:
                 object - instance of the Job class for this backup job
-
             Raises:
                 SDKException:
                     if backup level specified is not correct
-
                     if response is empty
-
                     if response is not success
         """
         backup_level = backup_level.lower()
@@ -1232,35 +1100,26 @@ class Subclient(object):
                vm_file_browse=False,
                vm_disk_browse=False):
         """Gets the content of the backup for this subclient at the path specified.
-
             Args:
                 path                (str)   --  folder path to get the contents of
                     default: ''; returns the root of the Backup content
-
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: False
-
                 vm_file_browse      (bool)  --  browse files and folders inside
                                                     a guest virtual machine
                     only applicable when browsing content inside a guest virtual machine
                     default: False
-
                 vm_disk_browse      (bool)  --  browse virtual machine files
                                                     e.g.; .vmdk files, etc.
                     only applicable when browsing content inside a guest virtual machine
                     default: False
-
             Returns:
                 list - list of all folders or files with their full paths inside the input path
-
                 dict - path along with the details like name, file/folder, size, modification time
-
             Raises:
                 SDKException:
                     if failed to browse content
-
                     if response is empty
-
                     if response is not success
         """
         from urllib.parse import urlencode
@@ -1288,46 +1147,31 @@ class Subclient(object):
                        to_date=None):
         """Gets the content of the backup for this subclient
             at the path specified in the time range specified.
-
             Args:
                 path                (str)   --  folder path to get the contents of
                     default: ''; returns the root of the Backup content
-
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: True
-
                 restore_index       (bool)  --  restore index if it is not cached
                     default: True
-
                 from_date           (str)   --  date to get the contents after
                         format: dd/MM/YYYY
-
                         gets contents from 01/01/1970 if not specified
                     default: None
-
                 to_date             (str)  --  date to get the contents before
                         format: dd/MM/YYYY
-
                         gets contents till current day if not specified
                     default: None
-
             Returns:
                 list - list of all folders or files with their full paths inside the input path
-
                 dict - path along with the details like name, file/folder, size, modification time
-
             Raises:
                 SDKException:
                     if from date value is incorrect
-
                     if to date value is incorrect
-
                     if to date is less than from date
-
                     if failed to browse content
-
                     if response is empty
-
                     if response is not success
         """
         if from_date and (from_date != '01/01/1970' and from_date != '1/1/1970'):
@@ -1401,27 +1245,19 @@ class Subclient(object):
              restore_index=True):
         """Searches a file/folder in the subclient backup content,
             and returns all the files matching the file name given.
-
             Args:
                 file_or_folder_name (str)   --  name of the file or folder to search
-
                 show_deleted_files  (bool)  --  include deleted files in the search or not
                     default: True
-
                 restore_index       (bool)  --  restore index if it is not cached
                     default: True
-
             Returns:
                 list - list of all files or folders with their full paths matching the name
-
                 dict - path along with the details like name, file/folder, size, modification time
-
             Raises:
                 SDKException:
                     if failed to search file/folder
-
                     if response is empty
-
                     if response is not success
         """
         request_json = self._browse_and_find_json(
@@ -1439,27 +1275,19 @@ class Subclient(object):
 
     def restore_in_place(self, paths, overwrite=True, restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the same location.
-
             Args:
                 paths                   (list)  --  list of full paths of files/folders to restore
-
                 overwrite               (bool)  --  unconditional overwrite files during restore
                     default: True
-
                 restore_data_and_acl    (bool)  --  restore data and ACL files
                     default: True
-
             Returns:
                 object - instance of the Job class for this restore job
-
             Raises:
                 SDKException:
                     if paths is not a list
-
                     if failed to initialize job
-
                     if response is empty
-
                     if response is not success
         """
         if not (isinstance(paths, list) and
@@ -1501,37 +1329,25 @@ class Subclient(object):
                              restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
-
             Args:
                 client                (str/object) --  either the name of the client or
                                                            the instance of the Client
-
                 destination_path      (str)        --  full path of the restore location on client
-
                 paths                 (list)       --  list of full paths of
                                                            files/folders to restore
-
                 overwrite             (bool)       --  unconditional overwrite files during restore
                     default: True
-
                 restore_data_and_acl  (bool)       --  restore data and ACL files
                     default: True
-
             Returns:
                 object - instance of the Job class for this restore job
-
             Raises:
                 SDKException:
                     if client is not a string or Client instance
-
                     if destination_path is not a string
-
                     if paths is not a list
-
                     if failed to initialize job
-
                     if response is empty
-
                     if response is not success
         """
         from .client import Client
@@ -1603,10 +1419,8 @@ class FileSystemSubclient(Subclient):
 
     def _get_subclient_content_(self, subclient_properties):
         """Gets the appropriate content from the Subclient relevant to the user.
-
             Args:
                 subclient_properties (dict)  --  dictionary contatining the properties of subclient
-
             Returns:
                 list - list of content associated with the subclient
         """
@@ -1623,10 +1437,8 @@ class FileSystemSubclient(Subclient):
     def _set_subclient_content_(self, subclient_content):
         """Creates the list of content JSON to pass to the API to add/update content of a
             File System Subclient.
-
             Args:
                 subclient_content (list)  --  list of the content to add to the subclient
-
             Returns:
                 list - list of the appropriate JSON for an agent to send to the POST Subclient API
         """
@@ -1647,10 +1459,8 @@ class VirtualServerSubclient(Subclient):
 
     def _get_subclient_content_(self, subclient_properties):
         """Gets the appropriate content from the Subclient relevant to the user.
-
             Args:
                 subclient_properties (dict)  --  dictionary contatining the properties of subclient
-
             Returns:
                 list - list of content associated with the subclient
         """
@@ -1689,10 +1499,8 @@ class VirtualServerSubclient(Subclient):
     def _set_subclient_content_(self, subclient_content):
         """Creates the list of content JSON to pass to the API to add/update content of a
             Virtual Server Subclient.
-
             Args:
                 subclient_content (list)  --  list of the content to add to the subclient
-
             Returns:
                 list - list of the appropriate JSON for an agent to send to the POST Subclient API
         """
@@ -1720,5 +1528,57 @@ class VirtualServerSubclient(Subclient):
                 content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+
+        return content
+
+
+class CloudAppsSubclient(Subclient):
+    """Derived class from Subclient Base class, representing a CloudApps subclient,
+        and to perform operations on that subclient."""
+
+    def _get_subclient_content_(self, subclient_properties):
+        """Gets the appropriate content from the Subclient relevant to the user.
+
+            Args:
+                subclient_properties (dict)  --  dictionary contatining the properties of subclient
+
+            Returns:
+                list - list of content associated with the subclient
+        """
+        content = []
+
+        for account in subclient_properties['content']:
+            content_dict = {}
+            temp_account = account["cloudconnectorContent"]["includeAccounts"]
+            content_dict['SMTPAddress'] = temp_account["contentName"]
+            content_dict['displayName'] = temp_account["contentValue"]
+            content.append(content_dict.copy())
+
+        return content
+
+    def _set_subclient_content_(self, subclient_content):
+        """Creates the list of content JSON to pass to the API to add a new CloudApps Subclient
+            with the content passed in subclient content.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        """
+        content = []
+
+        for account in subclient_content:
+
+            content_temp = {
+                            "cloudconnectorContent": {
+                                "includeAccounts": {
+                                    "contentValue": account['displayName'],
+                                    "contentType": 134,
+                                    "contentName": account['SMTPAddress']
+                                    }
+                                }
+                            }
+            content.append(content_temp)
 
         return content
