@@ -1750,11 +1750,14 @@ class CloudAppsSubclient(Subclient):
         content = []
 
         for account in subclient_properties['content']:
-            content_dict = {}
             temp_account = account["cloudconnectorContent"]["includeAccounts"]
-            content_dict['SMTPAddress'] = temp_account["contentName"]
-            content_dict['displayName'] = temp_account["contentValue"]
-            content.append(content_dict.copy())
+
+            content_dict = {
+                'SMTPAddress': temp_account["contentName"],
+                'display_name': temp_account["contentValue"]
+            }
+
+            content.append(content_dict)
 
         return content
 
@@ -1771,15 +1774,15 @@ class CloudAppsSubclient(Subclient):
         content = []
 
         for account in subclient_content:
-            content_temp = {
+            temp_content_dict = {
                 "cloudconnectorContent": {
                     "includeAccounts": {
-                        "contentValue": account['displayName'],
+                        "contentValue": account['display_name'],
                         "contentType": 134,
                         "contentName": account['SMTPAddress']
                     }
                 }
             }
-            content.append(content_temp)
+            content.append(temp_content_dict)
 
         return content
