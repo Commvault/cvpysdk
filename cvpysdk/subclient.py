@@ -695,28 +695,60 @@ class Subclient(object):
         else:
             request_json = request_json2
 
+        http_request = 'POST'
+        request_url = self._SUBCLIENT
+
+        if isinstance(self, VirtualServerSubclient):
+            # if the description is same, the request is to update content
+            if subclient_description == self.description:
+                request_json = {
+                    'VirtualServer_VMSubClientEntity': self._set_subclient_content_(
+                        subclient_content
+                    )
+                }
+                http_request = 'PUT'
+                request_url += '/content'
+            # if the description is not the same, the request is to update description
+            # content attribute should then be removed from the request JSON
+            else:
+                del request_json['subClientProperties']['content']
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._SUBCLIENT, request_json
+            http_request, request_url, request_json
         )
 
         self._initialize_subclient_properties()
 
         if flag:
-            if response.json() and "response" in response.json():
-                error_code = str(response.json()["response"][0]["errorCode"])
+            if response.json():
+                if "response" in response.json():
+                    error_code = str(response.json()["response"][0]["errorCode"])
 
-                if error_code == "0":
-                    return (True, "0", "")
-                else:
-                    error_string = ""
+                    if error_code == "0":
+                        return (True, "0", "")
+                    else:
+                        error_message = ""
 
-                    if "errorString" in response.json()["response"][0]:
-                        error_string = response.json()["response"][0]["errorString"]
+                        if "errorString" in response.json()["response"][0]:
+                            error_message = response.json()["response"][0]["errorString"]
 
-                    if error_string:
-                        return (False, error_code, error_string)
+                        if error_message:
+                            return (False, error_code, error_message)
+                        else:
+                            return (False, error_code, "")
+                elif "errorCode" in response.json():
+                    error_code = str(response.json()['errorCode'])
+                    error_message = str(response.json()['errorMessage'])
+
+                    if error_code == "0":
+                        return (True, "0", "")
+
+                    if error_message:
+                        return (False, error_code, error_message)
                     else:
                         return (False, error_code, "")
+                else:
+                    raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1731,7 +1763,11 @@ class VirtualServerSubclient(Subclient):
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
-        return content
+        vs_subclient_content = {
+            "children": content
+        }
+
+        return vs_subclient_content
 
 
 class CloudAppsSubclient(Subclient):
