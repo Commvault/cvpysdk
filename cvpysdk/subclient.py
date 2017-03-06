@@ -23,7 +23,7 @@ VirtualServerSubclient: Derived class from Subclient Base class, representing a
                             virtual server subclient, and to perform operations on that subclient
 
 CloudAppsSubclient: Derived class from Subclient Base class, representing a
-                            cloud apps subclient, and to perform operations on that subclient
+                        cloud apps subclient, and to perform operations on that subclient
 
 Subclients:
     __init__(class_object)      --  initialise object of subclients object associated with
