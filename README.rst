@@ -102,6 +102,19 @@ Contribution Guidelines
 
 4. If the Issue is approved, the contributor can then make the changes to their fork and open a pull request.
 
+Pull Requests
+*************
+- CVPySDK has 3 branches, namely:
+    - **master**
+    - **dev**
+    - **test**
+
+- The contributor should *Fork* the **dev** branch, and make their changes on top of it, and open a *Pull Request*
+- The **test** branch will Synced with the **dev** branch after every **n** commits, depending on the commit size
+- The **master** branch will then be updated with the **test** branch, once everything is verified
+
+ **Note:** The SDK team will not accept any *Pull Requests* on the **master** branch
+
 Coding Considerations
 *********************
 
