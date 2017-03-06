@@ -1784,6 +1784,7 @@ class CloudAppsSubclient(Subclient):
                         }
                     }
                 }
+
                 content.append(temp_content_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
