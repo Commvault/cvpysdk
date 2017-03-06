@@ -1773,16 +1773,19 @@ class CloudAppsSubclient(Subclient):
         """
         content = []
 
-        for account in subclient_content:
-            temp_content_dict = {
-                "cloudconnectorContent": {
-                    "includeAccounts": {
-                        "contentValue": account['display_name'],
-                        "contentType": 134,
-                        "contentName": account['SMTPAddress']
+        try:
+            for account in subclient_content:
+                temp_content_dict = {
+                    "cloudconnectorContent": {
+                        "includeAccounts": {
+                            "contentValue": account['display_name'],
+                            "contentType": 134,
+                            "contentName": account['SMTPAddress']
+                        }
                     }
                 }
-            }
-            content.append(temp_content_dict)
+                content.append(temp_content_dict)
+        except KeyError as err:
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
         return content
