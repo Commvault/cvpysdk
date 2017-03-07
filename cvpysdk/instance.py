@@ -9,15 +9,12 @@
 
 """Main file for performing instance operations.
 
-Instances, Instance, and VirtualServerInstance are 3 classes defined in this file.
+Instances and Instance are 2 classes defined in this file.
 
 Instances: Class for representing all the instances associated with a specific agent
 
 Instance:  Class for a single instance selected for an agent,
                 and to perform operations on that instance
-
-VirtualServerInstance: Class for representing a Virtual Server Agent instance,
-                           derived from the Instance class
 
 
 Instances:
@@ -48,11 +45,6 @@ Instance:
 
     _get_instance_properties()      --  method to get the properties of the instance
 
-
-VirtualServerInstance:
-    _get_instance_properties()      --  Instance class method overwritten to add virtual server
-                                            instance properties as well
-
 """
 
 from __future__ import absolute_import
@@ -82,6 +74,10 @@ class Instances(object):
 
         self._instances = self._get_instances()
 
+        from .instances.vsinstance import VirtualServerInstance
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
         self._instances_dict = {
             'file system': Instance,
             'virtual server': VirtualServerInstance
@@ -295,79 +291,3 @@ class Instance(object):
     def instance_name(self):
         """Treats the instance name as a read-only attribute."""
         return self._instance_name
-
-
-class VirtualServerInstance(Instance):
-    """Class for representing an Instance of the Virtual Server agent."""
-
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
-        """
-        super(VirtualServerInstance, self)._get_instance_properties()
-
-        self._vs_instance_type = None
-        self._v_center_name = None
-        self._v_center_username = None
-        self._associated_clients = None
-
-        if 'virtualServerInstance' in self._properties:
-            virtual_server_instance = self._properties['virtualServerInstance']
-            self._vs_instance_type = str(virtual_server_instance['vsInstanceType'])
-
-            if 'vmwareVendor' in virtual_server_instance:
-                v_center = virtual_server_instance['vmwareVendor']['virtualCenter']
-
-                self._v_center_name = str(v_center['domainName'])
-                self._v_center_username = str(v_center['userName'])
-
-            if 'associatedClients' in virtual_server_instance:
-                associated_clients = virtual_server_instance['associatedClients']
-
-                self._associated_clients = {
-                    'Clients': [],
-                    'ClientGroups': []
-                }
-
-                for member in associated_clients['memberServers']:
-                    client = member['client']
-
-                    if 'clientName' in client:
-                        temp_dict = {
-                            'client_name': str(client['clientName']),
-                            'client_id': str(client['clientId'])
-                        }
-                        self._associated_clients['Clients'].append(temp_dict)
-                    elif 'clientGroupName' in client:
-                        temp_dict = {
-                            'client_group_name': str(client['clientGroupName']),
-                            'client_group_id': str(client['clientGroupId'])
-                        }
-                        self._associated_clients['ClientGroups'].append(temp_dict)
-                    else:
-                        continue
-
-    @property
-    def vs_instance_type(self):
-        """Treats the vs instance type as a read-only attribute."""
-        return self._vs_instance_type
-
-    @property
-    def v_center_name(self):
-        """Treats the v-center name as a read-only attribute."""
-        return self._v_center_name
-
-    @property
-    def v_center_username(self):
-        """Treats the v-center user name as a read-only attribute."""
-        return self._v_center_username
-
-    @property
-    def associated_clients(self):
-        """Treats the clients associated to this instance as a read-only attribute."""
-        return self._associated_clients
