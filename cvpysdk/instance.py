@@ -309,7 +309,7 @@ class VirtualServerInstance(Instance):
 
                     if response is not success
         """
-        super()._get_instance_properties()
+        super(VirtualServerInstance, self)._get_instance_properties()
 
         self._vs_instance_type = None
         self._v_center_name = None

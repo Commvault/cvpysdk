@@ -123,7 +123,7 @@ class Backupsets(object):
         )
 
         for index, backupset in enumerate(self._backupsets):
-            sub_str = '{:^5}\t{:20}\t{:^20}\t{:20}\t{:20}\n'.format(
+            sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\n'.format(
                 index + 1,
                 backupset,
                 self._instance_name,
