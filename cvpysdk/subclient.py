@@ -7,23 +7,14 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""Main file for performing sublcient operations.
+"""Main file for performing subclient operations.
 
-Subclients, Subclient, FileSystemSubclient, VirtualServerSubclient,
-and CloudAppsSubclient are 5 classes defined in this file.
+Subclients and Subclient are 2 classes defined in this file.
 
-Subclients: Class for representing all the subclients associated with a backupset
+Subclients: Class for representing all the subclients associated with a backupset / instance
 
 Subclient: Base class consisting of all the common properties and operations for a Subclient
 
-FileSystemSubclient: Derived class from Subclient Base class, representing a file system subclient,
-                        and to perform operations on that subclient
-
-VirtualServerSubclient: Derived class from Subclient Base class, representing a
-                            virtual server subclient, and to perform operations on that subclient
-
-CloudAppsSubclient: Derived class from Subclient Base class, representing a
-                        cloud apps subclient, and to perform operations on that subclient
 
 Subclients:
     __init__(class_object)      --  initialise object of subclients object associated with
@@ -94,24 +85,6 @@ Subclient:
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
                                         to the input client, at the specified destionation location
 
-
-FileSystemSubclient:
-    _get_subclient_content_()   --  gets the content of a file system subclient
-
-    _set_subclient_content_()   --  sets the content of a file system subclient
-
-
-VirtualServerSubclient:
-    _get_subclient_content_()   --  gets the content of a virtual server subclient
-
-    _set_subclient_content_()   --  sets the content of a virtual server subclient
-
-
-CloudAppsSubclient:
-    _get_subclient_content_()   --  gets the content of a cloud apps subclient
-
-    _set_subclient_content_()   --  sets the content of a cloud apps subclient
-
 """
 
 from __future__ import absolute_import
@@ -168,6 +141,10 @@ class Subclients(object):
 
         self._subclients = self._get_subclients()
 
+        from .subclients.fssubclient import FileSystemSubclient
+        from .subclients.vssubclient import VirtualServerSubclient
+        from .subclients.casubclient import CloudAppsSubclient
+
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._subclients_dict = {
@@ -187,7 +164,7 @@ class Subclients(object):
         )
 
         for index, subclient in enumerate(self._subclients):
-            sub_str = '{:^5}\t{:20}\t{:20}\t{:^20}\t{:20}\t{:20}\n'.format(
+            sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\t{:20}\n'.format(
                 index + 1,
                 subclient,
                 self._backupset_object.backupset_name,
@@ -633,6 +610,8 @@ class Subclient(object):
 
                     if response is not success
         """
+        from .subclients.vssubclient import VirtualServerSubclient
+
         request_json1 = {
             "association": {
                 "entity": [{
@@ -1637,192 +1616,3 @@ class Subclient(object):
         )
 
         return self._process_restore_request(request_json)
-
-
-class FileSystemSubclient(Subclient):
-    """Derived class from Subclient Base class, representing a file system subclient,
-        and to perform operations on that subclient."""
-
-    def _get_subclient_content_(self, subclient_properties):
-        """Gets the appropriate content from the Subclient relevant to the user.
-
-            Args:
-                subclient_properties (dict)  --  dictionary contatining the properties of subclient
-
-            Returns:
-                list - list of content associated with the subclient
-        """
-        content = []
-
-        if 'content' in self._subclient_properties:
-            subclient_content = subclient_properties['content']
-
-            for path in subclient_content:
-                content.append(str(path["path"]))
-
-        return content
-
-    def _set_subclient_content_(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to add/update content of a
-            File System Subclient.
-
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
-
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
-        """
-        content = []
-
-        for path in subclient_content:
-            file_system_dict = {
-                "path": path
-            }
-            content.append(file_system_dict)
-
-        return content
-
-
-class VirtualServerSubclient(Subclient):
-    """Derived class from Subclient Base class, representing a virtual server subclient,
-        and to perform operations on that subclient."""
-
-    def _get_subclient_content_(self, subclient_properties):
-        """Gets the appropriate content from the Subclient relevant to the user.
-
-            Args:
-                subclient_properties (dict)  --  dictionary contatining the properties of subclient
-
-            Returns:
-                list - list of content associated with the subclient
-        """
-        content = []
-
-        content_types = {
-            '1': 'Host',
-            '2': 'Resource Pool',
-            '4': 'Datacenter',
-            '9': 'Virtual Machine',
-            '16': 'All unprotected VMs',
-            '17': 'Root'
-        }
-
-        if 'vmContent' in self._subclient_properties:
-            subclient_content = subclient_properties['vmContent']
-
-            if 'children' in subclient_content:
-                children = subclient_content['children']
-
-                for child in children:
-                    path = str(child['path']) if 'path' in child else None
-                    display_name = str(child['displayName'])
-                    content_type = content_types[str(child['type'])]
-
-                    temp_dict = {
-                        'path': path,
-                        'display_name': display_name,
-                        'type': content_type
-                    }
-
-                    content.append(temp_dict)
-
-        return content
-
-    def _set_subclient_content_(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to add/update content of a
-            Virtual Server Subclient.
-
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
-
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
-        """
-        content = []
-
-        content_types = {
-            'Host': '1',
-            'Root': '17',
-            'Datacenter': '4',
-            'Resource Pool': '2',
-            'Virtual Machine': '9',
-            'All unprotected VMs': '16'
-        }
-
-        try:
-            for temp_dict in subclient_content:
-                virtual_server_dict = {
-                    'allOrAnyChildren': True,
-                    'equalsOrNotEquals': True,
-                    'displayName': temp_dict['display_name'],
-                    'path': temp_dict['path'],
-                    'type': content_types[temp_dict['type']]
-                }
-
-                content.append(virtual_server_dict)
-        except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
-
-        vs_subclient_content = {
-            "children": content
-        }
-
-        return vs_subclient_content
-
-
-class CloudAppsSubclient(Subclient):
-    """Derived class from Subclient Base class, representing a CloudApps subclient,
-        and to perform operations on that subclient."""
-
-    def _get_subclient_content_(self, subclient_properties):
-        """Gets the appropriate content from the Subclient relevant to the user.
-
-            Args:
-                subclient_properties (dict)  --  dictionary contatining the properties of subclient
-
-            Returns:
-                list - list of content associated with the subclient
-        """
-        content = []
-
-        for account in subclient_properties['content']:
-            temp_account = account["cloudconnectorContent"]["includeAccounts"]
-
-            content_dict = {
-                'SMTPAddress': temp_account["contentName"],
-                'display_name': temp_account["contentValue"]
-            }
-
-            content.append(content_dict)
-
-        return content
-
-    def _set_subclient_content_(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to add/update content of a
-            Cloud Apps Subclient.
-
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
-
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
-        """
-        content = []
-
-        try:
-            for account in subclient_content:
-                temp_content_dict = {
-                    "cloudconnectorContent": {
-                        "includeAccounts": {
-                            "contentValue": account['display_name'],
-                            "contentType": 134,
-                            "contentName": account['SMTPAddress']
-                        }
-                    }
-                }
-
-                content.append(temp_content_dict)
-        except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
-
-        return content
