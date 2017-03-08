@@ -1249,7 +1249,7 @@ class Subclient(object):
 
     def browse(self,
                path='',
-               show_deleted_files=False,
+               show_deleted_files=True,
                vm_file_browse=False,
                vm_disk_browse=False):
         """Gets the content of the backup for this subclient at the path specified.
@@ -1259,7 +1259,7 @@ class Subclient(object):
                     default: ''; returns the root of the Backup content
 
                 show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: False
+                    default: True
 
                 vm_file_browse      (bool)  --  browse files and folders inside
                                                     a guest virtual machine
