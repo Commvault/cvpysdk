@@ -79,7 +79,6 @@ class Instances(object):
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._instances_dict = {
-            'file system': Instance,
             'virtual server': VirtualServerInstance
         }
 
@@ -196,9 +195,14 @@ class Instances(object):
             agent_name = self._agent_object.agent_name
 
             if self.has_instance(instance_name):
-                return self._instances_dict[agent_name](
-                    self._agent_object, instance_name, self._instances[instance_name]
-                )
+                if agent_name in self._instances_dict:
+                    return self._instances_dict[agent_name](
+                        self._agent_object, instance_name, self._instances[instance_name]
+                    )
+                else:
+                    return Instance(
+                        self._agent_object, instance_name, self._instances[instance_name]
+                    )
 
             raise SDKException(
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
