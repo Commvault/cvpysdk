@@ -145,6 +145,10 @@ class Subclients(object):
         from .subclients.vssubclient import VirtualServerSubclient
         from .subclients.casubclient import CloudAppsSubclient
 
+        globals()['FileSystemSubclient'] = FileSystemSubclient
+        globals()['VirtualServerSubclient'] = VirtualServerSubclient
+        globals()['CloudAppsSubclient'] = CloudAppsSubclient
+
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._subclients_dict = {
@@ -610,8 +614,6 @@ class Subclient(object):
 
                     if response is not success
         """
-        from .subclients.vssubclient import VirtualServerSubclient
-
         request_json1 = {
             "association": {
                 "entity": [{
@@ -677,7 +679,7 @@ class Subclient(object):
         http_request = 'POST'
         request_url = self._SUBCLIENT
 
-        if isinstance(self, VirtualServerSubclient):
+        if isinstance(self, globals()['VirtualServerSubclient']):
             # if the description is same, the request is to update content
             if subclient_description == self.description:
                 request_json = {
@@ -780,6 +782,7 @@ class Subclient(object):
             file_or_folder_name=None,
             show_deleted_files=True,
             restore_index=True,
+            vm_disk_browse=False,
             from_date=0,
             to_date=time.time()):
         """Returns the JSON request to pass to the DoBrowse API,
@@ -797,17 +800,23 @@ class Subclient(object):
             "Find": 1
         }
 
+        browse_mode = 2
+
+        if isinstance(self, globals()['VirtualServerSubclient']):
+            browse_mode = 4
+
         request_json = {
             "opType": options_dict[option],
             "mode": {
-                "mode": 2
+                "mode": browse_mode
             },
             "paths": [{
                 "path": path
             }],
             "options": {
                 "showDeletedFiles": show_deleted_files,
-                "restoreIndex": restore_index
+                "restoreIndex": restore_index,
+                "vsDiskBrowse": vm_disk_browse
             },
             "entity": {
                 "clientName": self._backupset_object._agent_object._client_object.client_name,
@@ -890,16 +899,26 @@ class Subclient(object):
                         for result in result_set:
                             name = str(result['displayName'])
                             path = str(result['path'])
-                            mod_time = time.localtime(result['modificationTime'])
-                            mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
+
+                            if 'modificationTime' in result:
+                                mod_time = time.localtime(result['modificationTime'])
+                                mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
+                            else:
+                                mod_time = None
 
                             if 'file' in result['flags']:
-                                file_or_folder = 'File'
+                                if result['flags']['file'] is True:
+                                    file_or_folder = 'File'
+                                else:
+                                    file_or_folder = 'Folder'
                             else:
                                 file_or_folder = 'Folder'
 
                             # gets the size in human readable format
-                            size = self._convert_size(float(result['size']))
+                            if 'size' in result:
+                                size = self._convert_size(float(result['size']))
+                            else:
+                                size = None
 
                             temp = {
                                 path: [name, file_or_folder, size, mod_time]
@@ -955,10 +974,10 @@ class Subclient(object):
                     "clientId": int(self._backupset_object._agent_object._client_object.client_id),
                     "appName": self._backupset_object._agent_object.agent_name,
                     "appTypeId": int(self._backupset_object._agent_object.agent_id),
-                    "backupsetName": self._backupset_object.backupset_name,
-                    "backupSetId": int(self._backupset_object.backupset_id),
                     "instanceName": self._backupset_object._instance_name,
                     "instanceId": int(self._backupset_object._instance_id),
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "backupSetId": int(self._backupset_object.backupset_id),
                     "subclientName": self.subclient_name,
                     "subclientId": int(self.subclient_id),
                 }],
@@ -1248,9 +1267,8 @@ class Subclient(object):
         return self._process_backup_request(backup_request)
 
     def browse(self,
-               path='',
+               path='\\',
                show_deleted_files=True,
-               vm_file_browse=False,
                vm_disk_browse=False):
         """Gets the content of the backup for this subclient at the path specified.
 
@@ -1260,11 +1278,6 @@ class Subclient(object):
 
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: True
-
-                vm_file_browse      (bool)  --  browse files and folders inside
-                                                    a guest virtual machine
-                    only applicable when browsing content inside a guest virtual machine
-                    default: False
 
                 vm_disk_browse      (bool)  --  browse virtual machine files
                                                     e.g.; .vmdk files, etc.
@@ -1287,12 +1300,17 @@ class Subclient(object):
         from urllib.parse import urlencode
 
         web_service = self._SUBCLIENT + '/Browse?'
+
+        browse_mode = 2
+
+        if isinstance(self, globals()['VirtualServerSubclient']):
+            browse_mode = 4
+
         encode_dict = {
             'path': path,
             'showDeletedFiles': show_deleted_files,
-            'vsFileBrowse': vm_file_browse,
             'vsDiskBrowse': vm_disk_browse,
-            'mode': 2
+            'mode': browse_mode
         }
 
         web_service += urlencode(encode_dict)
@@ -1302,9 +1320,10 @@ class Subclient(object):
         return self._process_browse_request('Browse', flag, response)
 
     def browse_in_time(self,
-                       path='',
+                       path='\\',
                        show_deleted_files=True,
                        restore_index=True,
+                       vm_disk_browse=False,
                        from_date=None,
                        to_date=None):
         """Gets the content of the backup for this subclient
@@ -1406,6 +1425,7 @@ class Subclient(object):
             path=path,
             show_deleted_files=show_deleted_files,
             restore_index=restore_index,
+            vm_disk_browse=vm_disk_browse,
             from_date=from_date,
             to_date=to_date
         )
