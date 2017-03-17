@@ -530,42 +530,34 @@ class Subclient(object):
         """Initializes the common properties for the subclient."""
         self._subclient_properties = self._get_subclient_properties()
 
+        self._description = None
+        self._last_backup_time = None
+        self._on_demand_subclient = False
+        self._next_backup = None
+        self._is_backup_enabled = False
+
         if 'description' in self._subclient_properties['commonProperties']:
             self._description = str(self._subclient_properties['commonProperties']['description'])
-        else:
-            self._description = None
 
         if 'lastBackupTime' in self._subclient_properties['commonProperties']:
-            if self._subclient_properties['commonProperties']['nextBackupTime'] == 0:
-                self._last_backup_time = None
-            else:
+            if self._subclient_properties['commonProperties']['lastBackupTime'] != 0:
                 self._last_backup_time = time.ctime(
                     self._subclient_properties['commonProperties']['lastBackupTime']
                 )
-        else:
-            self._last_backup_time = None
 
         if 'onDemandSubClient' in self._subclient_properties['commonProperties']:
             self._on_demand_subclient = self._subclient_properties[
                 'commonProperties']['onDemandSubClient']
-        else:
-            self._on_demand_subclient = False
 
         if 'nextBackupTime' in self._subclient_properties['commonProperties']:
-            if self._subclient_properties['commonProperties']['nextBackupTime'] == 0:
-                self._next_backup = None
-            else:
+            if self._subclient_properties['commonProperties']['nextBackupTime'] != 0:
                 self._next_backup = time.ctime(
                     self._subclient_properties['commonProperties']['nextBackupTime']
                 )
-        else:
-            self._next_backup = None
 
         if 'enableBackup' in self._subclient_properties['commonProperties']:
             self._is_backup_enabled = self._subclient_properties[
                 'commonProperties']['enableBackup']
-        else:
-            self._is_backup_enabled = False
 
         self._content = self._get_subclient_content_(self._subclient_properties)
 
@@ -893,7 +885,7 @@ class Subclient(object):
 
                     if 'dataResultSet' in browse_result:
                         result_set = browse_result['dataResultSet']
-                        full_result = []
+                        paths_dict = {}
                         paths = []
 
                         for result in result_set:
@@ -920,14 +912,19 @@ class Subclient(object):
                             else:
                                 size = None
 
-                            temp = {
-                                path: [name, file_or_folder, size, mod_time]
-                            }
+                            path_list = [name, file_or_folder]
+
+                            if size:
+                                path_list.append(size)
+
+                            if mod_time:
+                                path_list.append(mod_time)
+
+                            paths_dict[path] = path_list
 
                             paths.append(path)
-                            full_result.append(temp)
 
-                        return paths, full_result
+                        return paths, paths_dict
                     else:
                         raise SDKException('Subclient', exception_code)
                 elif 'messages' in response.json()['browseResponses'][0]:
@@ -1266,15 +1263,12 @@ class Subclient(object):
 
         return self._process_backup_request(backup_request)
 
-    def browse(self,
-               path='\\',
-               show_deleted_files=True,
-               vm_disk_browse=False):
+    def browse(self, path='\\', show_deleted_files=True, vm_disk_browse=False):
         """Gets the content of the backup for this subclient at the path specified.
 
             Args:
                 path                (str)   --  folder path to get the contents of
-                    default: ''; returns the root of the Backup content
+                    default: '\\'; returns the root of the Backup content
 
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: True
@@ -1319,25 +1313,31 @@ class Subclient(object):
 
         return self._process_browse_request('Browse', flag, response)
 
-    def browse_in_time(self,
-                       path='\\',
-                       show_deleted_files=True,
-                       restore_index=True,
-                       vm_disk_browse=False,
-                       from_date=None,
-                       to_date=None):
+    def browse_in_time(
+            self,
+            path='\\',
+            show_deleted_files=True,
+            restore_index=True,
+            vm_disk_browse=False,
+            from_date=None,
+            to_date=None):
         """Gets the content of the backup for this subclient
             at the path specified in the time range specified.
 
             Args:
                 path                (str)   --  folder path to get the contents of
-                    default: ''; returns the root of the Backup content
+                    default: '\\'; returns the root of the Backup content
 
                 show_deleted_files  (bool)  --  include deleted files in the content or not
                     default: True
 
                 restore_index       (bool)  --  restore index if it is not cached
                     default: True
+
+                vm_disk_browse      (bool)  --  browse virtual machine files
+                                                    e.g.; .vmdk files, etc.
+                    only applicable when browsing content inside a guest virtual machine
+                    default: False
 
                 from_date           (str)   --  date to get the contents after
                         format: dd/MM/YYYY
@@ -1436,10 +1436,7 @@ class Subclient(object):
 
         return self._process_browse_request('Browse', flag, response)
 
-    def find(self,
-             file_or_folder_name,
-             show_deleted_files=True,
-             restore_index=True):
+    def find(self, file_or_folder_name, show_deleted_files=True, restore_index=True):
         """Searches a file/folder in the subclient backup content,
             and returns all the files matching the file name given.
 
@@ -1534,12 +1531,13 @@ class Subclient(object):
 
         return self._process_restore_request(request_json)
 
-    def restore_out_of_place(self,
-                             client,
-                             destination_path,
-                             paths,
-                             overwrite=True,
-                             restore_data_and_acl=True):
+    def restore_out_of_place(
+            self,
+            client,
+            destination_path,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
