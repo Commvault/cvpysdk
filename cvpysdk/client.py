@@ -25,7 +25,13 @@ Clients:
 
     _get_clients()            --  gets all the clients associated with the commcell
 
+    _get_client_dict()        --  returns the client dict for client to be added to member server
+
+    _member_servers()         --  returns member clients to be associated with the Virtual Client
+
     has_client(client_name)   --  checks if a client exists with the given name or not
+
+    add_vmware_client()       --  adds a new VMWare Virtualization Client to the Commcell
 
     get(client_name)          --  returns the Client class object of the input client name
 
@@ -68,6 +74,8 @@ from __future__ import absolute_import
 
 import time
 
+from base64 import b64encode
+
 from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
@@ -87,6 +95,7 @@ class Clients(object):
         """
         self._commcell_object = commcell_object
         self._CLIENTS = self._commcell_object._services.GET_ALL_CLIENTS
+        self._ADD_CLIENT = self._commcell_object._services.GET_ALL_CLIENTS
         self._clients = self._get_clients()
 
     def __str__(self):
@@ -143,6 +152,62 @@ class Clients(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _get_client_dict(self, client_object):
+        """Returns the client dict for the client object to be appended to member server.
+
+            Args:
+                client_object   (object)    --  instance of the Client class
+
+            Returns:
+                dict    -   dictionary for a single client to be associated with the Virtual Client
+        """
+        client_dict = {
+            "client": {
+                "clientName": client_object.client_name,
+                "clientId": int(client_object.client_id),
+                "_type_": 3
+            }
+        }
+
+        return client_dict
+
+    def _member_servers(self, clients_list):
+        """Returns the member clients to be associated with the Virtual Client.
+
+            Args:
+                clients_list (list)    --  list of the clients to associated to the virtual client
+
+            Returns:
+                list - list consisting of all member servers to be associated to the Virtual Client
+
+            Raises:
+                SDKException:
+                    if type of clients list argument is not list
+        """
+        if not isinstance(clients_list, list):
+            raise SDKException('Client', '101')
+
+        member_servers = []
+
+        for client in clients_list:
+            if isinstance(client, str):
+                client = client.strip().lower()
+
+                if self.has_client(client):
+                    temp_client = self.get(client)
+
+                    if temp_client.agents.has_agent('virtual server'):
+                        client_dict = self._get_client_dict(temp_client)
+                        member_servers.append(client_dict)
+
+                    del temp_client
+            elif isinstance(client, Client):
+                if client.agents.has_agent('virtual server'):
+                    client_dict = self._get_client_dict(client)
+                    member_servers.append(client_dict)
+
+        return member_servers
+
     def has_client(self, client_name):
         """Checks if a client exists in the commcell with the input client name.
 
@@ -161,8 +226,97 @@ class Clients(object):
 
         return self._clients and str(client_name).lower() in self._clients
 
-    def add_virtualization_client(self, client_name):
-        pass
+    def add_vmware_client(
+            self,
+            client_name,
+            vcenter_hostname,
+            vcenter_username,
+            vcenter_password,
+            clients):
+        """Adds a new VMWare Virtualization Client to the Commcell.
+
+            Args:
+                client_name         (str)   --  name of the new VMWare Virtual Client
+                vcenter_hostname    (str)   --  hostname of the vcenter to connect to
+                vcenter_username    (str)   --  login username for the vcenter
+                vcenter_password    (str)   --  plain-text password for the vcenter
+                clients             (list)  --  list cotaining client names / client objects,
+                                                    to associate with the Virtual Client
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+        """
+        vcenter_password = b64encode(vcenter_password.encode()).decode()
+        member_servers = self._member_servers(clients)
+
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "virtualServerClientProperties": {
+                    "virtualServerInstanceInfo": {
+                        "vsInstanceType": 1,
+                        "associatedClients": {
+                            "memberServers": member_servers
+                        },
+                        "vmwareVendor": {
+                            "vcenterHostName": vcenter_hostname,
+                            "virtualCenter": {
+                                "userName": vcenter_username,
+                                "password": vcenter_password
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._ADD_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        client_id = response.json()['response']['entity']['clientId']
+
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self._clients = self._get_clients()
+                        return Client(self._commcell_object, client_name, client_id)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def get(self, client_name):
         """Returns a client object of the specified client name.
