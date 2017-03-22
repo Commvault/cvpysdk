@@ -674,11 +674,7 @@ class Subclient(object):
         if isinstance(self, globals()['VirtualServerSubclient']):
             # if the description is same, the request is to update content
             if subclient_description == self.description:
-                request_json = {
-                    'VirtualServer_VMSubClientEntity': self._set_subclient_content_(
-                        subclient_content
-                    )
-                }
+                request_json = self._set_subclient_content_(subclient_content)
                 http_request = 'PUT'
                 request_url += '/content'
             # if the description is not the same, the request is to update description
