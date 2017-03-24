@@ -256,11 +256,11 @@ class Clients(object):
 
                     if response is not success
         """
-        vcenter_password = b64encode(vcenter_password.encode()).decode()
-        member_servers = self._member_servers(clients)
-
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        vcenter_password = b64encode(vcenter_password.encode()).decode()
+        member_servers = self._member_servers(clients)
 
         request_json = {
             "clientInfo": {
@@ -442,7 +442,7 @@ class Client(object):
             self._client_id = self._get_client_id()
 
         self._CLIENT = self._commcell_object._services.CLIENT % (self.client_id)
-        self.properties = self._get_client_properties()
+        self._get_client_properties()
 
         self.agents = Agents(self)
         self.schedules = Schedules(self)
