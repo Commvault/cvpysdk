@@ -27,8 +27,9 @@ WorkFlow:
 """
 
 from __future__ import absolute_import
+from __future__ import print_function
 
-import xmltodict
+from past.builtins import raw_input
 
 from .job import Job
 from .exception import SDKException
@@ -235,9 +236,9 @@ class WorkFlow(object):
             prompt = input_dict['input_name']
 
         if input_dict['is_required']:
-            value = input(prompt + '*' + '::  ')
+            value = raw_input(prompt + '*' + '::  ')
         else:
-            value = input(prompt + '::  ')
+            value = raw_input(prompt + '::  ')
 
         if value:
             return value
@@ -294,7 +295,6 @@ class WorkFlow(object):
             workflow_vals = self._workflows[workflow_name]
 
             execute_workflow_json = {}
-            inputs = {}
 
             if 'inputs' in workflow_vals:
                 o_str = 'Workflow Name: \t\t"{0}"\n'.format(workflow_name)
@@ -303,16 +303,10 @@ class WorkFlow(object):
                 print(o_str)
 
                 for a_input in workflow_vals['inputs']:
-                    inputs[a_input['input_name']] = self._read_inputs_(a_input)
-
-            if inputs:
-                execute_workflow_json['inputs'] = inputs
-
-            # Temporarily use XML here till the time API does not support JSON
-            xml = xmltodict.unparse(execute_workflow_json)
+                    execute_workflow_json[a_input['input_name']] = self._read_inputs_(a_input)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._EXECUTE_WORKFLOW % workflow_name, xml
+                'POST', self._EXECUTE_WORKFLOW % workflow_name, execute_workflow_json
             )
 
             if flag:
