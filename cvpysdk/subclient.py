@@ -49,15 +49,21 @@ Subclient:
 
     _initialize_subclient_properties() --  initializes the properties of this subclient
 
+    _update()                   --  updates the properties of a subclient
+
+    _filter_paths()             --  filters the path as per the OS, and the Agent
+
+    _process_backup_request()   --  runs the backup request provided, and processes the response
+
     _browse_and_find_json()     --  returns the appropriate JSON request to pass for either
                                         Browse operation or Find operation
 
-    _process_browse_request()   --  processes response received for both Browse and Find request
+    _process_browse_response()  --  processes response received for both Browse and Find request
 
     _restore_json()             --  returns the apppropriate JSON request to pass for either
                                         Restore In-Place or Out-of-Place operation
 
-    _process_restore_request()  --  processes response received for the Restore request
+    _process_restore_response() --  processes response received for the Restore request
 
     description()               --  update the description of the subclient
 
@@ -291,8 +297,8 @@ class Subclients(object):
                     "subClientEntity": {
                         "clientName": self._backupset_object._agent_object._client_object.client_name,
                         "appName": self._backupset_object._agent_object.agent_name,
-                        "backupsetName": self._backupset_object.backupset_name,
                         "instanceName": self._backupset_object._instance_name,
+                        "backupsetName": self._backupset_object.backupset_name,
                         "subclientName": subclient_name
                     },
                     "commonProperties": {
@@ -620,8 +626,8 @@ class Subclient(object):
                 "subClientEntity": {
                     "clientName": self._backupset_object._agent_object._client_object.client_name,
                     "appName": self._backupset_object._agent_object.agent_name,
-                    "backupsetName": self._backupset_object.backupset_name,
                     "instanceName": self._backupset_object._instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
                     "subclientName": self.subclient_name
                 },
                 "content": self._set_subclient_content_(subclient_content),
@@ -646,8 +652,8 @@ class Subclient(object):
                 "subClientEntity": {
                     "clientName": self._backupset_object._agent_object._client_object.client_name,
                     "appName": self._backupset_object._agent_object.agent_name,
-                    "backupsetName": self._backupset_object.backupset_name,
                     "instanceName": self._backupset_object._instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
                     "subclientName": self.subclient_name
                 },
                 "content": self._set_subclient_content_(subclient_content),
@@ -723,6 +729,42 @@ class Subclient(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _filter_paths(self, paths, is_single_path=False):
+        """Filters the paths based on the Operating System, and Agent.
+
+            Args:
+                paths           (list)  --  list containing paths to be filtered
+
+                is_single_path  (bool)  --  boolean specifying whether to return a single path
+                                                or the entire list
+
+            Returns:
+                list    -   if the boolean is_single_path is set to False
+
+                str     -   if the boolean is_single_path is set to True
+        """
+        for index, path in enumerate(paths):
+            if int(self._backupset_object._agent_object.agent_id) == 33:
+                path = path.strip('\\').strip('/')
+                if path:
+                    path = path.replace('/', '\\')
+                else:
+                    path = '\\'
+            elif int(self._backupset_object._agent_object.agent_id) == 29:
+                path = path.strip('\\').strip('/')
+                if path:
+                    path = path.replace('\\', '/')
+                else:
+                    path = '\\'
+                path = '/' + path
+
+            paths[index] = path
+
+        if is_single_path:
+            return paths[0]
+        else:
+            return paths
 
     def _process_backup_request(self, backup_request):
         """Runs the Backup for a subclient with the request provided and returns the Job object.
@@ -841,7 +883,7 @@ class Subclient(object):
 
         return request_json
 
-    def _process_browse_request(self, option, flag, response):
+    def _process_browse_response(self, option, flag, response):
         """Runs the DoBrowse API with the request JSON provided for the operation specified,
             and returns the contents after parsing the response.
 
@@ -1019,7 +1061,7 @@ class Subclient(object):
 
         return request_json
 
-    def _process_restore_request(self, request_json):
+    def _process_restore_response(self, request_json):
         """Runs the CreateTask API with the request JSON provided for Restore,
             and returns the contents after parsing the response.
 
@@ -1307,7 +1349,7 @@ class Subclient(object):
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', web_service)
 
-        return self._process_browse_request('Browse', flag, response)
+        return self._process_browse_response('Browse', flag, response)
 
     def browse_in_time(
             self,
@@ -1401,20 +1443,7 @@ class Subclient(object):
         if to_date < from_date:
             raise SDKException('Subclient', '107')
 
-        if int(self._backupset_object._agent_object.agent_id) == 33:
-            path = path.strip('\\').strip('/')
-            if path:
-                path = path.replace('/', '\\')
-            else:
-                path = '\\'
-        elif int(self._backupset_object._agent_object.agent_id) == 29:
-            path = path.strip('\\').strip('/')
-            if path:
-                path = path.replace('\\', '/')
-            else:
-                path = '\\'
-
-            path = '/' + path
+        path = self._filter_paths([path], True)
 
         request_json = self._browse_and_find_json(
             option='Browse',
@@ -1430,7 +1459,7 @@ class Subclient(object):
             'POST', self._BROWSE, request_json
         )
 
-        return self._process_browse_request('Browse', flag, response)
+        return self._process_browse_response('Browse', flag, response)
 
     def find(self, file_or_folder_name, show_deleted_files=True, restore_index=True):
         """Searches a file/folder in the subclient backup content,
@@ -1469,7 +1498,7 @@ class Subclient(object):
             'POST', self._BROWSE, request_json
         )
 
-        return self._process_browse_request('Find', flag, response)
+        return self._process_browse_response('Find', flag, response)
 
     def restore_in_place(self, paths, overwrite=True, restore_data_and_acl=True):
         """Restores the files/folders specified in the input paths list to the same location.
@@ -1501,22 +1530,7 @@ class Subclient(object):
                 isinstance(restore_data_and_acl, bool)):
             raise SDKException('Subclient', '101')
 
-        for index, path in enumerate(paths):
-            if int(self._backupset_object._agent_object.agent_id) == 33:
-                path = path.strip('\\').strip('/')
-                if path:
-                    path = path.replace('/', '\\')
-                else:
-                    path = '\\'
-            elif int(self._backupset_object._agent_object.agent_id) == 29:
-                path = path.strip('\\').strip('/')
-                if path:
-                    path = path.replace('\\', '/')
-                else:
-                    path = '\\'
-                path = '/' + path
-
-            paths[index] = path
+        paths = self._filter_paths(paths)
 
         if paths == []:
             raise SDKException('Subclient', '104')
@@ -1525,7 +1539,7 @@ class Subclient(object):
             paths=paths, overwrite=overwrite, restore_data_and_acl=restore_data_and_acl
         )
 
-        return self._process_restore_request(request_json)
+        return self._process_restore_response(request_json)
 
     def restore_out_of_place(
             self,
@@ -1585,37 +1599,9 @@ class Subclient(object):
         else:
             raise SDKException('Subclient', '105')
 
-        for index, path in enumerate(paths):
-            if int(self._backupset_object._agent_object.agent_id) == 33:
-                path = path.strip('\\').strip('/')
-                if path:
-                    path = path.replace('/', '\\')
-                else:
-                    path = '\\'
-            elif int(self._backupset_object._agent_object.agent_id) == 29:
-                path = path.strip('\\').strip('/')
-                if path:
-                    path = path.replace('\\', '/')
-                else:
-                    path = '\\'
-                path = '/' + path
+        paths = self._filter_paths(paths)
 
-            paths[index] = path
-
-        if int(self._backupset_object._agent_object.agent_id) == 33:
-            destination_path = destination_path.strip('\\').strip('/')
-            if destination_path:
-                destination_path = destination_path.replace('/', '\\')
-            else:
-                destination_path = '\\'
-        elif int(self._backupset_object._agent_object.agent_id) == 29:
-            destination_path = destination_path.strip('\\').strip('/')
-            if destination_path:
-                destination_path = destination_path.replace('\\', '/')
-            else:
-                destination_path = '\\'
-
-            destination_path = '/' + destination_path
+        destination_path = self._filter_paths([destination_path], True)
 
         if paths == []:
             raise SDKException('Subclient', '104')
@@ -1629,4 +1615,4 @@ class Subclient(object):
             restore_data_and_acl=restore_data_and_acl
         )
 
-        return self._process_restore_request(request_json)
+        return self._process_restore_response(request_json)
