@@ -55,11 +55,8 @@ class VirtualServerSubclient(Subclient):
     """Derived class from Subclient Base class, representing a virtual server subclient,
         and to perform operations on that subclient."""
 
-    def _get_subclient_content_(self, subclient_properties):
+    def _get_subclient_content_(self):
         """Gets the appropriate content from the Subclient relevant to the user.
-
-            Args:
-                subclient_properties (dict)  --  dictionary contatining the properties of subclient
 
             Returns:
                 list - list of content associated with the subclient
@@ -76,7 +73,7 @@ class VirtualServerSubclient(Subclient):
         }
 
         if 'vmContent' in self._subclient_properties:
-            subclient_content = subclient_properties['vmContent']
+            subclient_content = self._subclient_properties['vmContent']
 
             if 'children' in subclient_content:
                 children = subclient_content['children']

@@ -28,11 +28,8 @@ class FileSystemSubclient(Subclient):
     """Derived class from Subclient Base class, representing a file system subclient,
         and to perform operations on that subclient."""
 
-    def _get_subclient_content_(self, subclient_properties):
+    def _get_subclient_content_(self):
         """Gets the appropriate content from the Subclient relevant to the user.
-
-            Args:
-                subclient_properties (dict)  --  dictionary contatining the properties of subclient
 
             Returns:
                 list - list of content associated with the subclient
@@ -40,7 +37,7 @@ class FileSystemSubclient(Subclient):
         content = []
 
         if 'content' in self._subclient_properties:
-            subclient_content = subclient_properties['content']
+            subclient_content = self._subclient_properties['content']
 
             for path in subclient_content:
                 content.append(str(path["path"]))

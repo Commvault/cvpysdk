@@ -29,18 +29,15 @@ class CloudAppsSubclient(Subclient):
     """Derived class from Subclient Base class, representing a CloudApps subclient,
         and to perform operations on that subclient."""
 
-    def _get_subclient_content_(self, subclient_properties):
+    def _get_subclient_content_(self):
         """Gets the appropriate content from the Subclient relevant to the user.
-
-            Args:
-                subclient_properties (dict)  --  dictionary contatining the properties of subclient
 
             Returns:
                 list - list of content associated with the subclient
         """
         content = []
 
-        for account in subclient_properties['content']:
+        for account in self._subclient_properties['content']:
             temp_account = account["cloudconnectorContent"]["includeAccounts"]
 
             content_dict = {
