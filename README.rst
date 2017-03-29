@@ -10,16 +10,16 @@ Requirements
 ------------
 
 - Python 2.7 or above
-- **requests** Python package (https://pypi.python.org/pypi/requests/)
-- **future** Python package (https://pypi.python.org/pypi/future)
-- **xmltodict** Python package (https://pypi.python.org/pypi/xmltodict)
+- `requests <https://pypi.python.org/pypi/requests/>`_ Python package
+- `future <https://pypi.python.org/pypi/future>`_ Python package
+- `xmltodict <https://pypi.python.org/pypi/xmltodict>`_ Python package
 - Commvault Software v11 SP7 or later release with WebConsole installed
 
 
 Installing CVPySDK
 ------------------
 
-CVPySDK is available on GitHub (https://github.com/CommvaultEngg/cvpysdk).
+CVPySDK is available on GitHub `here <https://github.com/CommvaultEngg/cvpysdk>`_
 
 It can be installed from source. After downloading, from within the ``cvpysdk`` directory, execute::
 
@@ -136,7 +136,7 @@ chat rooms, and mailing lists is expected to follow the
 
 License
 =======
-**CVPySDK** and its contents are licensed under Commvault License: https://raw.githubusercontent.com/CommvaultEngg/cvpysdk/master/LICENSE.txt
+**CVPySDK** and its contents are licensed under `Commvault License <https://raw.githubusercontent.com/CommvaultEngg/cvpysdk/master/LICENSE.txt>`_
 
 
 About Commvault
