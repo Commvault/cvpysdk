@@ -89,8 +89,6 @@ class Backupsets(object):
         from .agent import Agent
         from .instance import Instance
 
-        self._instance_id = None
-        self._instance_name = None
         self._instance_object = None
 
         if isinstance(class_object, Agent):
@@ -98,8 +96,6 @@ class Backupsets(object):
         elif isinstance(class_object, Instance):
             self._instance_object = class_object
             self._agent_object = class_object._agent_object
-            self._instance_name = class_object.instance_name
-            self._instance_id = class_object.instance_id
 
         self._commcell_object = self._agent_object._commcell_object
 
@@ -125,8 +121,8 @@ class Backupsets(object):
         for index, backupset in enumerate(self._backupsets):
             sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\n'.format(
                 index + 1,
-                backupset,
-                self._instance_name,
+                backupset.split('\\')[-1],
+                self._backupsets[backupset]['instance'],
                 self._agent_object.agent_name,
                 self._agent_object._client_object.client_name
             )
@@ -144,8 +140,14 @@ class Backupsets(object):
             Returns:
                 dict - consists of all backupsets of the agent
                     {
-                         "backupset1_name": backupset1_id,
-                         "backupset2_name": backupset2_id
+                         "backupset1_name": {
+                             "id": backupset1_id,
+                             "instance": instance
+                         },
+                         "backupset2_name": {
+                             "id": backupset2_id,
+                             "instance": instance
+                         }
                     }
 
             Raises:
@@ -163,23 +165,32 @@ class Backupsets(object):
                 return_dict = {}
 
                 for dictionary in response.json()['backupsetProperties']:
-                    if not self._instance_name:
-                        self._instance_name = str(dictionary['backupSetEntity']['instanceName'])
-                        self._instance_id = str(dictionary['backupSetEntity']['instanceId'])
-
                     agent = str(dictionary['backupSetEntity']['appName']).lower()
                     instance = str(dictionary['backupSetEntity']['instanceName']).lower()
 
                     if self._instance_object is not None:
-                        if (self._instance_name in instance and
+                        if (self._instance_object.instance_name in instance and
                                 self._agent_object.agent_name in agent):
                             temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
                             temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
-                            return_dict[temp_name] = temp_id
+                            return_dict[temp_name] = {
+                                "id": temp_id,
+                                "instance": instance
+                            }
                     elif self._agent_object.agent_name in agent:
                         temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
                         temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
-                        return_dict[temp_name] = temp_id
+
+                        if len(self._agent_object.instances._instances) > 1:
+                            return_dict["{0}\\{1}".format(instance, temp_name)] = {
+                                "id": temp_id,
+                                "instance": instance
+                            }
+                        else:
+                            return_dict[temp_name] = {
+                                "id": temp_id,
+                                "instance": instance
+                            }
 
                 return return_dict
             else:
@@ -236,80 +247,87 @@ class Backupsets(object):
         else:
             backupset_name = str(backupset_name).lower()
 
-        if not self.has_backupset(backupset_name):
-            add_backupset_service = self._commcell_object._services.ADD_BACKUPSET
-
-            request_json = {
-                "association": {
-                    "entity": [{
-                        "clientName": self._agent_object._client_object.client_name,
-                        "appName": self._agent_object.agent_name,
-                        "backupsetName": backupset_name,
-                        "instanceName": self._instance_name
-                    }]
-                },
-                "backupSetInfo": {
-                    "commonBackupSet": {
-                        "onDemandBackupset": on_demand_backupset
-                    }
-                }
-            }
-
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', add_backupset_service, request_json
+        if self.has_backupset(backupset_name):
+            raise SDKException(
+                'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name)
             )
 
-            if flag:
-                if response.json():
-                    if 'response' in response.json():
-                        response_value = response.json()['response'][0]
-                        error_code = str(response_value['errorCode'])
-                        error_message = None
+        add_backupset_service = self._commcell_object._services.ADD_BACKUPSET
 
-                        if 'errorString' in response_value:
-                            error_message = str(response_value['errorString'])
+        if self._instance_object is None:
+            if self._agent_object.instances.has_instance('DefaultInstanceName'):
+                self._instance_object = self._agent_object.instances.get('DefaultInstanceName')
+            else:
+                self._instance_object = self._agent_object.instances.get(
+                    sorted(self._agent_object.instances._instances)[0]
+                )
 
-                        if error_message:
-                            o_str = 'Failed to create new backupset\nError: "{0}"'.format(
-                                error_message
-                            )
-                            raise SDKException('Backupset', '102', o_str)
-                        else:
-                            if error_code == '0':
-                                backupset_id = response_value['entity']['backupsetId']
-                                # initialize the backupsets again
-                                # so the backupsets object has all the backupsets
-                                self._backupsets = self._get_backupsets()
+        request_json = {
+            "association": {
+                "entity": [{
+                    "clientName": self._agent_object._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": backupset_name
+                }]
+            },
+            "backupSetInfo": {
+                "commonBackupSet": {
+                    "onDemandBackupset": on_demand_backupset
+                }
+            }
+        }
 
-                                return Backupset(
-                                    self._agent_object,
-                                    backupset_name,
-                                    backupset_id,
-                                    self._instance_id,
-                                    self._instance_name
-                                )
-                            else:
-                                o_str = ('Failed to create new backupset with error code: "{0}"\n'
-                                         'Please check the documentation for '
-                                         'more details on the error').format(error_code)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_backupset_service, request_json
+        )
 
-                                raise SDKException('Backupset', '102', o_str)
-                    else:
-                        error_code = response.json()['errorCode']
-                        error_message = response.json()['errorMessage']
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    response_value = response.json()['response'][0]
+                    error_code = str(response_value['errorCode'])
+                    error_message = None
+
+                    if 'errorString' in response_value:
+                        error_message = str(response_value['errorString'])
+
+                    if error_message:
                         o_str = 'Failed to create new backupset\nError: "{0}"'.format(
                             error_message
                         )
                         raise SDKException('Backupset', '102', o_str)
+                    else:
+                        if error_code == '0':
+                            backupset_id = response_value['entity']['backupsetId']
+
+                            # initialize the backupsets again
+                            # so the backupsets object has all the backupsets
+                            self._backupsets = self._get_backupsets()
+
+                            return Backupset(
+                                self._instance_object,
+                                backupset_name,
+                                backupset_id
+                            )
+                        else:
+                            o_str = ('Failed to create new backupset with error code: "{0}"\n'
+                                     'Please check the documentation for '
+                                     'more details on the error').format(error_code)
+
+                            raise SDKException('Backupset', '102', o_str)
                 else:
-                    raise SDKException('Response', '102')
+                    error_code = response.json()['errorCode']
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Failed to create new backupset\nError: "{0}"'.format(
+                        error_message
+                    )
+                    raise SDKException('Backupset', '102', o_str)
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('Response', '102')
         else:
-            raise SDKException(
-                'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name)
-            )
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def get(self, backupset_name):
         """Returns a backupset object of the specified backupset name.
@@ -332,12 +350,15 @@ class Backupsets(object):
             backupset_name = str(backupset_name).lower()
 
             if self.has_backupset(backupset_name):
+                if self._instance_object is None:
+                    self._instance_object = self._agent_object.instances.get(
+                        self._backupsets[backupset_name]['instance']
+                    )
+
                 return Backupset(
-                    self._agent_object,
+                    self._instance_object,
                     backupset_name,
-                    self._backupsets[backupset_name],
-                    self._instance_id,
-                    self._instance_name
+                    self._backupsets[backupset_name]["id"]
                 )
 
             raise SDKException(
@@ -418,41 +439,26 @@ class Backupsets(object):
 class Backupset(object):
     """Class for performing backupset operations for a specific backupset."""
 
-    def __init__(
-            self,
-            agent_object,
-            backupset_name,
-            backupset_id=None,
-            instance_id=1,
-            instance_name=None):
+    def __init__(self, instance_object, backupset_name, backupset_id=None):
         """Initialise the backupset object.
 
             Args:
-                agent_object   (object)  --  instance of the Agent class
+                instance_object     (object)  --  instance of the Instance class
 
-                backupset_name (str)     --  name of the backupset
+                backupset_name      (str)     --  name of the backupset
 
-                backupset_id   (str)     --  id of the backupset
-                    default: None
-
-                instance_id    (str)     --  id of the instance associated with the backupset
-                    default: 1, for File System iDA
-
-                instance_name  (str)     --  name of the instance associated with the backupset
+                backupset_id        (str)     --  id of the backupset
                     default: None
 
             Returns:
                 object - instance of the Backupset class
         """
-        self._agent_object = agent_object
-        self._commcell_object = self._agent_object._commcell_object
+        self._instance_object = instance_object
+        self._agent_object = self._instance_object._agent_object
+        self._commcell_object = self._instance_object._agent_object._commcell_object
 
-        self._backupset_name = str(backupset_name).lower()
+        self._backupset_name = str(backupset_name).split('\\')[-1].lower()
         self._description = None
-        self._instance_id = instance_id
-
-        if instance_name:
-            self._instance_name = instance_name
 
         if backupset_id:
             # Use the backupset id provided in the arguments
@@ -473,8 +479,13 @@ class Backupset(object):
 
     def __repr__(self):
         """String representation of the instance of this class."""
-        representation_string = 'Backupset class instance for Backupset: "{0}" of Agent: "{1}"'
-        return representation_string.format(self.backupset_name, self._agent_object.agent_name)
+        representation_string = ('Backupset class instance for Backupset: "{0}" '
+                                 'for Instance: "{1}" of Agent: "{2}"')
+        return representation_string.format(
+            self.backupset_name,
+            self._instance_object.instance_name,
+            self._instance_object._agent_object.agent_name
+        )
 
     def _get_backupset_id(self):
         """Gets the backupset id associated with this backupset.
@@ -482,7 +493,7 @@ class Backupset(object):
             Returns:
                 str - id associated with this backupset
         """
-        backupsets = Backupsets(self._agent_object)
+        backupsets = Backupsets(self._instance_object)
         return backupsets.get(self.backupset_name).backupset_id
 
     def _get_backupset_properties(self):
@@ -558,10 +569,10 @@ class Backupset(object):
         request_json = {
             "association": {
                 "entity": [{
-                    "clientName": self._agent_object._client_object.client_name,
-                    "appName": self._agent_object.agent_name,
-                    "backupsetName": self.backupset_name,
-                    "instanceName": self._instance_name
+                    "clientName": self._instance_object._agent_object._client_object.client_name,
+                    "appName": self._instance_object._agent_object.agent_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": self.backupset_name
                 }]
             },
             "backupsetProperties": {
