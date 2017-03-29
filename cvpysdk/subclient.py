@@ -933,17 +933,20 @@ class Subclient(object):
 
         return request_json
 
-    def _process_browse_response(self, option, flag, response):
+    def _process_browse_response(self, option, flag, response, is_vs_browse=False):
         """Runs the DoBrowse API with the request JSON provided for the operation specified,
             and returns the contents after parsing the response.
 
             Args:
-                option      (str)   --  string option for which to process the response for
+                option          (str)   --  string option for which to process the response for
                     e.g.; Browse / Find
 
-                flag        (bool)  --  boolean to specify whether the response was success or not
+                flag            (bool)  --  boolean, whether the response was success or not
 
-                response    (dict)  --  JSON response received for the request from the Server
+                response        (dict)  --  JSON response received for the request from the Server
+
+                is_vs_browse    (bool)  --  boolean, specifying a Virtual Server subclient browse
+                    default: False
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
@@ -1007,6 +1010,19 @@ class Subclient(object):
 
                             if mod_time:
                                 path_list.append(mod_time)
+
+                            if is_vs_browse:
+                                virtual_server_metadata = None
+
+                                if 'advancedData' in result:
+                                    advanced_data = result['advancedData']
+                                    if 'browseMetaData' in advanced_data:
+                                        browse_metadata = advanced_data['browseMetaData']
+                                        if 'virtualServerMetaData' in browse_metadata:
+                                            virtual_server_metadata = browse_metadata[
+                                                'virtualServerMetaData']
+
+                                path_list.append(virtual_server_metadata)
 
                             paths_dict[path] = path_list
 
@@ -1351,7 +1367,7 @@ class Subclient(object):
 
         return self._process_backup_request(backup_request)
 
-    def browse(self, path='\\', show_deleted_files=True, vm_disk_browse=False):
+    def browse(self, path='\\', show_deleted_files=True, vm_disk_browse=False, is_vs_browse=False):
         """Gets the content of the backup for this subclient at the path specified.
 
             Args:
@@ -1364,6 +1380,9 @@ class Subclient(object):
                 vm_disk_browse      (bool)  --  browse virtual machine files
                                                     e.g.; .vmdk files, etc.
                     only applicable when browsing content inside a guest virtual machine
+                    default: False
+
+                is_vs_browse    (bool)  --  boolean, specifying a Virtual Server subclient browse
                     default: False
 
             Returns:
@@ -1399,7 +1418,7 @@ class Subclient(object):
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', web_service)
 
-        return self._process_browse_response('Browse', flag, response)
+        return self._process_browse_response('Browse', flag, response, is_vs_browse)
 
     def browse_in_time(
             self,
@@ -1408,7 +1427,8 @@ class Subclient(object):
             restore_index=True,
             vm_disk_browse=False,
             from_date=None,
-            to_date=None):
+            to_date=None,
+            is_vs_browse=False):
         """Gets the content of the backup for this subclient
             at the path specified in the time range specified.
 
@@ -1438,6 +1458,9 @@ class Subclient(object):
 
                         gets contents till current day if not specified
                     default: None
+
+                is_vs_browse    (bool)  --  boolean, specifying a Virtual Server subclient browse
+                    default: False
 
             Returns:
                 list - list of all folders or files with their full paths inside the input path
@@ -1509,7 +1532,7 @@ class Subclient(object):
             'POST', self._BROWSE, request_json
         )
 
-        return self._process_browse_response('Browse', flag, response)
+        return self._process_browse_response('Browse', flag, response, is_vs_browse)
 
     def find(self, file_or_folder_name, show_deleted_files=True, restore_index=True):
         """Searches a file/folder in the subclient backup content,
