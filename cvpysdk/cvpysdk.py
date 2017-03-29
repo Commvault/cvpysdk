@@ -93,6 +93,9 @@ class CVPySDK(object):
                 requests Connection Error   --  requests.exceptions.ConnectionError
         """
         try:
+            if isinstance(self._commcell_object._password, dict):
+                raise SDKException('CVPySDK', '104')
+
             json_login_request = {
                 "mode": 4,
                 "username": self._commcell_object._user,

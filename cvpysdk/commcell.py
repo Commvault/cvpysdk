@@ -102,18 +102,21 @@ class Commcell(object):
 
         self._user = commcell_username
 
-        if commcell_password is None:
-            commcell_password = getpass.getpass('Please enter the Commcell Password: ')
-
-        # encodes the plain text password using base64 encoding
-        self._password = b64encode(commcell_password.encode()).decode()
-
         self._headers = {
             'Host': webconsole_hostname,
             'Accept': 'application/json',
             'Content-type': 'application/json',
             'Authtoken': None
         }
+
+        if commcell_password is None:
+            commcell_password = getpass.getpass('Please enter the Commcell Password: ')
+
+        if isinstance(commcell_password, dict):
+            self._password = commcell_password
+        else:
+            # encodes the plain text password using base64 encoding
+            self._password = b64encode(commcell_password.encode()).decode()
 
         self._cvpysdk_object = CVPySDK(self)
 
@@ -131,8 +134,12 @@ class Commcell(object):
         # Initialize all the services with this commcell service
         self._services = ApiLibrary(self._web_service)
 
-        # Login to the commcell with the credentials provided and store the token in the headers.
-        self._headers['Authtoken'], self.__user_guid = self._cvpysdk_object._login_()
+        if isinstance(commcell_password, dict):
+            self._headers['Authtoken'] = self._password['Authtoken']
+        else:
+            # Login to the commcell with the credentials provided
+            # and store the token in the headers
+            self._headers['Authtoken'], self.__user_guid = self._cvpysdk_object._login_()
 
         if not self._headers['Authtoken']:
             raise SDKException('Commcell', '102')

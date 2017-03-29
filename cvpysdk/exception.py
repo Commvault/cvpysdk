@@ -31,7 +31,8 @@ EXCEPTION_DICT = {
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
         '102': '',
-        '103': 'Reached the maximum attempts limit'
+        '103': 'Reached the maximum attempts limit',
+        '104': 'This session has expired. Please login again'
     },
     'Client': {
         '101': 'Data type of the input(s) is not valid',
