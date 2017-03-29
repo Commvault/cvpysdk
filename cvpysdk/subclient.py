@@ -124,23 +124,34 @@ class Subclients(object):
         from .backupset import Backupset
 
         self._backupset_object = None
-        self._instance_object = None
 
-        if isinstance(class_object, Backupset):
-            self._backupset_object = class_object
-        elif isinstance(class_object, Instance):
+        if isinstance(class_object, Instance):
             self._instance_object = class_object
-            self._backupset_object = Backupset(
-                class_object._agent_object,
-                'defaultBackupSet',
-                instance_id=class_object.instance_id,
-                instance_name=class_object.instance_name
-            )
+        elif isinstance(class_object, Backupset):
+            self._backupset_object = class_object
+            self._instance_object = class_object._instance_object
 
-        self._commcell_object = self._backupset_object._commcell_object
+            '''
+            try:
+                self._backupset_object = Backupset(
+                    class_object._agent_object,
+                    'defaultBackupSet',
+                    instance_id=class_object.instance_id,
+                    instance_name=class_object.instance_name
+                )
+            except SDKException:
+                self._backupset_object = Backupset(
+                    class_object._agent_object,
+                    sorted(class_object.backupsets._backupsets)[0],
+                    instance_id=class_object.instance_id,
+                    instance_name=class_object.instance_name
+                )
+            '''
+
+        self._commcell_object = self._instance_object._commcell_object
 
         self._SUBCLIENTS = self._commcell_object._services.GET_ALL_SUBCLIENTS % (
-            self._backupset_object._agent_object._client_object.client_id
+            self._instance_object._agent_object._client_object.client_id
         )
 
         self._ADD_SUBCLIENT = self._commcell_object._services.ADD_SUBCLIENT
@@ -176,11 +187,11 @@ class Subclients(object):
         for index, subclient in enumerate(self._subclients):
             sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\t{:20}\n'.format(
                 index + 1,
-                subclient,
-                self._backupset_object.backupset_name,
-                self._backupset_object._instance_name,
-                self._backupset_object._agent_object.agent_name,
-                self._backupset_object._agent_object._client_object.client_name
+                subclient.split('\\')[-1],
+                self._subclients[subclient]['backupset'],
+                self._instance_object.instance_name,
+                self._instance_object._agent_object.agent_name,
+                self._instance_object._agent_object._client_object.client_name
             )
             representation_string += sub_str
 
@@ -188,9 +199,16 @@ class Subclients(object):
 
     def __repr__(self):
         """Representation string for the instance of the Subclients class."""
-        return "Subclients class instance for Backupset: '{0}', of Instance: '{1}'".format(
-            self._backupset_object.backupset_name, self._backupset_object._instance_name
-        )
+        if self._backupset_object is None:
+            o_str = "Subclients class instance for Instance: '{0}'".format(
+                self._instance_object.instance_name
+            )
+        else:
+            o_str = "Subclients class instance for Backupset: '{0}', of Instance: '{1}'".format(
+                self._backupset_object.backupset_name, self._instance_object.instance_name
+            )
+
+        return o_str
 
     def _get_subclients(self):
         """Gets all the subclients associated to the client specified by the backupset object.
@@ -198,8 +216,14 @@ class Subclients(object):
             Returns:
                 dict - consists of all subclients in the backupset
                     {
-                         "subclient1_name": subclient1_id,
-                         "subclient2_name": subclient2_id
+                         "subclient1_name": {
+                             "id": subclient1_id,
+                             "backupset": backupset
+                         },
+                         "subclient2_name": {
+                             "id": subclient2_id,
+                             "backupset": backupset
+                         }
                     }
 
             Raises:
@@ -220,16 +244,29 @@ class Subclients(object):
                     backupset = str(dictionary['subClientEntity']['backupsetName']).lower()
                     instance = str(dictionary['subClientEntity']['instanceName']).lower()
 
-                    if self._instance_object is not None:
+                    if self._backupset_object is not None:
                         if (self._instance_object.instance_name in instance and
                                 self._backupset_object.backupset_name in backupset):
                             temp_name = str(dictionary['subClientEntity']['subclientName']).lower()
                             temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
-                            return_dict[temp_name] = temp_id
-                    elif self._backupset_object.backupset_name in backupset:
+                            return_dict[temp_name] = {
+                                "id": temp_id,
+                                "backupset": backupset
+                            }
+                    elif self._instance_object.instance_name in instance:
                         temp_name = str(dictionary['subClientEntity']['subclientName']).lower()
                         temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
-                        return_dict[temp_name] = temp_id
+
+                        if len(self._instance_object.backupsets._backupsets) > 1:
+                            return_dict["{0}\\{1}".format(backupset, temp_name)] = {
+                                "id": temp_id,
+                                "backupset": backupset
+                            }
+                        else:
+                            return_dict[temp_name] = {
+                                "id": temp_id,
+                                "backupset": backupset
+                            }
 
                 return return_dict
             else:
@@ -290,65 +327,73 @@ class Subclients(object):
                 isinstance(description, str)):
             raise SDKException('Subclient', '101')
 
-        if not self.has_subclient(subclient_name):
-            request_json = {
-                "subClientProperties": {
-                    "contentOperationType": 2,
-                    "subClientEntity": {
-                        "clientName": self._backupset_object._agent_object._client_object.client_name,
-                        "appName": self._backupset_object._agent_object.agent_name,
-                        "instanceName": self._backupset_object._instance_name,
-                        "backupsetName": self._backupset_object.backupset_name,
-                        "subclientName": subclient_name
-                    },
-                    "commonProperties": {
-                        "description": description,
-                        "enableBackup": True,
-                        "storageDevice": {
-                            "dataBackupStoragePolicy": {
-                                "storagePolicyName": storage_policy
-                            }
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(subclient_name)
+            )
+
+        if self._backupset_object is None:
+            if self._instance_object.backupsets.has_backupset('defaultBackupSet'):
+                self._backupset_object = self._instance_object.backupsets.get('defaultBackupSet')
+            else:
+                self._backupset_object = self._instance_object.backupsets.get(
+                    sorted(self._instance_object.backupsets._backupsets)[0]
+                )
+
+        request_json = {
+            "subClientProperties": {
+                "contentOperationType": 2,
+                "subClientEntity": {
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": subclient_name
+                },
+                "commonProperties": {
+                    "description": description,
+                    "enableBackup": True,
+                    "storageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
                         }
                     }
                 }
             }
+        }
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._ADD_SUBCLIENT, request_json
-            )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._ADD_SUBCLIENT, request_json
+        )
 
-            if flag:
-                if response.json() and 'response' in response.json():
-                    error_code = response.json()['response']['errorCode']
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
 
-                    if error_code != 0:
-                        error_string = response.json()['response']['errorString']
-                        raise SDKException(
-                            'Subclient',
-                            '102',
-                            'Failed to create subclient\nError: "{0}"'.format(error_string)
-                        )
-                    else:
-                        subclient_id = response.json()['response']['entity']['subclientId']
-
-                        # initialize the subclients again
-                        # so the subclient object has all the subclients
-                        self._subclients = self._get_subclients()
-
-                        agent_name = self._backupset_object._agent_object.agent_name
-
-                        return self._subclients_dict[agent_name](
-                            self._backupset_object, subclient_name, subclient_id
-                        )
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Subclient',
+                        '102',
+                        'Failed to create subclient\nError: "{0}"'.format(error_string)
+                    )
                 else:
-                    raise SDKException('Response', '102')
+                    subclient_id = response.json()['response']['entity']['subclientId']
+
+                    # initialize the subclients again
+                    # so the subclient object has all the subclients
+                    self._subclients = self._get_subclients()
+
+                    agent_name = self._backupset_object._agent_object.agent_name
+
+                    return self._subclients_dict[agent_name](
+                        self._backupset_object, subclient_name, subclient_id
+                    )
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('Response', '102')
         else:
-            raise SDKException(
-                'Subclient', '102', 'Subclient "{0}" already exists.'.format(subclient_name)
-            )
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def get(self, subclient_name):
         """Returns a subclient object of the specified backupset name.
@@ -370,11 +415,16 @@ class Subclients(object):
         else:
             subclient_name = str(subclient_name).lower()
 
-            agent_name = self._backupset_object._agent_object.agent_name
+            agent_name = self._instance_object._agent_object.agent_name
 
             if self.has_subclient(subclient_name):
+                if self._backupset_object is None:
+                    self._backupset_object = self._instance_object.backupsets.get(
+                        self._subclients[subclient_name]['backupset']
+                    )
+
                 return self._subclients_dict[agent_name](
-                    self._backupset_object, subclient_name, self._subclients[subclient_name]
+                    self._backupset_object, subclient_name, self._subclients[subclient_name]['id']
                 )
 
             raise SDKException(
@@ -465,7 +515,7 @@ class Subclient(object):
                 object - instance of the Subclient class
         """
         self._backupset_object = backupset_object
-        self._subclient_name = str(subclient_name).lower()
+        self._subclient_name = str(subclient_name).split('\\')[-1].lower()
         self._commcell_object = self._backupset_object._commcell_object
 
         if subclient_id:
@@ -524,7 +574,7 @@ class Subclient(object):
 
     # Abstract method to be overridden
     # Raises `Method Not Implemented` Exception if not implemented
-    def _get_subclient_content_(self, subclient_content):
+    def _get_subclient_content_(self):
         raise SDKException('Subclient', '112')
 
     # Abstract method to be overridden
@@ -565,7 +615,7 @@ class Subclient(object):
             self._is_backup_enabled = self._subclient_properties[
                 'commonProperties']['enableBackup']
 
-        self._content = self._get_subclient_content_(self._subclient_properties)
+        self._content = self._get_subclient_content_()
 
     @staticmethod
     def _convert_size(input_size):
@@ -617,7 +667,7 @@ class Subclient(object):
                 "entity": [{
                     "clientName": self._backupset_object._agent_object._client_object.client_name,
                     "appName": self._backupset_object._agent_object.agent_name,
-                    "instanceName": self._backupset_object._instance_name,
+                    "instanceName": self._backupset_object._instance_object.instance_name,
                     "backupsetName": self._backupset_object.backupset_name,
                     "subclientName": self.subclient_name
                 }]
@@ -626,7 +676,7 @@ class Subclient(object):
                 "subClientEntity": {
                     "clientName": self._backupset_object._agent_object._client_object.client_name,
                     "appName": self._backupset_object._agent_object.agent_name,
-                    "instanceName": self._backupset_object._instance_name,
+                    "instanceName": self._backupset_object._instance_object.instance_name,
                     "backupsetName": self._backupset_object.backupset_name,
                     "subclientName": self.subclient_name
                 },
@@ -643,7 +693,7 @@ class Subclient(object):
                 "entity": [{
                     "clientName": self._backupset_object._agent_object._client_object.client_name,
                     "appName": self._backupset_object._agent_object.agent_name,
-                    "instanceName": self._backupset_object._instance_name,
+                    "instanceName": self._backupset_object._instance_object.instance_name,
                     "backupsetName": self._backupset_object.backupset_name,
                     "subclientName": self.subclient_name
                 }]
@@ -652,7 +702,7 @@ class Subclient(object):
                 "subClientEntity": {
                     "clientName": self._backupset_object._agent_object._client_object.client_name,
                     "appName": self._backupset_object._agent_object.agent_name,
-                    "instanceName": self._backupset_object._instance_name,
+                    "instanceName": self._backupset_object._instance_object.instance_name,
                     "backupsetName": self._backupset_object.backupset_name,
                     "subclientName": self.subclient_name
                 },
@@ -852,7 +902,7 @@ class Subclient(object):
                 "clientName": self._backupset_object._agent_object._client_object.client_name,
                 "clientId": int(self._backupset_object._agent_object._client_object.client_id),
                 "applicationId": int(self._backupset_object._agent_object.agent_id),
-                "instanceId": int(self._backupset_object._instance_id),
+                "instanceId": int(self._backupset_object._instance_object.instance_id),
                 "backupsetId": int(self._backupset_object.backupset_id),
                 "subclientId": int(self.subclient_id)
             },
@@ -1009,8 +1059,8 @@ class Subclient(object):
                     "clientId": int(self._backupset_object._agent_object._client_object.client_id),
                     "appName": self._backupset_object._agent_object.agent_name,
                     "appTypeId": int(self._backupset_object._agent_object.agent_id),
-                    "instanceName": self._backupset_object._instance_name,
-                    "instanceId": int(self._backupset_object._instance_id),
+                    "instanceName": self._backupset_object._instance_object.instance_name,
+                    "instanceId": int(self._backupset_object._instance_object.instance_id),
                     "backupsetName": self._backupset_object.backupset_name,
                     "backupSetId": int(self._backupset_object.backupset_id),
                     "subclientName": self.subclient_name,
