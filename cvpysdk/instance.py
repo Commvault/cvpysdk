@@ -75,11 +75,13 @@ class Instances(object):
         self._instances = self._get_instances()
 
         from .instances.vsinstance import VirtualServerInstance
+        from .instances.cainstance import CloudAppsInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._instances_dict = {
-            'virtual server': VirtualServerInstance
+            'virtual server': VirtualServerInstance,
+            'cloud apps': CloudAppsInstance
         }
 
     def __str__(self):
