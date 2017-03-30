@@ -134,8 +134,13 @@ class Commcell(object):
         # Initialize all the services with this commcell service
         self._services = ApiLibrary(self._web_service)
 
+        self.__user_guid = None
+
         if isinstance(commcell_password, dict):
-            self._headers['Authtoken'] = self._password['Authtoken']
+            if self._password['Authtoken'].startswith('QSDK '):
+                self._headers['Authtoken'] = self._password['Authtoken']
+            else:
+                self._headers['Authtoken'] = '{0}{1}'.format('QSDK ', self._password['Authtoken'])
         else:
             # Login to the commcell with the credentials provided
             # and store the token in the headers
