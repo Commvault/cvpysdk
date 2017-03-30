@@ -157,7 +157,7 @@ class CloudAppsSubclient(Subclient):
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]['cloudAppsRestoreOptions'] = {
-            "instanceType": self._instance_object._ca_instance_type,
+            "instanceType": self._backupset_object._instance_object._ca_instance_type,
             "googleRestoreOptions": {
                 "strDestUserAccount": destination_path,
                 "folderGuid": "",
@@ -166,4 +166,4 @@ class CloudAppsSubclient(Subclient):
             }
         }
 
-        return self._process_restore_request(request_json)
+        return self._process_restore_response(request_json)
