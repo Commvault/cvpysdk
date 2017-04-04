@@ -91,6 +91,10 @@ class ApiLibrary(object):
         self.GET_WORKFLOWS = '{0}Workflow'
         self.EXECUTE_WORKFLOW = '{0}wapi/%s'
 
+        self.INSTANCE_BROWSE = '{0}Client/%s/%s/Instance/%s/Browse'
+
+        self.SQL_RESTORE_OPTIONS = '{0}SQL/RestoreOptions'
+
         for key, value in vars(self).items():
             setattr(self, key, value.format(web_service))
 

@@ -52,7 +52,8 @@ EXCEPTION_DICT = {
     },
     'Instance': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'Input date is incorrect'
     },
     'Subclient': {
         '101': 'Data type of the input(s) is not valid',
