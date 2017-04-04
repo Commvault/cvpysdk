@@ -1103,12 +1103,12 @@ class ClientGroup(object):
         """Adds clients to the ClientGroup.
 
         Args:
-                clients                 (str/list)   --  ',' separated string of client names,
-                                                             or a list of clients,
-                                                             to be added under client group
+                clients     (str/list)  --  ',' separated string of client names,
+                                                or a list of clients,
+                                                to be added under client group
 
-                overwrite               (bool)       --  if set to true will remove old clients,
-                                                             and add new clients
+                overwrite   (bool)      --  if set to true will remove old clients,
+                                                and add new clients
                     default: False
 
             Raises:
@@ -1128,9 +1128,9 @@ class ClientGroup(object):
         """Deletes clients from the ClientGroup.
 
             Args:
-                clients                 (str/list)   --  ',' separated string of client names,
-                                                             or a list of clients,
-                                                             to be removed from the client group
+                clients     (str/list)  --  ',' separated string of client names,
+                                                or a list of clients,
+                                                to be removed from the client group
 
             Raises:
                 SDKException:

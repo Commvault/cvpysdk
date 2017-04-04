@@ -70,6 +70,7 @@ from .storage import SchedulePolicies
 from .usergroup import UserGroups
 from .workflow import WorkFlow
 from .exception import SDKException
+from .clientgroup import ClientGroups
 
 
 class Commcell(object):
@@ -157,7 +158,8 @@ class Commcell(object):
             StoragePolicies,
             SchedulePolicies,
             UserGroups,
-            WorkFlow
+            WorkFlow,
+            ClientGroups
         ]
 
         sdk_dict = self._attribs_(sdk_classes)
@@ -170,6 +172,7 @@ class Commcell(object):
         self.schedule_policies = sdk_dict[SchedulePolicies]
         self.user_groups = sdk_dict[UserGroups]
         self.workflows = sdk_dict[WorkFlow]
+        self.client_groups = sdk_dict[ClientGroups]
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -259,6 +262,7 @@ class Commcell(object):
         del self.schedule_policies
         del self.user_groups
         del self.workflows
+        del self.client_groups
         del self.__user_guid
         del self._web_service
         del self._cvpysdk_object
