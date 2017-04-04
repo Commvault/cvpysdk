@@ -161,17 +161,20 @@ class Subclients(object):
         from .subclients.fssubclient import FileSystemSubclient
         from .subclients.vssubclient import VirtualServerSubclient
         from .subclients.casubclient import CloudAppsSubclient
+        from .subclients.sqlsubclient import SQLServerSubclient
 
         globals()['FileSystemSubclient'] = FileSystemSubclient
         globals()['VirtualServerSubclient'] = VirtualServerSubclient
         globals()['CloudAppsSubclient'] = CloudAppsSubclient
+        globals()['SQLServerSubclient'] = SQLServerSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._subclients_dict = {
             'file system': FileSystemSubclient,
             'virtual server': VirtualServerSubclient,
-            'cloud apps': CloudAppsSubclient
+            'cloud apps': CloudAppsSubclient,
+            'sql server': SQLServerSubclient
         }
 
     def __str__(self):
@@ -293,15 +296,20 @@ class Subclients(object):
 
         return self._subclients and str(subclient_name).lower() in self._subclients
 
-    def add(self, subclient_name, storage_policy, description=''):
+    def add(self, subclient_name, storage_policy, description='', log_backup_storage_policy=None):
         """Adds a new subclient to the backupset.
 
             Args:
-                subclient_name  (str)   --  name of the new subclient to add
+                subclient_name      (str)   --  name of the new subclient to add
 
-                storage_policy  (str)   --  name of the storage policy to associate with subclient
+                storage_policy      (str)   --  name of the storage policy to
+                                                    associate with the subclient
 
-                description     (str)   --  description for the subclient (optional)
+                description         (str)   --  description for the subclient (optional)
+
+                log_storage_policy  (str)   --  name of the log storage policy
+                        (optional applicable only for SQL Server Agent)
+                    default: None
 
             Returns:
                 object - instance of the Subclient class
@@ -361,6 +369,20 @@ class Subclients(object):
                 }
             }
         }
+
+        if log_backup_storage_policy:
+            if not isinstance(log_backup_storage_policy, str):
+                raise SDKException('Subclient', '101')
+
+            log_storage_policy_dict = {
+                "logBackupStoragePolicy": {
+                    "storagePolicyName": log_backup_storage_policy
+                }
+            }
+
+            request_json["subClientProperties"]["commonProperties"]["storageDevice"].update(
+                log_storage_policy_dict
+            )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._ADD_SUBCLIENT, request_json
@@ -591,6 +613,7 @@ class Subclient(object):
         self._on_demand_subclient = False
         self._next_backup = None
         self._is_backup_enabled = False
+        self._storage_policy = None
 
         if 'description' in self._subclient_properties['commonProperties']:
             self._description = str(self._subclient_properties['commonProperties']['description'])
@@ -617,6 +640,13 @@ class Subclient(object):
 
         self._content = self._get_subclient_content_()
 
+        storage_device = self._subclient_properties['commonProperties']['storageDevice']
+
+        if 'dataBackupStoragePolicy' in storage_device:
+            self._storage_policy = str(
+                storage_device['dataBackupStoragePolicy']['storagePolicyName']
+            )
+
     @staticmethod
     def _convert_size(input_size):
         """Converts the given float size to appropriate size in B / KB / MB / GB, etc.
@@ -636,17 +666,31 @@ class Subclient(object):
         size = round(input_size / power, 2)
         return '%s %s' % (size, size_name[i])
 
-    def _update(self, subclient_description, subclient_content, backup=True, enable_time=None):
+    def _update(
+            self,
+            subclient_description,
+            subclient_content,
+            backup=True,
+            enable_time=None,
+            storage_policy=None,
+            log_backup_storage_policy=None):
         """Updates the properties of the subclient.
 
             Args:
-                subclient_description (str)     --  description of the subclient
+                subclient_description       (str)     --  description of the subclient
 
-                subclient_content     (list)    --  content of the subclient
+                subclient_content           (list)    --  content of the subclient
 
-                backup                (bool)    --  enable backup or not
+                backup                      (bool)    --  enable backup or not
 
-                enable_time           (str)     --  time to re-enable the activity at
+                enable_time                 (str)     --  time to re-enable the activity at
+
+                storage_policy              (str)     --  storage policy assigned to subclient
+                    default: None
+
+                log_backup_storage_policy   (str)     --  log backup storage policy assigned to
+                                                            subclient
+                    default: None
 
             Returns:
                 (bool, str, str):
@@ -719,10 +763,41 @@ class Subclient(object):
             }
         }
 
+        request_json3 = {
+            "subClientProperties": {
+                "commonProperties": {
+                    "storageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
+                        },
+                    }
+                }
+            },
+            "association": {
+                "entity": [{
+                    "subclientName": self._subclient_name
+                }]
+            }
+        }
+
         if enable_time is None:
             request_json = request_json1
         else:
             request_json = request_json2
+
+        if storage_policy is not None:
+            request_json = request_json3
+
+            if log_backup_storage_policy is not None:
+                log_backup_storage_policy_dict = {
+                    "logBackupStoragePolicy": {
+                        "storagePolicyName": log_backup_storage_policy
+                    }
+                }
+
+                request_json['subClientProperties']['commonProperties']['storageDevice'].update(
+                    log_backup_storage_policy_dict
+                )
 
         http_request = 'POST'
         request_url = self._SUBCLIENT
@@ -1206,6 +1281,11 @@ class Subclient(object):
         """Treats the subclient content as a property of the Subclient class."""
         return self._content
 
+    @property
+    def storage_policy(self):
+        """Treats the subclient storage policy as a read-only attribute."""
+        return self._storage_policy
+
     @description.setter
     def description(self, value):
         """Sets the description of the subclient as the value provided as input.
@@ -1252,6 +1332,31 @@ class Subclient(object):
         else:
             raise SDKException(
                 'Subclient', '102', 'Subclient content should be a list value and not empty'
+            )
+
+    @storage_policy.setter
+    def storage_policy(self, value):
+        """Sets the storage policy of subclient as the value provided as input.
+
+            Args:
+                value   (str)   -- Storage policy name to be assigned to subclient
+
+            Raises:
+                SDKException:
+                    if failed to update storage policy name
+                    if storage policy name is not in string format
+        """
+        if isinstance(value, str):
+            output = self._update(self.description, self.content, storage_policy=value)
+
+            if output[0]:
+                return
+            else:
+                o_str = 'Failed to update the storage policy of the subclient\nError: "{0}"'
+                raise SDKException('Subclient', '102', o_str.format(output[2]))
+        else:
+            raise SDKException(
+                'Subclient', '102', 'Subclient storage policy should be a string value'
             )
 
     def enable_backup(self):
