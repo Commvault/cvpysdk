@@ -478,7 +478,7 @@ class Subclients(object):
 
         if self.has_subclient(subclient_name):
             delete_subclient_service = self._commcell_object._services.SUBCLIENT % (
-                self._subclients[subclient_name]
+                self._subclients[subclient_name]['id']
             )
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(

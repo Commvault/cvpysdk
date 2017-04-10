@@ -390,7 +390,7 @@ class Backupsets(object):
 
         if self.has_backupset(backupset_name):
             delete_backupset_service = self._commcell_object._services.BACKUPSET % (
-                self._backupsets[backupset_name]
+                self._backupsets[backupset_name]['id']
             )
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
