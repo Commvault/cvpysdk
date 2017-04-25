@@ -348,6 +348,13 @@ class Subclients(object):
                     sorted(self._instance_object.backupsets._backupsets)[0]
                 )
 
+        if storage_policy not in self._commcell_object.storage_policies._policies:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(storage_policy)
+            )
+
         request_json = {
             "subClientProperties": {
                 "contentOperationType": 2,
@@ -643,9 +650,10 @@ class Subclient(object):
         storage_device = self._subclient_properties['commonProperties']['storageDevice']
 
         if 'dataBackupStoragePolicy' in storage_device:
-            self._storage_policy = str(
-                storage_device['dataBackupStoragePolicy']['storagePolicyName']
-            )
+            if 'storagePolicyName' in storage_device['dataBackupStoragePolicy']:
+                self._storage_policy = str(
+                    storage_device['dataBackupStoragePolicy']['storagePolicyName']
+                )
 
     @staticmethod
     def _convert_size(input_size):
@@ -787,6 +795,13 @@ class Subclient(object):
 
         if storage_policy is not None:
             request_json = request_json3
+
+            if storage_policy not in self._commcell_object.storage_policies._policies:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Storage Policy: "{0}" does not exist in the Commcell'.format(storage_policy)
+                )
 
             if log_backup_storage_policy is not None:
                 log_backup_storage_policy_dict = {
