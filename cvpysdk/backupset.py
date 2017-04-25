@@ -714,11 +714,12 @@ class Backupset(object):
                 raise SDKException('Backupset', '102', o_str.format(output[2]))
 
     def backup(self):
-        """Run full backup job for all subclients in this backupset.
+        """Runs Incremental backup job for all subclients in this backupset.
+            Runs Full Backup job for a subclient, if no job had been ran earlier for it.
 
             Returns:
-                list - list containing the job objects for the full backup jobs started for
-                        the subclients in the backupset
+                list  -  list consisting of the job objects for the backup jobs started for
+                             the subclients in the backupset
         """
         return_list = []
         thread_list = []
