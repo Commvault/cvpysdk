@@ -22,6 +22,10 @@ WorkFlow:
 
     has_workflow(workflow_name)     --  checks if the workflow exists with the given name or not
 
+    import_workflow(workflow_xml)   --  imports a workflow to the Commcell
+
+    deploy_workflow()               --  deploys a workflow to the Commcell
+
     execute_workflow(workflow_name) --  executes a workflow and returns the job instance
 
 """
@@ -49,6 +53,7 @@ class WorkFlow(object):
         """
         self._commcell_object = commcell_object
         self._WORKFLOWS = self._commcell_object._services.GET_WORKFLOWS
+        self._DEPLOY_WORKFLOW = self._commcell_object._services.DEPLOY_WORKFLOW
         self._EXECUTE_WORKFLOW = self._commcell_object._services.EXECUTE_WORKFLOW
 
         self._workflows = self._get_workflows()
@@ -157,6 +162,7 @@ class WorkFlow(object):
 
                 for workflow in response.json()['container']:
                     workflow_name = str(workflow['entity']['workflowName']).lower()
+                    workflow_id = str(workflow['entity']['workflowId'])
                     workflow_description = str(workflow['description'])
 
                     if 'deployments' in workflow:
@@ -203,11 +209,13 @@ class WorkFlow(object):
                         workflow_dict[workflow_name] = {
                             'description': workflow_description,
                             'client': workflow_client,
+                            'id': workflow_id,
                             'inputs': workflow_inputs
                         }
                     else:
                         workflow_dict[workflow_name] = {
-                            'description': workflow_description
+                            'description': workflow_description,
+                            'id': workflow_id,
                         }
 
                 return workflow_dict
@@ -264,6 +272,90 @@ class WorkFlow(object):
             raise SDKException('Workflow', '101')
 
         return self._workflows and str(workflow_name).lower() in self._workflows
+
+    def import_workflow(self, workflow_xml):
+        """Imports a workflow to the Commcell.
+
+            Args:
+                workflow_xml    (str)   --  workflow xml in string
+
+            Raises:
+                SDKException:
+                    if type of the workflow xml argument is not string
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+        """
+        if not isinstance(workflow_xml, str):
+            raise SDKException('Workflow', '101')
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._WORKFLOWS, workflow_xml
+        )
+
+        self._workflows = self._get_workflows()
+
+        if flag is False:
+            raise SDKException(
+                'Workflow', '102', 'Importing Workflow failed. {0}'.format(response.json())
+            )
+
+    def deploy_workflow(self, workflow_name, workflow_xml):
+        """Deploys a workflow on the Commcell.
+
+            Args:
+                workflow_name   (str)   --  name of the workflow
+
+                workflow_xml    (str)   --  workflow xml in string
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if type of the workflow xml argument is not string
+
+                    if no workflow exists with the given name
+
+                    if failed to deploy workflow
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not (isinstance(workflow_name, str) and isinstance(workflow_xml, str)):
+            raise SDKException('Workflow', '101')
+
+        workflow_name = str(workflow_name).lower()
+
+        if not self.has_workflow(workflow_name):
+            raise SDKException(
+                'Workflow', '102', 'No workflow exists with name: {0}'.format(workflow_name)
+            )
+
+        workflow_deploy_service = self._DEPLOY_WORKFLOW % self._workflows[workflow_name]['id']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', workflow_deploy_service, workflow_xml
+        )
+
+        self._workflows = self._get_workflows()
+
+        if flag:
+            if response.json():
+                error_code = str(response.json()['errorCode'])
+
+                if error_code != "0":
+                    error_message = str(response.json()['errorMessage'])
+
+                    raise SDKException(
+                        'Workflow',
+                        '102',
+                        'Failed to deploy workflow\nError: "{0}"'.format(error_message)
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def execute_workflow(self, workflow_name):
         """Executes the workflow with the workflow name given as input, and returns its job id.

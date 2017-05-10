@@ -89,6 +89,7 @@ class ApiLibrary(object):
         self.RESTORE = '{0}CreateTask'
 
         self.GET_WORKFLOWS = '{0}Workflow'
+        self.DEPLOY_WORKFLOW = '{0}Workflow/%s/action/deploy'
         self.EXECUTE_WORKFLOW = '{0}wapi/%s'
 
         self.INSTANCE_BROWSE = '{0}Client/%s/%s/Instance/%s/Browse'
