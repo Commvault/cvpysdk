@@ -28,6 +28,8 @@ WorkFlow:
 
     execute_workflow(workflow_name) --  executes a workflow and returns the job instance
 
+    delete_workflow(workflow_name)  --  deletes a workflow from the commcell
+
 """
 
 from __future__ import absolute_import
@@ -420,4 +422,36 @@ class WorkFlow(object):
         else:
             raise SDKException(
                 'Workflow', '102', 'No workflow exists with name: {0}'.format(workflow_name)
+            )
+
+    def delete_workflow(self, workflow_name):
+        """Deletes a workflow from the Commcell.
+
+            Args:
+                workflow_name    (str)   --  name of the workflow to remove
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+        """
+        if not isinstance(workflow_name, str):
+            raise SDKException('Workflow', '101')
+
+        workflow_xml = """
+            <Workflow_DeleteWorkflow>
+                <workflow workflowName="{0}"/>
+            </Workflow_DeleteWorkflow>
+        """.format(workflow_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._WORKFLOWS, workflow_xml
+        )
+
+        self._workflows = self._get_workflows()
+
+        if flag is False:
+            raise SDKException(
+                'Workflow', '102', 'Deleting Workflow failed. {0}'.format(response.json())
             )
