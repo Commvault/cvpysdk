@@ -238,8 +238,11 @@ class Job(object):
 
         subclient_properties = job_summary['subclient']
 
-        self._client_name = str(subclient_properties['clientName'])
-        self._agent_name = str(subclient_properties['appName'])
+        if 'clientName' in subclient_properties:
+            self._client_name = str(subclient_properties['clientName'])
+
+        if 'appName' in subclient_properties:
+            self._agent_name = str(subclient_properties['appName'])
 
         if 'backupsetName' in subclient_properties:
             self._backupset_name = str(subclient_properties['backupsetName'])
@@ -272,6 +275,26 @@ class Job(object):
         if 'reasonForJobDelay' in job_details['jobDetail']['progressInfo']:
             if job_details['jobDetail']['progressInfo']['reasonForJobDelay']:
                 self._delay_reason = job_details['jobDetail']['progressInfo']['reasonForJobDelay']
+
+    def _wait_for_status(self, status):
+        """Waits for 2 minutes or till the job status is changed to given status,
+            whichever is earlier.
+
+            Args:
+                status  (str)   --  Job Status
+
+            Returns:
+                None
+        """
+        start_time = time.time()
+
+        while self.status.lower() != status.lower():
+            if self.finished is True:
+                break
+            if time.time() - start_time > 120:
+                break
+
+            time.sleep(3)
 
     @property
     def client_name(self):
@@ -333,8 +356,12 @@ class Job(object):
         """Treats the job pending reason as a read-only attribute."""
         return self._pending_reason
 
-    def pause(self):
-        """Suspend the job.
+    def pause(self, wait_for_job_to_pause=False):
+        """Suspends the job.
+
+            Args:
+                wait_for_job_to_pause   (bool)  --  wait till job status is changed to Suspended
+                    default: False
 
             Raises:
                 SDKException:
@@ -359,8 +386,15 @@ class Job(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def resume(self):
-        """Resume the job.
+        if wait_for_job_to_pause is True:
+            self._wait_for_status("SUSPENDED")
+
+    def resume(self, wait_for_job_to_resume=False):
+        """Resumes the job.
+
+            Args:
+                wait_for_job_to_resume  (bool)  --  wait till job status is changed to Running
+                        default: False
 
             Raises:
                 SDKException:
@@ -385,8 +419,15 @@ class Job(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def kill(self):
-        """Kill the job.
+        if wait_for_job_to_resume is True:
+            self._wait_for_status("RUNNING")
+
+    def kill(self, wait_for_job_to_kill=False):
+        """Kills the job.
+
+            Args:
+                wait_for_job_to_kill    (bool)  --  wait till job status is changed to Killed
+                        default: False
 
             Raises:
                 SDKException:
@@ -410,3 +451,6 @@ class Job(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+        if wait_for_job_to_kill is True:
+            self._wait_for_status_to_change("KILLED")
