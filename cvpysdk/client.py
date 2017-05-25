@@ -509,6 +509,8 @@ class Client(object):
                         self._is_restore_enabled = activity["enableActivityType"]
                     elif activity["activityType"] == 16:
                         self._is_data_aging_enabled = activity["enableActivityType"]
+
+                self._client_hostname = client_properties['client']['clientEntity']['hostName']
             else:
                 raise SDKException('Response', '102')
         else:
@@ -589,6 +591,11 @@ class Client(object):
         return self._client_name
 
     @property
+    def client_hostname(self):
+        """Treats the client host name as a read-only attribute."""
+        return self._client_hostname
+
+    @property
     def os_info(self):
         """Treats the os information as a read-only attribute."""
         return self._os_info
@@ -640,6 +647,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -689,6 +698,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -723,6 +734,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -756,6 +769,8 @@ class Client(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+
+        self._get_client_properties()
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -806,6 +821,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -840,6 +857,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -873,6 +892,8 @@ class Client(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+
+        self._get_client_properties()
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -923,6 +944,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -956,6 +979,8 @@ class Client(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+
+        self._get_client_properties()
 
         if flag:
             if response.json() and 'response' in response.json():
