@@ -54,19 +54,23 @@ Client:
 
     enable_backup_at_time()      --  enables the backup for the client at the input time specified
 
-    disble_backup()              --  disbles the backup for the client
+    disable_backup()              --  disables the backup for the client
 
     enable_restore()             --  enables the restore for the client
 
     enable_restore_at_time()     --  enables the restore for the client at the input time specified
 
-    disble_restore()             --  disbles the restore for the client
+    disable_restore()             --  disables the restore for the client
 
     enable_data_aging()          --  enables the data aging for the client
 
     enable_data_aging_at_time()  --  enables the data aging for the client at input time specified
 
-    disable_data_aging()         --  disbles the data aging for the clientt
+    disable_data_aging()         --  disables the data aging for the client
+
+    execute_script()             --  executes given script on the client
+
+    execute_command()            --  executes a command on the client
 
 """
 
@@ -993,6 +997,110 @@ class Client(object):
 
                     o_str = 'Failed to disable Data Aging\nError: "{0}"'.format(error_message)
                     raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def execute_script(self, script_type, script):
+        """Executes the given script of the script type on this client.
+
+            Args:
+                script_type     (str)   --  type of script to be executed on the client
+                    JAVA / Python / PowerShell / WindowsBatch / UnixShell
+
+                script          (str)   --  script in string to be executed on the client
+
+            Raises:
+                SDKException:
+                    if script type argument is not of type string
+
+                    if script argument is not of type string
+
+                    if script type is not valid
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not (isinstance(script_type, str) and (isinstance(script, str))):
+            raise SDKException('Client', '101')
+
+        script_types = {
+            'java': 0,
+            'python': 1,
+            'powershell': 2,
+            'windowsbatch': 3,
+            'unixshell': 4
+        }
+
+        if script_type.lower() not in script_types:
+            raise SDKException('Client', '105')
+
+        import html
+        script = html.escape(script)
+
+        xml_execute_script = """
+        <App_ExecuteCommandReq arguments="" scriptType="{0}" waitForProcessCompletion="1">
+            <client clientId="{1}" clientName="{2}"/>
+            <scriptLines val="{3}"/>
+        </App_ExecuteCommandReq>
+        """.format(script_types[script_type.lower()], self.client_id, self.client_name, script)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services.EXECUTE_QCOMMAND, xml_execute_script
+        )
+
+        if flag:
+            if response.json():
+                output = response.json()['commandLineOutput']
+                exit_code = response.json()['processExitCode']
+                return exit_code, output
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def execute_command(self, command):
+        """Executes a command on this client.
+
+            Args:
+                command     (str)   --  command in string to be executed on the client
+
+            Raises:
+                SDKException:
+                    if command argument is not of type string
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not isinstance(command, str):
+            raise SDKException('Client', '101')
+
+        import html
+        command = html.escape(command)
+
+        xml_execute_command = """
+        <App_ExecuteCommandReq arguments="" command="{0}" waitForProcessCompletion="1">
+            <processinginstructioninfo>
+                <formatFlags continueOnError="1" elementBased="1" filterUnInitializedFields="0" formatted="0" ignoreUnknownTags="1" skipIdToNameConversion="0" skipNameToIdConversion="0"/>
+            </processinginstructioninfo>
+            <client clientId="{1}" clientName="{2}"/>
+        </App_ExecuteCommandReq>
+        """.format(command, self.client_id, self.client_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services.EXECUTE_QCOMMAND, xml_execute_command
+        )
+
+        if flag:
+            if response.json():
+                output = response.json()['commandLineOutput']
+                exit_code = response.json()['processExitCode']
+                return exit_code, output
             else:
                 raise SDKException('Response', '102')
         else:

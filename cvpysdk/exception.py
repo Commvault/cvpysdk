@@ -32,7 +32,8 @@ EXCEPTION_DICT = {
         '101': 'Failed to Login with the credentials provided',
         '102': '',
         '103': 'Reached the maximum attempts limit',
-        '104': 'This session has expired. Please login again'
+        '104': 'This session has expired. Please login again',
+        '105': 'Script Type is not valid'
     },
     'Client': {
         '101': 'Data type of the input(s) is not valid',
