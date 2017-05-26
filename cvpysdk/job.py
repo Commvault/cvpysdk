@@ -86,15 +86,15 @@ class Job(object):
         self._commcell_object = commcell_object
         self._job_id = str(job_id)
 
-        self._JOB = self._commcell_object._services.JOB % (self.job_id)
+        self._JOB = self._commcell_object._services['JOB'] % (self.job_id)
 
         if not self._is_valid_job():
             raise SDKException('Job', '103')
 
-        self._JOB_DETAILS = self._commcell_object._services.JOB_DETAILS
-        self._SUSPEND = self._commcell_object._services.SUSPEND_JOB % (self.job_id)
-        self._RESUME = self._commcell_object._services.RESUME_JOB % (self.job_id)
-        self._KILL = self._commcell_object._services.KILL_JOB % (self.job_id)
+        self._JOB_DETAILS = self._commcell_object._services['JOB_DETAILS']
+        self._SUSPEND = self._commcell_object._services['SUSPEND_JOB'] % (self.job_id)
+        self._RESUME = self._commcell_object._services['RESUME_JOB'] % (self.job_id)
+        self._KILL = self._commcell_object._services['KILL_JOB'] % (self.job_id)
 
         self.finished = self._is_finished()
         self.status = str(self._get_job_summary()['status'])

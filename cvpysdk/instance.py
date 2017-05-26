@@ -68,7 +68,7 @@ class Instances(object):
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
-        self._INSTANCES = self._commcell_object._services.GET_ALL_INSTANCES % (
+        self._INSTANCES = self._commcell_object._services['GET_ALL_INSTANCES'] % (
             self._agent_object._client_object.client_id
         )
 
@@ -244,7 +244,7 @@ class Instance(object):
             # Get the id associated with this instance
             self._instance_id = self._get_instance_id()
 
-        self._INSTANCE = self._commcell_object._services.INSTANCE % (self.instance_id)
+        self._INSTANCE = self._commcell_object._services['INSTANCE'] % (self.instance_id)
 
         self._properties = None
 

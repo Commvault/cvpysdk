@@ -78,7 +78,7 @@ class Alerts(object):
                 object - instance of the Alerts class
         """
         self._commcell_object = commcell_object
-        self._ALERTS = self._commcell_object._services.GET_ALL_ALERTS
+        self._ALERTS = self._commcell_object._services['GET_ALL_ALERTS']
         self._alerts = self._get_alerts()
 
     def __str__(self):
@@ -223,7 +223,7 @@ class Alerts(object):
         if not (isinstance(page_number, int) and isinstance(page_count, int)):
             raise SDKException('Alert', '101')
 
-        console_alerts = self._commcell_object._services.GET_ALL_CONSOLE_ALERTS % (
+        console_alerts = self._commcell_object._services['GET_ALL_CONSOLE_ALERTS'] % (
             page_number, page_count)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', console_alerts)
@@ -274,7 +274,7 @@ class Alerts(object):
 
             if self.has_alert(alert_name):
                 alert_id = self._alerts[alert_name]['id']
-                alert = self._commcell_object._services.ALERT % (alert_id)
+                alert = self._commcell_object._services['ALERT'] % (alert_id)
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
                     'DELETE', alert
@@ -337,7 +337,7 @@ class Alert(object):
         else:
             self._alert_category = self._get_alert_category()
 
-        self._ALERT = self._commcell_object._services.ALERT % (self.alert_id)
+        self._ALERT = self._commcell_object._services['ALERT'] % (self.alert_id)
         self._all_notification_types = {
             'email': 1,
             'snmp': 4,
@@ -488,7 +488,7 @@ class Alert(object):
             alert_notification_type_id = self._all_notification_types[
                 alert_notification_type.lower()]
 
-            enable_request = self._commcell_object._services.ENABLE_ALERT_NOTIFICATION % (
+            enable_request = self._commcell_object._services['ENABLE_ALERT_NOTIFICATION'] % (
                 self.alert_id, alert_notification_type_id
             )
 
@@ -540,7 +540,7 @@ class Alert(object):
             alert_notification_type_id = self._all_notification_types[
                 alert_notification_type.lower()]
 
-            disable_request = self._commcell_object._services.DISABLE_ALERT_NOTIFICATION % (
+            disable_request = self._commcell_object._services['DISABLE_ALERT_NOTIFICATION'] % (
                 self.alert_id, alert_notification_type_id
             )
 
@@ -578,7 +578,7 @@ class Alert(object):
 
                     if response is not success
         """
-        enable_request = self._commcell_object._services.ENABLE_ALERT % (self.alert_id)
+        enable_request = self._commcell_object._services['ENABLE_ALERT'] % (self.alert_id)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', enable_request)
 
@@ -619,7 +619,7 @@ class Alert(object):
 
                     if response is not success
         """
-        disable_request = self._commcell_object._services.DISABLE_ALERT % (self.alert_id)
+        disable_request = self._commcell_object._services['DISABLE_ALERT'] % (self.alert_id)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', disable_request

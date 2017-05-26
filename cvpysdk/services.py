@@ -9,96 +9,96 @@
 
 """Service URLs for REST API operations.
 
-ApiLibrary: Class having all the REST API services initialized with the commcell
+SERVICES_DICT:  A python dictionary for holding all the API services endpoints.
 
-ApiLibrary:
-    __init__(web_service)   --  initialize all the API services with the web service
-
-    __repr__()              --  retuns string representation for this class
+get_services(web_service):  updates the SERVICES_DICT with the WebConsole API URL
 
 """
 
 from __future__ import absolute_import
 
 
-class ApiLibrary(object):
-    """Class ApiLibrary for defining all the REST API URLs."""
+SERVICES_DICT = {
+    'LOGIN': '{0}Login',
+    'LOGOUT': '{0}Logout',
 
-    def __init__(self, web_service):
-        """Initializes the instance of the class ApiLibrary.
+    'GET_ALL_CLIENTS': '{0}Client',
+    'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
+    'CLIENT': '{0}Client/%s',
 
-            Args:
-                web_service (str)  --  web service URI for the API
-        """
-        self.LOGIN = '{0}Login'
-        self.LOGOUT = '{0}Logout'
+    'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
+    'AGENT': '{0}Agent',
 
-        self.GET_ALL_CLIENTS = '{0}Client'
-        self.GET_VIRTUAL_CLIENTS = '{0}Client?PseudoClientType=VSPseudo'
-        self.CLIENT = '{0}Client/%s'
+    'GET_ALL_BACKUPSETS': '{0}Backupset?clientId=%s',
+    'BACKUPSET': '{0}Backupset/%s',
+    'ADD_BACKUPSET': '{0}Backupset',
 
-        self.GET_ALL_AGENTS = '{0}Agent?clientId=%s'
-        self.AGENT = '{0}Agent'
+    'GET_ALL_INSTANCES': '{0}Instance?clientId=%s',
+    'INSTANCE': '{0}Instance/%s',
 
-        self.GET_ALL_BACKUPSETS = '{0}Backupset?clientId=%s'
-        self.BACKUPSET = '{0}Backupset/%s'
-        self.ADD_BACKUPSET = '{0}Backupset'
+    'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s',
+    'ADD_SUBCLIENT': '{0}Subclient',
+    'SUBCLIENT': '{0}Subclient/%s',
+    'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
 
-        self.GET_ALL_INSTANCES = '{0}Instance?clientId=%s'
-        self.INSTANCE = '{0}Instance/%s'
+    'GET_JOBS': '{0}Job?clientId=%s&jobFilter=%s',
+    'JOB': '{0}Job/%s',
+    'JOB_DETAILS': '{0}JobDetails',
+    'SUSPEND_JOB': '{0}Job/%s/action/pause',
+    'RESUME_JOB': '{0}Job/%s/action/resume',
+    'KILL_JOB': '{0}Job/%s/action/kill',
 
-        self.GET_ALL_SUBCLIENTS = '{0}Subclient?clientId=%s'
-        self.ADD_SUBCLIENT = '{0}Subclient'
-        self.SUBCLIENT = '{0}Subclient/%s'
-        self.SUBCLIENT_BACKUP = '{0}Subclient/%s/action/backup?backupLevel=%s'
+    'GET_MEDIA_AGENTS': '{0}MediaAgent',
+    'LIBRARY': '{0}Library',
 
-        self.GET_JOBS = '{0}Job?clientId=%s&jobFilter=%s'
-        self.JOB = '{0}Job/%s'
-        self.JOB_DETAILS = '{0}JobDetails'
-        self.SUSPEND_JOB = '{0}Job/%s/action/pause'
-        self.RESUME_JOB = '{0}Job/%s/action/resume'
-        self.KILL_JOB = '{0}Job/%s/action/kill'
+    'STORAGE_POLICY': '{0}StoragePolicy',
+    'SCHEDULE_POLICY': '{0}SchedulePolicy',
 
-        self.GET_MEDIA_AGENTS = '{0}MediaAgent'
-        self.LIBRARY = '{0}Library'
+    'GET_ALL_ALERTS': '{0}AlertRule',
+    'ALERT': '{0}AlertRule/%s',
+    'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
+    'ENABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Enable',
+    'DISABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Disable',
+    'ENABLE_ALERT': '{0}AlertRule/%s/Action/Enable',
+    'DISABLE_ALERT': '{0}AlertRule/%s/Action/Disable',
 
-        self.STORAGE_POLICY = '{0}StoragePolicy'
-        self.SCHEDULE_POLICY = '{0}SchedulePolicy'
+    'CLIENT_SCHEDULES': '{0}Schedules?clientId=%s',
+    'AGENT_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s',
+    'BACKUPSET_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s',
+    'SUBCLIENT_SCHEDULES': ('{0}Schedules?clientId=%s&apptypeId=%s&'
+                            'backupsetId=%s&subclientId=%s'),
 
-        self.GET_ALL_ALERTS = '{0}AlertRule'
-        self.ALERT = '{0}AlertRule/%s'
-        self.GET_ALL_CONSOLE_ALERTS = '{0}Alert?pageNo=%s&pageCount=%s'
-        self.ENABLE_ALERT_NOTIFICATION = '{0}AlertRule/%s/notificationType/%s/Action/Enable'
-        self.DISABLE_ALERT_NOTIFICATION = '{0}AlertRule/%s/notificationType/%s/Action/Disable'
-        self.ENABLE_ALERT = '{0}AlertRule/%s/Action/Enable'
-        self.DISABLE_ALERT = '{0}AlertRule/%s/Action/Disable'
+    'CLIENTGROUPS': '{0}ClientGroup',
+    'CLIENTGROUP': '{0}ClientGroup/%s',
 
-        self.CLIENT_SCHEDULES = '{0}Schedules?clientId=%s'
-        self.AGENT_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s'
-        self.BACKUPSET_SCHEDULES = '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s'
-        self.SUBCLIENT_SCHEDULES = ('{0}Schedules?clientId=%s&apptypeId=%s&'
-                                    'backupsetId=%s&subclientId=%s')
+    'USERGROUPS': '{0}UserGroup',
+    'USERGROUP': '{0}UserGroup/%s',
 
-        self.CLIENTGROUPS = '{0}ClientGroup'
-        self.CLIENTGROUP = '{0}ClientGroup/%s'
+    'BROWSE': '{0}DoBrowse',
+    'RESTORE': '{0}CreateTask',
 
-        self.USERGROUPS = '{0}UserGroup'
-        self.USERGROUP = '{0}UserGroup/%s'
+    'GET_WORKFLOWS': '{0}Workflow',
+    'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
+    'EXECUTE_WORKFLOW': '{0}wapi/%s',
 
-        self.BROWSE = '{0}DoBrowse'
-        self.RESTORE = '{0}CreateTask'
+    'INSTANCE_BROWSE': '{0}Client/%s/%s/Instance/%s/Browse',
 
-        self.GET_WORKFLOWS = '{0}Workflow'
-        self.DEPLOY_WORKFLOW = '{0}Workflow/%s/action/deploy'
-        self.EXECUTE_WORKFLOW = '{0}wapi/%s'
+    'SQL_RESTORE_OPTIONS': '{0}SQL/RestoreOptions',
 
-        self.INSTANCE_BROWSE = '{0}Client/%s/%s/Instance/%s/Browse'
+    'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute'
+}
 
-        self.SQL_RESTORE_OPTIONS = '{0}SQL/RestoreOptions'
 
-        for key, value in vars(self).items():
-            setattr(self, key, value.format(web_service))
+def get_services(web_service):
+    """Initializes the SERVICES DICT with the web service for APIs.
 
-    def __repr__(self):
-        """Representation string for this class instance."""
-        return 'ApiLibrary class instance for all REST API services.'
+        Args:
+            web_service     (str)   --  web service string for APIs
+
+        Returns:
+            dict    -   services dict consisting of all APIs
+    """
+    for service in SERVICES_DICT:
+        SERVICES_DICT[service] = SERVICES_DICT[service].format(web_service)
+
+    return SERVICES_DICT

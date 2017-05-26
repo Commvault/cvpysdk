@@ -150,11 +150,11 @@ class Subclients(object):
 
         self._commcell_object = self._instance_object._commcell_object
 
-        self._SUBCLIENTS = self._commcell_object._services.GET_ALL_SUBCLIENTS % (
+        self._SUBCLIENTS = self._commcell_object._services['GET_ALL_SUBCLIENTS'] % (
             self._instance_object._agent_object._client_object.client_id
         )
 
-        self._ADD_SUBCLIENT = self._commcell_object._services.ADD_SUBCLIENT
+        self._ADD_SUBCLIENT = self._commcell_object._services['ADD_SUBCLIENT']
 
         self._subclients = self._get_subclients()
 
@@ -484,7 +484,7 @@ class Subclients(object):
             subclient_name = str(subclient_name).lower()
 
         if self.has_subclient(subclient_name):
-            delete_subclient_service = self._commcell_object._services.SUBCLIENT % (
+            delete_subclient_service = self._commcell_object._services['SUBCLIENT'] % (
                 self._subclients[subclient_name]['id']
             )
 
@@ -552,11 +552,11 @@ class Subclient(object):
         else:
             self._subclient_id = self._get_subclient_id()
 
-        self._SUBCLIENT = self._commcell_object._services.SUBCLIENT % (self.subclient_id)
+        self._SUBCLIENT = self._commcell_object._services['SUBCLIENT'] % (self.subclient_id)
         self._BACKUP = None
 
-        self._BROWSE = self._commcell_object._services.BROWSE
-        self._RESTORE = self._commcell_object._services.RESTORE
+        self._BROWSE = self._commcell_object._services['BROWSE']
+        self._RESTORE = self._commcell_object._services['RESTORE']
 
         self._initialize_subclient_properties()
 
@@ -924,7 +924,7 @@ class Subclient(object):
 
                     if response is not success
         """
-        self._BACKUP = self._commcell_object._services.SUBCLIENT_BACKUP % (
+        self._BACKUP = self._commcell_object._services['SUBCLIENT_BACKUP'] % (
             self.subclient_id, backup_request
         )
 

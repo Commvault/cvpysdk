@@ -66,7 +66,7 @@ class UserGroups(object):
                 object - instance of the UserGroups class
         """
         self._commcell_object = commcell_object
-        self._USERGROUPS = self._commcell_object._services.USERGROUPS
+        self._USERGROUPS = self._commcell_object._services['USERGROUPS']
         self._user_groups = self._get_user_groups()
 
     def __str__(self):
@@ -202,7 +202,7 @@ class UserGroups(object):
             if self.has_user_group(user_group_name):
                 usergroup_id = self._user_groups[user_group_name]
 
-                delete_usergroup = self._commcell_object._services.USERGROUP % (usergroup_id)
+                delete_usergroup = self._commcell_object._services['USERGROUP'] % (usergroup_id)
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
                     'DELETE', delete_usergroup
@@ -272,7 +272,7 @@ class UserGroup(object):
         else:
             self._user_group_id = self._get_usergroup_id()
 
-        self._USERGROUP = self._commcell_object._services.USERGROUP % (self.user_group_id)
+        self._USERGROUP = self._commcell_object._services['USERGROUP'] % (self.user_group_id)
 
         self._description = None
         self._email = None

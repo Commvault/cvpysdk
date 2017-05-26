@@ -81,7 +81,7 @@ class Agents(object):
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
 
-        self._AGENTS = self._commcell_object._services.GET_ALL_AGENTS % (
+        self._AGENTS = self._commcell_object._services['GET_ALL_AGENTS'] % (
             self._client_object.client_id
         )
 
@@ -208,7 +208,7 @@ class Agent(object):
         self._commcell_object = self._client_object._commcell_object
         self._agent_name = str(agent_name)
 
-        self._AGENT = self._commcell_object._services.AGENT
+        self._AGENT = self._commcell_object._services['AGENT']
 
         if agent_id:
             # Use the agent id mentioned in the arguments

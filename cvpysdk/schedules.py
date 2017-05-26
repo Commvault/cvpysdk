@@ -57,25 +57,25 @@ class Schedules(object):
         self._repr_str = ""
 
         if isinstance(class_object, Client):
-            self._SCHEDULES = self._commcell_object._services.CLIENT_SCHEDULES % (
+            self._SCHEDULES = self._commcell_object._services['CLIENT_SCHEDULES'] % (
                 class_object.client_id
             )
             self._repr_str = "Client: {0}".format(class_object.client_name)
         elif isinstance(class_object, Agent):
-            self._SCHEDULES = self._commcell_object._services.AGENT_SCHEDULES % (
+            self._SCHEDULES = self._commcell_object._services['AGENT_SCHEDULES'] % (
                 class_object._client_object.client_id,
                 class_object.agent_id
             )
             self._repr_str = "Agent: {0}".format(class_object.agent_name)
         elif isinstance(class_object, Backupset):
-            self._SCHEDULES = self._commcell_object._services.BACKUPSET_SCHEDULES % (
+            self._SCHEDULES = self._commcell_object._services['BACKUPSET_SCHEDULES'] % (
                 class_object._agent_object._client_object.client_id,
                 class_object._agent_object.agent_id,
                 class_object.backupset_id
             )
             self._repr_str = "Backupset: {0}".format(class_object.backupset_name)
         elif isinstance(class_object, Subclient):
-            self._SCHEDULES = self._commcell_object._services.SUBCLIENT_SCHEDULES % (
+            self._SCHEDULES = self._commcell_object._services['SUBCLIENT_SCHEDULES'] % (
                 class_object._backupset_object._agent_object._client_object.client_id,
                 class_object._backupset_object._agent_object.agent_id,
                 class_object._backupset_object.backupset_id,

@@ -129,7 +129,7 @@ class MediaAgents(object):
                 object - instance of the MediaAgents class
         """
         self._commcell_object = commcell_object
-        self._MEDIA_AGENTS = self._commcell_object._services.GET_MEDIA_AGENTS
+        self._MEDIA_AGENTS = self._commcell_object._services['GET_MEDIA_AGENTS']
         self._media_agents = self._get_media_agents()
 
     def __str__(self):
@@ -302,7 +302,7 @@ class DiskLibraries(object):
                 object - instance of the DiskLibraries class
         """
         self._commcell_object = commcell_object
-        self._LIBRARY = self._commcell_object._services.LIBRARY
+        self._LIBRARY = self._commcell_object._services['LIBRARY']
         self._libraries = self._get_libraries()
 
     def __str__(self):
@@ -559,7 +559,7 @@ class StoragePolicies(object):
                 object - instance of the StoragePolicies class
         """
         self._commcell_object = commcell_object
-        self._POLICY = self._commcell_object._services.STORAGE_POLICY
+        self._POLICY = self._commcell_object._services['STORAGE_POLICY']
         self._policies = self._get_policies()
 
     def __str__(self):
@@ -839,7 +839,7 @@ class SchedulePolicies(object):
                 object - instance of the SchedulePolicies class
         """
         self._commcell_object = commcell_object
-        self._POLICY = self._commcell_object._services.SCHEDULE_POLICY
+        self._POLICY = self._commcell_object._services['SCHEDULE_POLICY']
         self._policies = self._get_policies()
 
     def __str__(self):

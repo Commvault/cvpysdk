@@ -103,7 +103,7 @@ class CVPySDK(object):
             }
 
             flag, response = self.make_request(
-                'POST', self._commcell_object._services.LOGIN, json_login_request
+                'POST', self._commcell_object._services['LOGIN'], json_login_request
             )
 
             if flag:
@@ -128,7 +128,7 @@ class CVPySDK(object):
             Returns:
                 str - response string from server upon logout success
         """
-        flag, response = self.make_request('POST', self._commcell_object._services.LOGOUT)
+        flag, response = self.make_request('POST', self._commcell_object._services['LOGOUT'])
 
         if flag:
             self._commcell_object._headers['Authtoken'] = None

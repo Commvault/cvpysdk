@@ -54,9 +54,9 @@ class WorkFlow(object):
                 object - instance of the WorkFlow class
         """
         self._commcell_object = commcell_object
-        self._WORKFLOWS = self._commcell_object._services.GET_WORKFLOWS
-        self._DEPLOY_WORKFLOW = self._commcell_object._services.DEPLOY_WORKFLOW
-        self._EXECUTE_WORKFLOW = self._commcell_object._services.EXECUTE_WORKFLOW
+        self._WORKFLOWS = self._commcell_object._services['GET_WORKFLOWS']
+        self._DEPLOY_WORKFLOW = self._commcell_object._services['DEPLOY_WORKFLOW']
+        self._EXECUTE_WORKFLOW = self._commcell_object._services['EXECUTE_WORKFLOW']
 
         self._workflows = self._get_workflows()
 

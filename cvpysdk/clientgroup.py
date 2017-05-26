@@ -105,7 +105,7 @@ class ClientGroups(object):
                 object - instance of the ClientGroups class
         """
         self._commcell_object = commcell_object
-        self._CLIENTGROUPS = self._commcell_object._services.CLIENTGROUPS
+        self._CLIENTGROUPS = self._commcell_object._services['CLIENTGROUPS']
         self._clientgroups = self._get_clientgroups()
 
     def __str__(self):
@@ -393,7 +393,7 @@ class ClientGroups(object):
             if self.has_clientgroup(clientgroup_name):
                 clientgroup_id = self._clientgroups[clientgroup_name]
 
-                delete_clientgroup_service = self._commcell_object._services.CLIENTGROUP
+                delete_clientgroup_service = self._commcell_object._services['CLIENTGROUP']
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
                     'DELETE', delete_clientgroup_service % clientgroup_id
@@ -457,7 +457,7 @@ class ClientGroup(object):
             # Get the id associated with this client group
             self._clientgroup_id = self._get_clientgroup_id()
 
-        self._CLIENTGROUP = self._commcell_object._services.CLIENTGROUP % (self.clientgroup_id)
+        self._CLIENTGROUP = self._commcell_object._services['CLIENTGROUP'] % (self.clientgroup_id)
 
         self._initialize_clientgroup_properties()
 

@@ -59,7 +59,7 @@ except ImportError:
     from queue import Queue
 
 
-from .services import ApiLibrary
+from .services import get_services
 from .cvpysdk import CVPySDK
 from .client import Clients
 from .alert import Alerts
@@ -133,7 +133,7 @@ class Commcell(object):
             raise SDKException('Commcell', '101')
 
         # Initialize all the services with this commcell service
-        self._services = ApiLibrary(self._web_service)
+        self._services = get_services(self._web_service)
 
         self.__user_guid = None
 

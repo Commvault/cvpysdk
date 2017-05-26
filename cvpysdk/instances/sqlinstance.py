@@ -164,7 +164,7 @@ class SQLServerInstance(Instance):
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services.RESTORE, request_json
+            'POST', self._commcell_object._services['RESTORE'], request_json
         )
 
         if flag:
@@ -218,7 +218,7 @@ class SQLServerInstance(Instance):
             "selectedDatabases": contents_dict
         }
 
-        webservice = self._commcell_object._services.SQL_RESTORE_OPTIONS
+        webservice = self._commcell_object._services['SQL_RESTORE_OPTIONS']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             "POST", webservice, request_json
@@ -357,7 +357,7 @@ class SQLServerInstance(Instance):
 
                     if response is not success
         """
-        browse_request = self._commcell_object._services.INSTANCE_BROWSE % (
+        browse_request = self._commcell_object._services['INSTANCE_BROWSE'] % (
             self._agent_object._client_object.client_id, "SQL", self.instance_id
         )
 
@@ -422,7 +422,7 @@ class SQLServerInstance(Instance):
         else:
             to_date = int(time.time())
 
-        browse_request = self._commcell_object._services.INSTANCE_BROWSE % (
+        browse_request = self._commcell_object._services['INSTANCE_BROWSE'] % (
             self._agent_object._client_object.client_id, "SQL", self.instance_id
         )
 

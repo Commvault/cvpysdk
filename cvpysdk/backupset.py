@@ -99,7 +99,7 @@ class Backupsets(object):
 
         self._commcell_object = self._agent_object._commcell_object
 
-        self._BACKUPSETS = (self._commcell_object._services.GET_ALL_BACKUPSETS) % (
+        self._BACKUPSETS = (self._commcell_object._services['GET_ALL_BACKUPSETS']) % (
             self._agent_object._client_object.client_id
         )
 
@@ -252,7 +252,7 @@ class Backupsets(object):
                 'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name)
             )
 
-        add_backupset_service = self._commcell_object._services.ADD_BACKUPSET
+        add_backupset_service = self._commcell_object._services['ADD_BACKUPSET']
 
         if self._instance_object is None:
             if self._agent_object.instances.has_instance('DefaultInstanceName'):
@@ -389,7 +389,7 @@ class Backupsets(object):
             backupset_name = str(backupset_name).lower()
 
         if self.has_backupset(backupset_name):
-            delete_backupset_service = self._commcell_object._services.BACKUPSET % (
+            delete_backupset_service = self._commcell_object._services['BACKUPSET'] % (
                 self._backupsets[backupset_name]['id']
             )
 
@@ -467,7 +467,7 @@ class Backupset(object):
             # Get the id associated with this backupset
             self._backupset_id = self._get_backupset_id()
 
-        self._BACKUPSET = self._commcell_object._services.BACKUPSET % (self.backupset_id)
+        self._BACKUPSET = self._commcell_object._services['BACKUPSET'] % (self.backupset_id)
 
         self._is_default = False
         self._properties = None

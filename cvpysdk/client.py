@@ -98,8 +98,8 @@ class Clients(object):
                 object - instance of the Clients class
         """
         self._commcell_object = commcell_object
-        self._CLIENTS = self._commcell_object._services.GET_ALL_CLIENTS
-        self._ADD_CLIENT = self._commcell_object._services.GET_ALL_CLIENTS
+        self._CLIENTS = self._commcell_object._services['GET_ALL_CLIENTS']
+        self._ADD_CLIENT = self._commcell_object._services['GET_ALL_CLIENTS']
         self._clients = self._get_clients()
 
     def __str__(self):
@@ -374,7 +374,7 @@ class Clients(object):
 
             if self.has_client(client_name):
                 client_id = self._clients[client_name]
-                client_delete_service = self._commcell_object._services.CLIENT % (client_id)
+                client_delete_service = self._commcell_object._services['CLIENT'] % (client_id)
                 client_delete_service += "?forceDelete=1"
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -445,7 +445,7 @@ class Client(object):
         else:
             self._client_id = self._get_client_id()
 
-        self._CLIENT = self._commcell_object._services.CLIENT % (self.client_id)
+        self._CLIENT = self._commcell_object._services['CLIENT'] % (self.client_id)
         self._get_client_properties()
 
         self.agents = Agents(self)
@@ -1049,7 +1049,7 @@ class Client(object):
         """.format(script_types[script_type.lower()], self.client_id, self.client_name, script)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services.EXECUTE_QCOMMAND, xml_execute_script
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_script
         )
 
         if flag:
@@ -1093,7 +1093,7 @@ class Client(object):
         """.format(command, self.client_id, self.client_name)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services.EXECUTE_QCOMMAND, xml_execute_command
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_command
         )
 
         if flag:
