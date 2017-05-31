@@ -481,9 +481,9 @@ class Client(object):
 
         if flag:
             if response.json() and 'clientProperties' in response.json():
-                client_properties = response.json()['clientProperties'][0]
+                self._properties = response.json()['clientProperties'][0]
 
-                os_info = client_properties['client']['osInfo']
+                os_info = self._properties['client']['osInfo']
                 processor_type = os_info['OsDisplayInfo']['ProcessorType']
                 os_name = os_info['OsDisplayInfo']['OSName']
 
@@ -494,7 +494,7 @@ class Client(object):
                     os_name
                 )
 
-                client_props = client_properties['clientProps']
+                client_props = self._properties['clientProps']
 
                 self._is_data_recovery_enabled = client_props[
                     'activityControl']['EnableDataRecovery']
@@ -514,7 +514,7 @@ class Client(object):
                     elif activity["activityType"] == 16:
                         self._is_data_aging_enabled = activity["enableActivityType"]
 
-                self._client_hostname = client_properties['client']['clientEntity']['hostName']
+                self._client_hostname = self._properties['client']['clientEntity']['hostName']
             else:
                 raise SDKException('Response', '102')
         else:
