@@ -1040,13 +1040,23 @@ class Client(object):
 
         import html
         script = html.escape(script)
+        script_lines = ""
+        script_lines_template = '<scriptLines val="{0}"/>'
+
+        for line in script.split('\n'):
+            script_lines += script_lines_template.format(line)
 
         xml_execute_script = """
         <App_ExecuteCommandReq arguments="" scriptType="{0}" waitForProcessCompletion="1">
             <client clientId="{1}" clientName="{2}"/>
-            <scriptLines val="{3}"/>
+            "{3}"
         </App_ExecuteCommandReq>
-        """.format(script_types[script_type.lower()], self.client_id, self.client_name, script)
+        """.format(
+            script_types[script_type.lower()],
+            self.client_id,
+            self.client_name,
+            script_lines
+        )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_script
