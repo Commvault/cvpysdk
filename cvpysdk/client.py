@@ -76,6 +76,7 @@ Client:
 
 from __future__ import absolute_import
 
+import os
 import time
 
 from base64 import b64encode
@@ -1010,7 +1011,7 @@ class Client(object):
                 script_type     (str)   --  type of script to be executed on the client
                     JAVA / Python / PowerShell / WindowsBatch / UnixShell
 
-                script          (str)   --  script in string to be executed on the client
+                script          (str)   --  path of the script to be executed on the client
 
             Raises:
                 SDKException:
@@ -1038,8 +1039,14 @@ class Client(object):
         if script_type.lower() not in script_types:
             raise SDKException('Client', '105')
 
+        if os.path.isfile(script):
+            with open(script, 'r') as temp_file:
+                script_file = temp_file.read()
+        else:
+            raise SDKException('Client', '105')
+
         import html
-        script = html.escape(script)
+        script = html.escape(script_file)
         script_lines = ""
         script_lines_template = '<scriptLines val="{0}"/>'
 
@@ -1064,8 +1071,15 @@ class Client(object):
 
         if flag:
             if response.json():
-                output = response.json()['commandLineOutput']
-                exit_code = response.json()['processExitCode']
+                exit_code = None
+                output = None
+
+                if 'commandLineOutput' in response.json():
+                    output = response.json()['commandLineOutput']
+
+                if 'processExitCode' in response.json():
+                    exit_code = response.json()['processExitCode']
+
                 return exit_code, output
             else:
                 raise SDKException('Response', '102')
@@ -1108,8 +1122,15 @@ class Client(object):
 
         if flag:
             if response.json():
-                output = response.json()['commandLineOutput']
-                exit_code = response.json()['processExitCode']
+                exit_code = None
+                output = None
+
+                if 'commandLineOutput' in response.json():
+                    output = response.json()['commandLineOutput']
+
+                if 'processExitCode' in response.json():
+                    exit_code = response.json()['processExitCode']
+
                 return exit_code, output
             else:
                 raise SDKException('Response', '102')

@@ -39,7 +39,8 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Time Value should be greater than current time',
-        '104': 'Time Value entered is not of correct format'
+        '104': 'Time Value entered is not of correct format',
+        '105': 'Script is not a valid file'
     },
     'Agent': {
         '101': 'Data type of the input(s) is not valid',
@@ -103,7 +104,8 @@ EXCEPTION_DICT = {
     },
     'Workflow': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'Workflow XML is not a valid file'
     }
 }
 

@@ -525,7 +525,7 @@ class Backupset(object):
             raise SDKException('Response', '101', response_string)
 
     def _run_backup(self, subclient_name, return_list):
-        """Triggers full backup job for the given subclient, and appends its Job object to the list.
+        """Triggers incremental backup job for the given subclient, and appends its Job object to the list.
             The SDKExcpetion class instance is appended to the list,
             if any exception is raised while running the backup job for the Subclient.
 

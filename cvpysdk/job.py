@@ -240,9 +240,13 @@ class Job(object):
 
         if 'clientName' in subclient_properties:
             self._client_name = str(subclient_properties['clientName'])
+        else:
+            self._client_name = None
 
         if 'appName' in subclient_properties:
             self._agent_name = str(subclient_properties['appName'])
+        else:
+            self._agent_name = None
 
         if 'backupsetName' in subclient_properties:
             self._backupset_name = str(subclient_properties['backupsetName'])
