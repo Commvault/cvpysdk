@@ -36,6 +36,8 @@ Commcell:
     _remove_attribs_()           --  removes all the attributs associated with the commcell
                                         object upon logout
 
+    _get_commserv_name()         --  returns the commserv name
+
     logout()                     --  logs out the user associated with the current instance
 
     request()                    --  runs an input HTTP request on the API specified,
@@ -44,6 +46,7 @@ Commcell:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import getpass
 
@@ -174,6 +177,8 @@ class Commcell(object):
         self.workflows = sdk_dict[WorkFlow]
         self.client_groups = sdk_dict[ClientGroups]
 
+        self._commserv_name = self._get_commserv_name()
+
     def __repr__(self):
         """String representation of the instance of this class.
 
@@ -246,7 +251,7 @@ class Commcell(object):
                 str - final response to be used
         """
         if '<title>' in input_string and '</title>' in input_string:
-            response_string = str(input_string).split("<title>")[1]
+            response_string = input_string.split("<title>")[1]
             response_string = response_string.split("</title>")[0]
             return response_string
         else:
@@ -269,6 +274,48 @@ class Commcell(object):
         del self._password
         del self._services
         del self
+
+    def _get_commserv_name(self):
+        """Returns the CommServ name
+
+            Returns:
+                commserv name if found
+
+                None if commserv name is not found
+
+            Raises:
+                SDKException:
+                    if failed to get commserv name
+
+                    if response received is empty
+
+                    if response is not success
+        """
+        request_url = self._services['COMMSERV']
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', request_url
+        )
+
+        if flag:
+            if response.json():
+                if 'commcell' in response.json():
+                    if 'commCellName' in response.json()['commcell']:
+                        return response.json()['commcell']['commCellName']
+                else:
+                    raise SDKException('Commcell', '103')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return None
+
+    @property
+    def commserv_name(self):
+        """Returns the commserver name"""
+        return self._commserv_name
 
     def logout(self):
         """Logs out the user associated with the current instance."""
