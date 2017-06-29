@@ -25,6 +25,9 @@ Schedules:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -147,14 +150,14 @@ class Schedules(object):
                     else:
                         continue
 
-                    temp_name = str(schedule_name).lower()
+                    temp_name = schedule_name.lower()
                     temp_id = str(schedule['task']['taskId']).lower()
 
                     subtask_dict = {}
 
                     for subtask in schedule['subTasks']:
                         if 'subTaskName' in subtask['subTask']:
-                            subtask_name = str(subtask['subTask']['subTaskName']).lower()
+                            subtask_name = subtask['subTask']['subTaskName'].lower()
                         else:
                             continue
 
@@ -187,7 +190,7 @@ class Schedules(object):
                 SDKException:
                     if type of the schedule name argument is not string
         """
-        if not isinstance(schedule_name, str):
+        if not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
 
-        return self.schedules and str(schedule_name).lower() in self.schedules
+        return self.schedules and schedule_name.lower() in self.schedules

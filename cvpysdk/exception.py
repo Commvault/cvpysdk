@@ -17,6 +17,7 @@ SDKException:       Class inheriting the "Exception" Base class for raising
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 # Common dictionary for all exceptions among the python package
 EXCEPTION_DICT = {
@@ -26,7 +27,8 @@ EXCEPTION_DICT = {
     },
     'Commcell': {
         '101': 'Commcell is not reachable. Please check the commcell name and services again',
-        '102': 'Authtoken not received. Please try again.'
+        '102': 'Authtoken not received. Please try again.',
+        '103': 'Failed to get CommServ name'
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
@@ -126,8 +128,8 @@ class SDKException(Exception):
             Returns:
                 object - instance of the SDKException class of type Exception
         """
-        self.exception_module = str(exception_module)
-        self.exception_id = str(exception_id)
+        self.exception_module = exception_module
+        self.exception_id = exception_id
         self.exception_message = EXCEPTION_DICT[exception_module][exception_id]
 
         if exception_message:

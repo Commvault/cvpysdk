@@ -16,11 +16,13 @@ get_services(web_service):  updates the SERVICES_DICT with the WebConsole API UR
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 
-SERVICES_DICT = {
+SERVICES_DICT_TEMPLATE = {
     'LOGIN': '{0}Login',
     'LOGOUT': '{0}Logout',
+    'COMMSERV': '{0}CommServ',
 
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
@@ -52,6 +54,7 @@ SERVICES_DICT = {
     'LIBRARY': '{0}Library',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
+    'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
     'SCHEDULE_POLICY': '{0}SchedulePolicy',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
@@ -85,7 +88,12 @@ SERVICES_DICT = {
 
     'SQL_RESTORE_OPTIONS': '{0}SQL/RestoreOptions',
 
-    'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute'
+    'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute',
+
+    'SOFTWARESTORE_DOWNLOADITEM': '{0}DownloadFile',
+    'SOFTWARESTORE_GETPKGID': '{0}SoftwareStoreItem',
+
+    'CREATE_TASK': '{0}CreateTask'
 }
 
 
@@ -98,7 +106,8 @@ def get_services(web_service):
         Returns:
             dict    -   services dict consisting of all APIs
     """
-    for service in SERVICES_DICT:
-        SERVICES_DICT[service] = SERVICES_DICT[service].format(web_service)
+    services_dict = SERVICES_DICT_TEMPLATE.copy()
+    for service in services_dict:
+        services_dict[service] = services_dict[service].format(web_service)
 
-    return SERVICES_DICT
+    return services_dict

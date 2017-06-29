@@ -40,6 +40,8 @@ SQLServerInstance:
 
 """
 
+from __future__ import unicode_literals
+
 import datetime
 import time
 import re
@@ -75,15 +77,15 @@ class SQLServerInstance(Instance):
         if destination_instance is None:
             destination_instance = self.instance_name
         else:
-            if str(destination_instance) not in self.destination_instances_dict:
+            if destination_instance not in self.destination_instances_dict:
                 raise SDKException(
-                    'Instance', '102', 'No Instance exists with name: {0}'.format(
-                        str(destination_instance)
-                    )
+                    'Instance',
+                    '102',
+                    'No Instance exists with name: {0}'.format(destination_instance)
                 )
 
         destination_client_id = int(
-            self.destination_instances_dict[str(destination_instance)]['clientId']
+            self.destination_instances_dict[destination_instance]['clientId']
         )
 
         destination_instance_id = int(
@@ -93,9 +95,9 @@ class SQLServerInstance(Instance):
         request_json = {
             "taskInfo": {
                 "associations": [{
-                    "clientName": str(self._agent_object._client_object.client_name),
-                    "appName": str(self._agent_object.agent_name),
-                    "instanceName": str(self.instance_name)
+                    "clientName": self._agent_object._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": self.instance_name
                 }],
                 "task": {
                     "initiatedFrom": 1,
@@ -121,7 +123,7 @@ class SQLServerInstance(Instance):
                             "destination": {
                                 "destinationInstance": {
                                     "clientId": destination_client_id,
-                                    "instanceName": str(destination_instance),
+                                    "instanceName": destination_instance,
                                     "instanceId": destination_instance_id
                                 },
                                 "destClient": {
@@ -136,7 +138,7 @@ class SQLServerInstance(Instance):
 
         if restore_path is not None:
             restore_path_dict = {
-                "restoreToDiskPath": str(restore_path),
+                "restoreToDiskPath": restore_path,
                 "restoreToDisk": True
             }
 
@@ -231,7 +233,7 @@ class SQLServerInstance(Instance):
                 if 'sqlDestinationInstances' in response.json():
                     for instance in response.json()['sqlDestinationInstances']:
                         instances_dict = {
-                            str(instance['genericEntity']['instanceName']).lower(): {
+                            instance['genericEntity']['instanceName'].lower(): {
                                 "instanceId": int(instance['genericEntity']['instanceId']),
                                 "clientId": int(instance['genericEntity']['clientId'])
                             }
@@ -295,13 +297,13 @@ class SQLServerInstance(Instance):
                 if 'sqlDatabase' in response.json():
                     for database in response.json()['sqlDatabase']:
 
-                        database_name = str(database['databaseName'])
+                        database_name = database['databaseName']
 
                         created_time = datetime.datetime.fromtimestamp(
                             int(database['createdTime'])
                         ).strftime('%d-%m-%Y %H:%M:%S')
 
-                        version = str(database['version'])
+                        version = database['version']
 
                         temp = {
                             database_name: [created_time, version]

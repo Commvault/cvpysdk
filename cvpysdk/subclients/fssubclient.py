@@ -21,6 +21,8 @@ FileSystemSubclient:
 
 """
 
+from __future__ import unicode_literals
+
 from ..subclient import Subclient
 
 
@@ -40,7 +42,7 @@ class FileSystemSubclient(Subclient):
             subclient_content = self._subclient_properties['content']
 
             for path in subclient_content:
-                content.append(str(path["path"]))
+                content.append(path["path"])
 
         return content
 

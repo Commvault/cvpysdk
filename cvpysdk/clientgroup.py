@@ -86,8 +86,11 @@ ClientGroup:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import time
+
+from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -158,7 +161,7 @@ class ClientGroups(object):
                 clientgroups_dict = {}
 
                 for client_group in client_groups:
-                    temp_name = str(client_group['name']).lower()
+                    temp_name = client_group['name'].lower()
                     temp_id = str(client_group['Id']).lower()
                     clientgroups_dict[temp_name] = temp_id
 
@@ -188,7 +191,7 @@ class ClientGroups(object):
         clients = []
 
         for client in clients_list:
-            if isinstance(client, str):
+            if isinstance(client, basestring):
                 client = client.strip().lower()
 
                 if self._commcell_object.clients.has_client(client):
@@ -209,10 +212,10 @@ class ClientGroups(object):
                 SDKException:
                     if type of the client group name argument is not string
         """
-        if not isinstance(clientgroup_name, str):
+        if not isinstance(clientgroup_name, basestring):
             raise SDKException('ClientGroup', '101')
 
-        return self._clientgroups and str(clientgroup_name).lower() in self._clientgroups
+        return self._clientgroups and clientgroup_name.lower() in self._clientgroups
 
     def add(self,
             clientgroup_name,
@@ -258,13 +261,14 @@ class ClientGroups(object):
 
                     if client group already exists with the given name
         """
-        if not (isinstance(clientgroup_name, str) and isinstance(clientgroup_description, str)):
+        if not (isinstance(clientgroup_name, basestring) and
+                isinstance(clientgroup_description, basestring)):
             raise SDKException('ClientGroup', '101')
 
         if not self.has_clientgroup(clientgroup_name):
             if isinstance(clients, list):
                 clients = self._valid_clients(clients)
-            elif isinstance(clients, str):
+            elif isinstance(clients, basestring):
                 clients = self._valid_clients(clients.split(','))
             else:
                 raise SDKException('ClientGroup', '101')
@@ -352,10 +356,10 @@ class ClientGroups(object):
 
                     if no client group exists with the given name
         """
-        if not isinstance(clientgroup_name, str):
+        if not isinstance(clientgroup_name, basestring):
             raise SDKException('ClientGroup', '101')
         else:
-            clientgroup_name = str(clientgroup_name).lower()
+            clientgroup_name = clientgroup_name.lower()
 
             if self.has_clientgroup(clientgroup_name):
                 return ClientGroup(
@@ -385,10 +389,10 @@ class ClientGroups(object):
                     if no clientgroup exists with the given name
         """
 
-        if not isinstance(clientgroup_name, str):
+        if not isinstance(clientgroup_name, basestring):
             raise SDKException('ClientGroup', '101')
         else:
-            clientgroup_name = str(clientgroup_name).lower()
+            clientgroup_name = clientgroup_name.lower()
 
             if self.has_clientgroup(clientgroup_name):
                 clientgroup_id = self._clientgroups[clientgroup_name]
@@ -403,7 +407,7 @@ class ClientGroups(object):
                     if response.json():
                         if 'errorCode' in response.json():
                             error_code = str(response.json()['errorCode'])
-                            error_message = str(response.json()['errorMessage'])
+                            error_message = response.json()['errorMessage']
 
                             if error_code == '0':
                                 # initialize the clientgroups again
@@ -448,7 +452,7 @@ class ClientGroup(object):
         """
         self._commcell_object = commcell_object
 
-        self._clientgroup_name = str(clientgroup_name).lower()
+        self._clientgroup_name = clientgroup_name.lower()
 
         if clientgroup_id:
             # Use the client group id provided in the arguments
@@ -510,7 +514,7 @@ class ClientGroup(object):
         clientgroup_props = self._get_clientgroup_properties()
 
         if 'clientGroupName' in clientgroup_props['clientGroup']:
-            self._clientgroup_name = str(clientgroup_props['clientGroup']['clientGroupName'])
+            self._clientgroup_name = clientgroup_props['clientGroup']['clientGroupName']
         else:
             raise SDKException(
                 'ClientGroup', '102', 'Client Group name is not specified in the respone'
@@ -519,13 +523,13 @@ class ClientGroup(object):
         self._description = None
 
         if 'description' in clientgroup_props:
-            self._description = str(clientgroup_props['description'])
+            self._description = clientgroup_props['description']
 
         self._associated_clients = []
 
         if 'associatedClients' in clientgroup_props:
             for client in clientgroup_props['associatedClients']:
-                self._associated_clients.append(str(client['clientName']))
+                self._associated_clients.append(client['clientName'])
 
         self._is_backup_enabled = False
         self._is_restore_enabled = False
@@ -701,7 +705,7 @@ class ClientGroup(object):
         if flag:
             if response.json():
 
-                error_message = str(response.json()['errorMessage'])
+                error_message = response.json()['errorMessage']
                 error_code = str(response.json()['errorCode'])
 
                 if error_code == '0':
@@ -738,12 +742,12 @@ class ClientGroup(object):
 
                     if failed to remove clients from the ClientGroup
         """
-        if isinstance(clients, str) or isinstance(clients, list):
+        if isinstance(clients, basestring) or isinstance(clients, list):
             clientgroups_object = ClientGroups(self._commcell_object)
 
             if isinstance(clients, list):
                 validated_clients_list = clientgroups_object._valid_clients(clients)
-            elif isinstance(clients, str):
+            elif isinstance(clients, basestring):
                 validated_clients_list = clientgroups_object._valid_clients(clients.split(','))
 
             if operation_type in ['ADD', 'OVERWRITE']:
@@ -802,7 +806,7 @@ class ClientGroup(object):
         for client in self._associated_clients:
             o_str += '\t' + client + '\n'
 
-        return str(o_str.strip())
+        return o_str.strip()
 
     @property
     def is_backup_enabled(self):
@@ -1062,7 +1066,7 @@ class ClientGroup(object):
     @clientgroup_name.setter
     def clientgroup_name(self, value):
         """Sets the name of the clientgroup as the value provided as input."""
-        if isinstance(value, str):
+        if isinstance(value, basestring):
             output = self._update(
                 clientgroup_name=value,
                 clientgroup_description=self.description,
@@ -1082,7 +1086,7 @@ class ClientGroup(object):
     @description.setter
     def description(self, value):
         """Sets the description of the clientgroup as the value provided in input."""
-        if isinstance(value, str):
+        if isinstance(value, basestring):
             output = self._update(
                 clientgroup_name=self.clientgroup_name,
                 clientgroup_description=value,

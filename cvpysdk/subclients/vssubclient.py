@@ -58,7 +58,11 @@ VirtualServerSubclient:
 
 """
 
+from __future__ import unicode_literals
+
 import xmltodict
+
+from past.builtins import basestring
 
 from ..exception import SDKException
 from ..subclient import Subclient
@@ -92,10 +96,10 @@ class VirtualServerSubclient(Subclient):
                 children = subclient_content['children']
 
                 for child in children:
-                    path = str(child['path']) if 'path' in child else None
-                    display_name = str(child['displayName'])
-                    content_type = content_types[str(child['type'])]
-                    vm_id = str(child['name'])
+                    path = child['path'] if 'path' in child else None
+                    display_name = child['displayName']
+                    content_type = content_types[child['type']]
+                    vm_id = child['name']
 
                     temp_dict = {
                         'id': vm_id,
@@ -651,8 +655,8 @@ class VirtualServerSubclient(Subclient):
         """
         from ..client import Client
 
-        if not ((isinstance(client, str) or isinstance(client, Client)) and
-                isinstance(destination_path, str) and
+        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
+                isinstance(destination_path, basestring) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -660,12 +664,12 @@ class VirtualServerSubclient(Subclient):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, str):
+        elif isinstance(client, basestring):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException('Subclient', '105')
 
-        vm_ids, vm_names = self._get_vm_ids_and_names_dict()
+        _, vm_names = self._get_vm_ids_and_names_dict()
 
         paths = self._process_restore_request(vm_names, paths)
 
@@ -721,12 +725,12 @@ class VirtualServerSubclient(Subclient):
 
                     if response is not success
         """
-        if not (isinstance(vm_to_restore, str) and
+        if not (isinstance(vm_to_restore, basestring) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
             raise SDKException('Subclient', '101')
 
-        vm_ids, vm_names = self._get_vm_ids_and_names_dict()
+        _, vm_names = self._get_vm_ids_and_names_dict()
 
         vms_to_restore = self._process_restore_request(vm_names, ['\\' + vm_to_restore])
 

@@ -51,6 +51,7 @@ job.delay_reason                --  reason why the job was delayed
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import time
 import threading
@@ -97,7 +98,7 @@ class Job(object):
         self._KILL = self._commcell_object._services['KILL_JOB'] % (self.job_id)
 
         self.finished = self._is_finished()
-        self.status = str(self._get_job_summary()['status'])
+        self.status = self._get_job_summary()['status']
 
         self._delay_reason = None
         self._pending_reason = None
@@ -122,7 +123,7 @@ class Job(object):
             Returns:
                 bool - boolean that represents whether the job is valid or not
         """
-        for i in range(10):
+        for _ in range(10):
             try:
                 self._get_job_summary()
                 return True
@@ -151,7 +152,7 @@ class Job(object):
         job_summary = self._get_job_summary()
         job_details = self._get_job_details()
 
-        self.status = str(job_summary['status'])
+        self.status = job_summary['status']
 
         if job_summary['lastUpdateTime'] != 0:
             self._end_time = time.ctime(job_summary['lastUpdateTime'])
@@ -239,36 +240,36 @@ class Job(object):
         subclient_properties = job_summary['subclient']
 
         if 'clientName' in subclient_properties:
-            self._client_name = str(subclient_properties['clientName'])
+            self._client_name = subclient_properties['clientName']
         else:
             self._client_name = None
 
         if 'appName' in subclient_properties:
-            self._agent_name = str(subclient_properties['appName'])
+            self._agent_name = subclient_properties['appName']
         else:
             self._agent_name = None
 
         if 'backupsetName' in subclient_properties:
-            self._backupset_name = str(subclient_properties['backupsetName'])
+            self._backupset_name = subclient_properties['backupsetName']
         else:
             self._backupset_name = None
 
         if 'instanceName' in subclient_properties:
-            self._instance_name = str(subclient_properties['instanceName'])
+            self._instance_name = subclient_properties['instanceName']
         else:
             self._instance_name = None
 
-        self._job_type = str(job_summary['jobType'])
+        self._job_type = job_summary['jobType']
 
         if self._job_type == 'Backup' and 'backupLevelName' in job_summary:
-            self._backup_level = str(job_summary['backupLevelName'])
+            self._backup_level = job_summary['backupLevelName']
         else:
             self._backup_level = None
 
         self._start_time = time.ctime(job_summary['jobStartTime'])
 
         if 'subclientName' in subclient_properties:
-            self._subclient_name = str(subclient_properties['subclientName'])
+            self._subclient_name = subclient_properties['subclientName']
         else:
             self._subclient_name = None
 
@@ -378,14 +379,13 @@ class Job(object):
         if flag:
             if response.json() and 'errors' in response.json():
                 error_list = response.json()['errors'][0]['errList'][0]
-                error_message = str(error_list['errLogMessage']).strip()
+                error_message = error_list['errLogMessage'].strip()
 
-                raise SDKException('Job', '102', 'Job suspend failed\nError: "{0}"'.format(
-                        error_message
-                    )
+                raise SDKException(
+                    'Job', '102', 'Job suspend failed\nError: "{0}"'.format(error_message)
                 )
             else:
-                self.status = str(self._get_job_summary()['status'])
+                self.status = self._get_job_summary()['status']
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -411,14 +411,13 @@ class Job(object):
         if flag:
             if response.json() and 'errors' in response.json():
                 error_list = response.json()['errors'][0]['errList'][0]
-                error_message = str(error_list['errLogMessage']).strip()
+                error_message = error_list['errLogMessage'].strip()
 
-                raise SDKException('Job', '102', 'Job resume failed\nError: "{0}"'.format(
-                        error_message
-                    )
+                raise SDKException(
+                    'Job', '102', 'Job resume failed\nError: "{0}"'.format(error_message)
                 )
             else:
-                self.status = str(self._get_job_summary()['status'])
+                self.status = self._get_job_summary()['status']
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -444,17 +443,16 @@ class Job(object):
         if flag:
             if response.json() and 'errors' in response.json():
                 error_list = response.json()['errors'][0]['errList'][0]
-                error_message = str(error_list['errLogMessage']).strip()
+                error_message = error_list['errLogMessage'].strip()
 
-                raise SDKException('Job', '102', 'Job kill failed\nError: "{0}"'.format(
-                        error_message
-                    )
+                raise SDKException(
+                    'Job', '102', 'Job kill failed\nError: "{0}"'.format(error_message)
                 )
             else:
-                self.status = str(self._get_job_summary()['status'])
+                self.status = self._get_job_summary()['status']
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
         if wait_for_job_to_kill is True:
-            self._wait_for_status_to_change("KILLED")
+            self._wait_for_status("KILLED")

@@ -27,6 +27,7 @@ CVPySDK:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import requests
 
@@ -109,7 +110,7 @@ class CVPySDK(object):
             if flag:
                 if response.json():
                     if "userName" in response.json() and "token" in response.json():
-                        return str(response.json()['token']), str(response.json()['userGUID'])
+                        return response.json()['token'], response.json()['userGUID']
                     else:
                         error_message = response.json()['errList'][0]['errLogMessage']
                         err_msg = 'Error: "{0}"'.format(error_message)

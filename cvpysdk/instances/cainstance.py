@@ -20,6 +20,8 @@ CloudAppsInstance:
 
 """
 
+from __future__ import unicode_literals
+
 from ..instance import Instance
 
 

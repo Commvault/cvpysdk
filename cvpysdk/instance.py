@@ -48,6 +48,9 @@ Instance:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
 
 from .subclient import Subclients
 from .exception import SDKException
@@ -138,10 +141,10 @@ class Instances(object):
 
                     for dictionary in response.json()['instanceProperties']:
 
-                        agent = str(dictionary['instance']['appName']).lower()
+                        agent = dictionary['instance']['appName'].lower()
 
                         if self._agent_object.agent_name in agent:
-                            temp_name = str(dictionary['instance']['instanceName']).lower()
+                            temp_name = dictionary['instance']['instanceName'].lower()
                             temp_id = str(dictionary['instance']['instanceId']).lower()
                             return_dict[temp_name] = temp_id
 
@@ -171,10 +174,10 @@ class Instances(object):
                 SDKException:
                     if type of the instance name argument is not string
         """
-        if not isinstance(instance_name, str):
+        if not isinstance(instance_name, basestring):
             raise SDKException('Instance', '101')
 
-        return self._instances and str(instance_name).lower() in self._instances
+        return self._instances and instance_name.lower() in self._instances
 
     def get(self, instance_name):
         """Returns a instance object of the specified instance name.
@@ -191,10 +194,10 @@ class Instances(object):
 
                     if no instance exists with the given name
         """
-        if not isinstance(instance_name, str):
+        if not isinstance(instance_name, basestring):
             raise SDKException('Instance', '101')
         else:
-            instance_name = str(instance_name).lower()
+            instance_name = instance_name.lower()
 
             agent_name = self._agent_object.agent_name
 
@@ -235,7 +238,7 @@ class Instance(object):
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
-        self._instance_name = str(instance_name).lower()
+        self._instance_name = instance_name.lower()
 
         if instance_id:
             # Use the instance id provided in the arguments
@@ -283,7 +286,7 @@ class Instance(object):
                 self._properties = response.json()["instanceProperties"][0]
 
                 instance_name = self._properties["instance"]["instanceName"]
-                self._instance_name = str(instance_name).lower()
+                self._instance_name = instance_name.lower()
             else:
                 raise SDKException('Response', '102')
         else:

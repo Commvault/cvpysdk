@@ -23,6 +23,10 @@ CloudAppsSubclient:
 
 """
 
+from __future__ import unicode_literals
+
+from past.builtins import basestring
+
 from ..exception import SDKException
 from ..subclient import Subclient
 
@@ -125,8 +129,8 @@ class CloudAppsSubclient(Subclient):
         """
         from ..client import Client
 
-        if not ((isinstance(client, str) or isinstance(client, Client)) and
-                isinstance(destination_path, str) and
+        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
+                isinstance(destination_path, basestring) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -134,7 +138,7 @@ class CloudAppsSubclient(Subclient):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, str):
+        elif isinstance(client, basestring):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException('Subclient', '105')
@@ -157,13 +161,13 @@ class CloudAppsSubclient(Subclient):
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]['cloudAppsRestoreOptions'] = {
-            "instanceType": self._backupset_object._instance_object._ca_instance_type,
-            "googleRestoreOptions": {
-                "strDestUserAccount": destination_path,
-                "folderGuid": "",
-                "restoreToDifferentAccount": True,
-                "restoreToGoogle": True
+                "instanceType": self._backupset_object._instance_object._ca_instance_type,
+                "googleRestoreOptions": {
+                    "strDestUserAccount": destination_path,
+                    "folderGuid": "",
+                    "restoreToDifferentAccount": True,
+                    "restoreToGoogle": True
+                }
             }
-        }
 
         return self._process_restore_response(request_json)
