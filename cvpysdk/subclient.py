@@ -38,47 +38,57 @@ Subclients:
 Subclient:
     __init__(backupset_object,
              subclient_name,
-             subclient_id)      --  initialise instance of the Subclient class,
-                                        associated to the specified backupset
+             subclient_id)              --  initialise instance of the Subclient class,
+                                                associated to the specified backupset
 
-    __repr__()                  --  return the subclient name, the instance is associated with
+    __repr__()                          --  return the subclient name, the instance is associated
+                                                with
 
-    _get_subclient_id()         --  method to get subclient id, if not specified in __init__ method
+    _get_subclient_id()                 --  method to get subclient id, if not specified in
+                                                __init__ method
 
-    _get_subclient_properties() --  get the properties of this subclient
+    _get_subclient_properties()         --  get the properties of this subclient
 
-    _initialize_subclient_properties() --  initializes the properties of this subclient
+    _initialize_subclient_properties()  --  initializes the properties of this subclient
 
-    _update()                   --  updates the properties of a subclient
+    _update()                           --  updates the properties of a subclient
 
-    _filter_paths()             --  filters the path as per the OS, and the Agent
+    _filter_paths()                     --  filters the path as per the OS, and the Agent
 
-    _process_backup_request()   --  runs the backup request provided, and processes the response
+    _process_backup_response()          --  process response received from backup request
 
-    _browse_and_find_json()     --  returns the appropriate JSON request to pass for either
-                                        Browse operation or Find operation
+    _browse_and_find_json()             --  returns the appropriate JSON request to pass for either
+                                                Browse operation or Find operation
 
-    _process_browse_response()  --  processes response received for both Browse and Find request
+    _process_browse_response()          --  processes response received for both Browse and Find
+                                                request
 
-    _restore_json()             --  returns the apppropriate JSON request to pass for either
-                                        Restore In-Place or Out-of-Place operation
+    _restore_json()                     --  returns the apppropriate JSON request to pass for
+                                                either Restore In-Place or Out-of-Place operation
 
-    _process_restore_response() --  processes response received for the Restore request
+    _process_restore_response()         --  processes response received for the Restore request
 
-    description()               --  update the description of the subclient
+    description()                       --  update the description of the subclient
 
-    content()                   --  update the content of the subclient
+    content()                           --  update the content of the subclient
 
-    enable_backup()             --  enables the backup for the subclient
+    storage_policy()                    --  update the storage policy for this subclient
 
-    enable_backup_at_time()     --  enables backup for the subclient at the input time specified
+    enable_backup()                     --  enables the backup for the subclient
 
-    disble_backup()             --  disbles the backup for the subclient
+    enable_backup_at_time()             --  enables backup for the subclient at the input time
+                                                specified
 
-    backup()                    --  run a backup job for the subclient
+    disble_backup()                     --  disbles the backup for the subclient
 
-    browse()                    --  gets the content of the backup for this subclient
-                                        at the path specified
+    enable_intelli_snap()               --  enables the intelli snap for the subclient
+
+    disable_intelli_snap()              --  disables the intelli snap for subclient
+
+    backup()                            --  run a backup job for the subclient
+
+    browse()                            --  gets the content of the backup for this subclient
+                                                at the path specified
 
     browse_in_time()            --  gets the content of the backup for this subclient
                                         at the input path in the time range specified
@@ -94,11 +104,13 @@ Subclient:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import re
 import math
 import time
 
+from past.builtins import basestring
 from future.standard_library import install_aliases
 
 from .job import Job
@@ -162,11 +174,13 @@ class Subclients(object):
         from .subclients.vssubclient import VirtualServerSubclient
         from .subclients.casubclient import CloudAppsSubclient
         from .subclients.sqlsubclient import SQLServerSubclient
+        from .subclients.nassubclient import NASSubclient
 
         globals()['FileSystemSubclient'] = FileSystemSubclient
         globals()['VirtualServerSubclient'] = VirtualServerSubclient
         globals()['CloudAppsSubclient'] = CloudAppsSubclient
         globals()['SQLServerSubclient'] = SQLServerSubclient
+        globals()['NASSubclient'] = NASSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -174,7 +188,8 @@ class Subclients(object):
             'file system': FileSystemSubclient,
             'virtual server': VirtualServerSubclient,
             'cloud apps': CloudAppsSubclient,
-            'sql server': SQLServerSubclient
+            'sql server': SQLServerSubclient,
+            'nas': NASSubclient
         }
 
     def __str__(self):
@@ -244,20 +259,20 @@ class Subclients(object):
                 return_dict = {}
 
                 for dictionary in response.json()['subClientProperties']:
-                    backupset = str(dictionary['subClientEntity']['backupsetName']).lower()
-                    instance = str(dictionary['subClientEntity']['instanceName']).lower()
+                    backupset = dictionary['subClientEntity']['backupsetName'].lower()
+                    instance = dictionary['subClientEntity']['instanceName'].lower()
 
                     if self._backupset_object is not None:
                         if (self._instance_object.instance_name in instance and
                                 self._backupset_object.backupset_name in backupset):
-                            temp_name = str(dictionary['subClientEntity']['subclientName']).lower()
+                            temp_name = dictionary['subClientEntity']['subclientName'].lower()
                             temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
                             return_dict[temp_name] = {
                                 "id": temp_id,
                                 "backupset": backupset
                             }
                     elif self._instance_object.instance_name in instance:
-                        temp_name = str(dictionary['subClientEntity']['subclientName']).lower()
+                        temp_name = dictionary['subClientEntity']['subclientName'].lower()
                         temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
 
                         if len(self._instance_object.backupsets._backupsets) > 1:
@@ -291,12 +306,12 @@ class Subclients(object):
                 SDKException:
                     if type of the subclient name argument is not string
         """
-        if not isinstance(subclient_name, str):
+        if not isinstance(subclient_name, basestring):
             raise SDKException('Subclient', '101')
 
-        return self._subclients and str(subclient_name).lower() in self._subclients
+        return self._subclients and subclient_name.lower() in self._subclients
 
-    def add(self, subclient_name, storage_policy, description='', log_backup_storage_policy=None):
+    def add(self, subclient_name, storage_policy, description=''):
         """Adds a new subclient to the backupset.
 
             Args:
@@ -306,10 +321,6 @@ class Subclients(object):
                                                     associate with the subclient
 
                 description         (str)   --  description for the subclient (optional)
-
-                log_storage_policy  (str)   --  name of the log storage policy
-                        (optional applicable only for SQL Server Agent)
-                    default: None
 
             Returns:
                 object - instance of the Subclient class
@@ -330,9 +341,9 @@ class Subclients(object):
 
                     if subclient already exists with the given name
         """
-        if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str) and
-                isinstance(description, str)):
+        if not (isinstance(subclient_name, basestring) and
+                isinstance(storage_policy, basestring) and
+                isinstance(description, basestring)):
             raise SDKException('Subclient', '101')
 
         if self.has_subclient(subclient_name):
@@ -376,20 +387,6 @@ class Subclients(object):
                 }
             }
         }
-
-        if log_backup_storage_policy:
-            if not isinstance(log_backup_storage_policy, str):
-                raise SDKException('Subclient', '101')
-
-            log_storage_policy_dict = {
-                "logBackupStoragePolicy": {
-                    "storagePolicyName": log_backup_storage_policy
-                }
-            }
-
-            request_json["subClientProperties"]["commonProperties"]["storageDevice"].update(
-                log_storage_policy_dict
-            )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._ADD_SUBCLIENT, request_json
@@ -439,10 +436,10 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         """
-        if not isinstance(subclient_name, str):
+        if not isinstance(subclient_name, basestring):
             raise SDKException('Subclient', '101')
         else:
-            subclient_name = str(subclient_name).lower()
+            subclient_name = subclient_name.lower()
 
             agent_name = self._instance_object._agent_object.agent_name
 
@@ -478,10 +475,10 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         """
-        if not isinstance(subclient_name, str):
+        if not isinstance(subclient_name, basestring):
             raise SDKException('Subclient', '101')
         else:
-            subclient_name = str(subclient_name).lower()
+            subclient_name = subclient_name.lower()
 
         if self.has_subclient(subclient_name):
             delete_subclient_service = self._commcell_object._services['SUBCLIENT'] % (
@@ -500,7 +497,7 @@ class Subclients(object):
                         error_message = None
 
                         if 'errorString' in response_value:
-                            error_message = str(response_value['errorString'])
+                            error_message = response_value['errorString']
 
                         if error_message:
                             o_str = 'Failed to delete subclient\nError: "{0}"'
@@ -544,7 +541,7 @@ class Subclient(object):
                 object - instance of the Subclient class
         """
         self._backupset_object = backupset_object
-        self._subclient_name = str(subclient_name).split('\\')[-1].lower()
+        self._subclient_name = subclient_name.split('\\')[-1].lower()
         self._commcell_object = self._backupset_object._commcell_object
 
         if subclient_id:
@@ -553,7 +550,6 @@ class Subclient(object):
             self._subclient_id = self._get_subclient_id()
 
         self._SUBCLIENT = self._commcell_object._services['SUBCLIENT'] % (self.subclient_id)
-        self._BACKUP = None
 
         self._BROWSE = self._commcell_object._services['BROWSE']
         self._RESTORE = self._commcell_object._services['RESTORE']
@@ -617,13 +613,15 @@ class Subclient(object):
 
         self._description = None
         self._last_backup_time = None
-        self._on_demand_subclient = False
+        self._is_on_demand_subclient = False
         self._next_backup = None
         self._is_backup_enabled = False
         self._storage_policy = None
+        self._data_readers = 2
+        self._is_intelli_snap_enabled = False
 
         if 'description' in self._subclient_properties['commonProperties']:
-            self._description = str(self._subclient_properties['commonProperties']['description'])
+            self._description = self._subclient_properties['commonProperties']['description']
 
         if 'lastBackupTime' in self._subclient_properties['commonProperties']:
             if self._subclient_properties['commonProperties']['lastBackupTime'] != 0:
@@ -631,9 +629,12 @@ class Subclient(object):
                     self._subclient_properties['commonProperties']['lastBackupTime']
                 )
 
-        if 'onDemandSubClient' in self._subclient_properties['commonProperties']:
-            self._on_demand_subclient = self._subclient_properties[
-                'commonProperties']['onDemandSubClient']
+        self._is_on_demand_subclient = self._backupset_object.is_on_demand_backupset
+
+        if 'numberOfBackupStreams' in self._subclient_properties['commonProperties']:
+            self._data_readers = int(
+                self._subclient_properties['commonProperties']['numberOfBackupStreams']
+            )
 
         if 'nextBackupTime' in self._subclient_properties['commonProperties']:
             if self._subclient_properties['commonProperties']['nextBackupTime'] != 0:
@@ -650,9 +651,15 @@ class Subclient(object):
         storage_device = self._subclient_properties['commonProperties']['storageDevice']
 
         if 'dataBackupStoragePolicy' in storage_device:
-            if 'storagePolicyName' in storage_device['dataBackupStoragePolicy']:
-                self._storage_policy = str(
-                    storage_device['dataBackupStoragePolicy']['storagePolicyName']
+            data_backup_storage_policy = storage_device['dataBackupStoragePolicy']
+            if 'storagePolicyName' in data_backup_storage_policy:
+                self._storage_policy = data_backup_storage_policy['storagePolicyName']
+
+        if 'snapCopyInfo' in self._subclient_properties['commonProperties']:
+            snap_copy_info = self._subclient_properties['commonProperties']['snapCopyInfo']
+            if 'isSnapBackupEnabled' in snap_copy_info:
+                self._is_intelli_snap_enabled = bool(
+                    snap_copy_info['isSnapBackupEnabled']
                 )
 
     @staticmethod
@@ -674,14 +681,104 @@ class Subclient(object):
         size = round(input_size / power, 2)
         return '%s %s' % (size, size_name[i])
 
+    def _process_update_response(self, flag, response):
+        """Updates the subclient properties with the request provided.
+
+            Args:
+                update_request  (str)  --  update request specifying the details to update
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if failed to update properties
+
+                    if response is empty
+
+                    if response is not success
+        """
+        self._initialize_subclient_properties()
+
+        if flag:
+            if response.json():
+                if "response" in response.json():
+                    error_code = str(response.json()["response"][0]["errorCode"])
+
+                    if error_code == "0":
+                        return (True, "0", "")
+                    else:
+                        error_message = ""
+
+                        if "errorString" in response.json()["response"][0]:
+                            error_message = response.json()["response"][0]["errorString"]
+
+                        if error_message:
+                            return (False, error_code, error_message)
+                        else:
+                            return (False, error_code, "")
+                elif "errorCode" in response.json():
+                    error_code = str(response.json()['errorCode'])
+                    error_message = response.json()['errorMessage']
+
+                    if error_code == "0":
+                        return (True, "0", "")
+
+                    if error_message:
+                        return (False, error_code, error_message)
+                    else:
+                        return (False, error_code, "")
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _update_subclient_props_json(self, properties_dict):
+        """Updates the common properties of the subclient
+
+            Args:
+                properties_dict (dict)  --  client property dict which is to be updated
+                    e.g.: {
+                            "numberOfBackupStreams": 2
+                          }
+
+            Raises:
+                SDKException:
+                    if failed to update properties
+
+                    if response is empty
+
+                    if response is not success
+        """
+        request_json = {
+            "subClientProperties": {
+                "commonProperties": {}
+            },
+            "association": {
+                "entity": [{
+                    "subclientName": self._subclient_name
+                }]
+            }
+        }
+
+        request_json['subClientProperties']['commonProperties'].update(properties_dict)
+
+        return request_json
+
     def _update(
             self,
             subclient_description,
             subclient_content,
             backup=True,
-            enable_time=None,
-            storage_policy=None,
-            log_backup_storage_policy=None):
+            enable_time=None):
         """Updates the properties of the subclient.
 
             Args:
@@ -693,15 +790,8 @@ class Subclient(object):
 
                 enable_time                 (str)     --  time to re-enable the activity at
 
-                storage_policy              (str)     --  storage policy assigned to subclient
-                    default: None
-
-                log_backup_storage_policy   (str)     --  log backup storage policy assigned to
-                                                            subclient
-                    default: None
-
             Returns:
-                (bool, str, str):
+                (bool, basestring, basestring):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -771,48 +861,10 @@ class Subclient(object):
             }
         }
 
-        request_json3 = {
-            "subClientProperties": {
-                "commonProperties": {
-                    "storageDevice": {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": storage_policy
-                        },
-                    }
-                }
-            },
-            "association": {
-                "entity": [{
-                    "subclientName": self._subclient_name
-                }]
-            }
-        }
-
         if enable_time is None:
             request_json = request_json1
         else:
             request_json = request_json2
-
-        if storage_policy is not None:
-            request_json = request_json3
-
-            if storage_policy not in self._commcell_object.storage_policies._policies:
-                raise SDKException(
-                    'Subclient',
-                    '102',
-                    'Storage Policy: "{0}" does not exist in the Commcell'.format(storage_policy)
-                )
-
-            if log_backup_storage_policy is not None:
-                log_backup_storage_policy_dict = {
-                    "logBackupStoragePolicy": {
-                        "storagePolicyName": log_backup_storage_policy
-                    }
-                }
-
-                request_json['subClientProperties']['commonProperties']['storageDevice'].update(
-                    log_backup_storage_policy_dict
-                )
 
         http_request = 'POST'
         request_url = self._SUBCLIENT
@@ -832,43 +884,7 @@ class Subclient(object):
             http_request, request_url, request_json
         )
 
-        self._initialize_subclient_properties()
-
-        if flag:
-            if response.json():
-                if "response" in response.json():
-                    error_code = str(response.json()["response"][0]["errorCode"])
-
-                    if error_code == "0":
-                        return (True, "0", "")
-                    else:
-                        error_message = ""
-
-                        if "errorString" in response.json()["response"][0]:
-                            error_message = response.json()["response"][0]["errorString"]
-
-                        if error_message:
-                            return (False, error_code, error_message)
-                        else:
-                            return (False, error_code, "")
-                elif "errorCode" in response.json():
-                    error_code = str(response.json()['errorCode'])
-                    error_message = str(response.json()['errorMessage'])
-
-                    if error_code == "0":
-                        return (True, "0", "")
-
-                    if error_message:
-                        return (False, error_code, error_message)
-                    else:
-                        return (False, error_code, "")
-                else:
-                    raise SDKException('Response', '102')
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+        return self._process_update_response(flag, response)
 
     def _filter_paths(self, paths, is_single_path=False):
         """Filters the paths based on the Operating System, and Agent.
@@ -906,12 +922,11 @@ class Subclient(object):
         else:
             return paths
 
-    def _process_backup_request(self, backup_request):
+    def _process_backup_response(self, flag, response):
         """Runs the Backup for a subclient with the request provided and returns the Job object.
 
             Args:
-                backup_request  (str)  --  backup request specifying the backup level,
-                                               to run for the subclient
+                update_request  (str)  --  update request specifying the details to update
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -924,12 +939,6 @@ class Subclient(object):
 
                     if response is not success
         """
-        self._BACKUP = self._commcell_object._services['SUBCLIENT_BACKUP'] % (
-            self.subclient_id, backup_request
-        )
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._BACKUP)
-
         if flag:
             if response.json():
                 if "jobIds" in response.json():
@@ -1070,8 +1079,8 @@ class Subclient(object):
                         paths = []
 
                         for result in result_set:
-                            name = str(result['displayName'])
-                            path = str(result['path'])
+                            name = result['displayName']
+                            path = result['path']
 
                             if 'modificationTime' in result:
                                 mod_time = time.localtime(result['modificationTime'])
@@ -1142,7 +1151,10 @@ class Subclient(object):
             client=None,
             destination_path=None,
             overwrite=True,
-            restore_data_and_acl=True):
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -1189,7 +1201,10 @@ class Subclient(object):
                     "options": {
                         "restoreOptions": {
                             "commonOptions": {
-                                "unconditionalOverwrite": overwrite
+                                "unconditionalOverwrite": overwrite,
+                                "preserveLevel": 1,
+                                "stripLevel": 2,
+                                "stripLevelType": 0
                             },
                             "destination": {
                                 "inPlace": in_place,
@@ -1214,6 +1229,120 @@ class Subclient(object):
         if destination_path is not None:
             request_json['taskInfo']["subTasks"][0]["options"][
                 "restoreOptions"]["destination"]["destPath"] = [destination_path]
+
+        if copy_precedence:
+            temp = {
+                "browseOption": {
+                    "mediaOption": {
+                        "copyPrecedence": {
+                            "copyPrecedenceApplicable": True,
+                            "synchronousCopyPrecedence": copy_precedence,
+                            "copyPrecedence": copy_precedence
+                        }
+                    }
+                }
+            }
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(temp)
+
+        restore_option = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']
+
+        if from_time and (from_time != '01/01/1970 00:00:00' and from_time != '1/1/1970 00:00:00'):
+            temp = {
+                "browseOption": {
+                    "timeRange": {
+                        "fromTimeValue": from_time
+                    }
+                }
+            }
+
+            if 'browseOption' in restore_option:
+                if 'timeRange' in restore_option['browseOption']:
+                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                        'browseOption']['timeRange'].update(temp['browseOption']['timeRange'])
+                else:
+                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                        'browseOption'].update(temp['browseOption'])
+            else:
+                request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(temp)
+
+        if to_time and (to_time != '01/01/1970 00:00:00' and to_time != '1/1/1970 00:00:00'):
+            temp = {
+                "browseOption": {
+                    "timeRange": {
+                        "toTimeValue": to_time
+                    }
+                }
+            }
+
+            if 'browseOption' in restore_option:
+                if 'timeRange' in restore_option['browseOption']:
+                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                        'browseOption']['timeRange'].update(temp['browseOption']['timeRange'])
+                else:
+                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                        'browseOption'].update(temp['browseOption'])
+            else:
+                request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(temp)
+
+        return request_json
+
+    def _backup_json(self,
+                     backup_level,
+                     incremental_backup,
+                     incremental_level):
+        """Returns the JSON request to pass to the API as per the options selected by the user.
+
+            Args:
+                backup_level        (str)   --  level of backup the user wish to run
+                        Full / Incremental / Differential / Synthetic_full
+
+                incremental_backup  (bool)  --  run incremental backup
+                        only applicable in case of Synthetic_full backup
+
+                incremental_level   (str)   --  run incremental backup before/after synthetic full
+                        BEFORE_SYNTH / AFTER_SYNTH
+
+                        only applicable in case of Synthetic_full backup
+
+            Returns:
+                dict - JSON request to pass to the API
+        """
+        request_json = {
+            "taskInfo": {
+                "associations": [{
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "subclientName": self.subclient_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "instanceName": self._backupset_object._instance_object.instance_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                }],
+                "task": {
+                    "initiatedFrom": 2,
+                    "taskType": 1,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "isEdgeDrive": False,
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 2,
+                            "operationType": 2
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "backupLevel": backup_level,
+                                "incLevel": incremental_level,
+                                "runIncrementalBackup": incremental_backup
+                            }
+                        }
+                    }
+                ]
+            }
+        }
 
         return request_json
 
@@ -1267,11 +1396,6 @@ class Subclient(object):
         return self._subclient_name
 
     @property
-    def on_demand_subclient(self):
-        """Treats the on demand subclient as a read-only attribute."""
-        return self._on_demand_subclient
-
-    @property
     def last_backup_time(self):
         """Treats the last backup time as a read-only attribute."""
         return self._last_backup_time
@@ -1285,6 +1409,16 @@ class Subclient(object):
     def is_backup_enabled(self):
         """Treats the is backup enabled as a read-only attribute."""
         return self._is_backup_enabled
+
+    @property
+    def is_intelli_snap_enabled(self):
+        """Treats the is intelli snap enabled as a read-only attribute."""
+        return self._is_intelli_snap_enabled
+
+    @property
+    def is_on_demand_subclient(self):
+        """Treats the on demand subclient as a read-only attribute."""
+        return self._is_on_demand_subclient
 
     @property
     def description(self):
@@ -1301,6 +1435,44 @@ class Subclient(object):
         """Treats the subclient storage policy as a read-only attribute."""
         return self._storage_policy
 
+    @property
+    def data_readers(self):
+        """Treats the data readers as a read-only attribute."""
+        return self._data_readers
+
+    @data_readers.setter
+    def data_readers(self, value):
+        """Sets the count of data readers for the subclient as the value provided as input.
+
+            Raises:
+                SDKException:
+                    if failed to update number of data readers for subclient
+
+                    if the type of value input is not string
+        """
+        if isinstance(value, int):
+            properties_dict = {
+                "numberOfBackupStreams": value
+            }
+
+            request_json = self._update_subclient_props_json(properties_dict)
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', self._SUBCLIENT, request_json
+            )
+
+            output = self._process_update_response(flag, response)
+
+            if output[0]:
+                return
+            else:
+                o_str = 'Failed to update data readers value for subclient\nError: "{0}"'
+                raise SDKException('Subclient', '102', o_str.format(output[2]))
+        else:
+            raise SDKException(
+                'Subclient', '102', 'Subclient data readers should be an int value'
+            )
+
     @description.setter
     def description(self, value):
         """Sets the description of the subclient as the value provided as input.
@@ -1311,7 +1483,7 @@ class Subclient(object):
 
                     if the type of value input is not string
         """
-        if isinstance(value, str):
+        if isinstance(value, basestring):
             output = self._update(value, self.content, self.is_backup_enabled)
 
             if output[0]:
@@ -1359,10 +1531,32 @@ class Subclient(object):
             Raises:
                 SDKException:
                     if failed to update storage policy name
+
                     if storage policy name is not in string format
         """
-        if isinstance(value, str):
-            output = self._update(self.description, self.content, storage_policy=value)
+        if isinstance(value, basestring):
+            if value not in self._commcell_object.storage_policies._policies:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Storage Policy: "{0}" does not exist in the Commcell'.format(value)
+                )
+
+            properties_dict = {
+                "storageDevice": {
+                    "dataBackupStoragePolicy": {
+                        "storagePolicyName": value
+                    }
+                }
+            }
+
+            request_json = self._update_subclient_props_json(properties_dict)
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', self._SUBCLIENT, request_json
+            )
+
+            output = self._process_update_response(flag, response)
 
             if output[0]:
                 return
@@ -1438,11 +1632,75 @@ class Subclient(object):
             o_str = 'Failed to disable backup for the subclient\nError: "{0}"'
             raise SDKException('Subclient', '102', o_str.format(output[2]))
 
+    def enable_intelli_snap(self, snap_engine_name):
+        """Enables Intelli Snap for the subclient.
+
+            Args:
+                snap_engine_name    (str)   --  Snap Engine Name
+
+            Raises:
+                SDKException:
+                    if failed to enable intelli snap for subclient
+        """
+        if not isinstance(snap_engine_name, basestring):
+            raise SDKException("Subclient", "101")
+
+        properties_dict = {
+            "snapCopyInfo": {
+                "isSnapBackupEnabled": True,
+                "snapToTapeSelectedEngine": {
+                    "snapShotEngineName": snap_engine_name
+                }
+            }
+        }
+
+        request_json = self._update_subclient_props_json(properties_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._SUBCLIENT, request_json
+        )
+
+        output = self._process_update_response(flag, response)
+
+        if output[0]:
+            return
+        else:
+            o_str = 'Failed to enable intelli snap for the subclient\nError: "{0}"'
+            raise SDKException('Subclient', '102', o_str.format(output[2]))
+
+    def disable_intelli_snap(self):
+        """Disables Intelli Snap for the subclient.
+
+            Raises:
+                SDKException:
+                    if failed to disable intelli snap for subclient
+        """
+        properties_dict = {
+            "snapCopyInfo": {
+                "isSnapBackupEnabled": False
+            }
+        }
+
+        request_json = self._update_subclient_props_json(properties_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._SUBCLIENT, request_json
+        )
+
+        output = self._process_update_response(flag, response)
+
+        if output[0]:
+            return
+        else:
+            o_str = 'Failed to disable intelli snap for the subclient\nError: "{0}"'
+            raise SDKException('Subclient', '102', o_str.format(output[2]))
+
     def backup(
             self,
             backup_level="Incremental",
             incremental_backup=False,
-            incremental_level='BEFORE_SYNTH'):
+            incremental_level='BEFORE_SYNTH',
+            on_demand_input=None):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -1460,6 +1718,11 @@ class Subclient(object):
                         only applicable in case of Synthetic_full backup
                     default: BEFORE_SYNTH
 
+                on_demand_input     (str)   --  input file location for on demand subclient
+
+                        only applicable in case of on demand subclient
+                    default: None
+
             Returns:
                 object - instance of the Job class for this backup job
 
@@ -1471,21 +1734,53 @@ class Subclient(object):
 
                     if response is not success
         """
-        backup_level = backup_level.lower()
+        if on_demand_input is not None:
+            if not isinstance(on_demand_input, basestring):
+                raise SDKException('Subclient', '101')
 
-        if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
-            raise SDKException('Subclient', '103')
+            if not self.is_on_demand_subclient:
+                raise SDKException(
+                    'Subclient', '102', 'On Demand backup is not supported for this subclient'
+                )
 
-        backup_request = backup_level
+            on_demand = {
+                "onDemandInputFile": on_demand_input
+            }
 
-        if backup_level == 'synthetic_full':
-            if incremental_backup:
-                backup_request += '&runIncrementalBackup=True'
-                backup_request += '&incLevel=%s' % (incremental_level.lower())
-            else:
-                backup_request += '&runIncrementalBackup=False'
+            request_json = self._backup_json(backup_level, incremental_backup, incremental_level)
 
-        return self._process_backup_request(backup_request)
+            request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(on_demand)
+
+            backup_service = self._commcell_object._services['CREATE_TASK']
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', backup_service, request_json
+            )
+
+        else:
+            backup_level = backup_level.lower()
+
+            if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
+                raise SDKException('Subclient', '103')
+
+            backup_request = backup_level
+
+            if backup_level == 'synthetic_full':
+                if incremental_backup:
+                    backup_request += '&runIncrementalBackup=True'
+                    backup_request += '&incLevel=%s' % (incremental_level.lower())
+                else:
+                    backup_request += '&runIncrementalBackup=False'
+
+            backup_service = self._commcell_object._services['SUBCLIENT_BACKUP'] % (
+                self.subclient_id, backup_request
+            )
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', backup_service
+            )
+
+        return self._process_backup_response(flag, response)
 
     def browse(self, path='\\', show_deleted_files=True, vm_disk_browse=False, is_vs_browse=False):
         """Gets the content of the backup for this subclient at the path specified.
@@ -1693,7 +1988,14 @@ class Subclient(object):
 
         return self._process_browse_response('Find', flag, response)
 
-    def restore_in_place(self, paths, overwrite=True, restore_data_and_acl=True):
+    def restore_in_place(
+            self,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -1704,6 +2006,19 @@ class Subclient(object):
 
                 restore_data_and_acl    (bool)  --  restore data and ACL files
                     default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1729,8 +2044,12 @@ class Subclient(object):
             raise SDKException('Subclient', '104')
 
         request_json = self._restore_json(
-            paths=paths, overwrite=overwrite, restore_data_and_acl=restore_data_and_acl
-        )
+            paths=paths,
+            overwrite=overwrite,
+            restore_data_and_acl=restore_data_and_acl,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time)
 
         return self._process_restore_response(request_json)
 
@@ -1740,7 +2059,10 @@ class Subclient(object):
             destination_path,
             paths,
             overwrite=True,
-            restore_data_and_acl=True):
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1758,6 +2080,19 @@ class Subclient(object):
 
                 restore_data_and_acl  (bool)       --  restore data and ACL files
                     default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1778,8 +2113,8 @@ class Subclient(object):
         """
         from .client import Client
 
-        if not ((isinstance(client, str) or isinstance(client, Client)) and
-                isinstance(destination_path, str) and
+        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
+                isinstance(destination_path, basestring) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -1787,7 +2122,7 @@ class Subclient(object):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, str):
+        elif isinstance(client, basestring):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException('Subclient', '105')
@@ -1805,7 +2140,10 @@ class Subclient(object):
             client=client,
             destination_path=destination_path,
             overwrite=overwrite,
-            restore_data_and_acl=restore_data_and_acl
+            restore_data_and_acl=restore_data_and_acl,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time
         )
 
         return self._process_restore_response(request_json)
