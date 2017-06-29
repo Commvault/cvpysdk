@@ -54,13 +54,13 @@ Client:
 
     enable_backup_at_time()      --  enables the backup for the client at the input time specified
 
-    disable_backup()              --  disables the backup for the client
+    disable_backup()             --  disables the backup for the client
 
     enable_restore()             --  enables the restore for the client
 
     enable_restore_at_time()     --  enables the restore for the client at the input time specified
 
-    disable_restore()             --  disables the restore for the client
+    disable_restore()            --  disables the restore for the client
 
     enable_data_aging()          --  enables the data aging for the client
 
@@ -72,13 +72,19 @@ Client:
 
     execute_command()            --  executes a command on the client
 
+    enable_intelli_snap()        --  enables intelli snap for the client
+
+    disable_intelli_snap()       --  disables intelli snap for the client
+
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os
 import time
 
+from past.builtins import basestring
 from base64 import b64encode
 
 from .agent import Agents
@@ -146,7 +152,7 @@ class Clients(object):
                 clients_dict = {}
 
                 for dictionary in response.json()['clientProperties']:
-                    temp_name = str(dictionary['client']['clientEntity']['clientName']).lower()
+                    temp_name = dictionary['client']['clientEntity']['clientName'].lower()
                     temp_id = str(dictionary['client']['clientEntity']['clientId']).lower()
                     clients_dict[temp_name] = temp_id
 
@@ -195,7 +201,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, str):
+            if isinstance(client, basestring):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -226,10 +232,10 @@ class Clients(object):
                 SDKException:
                     if type of the client name argument is not string
         """
-        if not isinstance(client_name, str):
+        if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
 
-        return self._clients and str(client_name).lower() in self._clients
+        return self._clients and client_name.lower() in self._clients
 
     def add_vmware_client(
             self,
@@ -338,10 +344,10 @@ class Clients(object):
 
                     if no client exists with the given name
         """
-        if not isinstance(client_name, str):
+        if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
         else:
-            client_name = str(client_name).lower()
+            client_name = client_name.lower()
 
             if self.has_client(client_name):
                 return Client(self._commcell_object, client_name, self._clients[client_name])
@@ -368,10 +374,10 @@ class Clients(object):
 
                     if no client exists with the given name
         """
-        if not isinstance(client_name, str):
+        if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
         else:
-            client_name = str(client_name).lower()
+            client_name = client_name.lower()
 
             if self.has_client(client_name):
                 client_id = self._clients[client_name]
@@ -439,7 +445,7 @@ class Client(object):
                 object - instance of the Client class
         """
         self._commcell_object = commcell_object
-        self._client_name = str(client_name).lower()
+        self._client_name = client_name.lower()
 
         if client_id:
             self._client_id = str(client_id)
@@ -516,6 +522,8 @@ class Client(object):
                         self._is_data_aging_enabled = activity["enableActivityType"]
 
                 self._client_hostname = self._properties['client']['clientEntity']['hostName']
+
+                self._is_intelli_snap_enabled = client_props['EnableSnapBackups']
             else:
                 raise SDKException('Response', '102')
         else:
@@ -585,6 +593,36 @@ class Client(object):
         else:
             return request_json1
 
+    def _update_client_props_json(self, properties_dict):
+        """Returns the update client properties JSON request to pass to the API as per
+            the property mentioned by the user.
+
+            Args:
+                properties_dict (dict)  --  client property dict which is to be updated
+                    e.g.: {
+                            "EnableSnapBackups": True
+                          }
+
+            Returns:
+                Client Properties update dict
+        """
+        request_json = {
+            "clientProperties": {
+                "clientProps": {}
+            },
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self.client_name
+                    }
+                ]
+            }
+        }
+
+        request_json['clientProperties']['clientProps'].update(properties_dict)
+
+        return request_json
+
     @property
     def client_id(self):
         """Treats the client id as a read-only attribute."""
@@ -634,6 +672,11 @@ class Client(object):
     def is_data_aging_enabled(self):
         """Treats the is data aging enabled as a read-only attribute."""
         return self._is_data_aging_enabled
+
+    @property
+    def is_intelli_snap_enabled(self):
+        """Treats the is intelli snap enabled as a read-only attribute."""
+        return self._is_intelli_snap_enabled
 
     def enable_backup(self):
         """Enable Backup for this Client.
@@ -1025,7 +1068,7 @@ class Client(object):
 
                     if response is not success
         """
-        if not (isinstance(script_type, str) and (isinstance(script, str))):
+        if not (isinstance(script_type, basestring) and (isinstance(script, basestring))):
             raise SDKException('Client', '101')
 
         script_types = {
@@ -1101,7 +1144,7 @@ class Client(object):
 
                     if response is not success
         """
-        if not isinstance(command, str):
+        if not isinstance(command, basestring):
             raise SDKException('Client', '101')
 
         import html
@@ -1132,6 +1175,86 @@ class Client(object):
                     exit_code = response.json()['processExitCode']
 
                 return exit_code, output
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_intelli_snap(self):
+        """Enables Intelli Snap for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to enable intelli snap
+
+                    if response is empty
+
+                    if response is not success
+        """
+        enable_intelli_snap_dict = {
+            "EnableSnapBackups": True
+        }
+
+        request_json = self._update_client_props_json(enable_intelli_snap_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
+
+        self._get_client_properties()
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    return
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = 'Failed to enable Inetlli Snap\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_intelli_snap(self):
+        """Disables Intelli Snap for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to disable intelli snap
+
+                    if response is empty
+
+                    if response is not success
+        """
+        disable_intelli_snap_dict = {
+            "EnableSnapBackups": False
+        }
+
+        request_json = self._update_client_props_json(disable_intelli_snap_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
+
+        self._get_client_properties()
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    return
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = 'Failed to disable Inetlli Snap\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
