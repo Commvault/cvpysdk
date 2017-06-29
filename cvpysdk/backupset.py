@@ -66,8 +66,11 @@ Backupset:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import threading
+
+from past.builtins import basestring
 
 from .subclient import Subclients
 from .schedules import Schedules
@@ -102,6 +105,12 @@ class Backupsets(object):
         self._BACKUPSETS = (self._commcell_object._services['GET_ALL_BACKUPSETS']) % (
             self._agent_object._client_object.client_id
         )
+
+        from .backupsets.nasbackupset import NASBackupset
+
+        self._backupsets_dict = {
+            'nas': NASBackupset
+        }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server']:
             self._BACKUPSETS += '&excludeHidden=0'
@@ -165,20 +174,20 @@ class Backupsets(object):
                 return_dict = {}
 
                 for dictionary in response.json()['backupsetProperties']:
-                    agent = str(dictionary['backupSetEntity']['appName']).lower()
-                    instance = str(dictionary['backupSetEntity']['instanceName']).lower()
+                    agent = dictionary['backupSetEntity']['appName'].lower()
+                    instance = dictionary['backupSetEntity']['instanceName'].lower()
 
                     if self._instance_object is not None:
                         if (self._instance_object.instance_name in instance and
                                 self._agent_object.agent_name in agent):
-                            temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
+                            temp_name = dictionary['backupSetEntity']['backupsetName'].lower()
                             temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
                             return_dict[temp_name] = {
                                 "id": temp_id,
                                 "instance": instance
                             }
                     elif self._agent_object.agent_name in agent:
-                        temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
+                        temp_name = dictionary['backupSetEntity']['backupsetName'].lower()
                         temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
 
                         if len(self._agent_object.instances._instances) > 1:
@@ -212,10 +221,10 @@ class Backupsets(object):
                 SDKException:
                     if type of the backupset name argument is not string
         """
-        if not isinstance(backupset_name, str):
+        if not isinstance(backupset_name, basestring):
             raise SDKException('Backupset', '101')
 
-        return self._backupsets and str(backupset_name).lower() in self._backupsets
+        return self._backupsets and backupset_name.lower() in self._backupsets
 
     def add(self, backupset_name, on_demand_backupset=False):
         """Adds a new backup set to the agent.
@@ -242,10 +251,10 @@ class Backupsets(object):
 
                     if backupset with same name already exists
         """
-        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
+        if not (isinstance(backupset_name, basestring) and isinstance(on_demand_backupset, bool)):
             raise SDKException('Backupset', '101')
         else:
-            backupset_name = str(backupset_name).lower()
+            backupset_name = backupset_name.lower()
 
         if self.has_backupset(backupset_name):
             raise SDKException(
@@ -290,7 +299,7 @@ class Backupsets(object):
                     error_message = None
 
                     if 'errorString' in response_value:
-                        error_message = str(response_value['errorString'])
+                        error_message = response_value['errorString']
 
                     if error_message:
                         o_str = 'Failed to create new backupset\nError: "{0}"'.format(
@@ -344,10 +353,10 @@ class Backupsets(object):
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, str):
+        if not isinstance(backupset_name, basestring):
             raise SDKException('Backupset', '101')
         else:
-            backupset_name = str(backupset_name).lower()
+            backupset_name = backupset_name.lower()
 
             if self.has_backupset(backupset_name):
                 if self._instance_object is None:
@@ -355,11 +364,18 @@ class Backupsets(object):
                         self._backupsets[backupset_name]['instance']
                     )
 
-                return Backupset(
-                    self._instance_object,
-                    backupset_name,
-                    self._backupsets[backupset_name]["id"]
-                )
+                if self._agent_object.agent_name in self._backupsets_dict.keys():
+                    return self._backupsets_dict[self._agent_object.agent_name](
+                        self._instance_object,
+                        backupset_name,
+                        self._backupsets[backupset_name]["id"]
+                    )
+                else:
+                    return Backupset(
+                        self._instance_object,
+                        backupset_name,
+                        self._backupsets[backupset_name]["id"]
+                    )
 
             raise SDKException(
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
@@ -383,10 +399,10 @@ class Backupsets(object):
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, str):
+        if not isinstance(backupset_name, basestring):
             raise SDKException('Backupset', '101')
         else:
-            backupset_name = str(backupset_name).lower()
+            backupset_name = backupset_name.lower()
 
         if self.has_backupset(backupset_name):
             delete_backupset_service = self._commcell_object._services['BACKUPSET'] % (
@@ -405,7 +421,7 @@ class Backupsets(object):
                         error_message = None
 
                         if 'errorString' in response_value:
-                            error_message = str(response_value['errorString'])
+                            error_message = response_value['errorString']
 
                         if error_message:
                             o_str = 'Failed to delete backupset\nError: "{0}"'
@@ -457,7 +473,7 @@ class Backupset(object):
         self._agent_object = self._instance_object._agent_object
         self._commcell_object = self._instance_object._agent_object._commcell_object
 
-        self._backupset_name = str(backupset_name).split('\\')[-1].lower()
+        self._backupset_name = backupset_name.split('\\')[-1].lower()
         self._description = None
 
         if backupset_id:
@@ -470,6 +486,7 @@ class Backupset(object):
         self._BACKUPSET = self._commcell_object._services['BACKUPSET'] % (self.backupset_id)
 
         self._is_default = False
+        self._is_on_demand_backupset = False
         self._properties = None
 
         self._get_backupset_properties()
@@ -512,12 +529,18 @@ class Backupset(object):
                 self._properties = response.json()["backupsetProperties"][0]
 
                 backupset_name = self._properties["backupSetEntity"]["backupsetName"]
-                self._backupset_name = str(backupset_name).lower()
+                self._backupset_name = backupset_name.lower()
 
                 self._is_default = bool(self._properties["commonBackupSet"]["isDefaultBackupSet"])
 
+                if 'commonBackupSet' in self._properties:
+                    if 'onDemandBackupset' in self._properties['commonBackupSet']:
+                        self._is_on_demand_backupset = bool(
+                            self._properties['commonBackupSet']['onDemandBackupset']
+                        )
+
                 if "userDescription" in self._properties["commonBackupSet"]:
-                    self._description = str(self._properties["commonBackupSet"]["userDescription"])
+                    self._description = self._properties["commonBackupSet"]["userDescription"]
             else:
                 raise SDKException('Response', '102')
         else:
@@ -525,7 +548,9 @@ class Backupset(object):
             raise SDKException('Response', '101', response_string)
 
     def _run_backup(self, subclient_name, return_list):
-        """Triggers incremental backup job for the given subclient, and appends its Job object to the list.
+        """Triggers incremental backup job for the given subclient,
+            and appends its Job object to the list.
+
             The SDKExcpetion class instance is appended to the list,
             if any exception is raised while running the backup job for the Subclient.
 
@@ -541,6 +566,55 @@ class Backupset(object):
         except SDKException as excp:
             return_list.append(excp)
 
+    def _process_update_reponse(self, request_json):
+        """Runs the Backupset update API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._BACKUPSET, request_json
+        )
+
+        self._get_backupset_properties()
+
+        if flag:
+            if response.json() and "response" in response.json():
+                error_code = str(response.json()["response"][0]["errorCode"])
+
+                if error_code == "0":
+                    return (True, "0", "")
+                else:
+                    error_string = ""
+
+                    if "errorString" in response.json()["response"][0]:
+                        error_string = response.json()["response"][0]["errorString"]
+
+                    if error_string:
+                        return (False, error_code, error_string)
+                    else:
+                        return (False, error_code, "")
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def _update(self, backupset_name, backupset_description, default_backupset):
         """Updates the properties of the backupset.
 
@@ -552,7 +626,7 @@ class Backupset(object):
                 default_backupset     (bool)  --  default backupset property
 
             Returns:
-                (bool, str, str):
+                (bool, basestring, basestring):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -587,33 +661,7 @@ class Backupset(object):
             request_json["backupsetProperties"]["commonBackupSet"][
                 "userDescription"] = backupset_description
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._BACKUPSET, request_json
-        )
-
-        self._get_backupset_properties()
-
-        if flag:
-            if response.json() and "response" in response.json():
-                error_code = str(response.json()["response"][0]["errorCode"])
-
-                if error_code == "0":
-                    return (True, "0", "")
-                else:
-                    error_string = ""
-
-                    if "errorString" in response.json()["response"][0]:
-                        error_string = response.json()["response"][0]["errorString"]
-
-                    if error_string:
-                        return (False, error_code, error_string)
-                    else:
-                        return (False, error_code, "")
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+        return self._process_update_reponse(request_json)
 
     @property
     def backupset_id(self):
@@ -635,6 +683,11 @@ class Backupset(object):
         """Treats the is default backupset as a read-only attribute."""
         return self._is_default
 
+    @property
+    def is_on_demand_backupset(self):
+        """Treats the is on demand backupset as a read-only attribute."""
+        return self._is_on_demand_backupset
+
     @backupset_name.setter
     def backupset_name(self, value):
         """Sets the name of the backupset as the value provided as input.
@@ -645,7 +698,7 @@ class Backupset(object):
 
                     if type of value input is not string
         """
-        if isinstance(value, str):
+        if isinstance(value, basestring):
             output = self._update(
                 backupset_name=value,
                 backupset_description=self.description,
@@ -673,7 +726,7 @@ class Backupset(object):
                     if description cannot be modified for this backupset
         """
         if self.description is not None:
-            if isinstance(value, str):
+            if isinstance(value, basestring):
                 output = self._update(
                     backupset_name=self.backupset_name,
                     backupset_description=value,
@@ -719,7 +772,7 @@ class Backupset(object):
 
             Returns:
                 list  -  list consisting of the job objects for the backup jobs started for
-                             the subclients in the backupset
+                        the subclients in the backupset
         """
         return_list = []
         thread_list = []
