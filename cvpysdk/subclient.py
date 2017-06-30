@@ -38,65 +38,43 @@ Subclients:
 Subclient:
     __init__(backupset_object,
              subclient_name,
-             subclient_id)              --  initialise instance of the Subclient class,
-                                                associated to the specified backupset
+             subclient_id)      --  initialise instance of the Subclient class,
+                                        associated to the specified backupset
 
-    __repr__()                          --  return the subclient name, the instance is associated
-                                                with
+    __repr__()                  --  return the subclient name, the instance is associated with
 
-    _get_subclient_id()                 --  method to get subclient id, if not specified in
-                                                __init__ method
+    _get_subclient_id()         --  method to get subclient id, if not specified in __init__ method
 
-    _get_subclient_properties()         --  get the properties of this subclient
+    _get_subclient_properties() --  get the properties of this subclient
 
-    _initialize_subclient_properties()  --  initializes the properties of this subclient
+    _initialize_subclient_properties() --  initializes the properties of this subclient
 
-    _update()                           --  updates the properties of a subclient
+    _update()                   --  updates the properties of a subclient
 
-    _filter_paths()                     --  filters the path as per the OS, and the Agent
+    _filter_paths()             --  filters the path as per the OS, and the Agent
 
-    _process_backup_response()          --  process response received from backup request
+    _process_backup_request()   --  runs the backup request provided, and processes the response
 
-    _browse_and_find_json()             --  returns the appropriate JSON request to pass for either
-                                                Browse operation or Find operation
+    _restore_json()             --  returns the apppropriate JSON request to pass for either
+                                        Restore In-Place or Out-of-Place operation
 
-    _process_browse_response()          --  processes response received for both Browse and Find
-                                                request
+    _process_restore_response() --  processes response received for the Restore request
 
-    _restore_json()                     --  returns the apppropriate JSON request to pass for
-                                                either Restore In-Place or Out-of-Place operation
+    description()               --  update the description of the subclient
 
-    _process_restore_response()         --  processes response received for the Restore request
+    content()                   --  update the content of the subclient
 
-    description()                       --  update the description of the subclient
+    enable_backup()             --  enables the backup for the subclient
 
-    content()                           --  update the content of the subclient
+    enable_backup_at_time()     --  enables backup for the subclient at the input time specified
 
-    storage_policy()                    --  update the storage policy for this subclient
+    disble_backup()             --  disbles the backup for the subclient
 
-    enable_backup()                     --  enables the backup for the subclient
+    backup()                    --  run a backup job for the subclient
 
-    enable_backup_at_time()             --  enables backup for the subclient at the input time
-                                                specified
-
-    disble_backup()                     --  disbles the backup for the subclient
-
-    enable_intelli_snap()               --  enables the intelli snap for the subclient
-
-    disable_intelli_snap()              --  disables the intelli snap for subclient
-
-    backup()                            --  run a backup job for the subclient
-
-    browse()                            --  gets the content of the backup for this subclient
-                                                at the path specified
-
-    browse_in_time()            --  gets the content of the backup for this subclient
-                                        at the input path in the time range specified
-
-    find()                      --  searches a given file/folder name in the subclient content
-
-    restore_in_place()          --  Restores the files/folders specified in the
-                                        input paths list to the same location
+    browse()                    --  Performs a browse operation on the subclient
+    
+    find()                      --  Performs a find operation on the subclient
 
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
                                         to the input client, at the specified destionation location
@@ -106,7 +84,6 @@ Subclient:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import re
 import math
 import time
 
@@ -954,196 +931,6 @@ class Subclient(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _browse_and_find_json(
-            self,
-            option,
-            path='\\**\\*',
-            file_or_folder_name=None,
-            show_deleted_files=True,
-            restore_index=True,
-            vm_disk_browse=False,
-            from_date=0,
-            to_date=time.time()):
-        """Returns the JSON request to pass to the DoBrowse API,
-            as per the options selected by the user.
-
-            Args:
-                option (str)  --  string option for which to run the API for
-                    e.g.; Browse / Find
-
-            Returns:
-                dict - JSON request to pass to the API
-        """
-        options_dict = {
-            "Browse": 0,
-            "Find": 1
-        }
-
-        browse_mode = 2
-
-        if isinstance(self, globals()['VirtualServerSubclient']):
-            browse_mode = 4
-
-        request_json = {
-            "opType": options_dict[option],
-            "mode": {
-                "mode": browse_mode
-            },
-            "paths": [{
-                "path": path
-            }],
-            "options": {
-                "showDeletedFiles": show_deleted_files,
-                "restoreIndex": restore_index,
-                "vsDiskBrowse": vm_disk_browse
-            },
-            "entity": {
-                "clientName": self._backupset_object._agent_object._client_object.client_name,
-                "clientId": int(self._backupset_object._agent_object._client_object.client_id),
-                "applicationId": int(self._backupset_object._agent_object.agent_id),
-                "instanceId": int(self._backupset_object._instance_object.instance_id),
-                "backupsetId": int(self._backupset_object.backupset_id),
-                "subclientId": int(self.subclient_id)
-            },
-            "timeRange": {
-                "fromTime": int(from_date),
-                "toTime": int(to_date)
-            },
-            "queries": [{
-                "type": 0,
-                "queryId": "dataQuery",
-                "dataParam": {
-                    "sortParam": {
-                        "ascending": False,
-                        "sortBy": [0]
-                    }
-                }
-            }]
-        }
-
-        if option == 'Find':
-            request_json['queries'][0]['whereClause'] = [{
-                "connector": 0,
-                "criteria": {
-                    "field": "FileName",
-                    "values": [file_or_folder_name]
-                }
-            }]
-
-        return request_json
-
-    def _process_browse_response(self, option, flag, response, is_vs_browse=False):
-        """Runs the DoBrowse API with the request JSON provided for the operation specified,
-            and returns the contents after parsing the response.
-
-            Args:
-                option          (str)   --  string option for which to process the response for
-                    e.g.; Browse / Find
-
-                flag            (bool)  --  boolean, whether the response was success or not
-
-                response        (dict)  --  JSON response received for the request from the Server
-
-                is_vs_browse    (bool)  --  boolean, specifying a Virtual Server subclient browse
-                    default: False
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if failed to browse/search for content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        options_dict = {
-            "Browse": ('110', 'Failed to browse for subclient backup content\nError: "{0}"'),
-            "Find": ('111', 'Failed to Search\nError: "{0}"')
-        }
-
-        exception_code = options_dict[option][0]
-        exception_message = options_dict[option][1]
-
-        if flag:
-            if response.json() and 'browseResponses' in response.json():
-                if 'browseResult' in response.json()['browseResponses'][0]:
-                    browse_result = response.json()['browseResponses'][0]['browseResult']
-
-                    if 'dataResultSet' in browse_result:
-                        result_set = browse_result['dataResultSet']
-                        paths_dict = {}
-                        paths = []
-
-                        for result in result_set:
-                            name = result['displayName']
-                            path = result['path']
-
-                            if 'modificationTime' in result:
-                                mod_time = time.localtime(result['modificationTime'])
-                                mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
-                            else:
-                                mod_time = None
-
-                            if 'file' in result['flags']:
-                                if result['flags']['file'] is True:
-                                    file_or_folder = 'File'
-                                else:
-                                    file_or_folder = 'Folder'
-                            else:
-                                file_or_folder = 'Folder'
-
-                            # gets the size in human readable format
-                            if 'size' in result:
-                                size = self._convert_size(float(result['size']))
-                            else:
-                                size = None
-
-                            path_list = [name, file_or_folder]
-
-                            if size:
-                                path_list.append(size)
-
-                            if mod_time:
-                                path_list.append(mod_time)
-
-                            if is_vs_browse:
-                                virtual_server_metadata = None
-
-                                if 'advancedData' in result:
-                                    advanced_data = result['advancedData']
-                                    if 'browseMetaData' in advanced_data:
-                                        browse_metadata = advanced_data['browseMetaData']
-                                        if 'virtualServerMetaData' in browse_metadata:
-                                            virtual_server_metadata = browse_metadata[
-                                                'virtualServerMetaData']
-
-                                path_list.append(virtual_server_metadata)
-
-                            paths_dict[path] = path_list
-
-                            paths.append(path)
-
-                        return paths, paths_dict
-                    else:
-                        raise SDKException('Subclient', exception_code)
-                elif 'messages' in response.json()['browseResponses'][0]:
-                    message = response.json()['browseResponses'][0]['messages'][0]
-                    error_message = message['errorMessage']
-
-                    o_str = exception_message
-                    raise SDKException('Subclient', '102', o_str.format(error_message))
-                else:
-                    raise SDKException('Subclient', exception_code)
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
     def _restore_json(
             self,
             paths,
@@ -1782,211 +1569,77 @@ class Subclient(object):
 
         return self._process_backup_response(flag, response)
 
-    def browse(self, path='\\', show_deleted_files=True, vm_disk_browse=False, is_vs_browse=False):
-        """Gets the content of the backup for this subclient at the path specified.
+    def browse(self, *args, **kwargs):
+        """ Performs a browse operation on the subclient
 
             Args:
-                path                (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                Dictionary of browse options
+                    Example-  
+                        browse({
+                            'path': 'c:\\hello',
+                            'show_deleted': True
+                        })
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                (or)
 
-                vm_disk_browse      (bool)  --  browse virtual machine files
-                                                    e.g.; .vmdk files, etc.
-                    only applicable when browsing content inside a guest virtual machine
-                    default: False
+                Keyword argument of browse options 
+                    Example-   browse( path='c:\\hello', show_deleted=True )
 
-                is_vs_browse    (bool)  --  boolean, specifying a Virtual Server subclient browse
-                    default: False
+                Refer Backupset.default_browse_options for all the supported options
 
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
+        Returns:
+            (list): List of only the file, folder paths from the browse response
+            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
 
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
         """
-        from urllib.parse import urlencode
 
-        web_service = self._SUBCLIENT + '/Browse?'
-
-        browse_mode = 2
-
-        if isinstance(self, globals()['VirtualServerSubclient']):
-            browse_mode = 4
-
-        encode_dict = {
-            'path': path,
-            'showDeletedFiles': show_deleted_files,
-            'vsDiskBrowse': vm_disk_browse,
-            'mode': browse_mode
-        }
-
-        web_service += urlencode(encode_dict)
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', web_service)
-
-        return self._process_browse_response('Browse', flag, response, is_vs_browse)
-
-    def browse_in_time(
-            self,
-            path='\\',
-            show_deleted_files=True,
-            restore_index=True,
-            vm_disk_browse=False,
-            from_date=None,
-            to_date=None,
-            is_vs_browse=False):
-        """Gets the content of the backup for this subclient
-            at the path specified in the time range specified.
-
-            Args:
-                path                (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
-
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
-
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
-
-                vm_disk_browse      (bool)  --  browse virtual machine files
-                                                    e.g.; .vmdk files, etc.
-                    only applicable when browsing content inside a guest virtual machine
-                    default: False
-
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
-
-                        gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-
-                        gets contents till current day if not specified
-                    default: None
-
-                is_vs_browse    (bool)  --  boolean, specifying a Virtual Server subclient browse
-                    default: False
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if from date value is incorrect
-
-                    if to date value is incorrect
-
-                    if to date is less than from date
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        if from_date and (from_date != '01/01/1970' and from_date != '1/1/1970'):
-            temp = from_date.split('/')
-            if (len(temp) == 3 and
-                    0 < int(temp[0]) < 32 and
-                    0 < int(temp[1]) < 13 and
-                    int(temp[2]) > 1969 and
-                    (re.search(r'\d\d/\d\d/\d\d\d\d', from_date) or
-                     re.search(r'\d/\d/\d\d\d\d', from_date))):
-                from_date = int(time.mktime(time.strptime(from_date, '%d/%m/%Y')))
-            else:
-                raise SDKException('Subclient', '106')
+        if len(args) > 0 and type(args[0]) == dict:
+            options = args[0]
         else:
-            from_date = 0
+            options = kwargs
 
-        if to_date and (to_date != '01/01/1970' and to_date != '1/1/1970'):
-            temp = to_date.split('/')
-            if (len(temp) == 3 and
-                    0 < int(temp[0]) < 32 and
-                    0 < int(temp[1]) < 13 and
-                    int(temp[2]) > 1969 and
-                    (re.search(r'\d\d/\d\d/\d\d\d\d', to_date) or
-                     re.search(r'\d/\d/\d\d\d\d', to_date))):
-                today = time.strftime('%d/%m/%Y')
-                if today == to_date:
-                    to_date = int(time.time())
-                else:
-                    to_date = int(time.mktime(time.strptime(to_date, '%d/%m/%Y')))
-            else:
-                raise SDKException('Subclient', '106')
-        else:
-            to_date = int(time.time())
+        options['_subclient_id'] = self._subclient_id
 
-        if to_date < from_date:
-            raise SDKException('Subclient', '107')
+        return self._backupset_object.browse(options)
 
-        path = self._filter_paths([path], True)
+    def find(self, *args, **kwargs):
+        """ Performs a find operation on the subclient
 
-        request_json = self._browse_and_find_json(
-            option='Browse',
-            path=path,
-            show_deleted_files=show_deleted_files,
-            restore_index=restore_index,
-            vm_disk_browse=vm_disk_browse,
-            from_date=from_date,
-            to_date=to_date
-        )
+         Args:
+            Dictionary of browse options
+                Example-  
+                    find({ 
+                        'file_name': '*.txt',
+                        'show_deleted': True
+                    })
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._BROWSE, request_json
-        )
+            (or)
 
-        return self._process_browse_response('Browse', flag, response, is_vs_browse)
+            Keyword argument of browse options 
+                Example-   find( file_name='*.txt', show_deleted=True )
 
-    def find(self, file_or_folder_name, show_deleted_files=True, restore_index=True):
-        """Searches a file/folder in the subclient backup content,
-            and returns all the files matching the file name given.
+            Refer Backupset.default_browse_options for all the supported options
 
-            Args:
-                file_or_folder_name (str)   --  name of the file or folder to search
+            Additional options supported:
+                file_name       (str)   --   Find files with name
+                file_size_gt    (int)   --   Find files with size greater than size
+                file_size_lt    (int)   --   Find files with size lesser than size
+                file_size_et    (int)   --   Find files with size equal to size
 
-                show_deleted_files  (bool)  --  include deleted files in the search or not
-                    default: True
+        Returns:
+            (list): List of only the file, folder paths from the browse response
+            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
 
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
-
-            Returns:
-                list - list of all files or folders with their full paths matching the name
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if failed to search file/folder
-
-                    if response is empty
-
-                    if response is not success
         """
-        request_json = self._browse_and_find_json(
-            option='Find',
-            file_or_folder_name=file_or_folder_name,
-            show_deleted_files=show_deleted_files,
-            restore_index=restore_index
-        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._BROWSE, request_json
-        )
+        if len(args) > 0 and type(args[0]) == dict:
+            options = args[0]
+        else:
+            options = kwargs
 
-        return self._process_browse_response('Find', flag, response)
+        options['_subclient_id'] = self._subclient_id
+
+        return self._backupset_object.find(options)
 
     def restore_in_place(
             self,
