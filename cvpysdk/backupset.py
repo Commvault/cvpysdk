@@ -842,7 +842,7 @@ class Backupset(object):
                         temp_dict['criteria']['dataOperator'] = filter[2]
 
                     request_json['queries'][0]['whereClause'].append(temp_dict)
-        print request_json
+        
         return request_json
 
     def _process_browse_response(self, flag, response, options):
