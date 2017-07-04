@@ -1583,7 +1583,7 @@ class Subclient(object):
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   browse( path='c:\\hello', show_deleted=True )
+                    Example-   browse( path='c:\\hello', show_deleted=True, to_time = '2016-04-31 12:00:00' )
 
                 Refer Backupset.default_browse_options for all the supported options
 
@@ -1610,13 +1610,15 @@ class Subclient(object):
                 Example-  
                     find({ 
                         'file_name': '*.txt',
-                        'show_deleted': True
+                        'show_deleted': True,
+                        'from_time': '2014-04-20 12:00:00',
+                        'to_time': '2016-04-31 12:00:00'
                     })
 
             (or)
 
             Keyword argument of browse options 
-                Example-   find( file_name='*.txt', show_deleted=True )
+                Example-   find( file_name='*.txt', show_deleted=True, to_time = '2016-04-31 12:00:00' )
 
             Refer Backupset.default_browse_options for all the supported options
 

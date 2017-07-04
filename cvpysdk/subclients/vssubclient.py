@@ -236,13 +236,15 @@ class VirtualServerSubclient(Subclient):
                     Example-  
                         browse({
                             'path': '\\vmname\\',
-                            'show_deleted': True
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
                         })
 
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   browse( path='\\vmname\\', show_deleted=True )
+                    Example-   browse( path='\\vmname\\', show_deleted=True, to_time = '2016-04-31 12:00:00' )
 
                 Refer Backupset.default_browse_options for all the supported options
 
@@ -274,13 +276,17 @@ class VirtualServerSubclient(Subclient):
                     Example-  
                         guest_files_browse({
                             'path': '\\vmname\\',
-                            'show_deleted': True
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
                         })
 
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   guest_files_browse( path='\\vmname\\', show_deleted=True )
+                    Example-   guest_files_browse( 
+                        path='\\vmname\\', show_deleted=True, to_time = '2016-04-31 12:00:00'
+                    )
 
                 Refer Backupset.default_browse_options for all the supported options
 
@@ -300,13 +306,17 @@ class VirtualServerSubclient(Subclient):
                     Example-  
                         vm_files_browse({
                             'path': '\\vmname\\',
-                            'show_deleted': True
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
                         })
 
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   vm_files_browse( path='\\vmname\\', show_deleted=True )
+                    Example-   vm_files_browse( 
+                        path='\\vmname\\', show_deleted=True, to_time = '2016-04-31 12:00:00'
+                    )
 
                 Refer Backupset.default_browse_options for all the supported options
 
@@ -326,13 +336,17 @@ class VirtualServerSubclient(Subclient):
                     Example-  
                         disk_level_browse({
                             'path': '\\vmname\\',
-                            'show_deleted': True
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
                         })
 
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   disk_level_browse( path='\\vmname\\', show_deleted=True )
+                    Example-   disk_level_browse( 
+                        path='\\vmname\\', show_deleted=True, to_time = '2016-04-31 12:00:00 
+                    )
 
                 Refer Backupset.default_browse_options for all the supported options
 

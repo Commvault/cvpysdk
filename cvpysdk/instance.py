@@ -302,3 +302,93 @@ class Instance(object):
     def instance_name(self):
         """Treats the instance name as a read-only attribute."""
         return self._instance_name
+
+    def browse(self, *args, **kwargs):
+        """ Performs a browse operation on the instance if only one backupset is available
+
+            Args:
+                Dictionary of browse options
+                    Example-  
+                        browse({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
+                        })
+
+                (or)
+
+                Keyword argument of browse options 
+                    Example-   browse( path='c:\\hello', show_deleted=True, to_time = '2016-04-31 12:00:00' )
+
+                Refer Backupset.default_browse_options for all the supported options
+
+        Returns:
+            (list): List of only the file, folder paths from the browse response
+            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+        
+        Raises:
+            SDKException:
+                If there are more than one backupsets in the instance 
+        
+        """
+
+        all_backupsets = self.backupsets._get_backupsets()
+
+        # If there is only one backupset, then perform backupset level browse on it
+        if len(all_backupsets.keys()) == 1:
+            the_lone_backupset = all_backupsets.keys()[0]
+            temp_backupset_obj = self.backupsets.get(the_lone_backupset)
+            return temp_backupset_obj.browse(*args, **kwargs)
+
+        # If there are more than one backupset, then raise exception
+        else:
+            raise SDKException(
+                'Instance', '102', 'Cannot perform instance level browse. There are multiple backupsets'
+            )
+
+    def find(self, *args, **kwargs):
+        """ Performs a find operation on the instance if only one backupset is available
+
+         Args:
+            Dictionary of browse options
+                Example-  
+                    find({
+                        'file_name': '*.txt',
+                        'show_deleted': True,
+                        'from_time': '2014-04-20 12:00:00',
+                        'to_time': '2016-04-31 12:00:00'
+                    })
+
+            (or)
+
+            Keyword argument of browse options 
+                Example-   find( file_name='*.txt', show_deleted=True, to_time = '2016-04-31 12:00:00' )
+
+            Refer self.default_browse_options for all the supported options
+
+            Additional options supported:
+                file_name       (str)   --   Find files with name
+                file_size_gt    (int)   --   Find files with size greater than size
+                file_size_lt    (int)   --   Find files with size lesser than size
+                file_size_et    (int)   --   Find files with size equal to size
+
+        Returns:
+            (list): List of only the file, folder paths from the browse response
+            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+
+        """
+
+        all_backupsets = self.backupsets._get_backupsets()
+
+        # If there is only one backupset, then perform backupset level find on it
+        if len(all_backupsets.keys()) == 1:
+            the_lone_backupset = all_backupsets.keys()[0]
+            temp_backupset_obj = self.backupsets.get(the_lone_backupset)
+            return temp_backupset_obj.find(*args, **kwargs)
+
+        # If there are more than one backupset, then raise exception
+        else:
+            raise SDKException(
+                'Instance', '102', 'Cannot perform instance level find. There are multiple backupsets'
+            )

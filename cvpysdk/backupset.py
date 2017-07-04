@@ -697,11 +697,11 @@ class Backupset(object):
         return self._process_update_reponse(request_json)
 
     @staticmethod
-    def _get_timestamp(timestamp):
-        """ Returns the timestamp which are in the format %Y-%m-%d %H:%M:%S
+    def _get_timestamp(formatted_time):
+        """ Returns the epoch timestamp given the input time is in format %Y-%m-%d %H:%M:%S
         
         Args:
-            time_value          (multiple)  --  Integer of timestamp or string of formatted time
+            formatted_time          (multiple)  --  String of formatted time or integer of timestamp
             
         Returns:
             (int)- Timestamp
@@ -711,16 +711,16 @@ class Backupset(object):
                 If the timestamp cannot be obtained
         """
 
-        if str(timestamp) == '0':
+        if str(formatted_time) == '0':
             return 0
 
         try:  # Try converting the value to Integer, if possible then return it.
-            timestamp = int(timestamp)
+            timestamp = int(formatted_time)
             return timestamp
 
         except ValueError:  # If not convertible to integer, then get the timestamp from formatted time
             try:
-                return int(time.mktime(datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").timetuple()))
+                return int(time.mktime(datetime.datetime.strptime(formatted_time, "%Y-%m-%d %H:%M:%S").timetuple()))
             except:
                 raise SDKException('Subclient', '106')
 
@@ -1105,13 +1105,15 @@ class Backupset(object):
                     Example-  
                         browse({ 
                             'path': 'c:\\hello',
-                            'show_deleted': True
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
                         })
 
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   browse( path='c:\\hello', show_deleted=True )
+                    Example-   browse( path='c:\\hello', show_deleted=True, to_time = '2016-04-31 12:00:00' )
 
                 Refer self.default_browse_options for all the supported options
 
@@ -1138,13 +1140,15 @@ class Backupset(object):
                 Example-  
                     find({
                         'file_name': '*.txt',
-                        'show_deleted': True
+                        'show_deleted': True,
+                        'from_time': '2014-04-20 12:00:00',
+                        'to_time': '2016-04-31 12:00:00'
                     })
 
             (or)
 
             Keyword argument of browse options 
-                Example-   find( file_name='*.txt', show_deleted=True )
+                Example-   find( file_name='*.txt', show_deleted=True, to_time = '2016-04-31 12:00:00' )
 
             Refer self.default_browse_options for all the supported options
 
