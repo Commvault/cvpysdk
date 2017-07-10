@@ -319,13 +319,13 @@ class Instance(object):
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   browse( path='c:\\hello', show_deleted=True, to_time = '2016-04-31 12:00:00' )
+                    Example -   browse( path='c:\\hello', show_deleted=True, to_time='2016-04-31 12:00:00' )
 
                 Refer Backupset.default_browse_options for all the supported options
 
         Returns:
-            (list): List of only the file, folder paths from the browse response
-            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+            list - List of only the file, folder paths from the browse response
+            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
         
         Raises:
             SDKException:
@@ -337,8 +337,8 @@ class Instance(object):
 
         # If there is only one backupset, then perform backupset level browse on it
         if len(all_backupsets.keys()) == 1:
-            the_lone_backupset = all_backupsets.keys()[0]
-            temp_backupset_obj = self.backupsets.get(the_lone_backupset)
+            backupset_name = all_backupsets.keys()[0]
+            temp_backupset_obj = self.backupsets.get(backupset_name)
             return temp_backupset_obj.browse(*args, **kwargs)
 
         # If there are more than one backupset, then raise exception
@@ -363,7 +363,7 @@ class Instance(object):
             (or)
 
             Keyword argument of browse options 
-                Example-   find( file_name='*.txt', show_deleted=True, to_time = '2016-04-31 12:00:00' )
+                Example -   find( file_name='*.txt', show_deleted=True, to_time='2016-04-31 12:00:00' )
 
             Refer self.default_browse_options for all the supported options
 
@@ -374,8 +374,8 @@ class Instance(object):
                 file_size_et    (int)   --   Find files with size equal to size
 
         Returns:
-            (list): List of only the file, folder paths from the browse response
-            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+            list -  List of only the file, folder paths from the browse response
+            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
         """
 

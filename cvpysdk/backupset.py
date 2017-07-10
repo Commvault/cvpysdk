@@ -514,8 +514,8 @@ class Backupset(object):
         self.default_browse_options = {
             'operation': 'browse',
             'show_deleted': False,
-            'from_time': 0,  # Timestamp or %Y-%m-%d %H:%M:%S
-            'to_time': 0,  # Timestamp or %Y-%m-%d %H:%M:%S
+            'from_time': 0,  # Timestamp ( string or integer ) or %Y-%m-%d %H:%M:%S ( string )
+            'to_time': 0,  # Timestamp ( string or integer ) or %Y-%m-%d %H:%M:%S ( string )
             'path': '\\',
             'copy_precedence': 0,
             'media_agent': '',
@@ -701,10 +701,10 @@ class Backupset(object):
         """ Returns the epoch timestamp given the input time is in format %Y-%m-%d %H:%M:%S
         
         Args:
-            formatted_time          (multiple)  --  String of formatted time or integer of timestamp
+            formatted_time   (mixed)  --  String of formatted time or integer/string of timestamp
             
         Returns:
-            (int)- Timestamp
+            int - Timestamp
             
         Raises:
             SDKException:
@@ -728,8 +728,8 @@ class Backupset(object):
         """ Recursively sets default values on a dictionary
 
         Args:
-            custom                  (dict)    --  The dictionary which has to be set with defaults
-            defaults                (dict)    --  The dictionary with default values
+            custom     (dict)    --  The dictionary which has to be set with defaults
+            defaults   (dict)    --  The dictionary with default values
 
         Returns:
             None
@@ -747,10 +747,10 @@ class Backupset(object):
         """ Prepares the options for the Browse/find operation
 
         Args:
-            options             (dict)    --   A dictionary of browse options
+            options   (dict)   --   A dictionary of browse options
 
         Returns:
-            (dict): The browse options with all the default options set
+            dict - The browse options with all the default options set
 
         """
 
@@ -762,10 +762,10 @@ class Backupset(object):
         """ Prepares the JSON object for the browse request
 
         Args:
-            options                 (dict)   --    The browse options dictionary
+            options   (dict)   --    The browse options dictionary
 
         Returns:
-            (dict): A JSON object for the browse response
+            dict - A JSON object for the browse response
 
         """
 
@@ -849,13 +849,13 @@ class Backupset(object):
         """ Retrieves the items from browse response
 
         Args:
-            flag            (bool)  --  boolean, whether the response was success or not
-            response        (dict)  --  JSON response received for the request from the Server
-            options         (dict)  --  The browse options dictionary
+            flag        (bool)  --  boolean, whether the response was success or not
+            response    (dict)  --  JSON response received for the request from the Server
+            options     (dict)  --  The browse options dictionary
 
         Returns:
-            (list): List of only the file, folder paths from the browse response
-            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+            list - List of only the file, folder paths from the browse response
+            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
         Raises:
             SDKException:
@@ -948,11 +948,11 @@ class Backupset(object):
         """ Performs a browse operation with the given options
 
         Args:
-            options         (dict)   --   Dictionary of browse options
+            options    (dict)   --   Dictionary of browse options
 
         Returns:
-            (list): List of only the file, folder paths from the browse response
-            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+            list - List of only the file, folder paths from the browse response
+            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
         """
 
@@ -1113,13 +1113,13 @@ class Backupset(object):
                 (or)
 
                 Keyword argument of browse options 
-                    Example-   browse( path='c:\\hello', show_deleted=True, to_time = '2016-04-31 12:00:00' )
+                    Example - browse( path='c:\\hello', show_deleted=True, to_time='2016-04-31 12:00:00' )
 
                 Refer self.default_browse_options for all the supported options
 
         Returns:
-            (list): List of only the file, folder paths from the browse response
-            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+            list - List of only the file, folder paths from the browse response
+            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
         """
 
@@ -1148,7 +1148,7 @@ class Backupset(object):
             (or)
 
             Keyword argument of browse options 
-                Example-   find( file_name='*.txt', show_deleted=True, to_time = '2016-04-31 12:00:00' )
+                Example - find( file_name='*.txt', show_deleted=True, to_time='2016-04-31 12:00:00' )
 
             Refer self.default_browse_options for all the supported options
 
@@ -1159,8 +1159,8 @@ class Backupset(object):
                 file_size_et    (int)   --   Find files with size equal to size
 
         Returns:
-            (list): List of only the file, folder paths from the browse response
-            (dict): Dictionary of all the paths with additional metadata which are retrieved from browse
+            list - List of only the file, folder paths from the browse response
+            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
         """
 
