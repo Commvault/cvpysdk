@@ -1004,6 +1004,9 @@ class StoragePolicy(object):
 
                 streams                  (int)  --  number of streams to use
 
+            Returns:
+                object - instance of the Job class for this aux copy job
+
             Raises:
                 SDKException:
                     if type of the storage policy copy name argument is not string
