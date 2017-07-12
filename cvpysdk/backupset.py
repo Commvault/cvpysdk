@@ -60,7 +60,7 @@ Backupset:
 
     _set_defaults()                 -- recursively sets default values on a dictionary
 
-    _default_browse_options()       -- prepares the options for the Browse/find operation
+    _prepare_browse_options()       -- prepares the options for the Browse/find operation
 
     _prepare_browse_json()          -- prepares the JSON object for the browse request
 
