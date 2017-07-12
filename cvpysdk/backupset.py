@@ -38,12 +38,10 @@ Backupsets:
 
 
 Backupset:
-    __init__(agent_object,
+    __init__(instance_object,
              backupset_name,
-             backupset_id=None,
-             instance_id=1,
-             instance_name=None)    -- initialise object of Backupset with the specified backupset
-                                         name and id, and associated to the specified agent
+             backupset_id=None)    -- initialise object of Backupset with the specified backupset
+                                         name and id, and associated to the specified instance
 
     __repr__()                      -- return the backupset name, the instance is associated with
 
@@ -56,26 +54,29 @@ Backupset:
                                         and appends the job object to the return list
 
     _update()                       -- updates the properties of the backupset
-    
-    _set_defaults()                 -- Recursively sets default values on a dictionary
-    
-    _default_browse_options()       -- Prepares the options for the Browse/find operation
-    
-    _prepare_browse_json()          -- Prepares the JSON object for the browse request
-    
-    _process_browse_response()      -- Retrieves the items from browse response
-    
-    _do_browse()                    -- Performs a browse operation with the given options
-    
+
+    _get_epoch_time()               -- gets the Epoch time given the input time is in format
+                                           %Y-%m-%d %H:%M:%S
+
+    _set_defaults()                 -- recursively sets default values on a dictionary
+
+    _default_browse_options()       -- prepares the options for the Browse/find operation
+
+    _prepare_browse_json()          -- prepares the JSON object for the browse request
+
+    _process_browse_response()      -- retrieves the items from browse response
+
+    _do_browse()                    -- performs a browse operation with the given options
+
     set_default_backupset()         -- sets the backupset as the default backup set for the agent,
                                         if not already default
 
     backup()                        -- runs full backup for all subclients
                                         associated with this backupset
-    
-    browse()                        -- Performs a browse operation on the backupset
-    
-    find()                          -- Performs a find operation on the backupset
+
+    browse()                        -- browse the content of the backupset
+
+    find()                          -- find content in the backupset
 
 """
 
@@ -84,7 +85,6 @@ from __future__ import unicode_literals
 
 import threading
 import time
-import datetime
 
 from past.builtins import basestring
 
@@ -511,11 +511,11 @@ class Backupset(object):
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
 
-        self.default_browse_options = {
+        self._default_browse_options = {
             'operation': 'browse',
             'show_deleted': False,
-            'from_time': 0,  # Timestamp ( string or integer ) or %Y-%m-%d %H:%M:%S ( string )
-            'to_time': 0,  # Timestamp ( string or integer ) or %Y-%m-%d %H:%M:%S ( string )
+            'from_time': 0,         # value should either be the Epoch time or the Timestamp
+            'to_time': 0,           # value should either be the Epoch time or the Timestamp
             'path': '\\',
             'copy_precedence': 0,
             'media_agent': '',
@@ -697,85 +697,85 @@ class Backupset(object):
         return self._process_update_reponse(request_json)
 
     @staticmethod
-    def _get_timestamp(formatted_time):
-        """ Returns the epoch timestamp given the input time is in format %Y-%m-%d %H:%M:%S
-        
-        Args:
-            formatted_time   (mixed)  --  String of formatted time or integer/string of timestamp
-            
-        Returns:
-            int - Timestamp
-            
-        Raises:
-            SDKException:
-                If the timestamp cannot be obtained
-        """
+    def _get_epoch_time(timestamp):
+        """Returns the Epoch time given the input time is in format %Y-%m-%d %H:%M:%S.
 
-        if str(formatted_time) == '0':
+            Args:
+                timestamp   (int / str)     --  value should either be the Epoch time or, the
+                                                    Timestamp of the format %Y-%m-%d %H:%M:%S
+
+            Returns:
+                int - epoch time converted from the input timestamp
+
+            Raises:
+                SDKException:
+                    if the input timestamp is not of correct format
+        """
+        if str(timestamp) == '0':
             return 0
 
-        try:  # Try converting the value to Integer, if possible then return it.
-            timestamp = int(formatted_time)
-            return timestamp
-
-        except ValueError:  # If not convertible to integer, then get the timestamp from formatted time
+        try:
+            # return the timestamp value in int type
+            return int(timestamp)
+        except ValueError:
+            # if not convertible to int, then convert the timestamp input to Epoch time
             try:
-                return int(time.mktime(datetime.datetime.strptime(formatted_time, "%Y-%m-%d %H:%M:%S").timetuple()))
+                return int(time.mktime(time.strptime(timestamp, "%Y-%m-%d %H:%M:%S")))
             except:
                 raise SDKException('Subclient', '106')
 
-    def _set_defaults(self, custom, defaults):
-        """ Recursively sets default values on a dictionary
+    def _set_defaults(self, final_dict, defaults_dict):
+        """Iterates over the defaults_dict, and adds the default value to the final_dict,
+            for the key which is not present in the final dict.
 
-        Args:
-            custom     (dict)    --  The dictionary which has to be set with defaults
-            defaults   (dict)    --  The dictionary with default values
+            Recursively sets default values on the final_dict dictionary.
 
-        Returns:
-            None
+            Args:
+                final_dict      (dict)  --  the dictionary to be set with defaults, and to be used
+                                                to generate the Browse / Find JSON
 
+                defaults_dict   (dict)  --  the dictionary with default values
+
+            Returns:
+                None
         """
+        for key in defaults_dict:
+            if key not in final_dict:
+                final_dict[key] = defaults_dict[key]
 
-        for key in defaults:
-            if key not in custom:
-                custom[key] = defaults[key]
-
-            if type(defaults[key]) == dict:
-                self._set_defaults(custom[key], defaults[key])
+            if isinstance(defaults_dict[key], dict):
+                self._set_defaults(final_dict[key], defaults_dict[key])
 
     def _prepare_browse_options(self, options):
-        """ Prepares the options for the Browse/find operation
+        """Prepares the options for the Browse/find operation.
 
-        Args:
-            options   (dict)   --   A dictionary of browse options
+            Args:
+                options     (dict)  --  a dictionary of browse options
 
-        Returns:
-            dict - The browse options with all the default options set
-
+            Returns:
+                dict - The browse options with all the default options set
         """
-
-        self._set_defaults(options, self.default_browse_options)
-
+        self._set_defaults(options, self._default_browse_options)
         return options
 
     def _prepare_browse_json(self, options):
-        """ Prepares the JSON object for the browse request
+        """Prepares the JSON object for the browse request.
 
-        Args:
-            options   (dict)   --    The browse options dictionary
+            Args:
+                options     (dict)  --  the browse options dictionary
 
-        Returns:
-            dict - A JSON object for the browse response
-
+            Returns:
+                dict - A JSON object for the browse response
         """
-
         operation_types = {
             'browse': 0,
             'find': 1
         }
 
         options['operation'] = options['operation'].lower()
-        options['operation'] = 'find' if options['operation'] not in operation_types else options['operation']
+
+        if options['operation'] not in operation_types:
+            options['operation'] = 'find'
 
         request_json = {
             "opType": operation_types[options['operation']],
@@ -799,8 +799,8 @@ class Backupset(object):
                 "subclientId": int(options['_subclient_id'])
             },
             "timeRange": {
-                "fromTime": self._get_timestamp(options['from_time']),
-                "toTime": self._get_timestamp(options['to_time'])
+                "fromTime": self._get_epoch_time(options['from_time']),
+                "toTime": self._get_epoch_time(options['to_time'])
             },
             "advOptions": {
                 "copyPrecedence": options['copy_precedence']
@@ -826,43 +826,48 @@ class Backupset(object):
         }
 
         if len(options['filters']) > 0:
-            request_json['queries'][0]['whereClause'] = []  # [('FileName', '*.txt'), ('FileSize','GT','100')]
+            # [('FileName', '*.txt'), ('FileSize','GT','100')]
+            request_json['queries'][0]['whereClause'] = []
 
-            for filter in options['filters']:
-                if filter[0] in ('FileName', 'FileSize'):
+            for browse_filter in options['filters']:
+                if browse_filter[0] in ('FileName', 'FileSize'):
                     temp_dict = {
                         'connector': 0,
                         'criteria': {
-                            'field': filter[0],
-                            'values': [filter[1]]
+                            'field': browse_filter[0],
+                            'values': [browse_filter[1]]
                         }
                     }
 
-                    if filter[0] == 'FileSize':
-                        temp_dict['criteria']['dataOperator'] = filter[2]
+                    if browse_filter[0] == 'FileSize':
+                        temp_dict['criteria']['dataOperator'] = browse_filter[2]
 
                     request_json['queries'][0]['whereClause'].append(temp_dict)
-        
+
         return request_json
 
     def _process_browse_response(self, flag, response, options):
-        """ Retrieves the items from browse response
+        """Retrieves the items from browse response.
 
         Args:
             flag        (bool)  --  boolean, whether the response was success or not
+
             response    (dict)  --  JSON response received for the request from the Server
+
             options     (dict)  --  The browse options dictionary
 
         Returns:
-            list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
+            list - List of only the file / folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
 
         Raises:
             SDKException:
                 if failed to browse/search for content
-                if response is empty
-                if response is not success
 
+                if response is empty
+
+                if response is not success
         """
 
         operation_types = {
@@ -870,10 +875,8 @@ class Backupset(object):
             "find": ('111', 'Failed to Search\nError: "{0}"')
         }
 
-        opt_type = options['operation']
-
-        exception_code = operation_types[opt_type][0]
-        exception_message = operation_types[opt_type][1]
+        exception_code = operation_types[options['operation']][0]
+        exception_message = operation_types[options['operation']][1]
 
         if flag:
 
@@ -944,22 +947,21 @@ class Backupset(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _do_browse(self, options=''):
-        """ Performs a browse operation with the given options
+    def _do_browse(self, options=None):
+        """Performs a browse operation with the given options.
 
         Args:
-            options    (dict)   --   Dictionary of browse options
+            options     (dict)  --  dictionary of browse options
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-
-        options = {} if options == '' else options
+        if options is None:
+            options = {}
 
         options = self._prepare_browse_options(options)
-
         request_json = self._prepare_browse_json(options)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1098,32 +1100,36 @@ class Backupset(object):
         return return_list
 
     def browse(self, *args, **kwargs):
-        """ Performs a browse operation on the backupset
+        """Browses the content of a Backupset.
 
             Args:
-                Dictionary of browse options
-                    Example-  
-                        browse({ 
+                Dictionary of browse options:
+                    Example:
+                        browse({
                             'path': 'c:\\hello',
                             'show_deleted': True,
                             'from_time': '2014-04-20 12:00:00',
                             'to_time': '2016-04-31 12:00:00'
                         })
 
-                (or)
+                    (OR)
 
-                Keyword argument of browse options 
-                    Example - browse( path='c:\\hello', show_deleted=True, to_time='2016-04-31 12:00:00' )
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            to_time='2016-04-31 12:00:00'
+                        )
 
-                Refer self.default_browse_options for all the supported options
+                Refer self._default_browse_options for all the supported options
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-
-        if len(args) > 0 and type(args[0]) == dict:
+        if len(args) > 0 and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -1133,11 +1139,12 @@ class Backupset(object):
         return self._do_browse(options)
 
     def find(self, *args, **kwargs):
-        """ Performs a find operation on the backupset
+        """Searches a file/folder in the backupset backup content,
+            and returns all the files matching the filters given.
 
          Args:
-            Dictionary of browse options
-                Example-  
+            Dictionary of find options:
+                Example:
                     find({
                         'file_name': '*.txt',
                         'show_deleted': True,
@@ -1145,26 +1152,33 @@ class Backupset(object):
                         'to_time': '2016-04-31 12:00:00'
                     })
 
-            (or)
+                (OR)
 
-            Keyword argument of browse options 
-                Example - find( file_name='*.txt', show_deleted=True, to_time='2016-04-31 12:00:00' )
+            Keyword argument of find options:
+                Example:
+                    find(
+                        file_name='*.txt',
+                        show_deleted=True,
+                        to_time='2016-04-31 12:00:00'
+                    )
 
-            Refer self.default_browse_options for all the supported options
+            Refer self._default_browse_options for all the supported options
 
             Additional options supported:
                 file_name       (str)   --   Find files with name
+
                 file_size_gt    (int)   --   Find files with size greater than size
+
                 file_size_lt    (int)   --   Find files with size lesser than size
+
                 file_size_et    (int)   --   Find files with size equal to size
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-
-        if len(args) > 0 and type(args[0]) == dict:
+        if len(args) > 0 and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
