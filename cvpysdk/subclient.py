@@ -38,43 +38,65 @@ Subclients:
 Subclient:
     __init__(backupset_object,
              subclient_name,
-             subclient_id)      --  initialise instance of the Subclient class,
-                                        associated to the specified backupset
+             subclient_id)              --  initialise instance of the Subclient class,
+                                                associated to the specified backupset
 
-    __repr__()                  --  return the subclient name, the instance is associated with
+    __repr__()                          --  return the subclient name, the instance is associated
+                                                with
 
-    _get_subclient_id()         --  method to get subclient id, if not specified in __init__ method
+    _get_subclient_id()                 --  method to get subclient id, if not specified in
+                                                __init__ method
 
-    _get_subclient_properties() --  get the properties of this subclient
+    _get_subclient_properties()         --  get the properties of this subclient
 
-    _initialize_subclient_properties() --  initializes the properties of this subclient
+    _initialize_subclient_properties()  --  initializes the properties of this subclient
 
-    _update()                   --  updates the properties of a subclient
+    _update()                           --  updates the properties of a subclient
 
-    _filter_paths()             --  filters the path as per the OS, and the Agent
+    _filter_paths()                     --  filters the path as per the OS, and the Agent
 
-    _process_backup_request()   --  runs the backup request provided, and processes the response
+    _process_backup_response()          --  process response received from backup request
 
-    _restore_json()             --  returns the apppropriate JSON request to pass for either
-                                        Restore In-Place or Out-of-Place operation
+    _browse_and_find_json()             --  returns the appropriate JSON request to pass for either
+                                                Browse operation or Find operation
 
-    _process_restore_response() --  processes response received for the Restore request
+    _process_browse_response()          --  processes response received for both Browse and Find
+                                                request
 
-    description()               --  update the description of the subclient
+    _restore_json()                     --  returns the apppropriate JSON request to pass for
+                                                either Restore In-Place or Out-of-Place operation
 
-    content()                   --  update the content of the subclient
+    _process_restore_response()         --  processes response received for the Restore request
 
-    enable_backup()             --  enables the backup for the subclient
+    description()                       --  update the description of the subclient
 
-    enable_backup_at_time()     --  enables backup for the subclient at the input time specified
+    content()                           --  update the content of the subclient
 
-    disble_backup()             --  disbles the backup for the subclient
+    storage_policy()                    --  update the storage policy for this subclient
 
-    backup()                    --  run a backup job for the subclient
+    enable_backup()                     --  enables the backup for the subclient
 
-    browse()                    --  Performs a browse operation on the subclient
-    
-    find()                      --  Performs a find operation on the subclient
+    enable_backup_at_time()             --  enables backup for the subclient at the input time
+                                                specified
+
+    disable_backup()                    --  disables the backup for the subclient
+
+    enable_intelli_snap()               --  enables the intelli snap for the subclient
+
+    disable_intelli_snap()              --  disables the intelli snap for subclient
+
+    backup()                            --  run a backup job for the subclient
+
+    browse()                            --  gets the content of the backup for this subclient
+                                                at the path specified
+
+    browse_in_time()            --  gets the content of the backup for this subclient
+                                        at the input path in the time range specified
+
+    find()                      --  searches a given file/folder name in the subclient content
+
+    restore_in_place()          --  Restores the files/folders specified in the
+                                        input paths list to the same location
 
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
                                         to the input client, at the specified destionation location
@@ -1570,29 +1592,36 @@ class Subclient(object):
         return self._process_backup_response(flag, response)
 
     def browse(self, *args, **kwargs):
-        """ Performs a browse operation on the subclient
+        """Browses the content of a Subclient.
 
             Args:
-                Dictionary of browse options
-                    Example-  
+                Dictionary of browse options:
+                    Example:
                         browse({
                             'path': 'c:\\hello',
-                            'show_deleted': True
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-21 12:00:00'
                         })
 
-                (or)
+                    (OR)
 
-                Keyword argument of browse options 
-                    Example -   browse( path='c:\\hello', show_deleted=True, to_time='2016-04-31 12:00:00' )
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
 
-                Refer Backupset.default_browse_options for all the supported options
+                Refer Backupset._default_browse_options for all the supported options
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-
         if len(args) > 0 and type(args[0]) == dict:
             options = args[0]
         else:
@@ -1603,37 +1632,46 @@ class Subclient(object):
         return self._backupset_object.browse(options)
 
     def find(self, *args, **kwargs):
-        """ Performs a find operation on the subclient
+        """Searches a file/folder in the subclient backup content,
+            and returns all the files matching the filters given.
 
          Args:
-            Dictionary of browse options
-                Example-  
-                    find({ 
+            Dictionary of find options:
+                Example:
+                    find({
                         'file_name': '*.txt',
                         'show_deleted': True,
                         'from_time': '2014-04-20 12:00:00',
-                        'to_time': '2016-04-31 12:00:00'
+                        'to_time': '2016-04-21 12:00:00'
                     })
 
-            (or)
+                (OR)
 
-            Keyword argument of browse options 
-                Example - find( file_name='*.txt', show_deleted=True, to_time='2016-04-31 12:00:00' )
+            Keyword argument of find options:
+                Example:
+                    find(
+                        file_name='*.txt',
+                        show_deleted=True,
+                        from_time=2014-04-20 12:00:00,
+                        to_time='2016-04-21 12:00:00'
+                    )
 
-            Refer Backupset.default_browse_options for all the supported options
+            Refer Backupset._default_browse_options for all the supported options
 
             Additional options supported:
                 file_name       (str)   --   Find files with name
+
                 file_size_gt    (int)   --   Find files with size greater than size
+
                 file_size_lt    (int)   --   Find files with size lesser than size
+
                 file_size_et    (int)   --   Find files with size equal to size
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-
         if len(args) > 0 and type(args[0]) == dict:
             options = args[0]
         else:
