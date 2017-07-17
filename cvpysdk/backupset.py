@@ -777,10 +777,21 @@ class Backupset(object):
         if options['operation'] not in operation_types:
             options['operation'] = 'find'
 
+        # add the browse mode value here, if it is different for an agent
+        # if agent is not added in the dict, default value 2 will be used
+        browse_mode = {
+            'virtual server': 4
+        }
+
+        mode = 2
+
+        if self._agent_object.agent_name in browse_mode:
+            mode = browse_mode[self._agent_object.agent_name]
+
         request_json = {
             "opType": operation_types[options['operation']],
             "mode": {
-                "mode": 2
+                "mode": mode
             },
             "paths": [{
                 "path": options['path']
