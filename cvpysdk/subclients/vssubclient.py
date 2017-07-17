@@ -69,12 +69,13 @@ class VirtualServerSubclient(Subclient):
         content = []
 
         content_types = {
-            '1': 'Host',
-            '2': 'Resource Pool',
-            '4': 'Datacenter',
-            '9': 'Virtual Machine',
-            '16': 'All unprotected VMs',
-            '17': 'Root'
+            1: 'Host',
+            2: 'Resource Pool',
+            4: 'Datacenter',
+            9: 'Virtual Machine',
+            16: 'All unprotected VMs',
+            17: 'Root',
+            35: 'Tag Category'
         }
 
         if 'vmContent' in self._subclient_properties:
@@ -113,12 +114,13 @@ class VirtualServerSubclient(Subclient):
         content = []
 
         content_types = {
-            'Host': '1',
-            'Root': '17',
-            'Datacenter': '4',
-            'Resource Pool': '2',
-            'Virtual Machine': '9',
-            'All unprotected VMs': '16'
+            'Host': 1,
+            'Root': 17,
+            'Datacenter': 4,
+            'Tag Category': 35,
+            'Resource Pool': 2,
+            'Virtual Machine': 9,
+            'All unprotected VMs': 16
         }
 
         try:
@@ -229,39 +231,46 @@ class VirtualServerSubclient(Subclient):
         return restore_content
 
     def browse(self, *args, **kwargs):
-        """ Performs a browse operation on the subclient
+        """Browses the content of the Subclient.
 
             Args:
-                Dictionary of browse options
-                    Example-  
+                Dictionary of browse options:
+                    Example:
                         browse({
                             'path': '\\vmname\\',
                             'show_deleted': True,
                             'from_time': '2014-04-20 12:00:00',
-                            'to_time': '2016-04-31 12:00:00'
+                            'to_time': '2016-04-21 12:00:00'
                         })
 
-                (or)
+                    (OR)
 
-                Keyword argument of browse options 
-                    Example - browse( path='\\vmname\\', show_deleted=True, to_time = '2016-04-31 12:00:00' )
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
 
-                Refer Backupset.default_browse_options for all the supported options
+                Refer Backupset._default_browse_options for all the supported options
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-
-        if len(args) > 0 and type(args[0]) == dict:
+        if len(args) > 0 and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
 
         vm_ids, vm_names = self._get_vm_ids_and_names_dict()
 
-        options['path'] = '\\' if 'path' not in options else options['path']
+        if 'path' not in options:
+            options['path'] = '\\'
+
         options['path'] = self._parse_vm_path(vm_names, options['path'])
 
         browse_content = super(VirtualServerSubclient, self).browse(options)
@@ -269,93 +278,114 @@ class VirtualServerSubclient(Subclient):
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
     def guest_files_browse(self, *args, **kwargs):
-        """ Performs a browse operation on the subclient
+        """Browses the content of the Subclient.
 
             Args:
-                Dictionary of browse options
-                    Example-  
-                        guest_files_browse({
+                Dictionary of browse options:
+                    Example:
+                        browse({
                             'path': '\\vmname\\',
                             'show_deleted': True,
                             'from_time': '2014-04-20 12:00:00',
-                            'to_time': '2016-04-31 12:00:00'
+                            'to_time': '2016-04-21 12:00:00'
                         })
 
-                (or)
+                    (OR)
 
-                Keyword argument of browse options 
-                    Example - guest_files_browse( 
-                        path='\\vmname\\', show_deleted=True, to_time='2016-04-31 12:00:00'
-                    )
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
 
-                Refer Backupset.default_browse_options for all the supported options
+                Refer Backupset._default_browse_options for all the supported options
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-
         return self.browse(*args, **kwargs)
 
     def vm_files_browse(self, *args, **kwargs):
-        """ Performs a browse operation on the subclient
+        """Browses the content of the Subclient.
 
             Args:
-                Dictionary of browse options
-                    Example-  
-                        vm_files_browse({
+                Dictionary of browse options:
+                    Example:
+                        browse({
                             'path': '\\vmname\\',
                             'show_deleted': True,
                             'from_time': '2014-04-20 12:00:00',
-                            'to_time': '2016-04-31 12:00:00'
+                            'to_time': '2016-04-21 12:00:00'
                         })
 
-                (or)
+                    (OR)
 
-                Keyword argument of browse options 
-                    Example - vm_files_browse( 
-                        path='\\vmname\\', show_deleted=True, to_time='2016-04-31 12:00:00'
-                    )
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
 
-                Refer Backupset.default_browse_options for all the supported options
+                Refer Backupset._default_browse_options for all the supported options
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
 
+        options['vm_disk_browse'] = True
         return self.browse(*args, **kwargs)
 
     def disk_level_browse(self, *args, **kwargs):
-        """ Performs a browse operation on the subclient
+        """Browses the content of the Subclient.
 
             Args:
-                Dictionary of browse options
-                    Example-  
-                        disk_level_browse({
+                Dictionary of browse options:
+                    Example:
+                        browse({
                             'path': '\\vmname\\',
                             'show_deleted': True,
                             'from_time': '2014-04-20 12:00:00',
-                            'to_time': '2016-04-31 12:00:00'
+                            'to_time': '2016-04-21 12:00:00'
                         })
 
-                (or)
+                    (OR)
 
-                Keyword argument of browse options 
-                    Example - disk_level_browse( 
-                        path='\\vmname\\', show_deleted=True, to_time='2016-04-31 12:00:00 
-                    )
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
 
-                Refer Backupset.default_browse_options for all the supported options
+                Refer Backupset._default_browse_options for all the supported options
 
         Returns:
             list - List of only the file, folder paths from the browse response
-            dict - Dictionary of all the paths with additional metadata which are retrieved from browse
 
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
 
+        options['vm_disk_browse'] = True
         browse_content = self.browse(*args, **kwargs)
 
         paths_list = []
