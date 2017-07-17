@@ -42,26 +42,47 @@ Get a client:
 Get an agent:
 	>>> agent = client.agents.get(agent_name)
 
-Get a backupset:
-	>>> backupset = agent.backupsets.get(backupset_name)
+Get an instance:
+	>>> instance = agent.instances.get(instance_name)
 
-Get a subclient:
-	>>> subclient = backupset.subclients.get(subclient_name)
+Browsing content at instance level:
+	>>> paths, dictionary = instance.browse(path='c:\\', show_deleted=True)
+
+Browsing content of a instance in a specific time range:
+	>>> paths, dictionary = instance.browse(path='f:\\', from_time='2010-04-19 02:30:00', to_time='2014-12-20 12:00:00')
+
+Searching a file in instance backup content:
+	>>> paths, dictionary = instance.find(file_name="*.csv")
+
+Get a backupset:
+	>>> backupset = instance.backupsets.get(backupset_name)
 
 Run backup for a backupset:
 	>>> job = backupset.backup()
 
+Browsing content at backupset level:
+	>>> paths, dictionary = backupset.browse(path='c:\\', show_deleted=True)
+
+Browsing content of a backupset in a specific time range:
+	>>> paths, dictionary = backupset.browse(path='f:\\', from_time='2010-04-19 02:30:00', to_time='2014-12-20 12:00:00')
+
+Searching a file in backupset backup content:
+	>>> paths, dictionary = backupset.find(file_name="*.csv")
+
+Get a subclient:
+	>>> subclient = backupset.subclients.get(subclient_name)
+
 Run backup for a subclient:
 	>>> job = subclient.backup(backup_level, incremental_backup, incremental_level)
 
-Browsing content of a subclient:
-	>>> paths, dictionary = subclient.browse(path, show_deleted_files, vm_file_browse, vm_disk_browse)
+Browsing content at subclient level:
+	>>> paths, dictionary = subclient.browse(path='c:\\', show_deleted=True)
 
 Browsing content of a subclient in a specific time range:
-	>>> paths, dictionary = subclient.browse_in_time(path, show_deleted_files, restore_index, from_date, to_date)
+	>>> paths, dictionary = subclient.browse(path='f:\\', from_time='2010-04-19 02:30:00', to_time='2014-12-20 12:00:00')
 
 Searching a file in subclient backup content:
-	>>> paths, dictionary = subclient.find(file_or_folder_name, show_deleted_files, restore_index)
+	>>> paths, dictionary = subclient.find(file_name="*.txt")
 
 Run restore in place job for a subclient:
 	>>> job = subclient.restore_in_place(paths, overwrite, restore_data_and_acl)
