@@ -45,6 +45,10 @@ Instance:
 
     _get_instance_properties()      --  method to get the properties of the instance
 
+    browse()                        --  browse the content of the instance
+
+    find()                          --  find content in the instance
+
 """
 
 from __future__ import absolute_import

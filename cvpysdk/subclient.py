@@ -57,12 +57,6 @@ Subclient:
 
     _process_backup_response()          --  process response received from backup request
 
-    _browse_and_find_json()             --  returns the appropriate JSON request to pass for either
-                                                Browse operation or Find operation
-
-    _process_browse_response()          --  processes response received for both Browse and Find
-                                                request
-
     _restore_json()                     --  returns the apppropriate JSON request to pass for
                                                 either Restore In-Place or Out-of-Place operation
 
@@ -90,16 +84,14 @@ Subclient:
     browse()                            --  gets the content of the backup for this subclient
                                                 at the path specified
 
-    browse_in_time()            --  gets the content of the backup for this subclient
-                                        at the input path in the time range specified
+    find()                              --  searches a given file/folder in the subclient content
 
-    find()                      --  searches a given file/folder name in the subclient content
+    restore_in_place()                  --  restores the files/folders specified in the
+                                                input paths list to the same location
 
-    restore_in_place()          --  Restores the files/folders specified in the
-                                        input paths list to the same location
-
-    restore_out_of_place()      --  Restores the files/folders specified in the input paths list
-                                        to the input client, at the specified destionation location
+    restore_out_of_place()              --  restores the files/folders specified in the input paths
+                                                list to the given client,
+                                                at the specified destionation location
 
 """
 
