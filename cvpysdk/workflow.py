@@ -30,7 +30,7 @@ WorkFlow:
 
     delete_workflow(workflow_name)      --  deletes a workflow from the commcell
 
-    _download_workflow(workflow_guid)   --  downloads given workflow from the store.commvault.com
+    _download_workflow(workflow_name)   --  downloads given workflow from the cloud.commvault.com
 
 """
 
@@ -39,6 +39,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+from base64 import b64decode
 
 from past.builtins import basestring
 from past.builtins import raw_input
@@ -496,11 +497,11 @@ class WorkFlow(object):
                 'Workflow', '102', 'Deleting Workflow failed. {0}'.format(response.json())
             )
 
-    def _download_workflow(self, workflow_guid, download_location, cloud_username, cloud_password):
+    def _download_workflow(self, workflow_name, download_location, cloud_username, cloud_password):
         """Downloads workflow from Software Store.
 
             Args:
-                workflow_guid       (str)   --  guid of the workflow to download
+                workflow_name       (str)   --  name of the workflow to download
 
                 download_location   (str)   --  location to download the workflow at
 
@@ -510,25 +511,18 @@ class WorkFlow(object):
 
             Raises:
                 SDKException:
-                    if type of the workflow guid argument is not string
+                    if type of the workflow name argument is not string
 
                     if HTTP Status Code is not SUCCESS / download workflow failed
         """
-        if not isinstance(workflow_guid, basestring):
+        if not isinstance(workflow_name, basestring):
             raise SDKException('Workflow', '101')
 
         from .commcell import Commcell
 
-        getpackageid_xml = """
-        <WebReport_StoreItemReq>
-            <items id="{0}"/>
-        </WebReport_StoreItemReq>
-        """.format(workflow_guid)
-
         cloud_commcell = Commcell('cloud.commvault.com', cloud_username, cloud_password)
-
         flag, response = cloud_commcell._cvpysdk_object.make_request(
-            'POST', cloud_commcell._services['SOFTWARESTORE_GETPKGID'], getpackageid_xml
+            'GET', cloud_commcell._services['SOFTWARESTORE_PKGINFO'] % (workflow_name)
         )
 
         if flag is False:
@@ -539,7 +533,12 @@ class WorkFlow(object):
             )
 
         if response.json():
-            package_id = response.json()["items"][0]["packageId"]
+            if "packageId" in response.json():
+                package_id = response.json()["packageId"]
+            else:
+                raise SDKException(
+                    'Workflow', '102', response.json()['errorDetail']['errorMessage']
+                )
         else:
             raise SDKException('Response', '102')
 
@@ -557,21 +556,22 @@ class WorkFlow(object):
 
         if flag:
             if response.json():
-                file_content = response.json()["fileContent"]["data"].decode(
-                    encoding='base64', errors='strict'
-                )
-                if os.path.exists(download_location):
-                    download_path = os.path.join(download_location, workflow_guid + ".xml")
-                else:
-                    raise SDKException(
-                        'Workflow',
-                        '102',
-                        'Specified download location: {0} does not exists.'.format(
-                            download_location
-                        )
-                    )
+                file_content = response.json()["fileContent"]["data"]
+                file_content = b64decode(file_content).decode('utf-8')
+
+                if not os.path.exists(download_location):
+                    try:
+                        os.makedirs(download_location)
+                    except FileExistsError:
+                        pass
+
+                download_path = os.path.join(download_location, workflow_name + ".xml")
+
                 with open(download_path, "w") as file_pointer:
                     file_pointer.write(file_content)
+
+                return download_path
+
             else:
                 raise SDKException('Response', '102')
         else:
