@@ -76,6 +76,8 @@ Client:
 
     disable_intelli_snap()       --  disables intelli snap for the client
 
+    is_ready                     --  checks if CommServ is able to communicate to client
+
 """
 
 from __future__ import absolute_import
@@ -501,6 +503,10 @@ class Client(object):
                     os_name
                 )
 
+                self._install_directory = None
+                self._version = None
+                self._service_pack = None
+
                 client_props = self._properties['clientProps']
 
                 self._is_data_recovery_enabled = client_props[
@@ -523,7 +529,19 @@ class Client(object):
 
                 self._client_hostname = self._properties['client']['clientEntity']['hostName']
 
-                self._is_intelli_snap_enabled = client_props['EnableSnapBackups']
+                self._is_intelli_snap_enabled = bool(client_props['EnableSnapBackups'])
+
+                if 'installDirectory' in self._properties['client']:
+                    self._install_directory = self._properties['client']['installDirectory']
+
+                if 'GalaxyRelease' in self._properties['client']['versionInfo']:
+                    self._version = self._properties['client'][
+                        'versionInfo']['GalaxyRelease']['ReleaseString']
+
+                if 'version' in self._properties['client']['versionInfo']:
+                    patch_info = self._properties['client']['versionInfo']['version']
+
+                    self._service_pack = patch_info.split(',')[0]
             else:
                 raise SDKException('Response', '102')
         else:
@@ -677,6 +695,21 @@ class Client(object):
     def is_intelli_snap_enabled(self):
         """Treats the is intelli snap enabled as a read-only attribute."""
         return self._is_intelli_snap_enabled
+
+    @property
+    def install_directory(self):
+        """Treats the install directory as a read-only attribute."""
+        return self._install_directory
+
+    @property
+    def version(self):
+        """Treats the version as a read-only attribute."""
+        return self._version
+
+    @property
+    def service_pack(self):
+        """Treats the service pack as a read-only attribute."""
+        return self._service_pack
 
     def enable_backup(self):
         """Enable Backup for this Client.
@@ -1255,6 +1288,42 @@ class Client(object):
 
                     o_str = 'Failed to disable Inetlli Snap\nError: "{0}"'.format(error_message)
                     raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_ready(self):
+        """Checks if CommServ is able to communicate to the client.
+
+            Returns:
+                True    -   if the CS is able to connect to the client
+
+                False   -   if communication fails b/w the CS and the client
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        request_xml = """
+        <EVGui_CheckReadinessReq >
+            <entity clientName="{0}" />
+        </EVGui_CheckReadinessReq>
+        """.format(self.client_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                if int(response.json()['isClientReady']) == 0:
+                    return False
+                return True
             else:
                 raise SDKException('Response', '102')
         else:
