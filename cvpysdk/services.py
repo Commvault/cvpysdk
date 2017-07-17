@@ -55,7 +55,10 @@ SERVICES_DICT_TEMPLATE = {
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
+    'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
+    'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
     'SCHEDULE_POLICY': '{0}SchedulePolicy',
+    'MEDIA_AGENT': '{0}MediaAgent/%s',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
@@ -91,6 +94,7 @@ SERVICES_DICT_TEMPLATE = {
     'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute',
 
     'SOFTWARESTORE_DOWNLOADITEM': '{0}DownloadFile',
+    'SOFTWARESTORE_PKGINFO': '{0}SoftwareStore/getPackagePublishInfo?packageName=%s',
     'SOFTWARESTORE_GETPKGID': '{0}SoftwareStoreItem',
 
     'CREATE_TASK': '{0}CreateTask'
