@@ -21,9 +21,7 @@ Job:
 
     _is_valid_job()             --  checks if the job with the given id is a valid job or not.
 
-    _check_finished()           --  checks if the job has finished or not yet
-
-    _is_finished()              --  checks for the status of the job.
+    is_finished()               --  checks for the status of the job.
                                         Returns True if finished, else False
 
     _get_job_summary()          --  gets the summary of the job with the given job id
@@ -42,7 +40,7 @@ Job:
 job.status                      --  Gives the current status of the job.
                                         (Completed / Suspended / Waiting / ... / etc.)
 
-job.finished                    --  Tells whether the job is finished or not. (True / False)
+job.is_finished                 --  Tells whether the job is finished or not. (True / False)
 
 job.pending_reason              --  reason if job went into pending state
 
@@ -54,7 +52,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import time
-import threading
 
 from .exception import SDKException
 
@@ -97,16 +94,13 @@ class Job(object):
         self._RESUME = self._commcell_object._services['RESUME_JOB'] % (self.job_id)
         self._KILL = self._commcell_object._services['KILL_JOB'] % (self.job_id)
 
-        self.finished = self._is_finished()
-        self.status = self._get_job_summary()['status']
-
         self._delay_reason = None
         self._pending_reason = None
 
         self._initialize_job_properties()
 
-        thread = threading.Thread(target=self._check_finished)
-        thread.start()
+        self.status = self._get_job_summary()['status']
+        self.is_finished
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -135,41 +129,6 @@ class Job(object):
                     raise excp
 
         return False
-
-    def _check_finished(self):
-        """Checks whether the job has finished or not."""
-        while not self._is_finished():
-            time.sleep(5)
-
-        self.finished = self._is_finished()
-
-    def _is_finished(self):
-        """Checks whether the job has finished or not.
-
-            Returns:
-                bool - boolean that represents whether the job has finished or not
-        """
-        job_summary = self._get_job_summary()
-        job_details = self._get_job_details()
-
-        self.status = job_summary['status']
-
-        if job_summary['lastUpdateTime'] != 0:
-            self._end_time = time.ctime(job_summary['lastUpdateTime'])
-        else:
-            self._end_time = None
-
-        if 'pendingReason' in job_summary:
-            if job_summary['pendingReason']:
-                self._pending_reason = job_summary['pendingReason']
-
-        if 'reasonForJobDelay' in job_details['jobDetail']['progressInfo']:
-            if job_details['jobDetail']['progressInfo']['reasonForJobDelay']:
-                self._delay_reason = job_details['jobDetail']['progressInfo']['reasonForJobDelay']
-
-        return ('completed' in self.status.lower() or
-                'killed' in self.status.lower() or
-                'failed' in self.status.lower())
 
     def _get_job_summary(self):
         """Gets the properties of this job.
@@ -294,12 +253,41 @@ class Job(object):
         start_time = time.time()
 
         while self.status.lower() != status.lower():
-            if self.finished is True:
+            if self.is_finished is True:
                 break
             if time.time() - start_time > 120:
                 break
 
             time.sleep(3)
+
+    @property
+    def is_finished(self):
+        """Checks whether the job has finished or not.
+
+            Returns:
+                bool - boolean that represents whether the job has finished or not
+        """
+        job_summary = self._get_job_summary()
+        job_details = self._get_job_details()
+
+        self.status = job_summary['status']
+
+        if job_summary['lastUpdateTime'] != 0:
+            self._end_time = time.ctime(job_summary['lastUpdateTime'])
+        else:
+            self._end_time = None
+
+        if 'pendingReason' in job_summary:
+            if job_summary['pendingReason']:
+                self._pending_reason = job_summary['pendingReason']
+
+        if 'reasonForJobDelay' in job_details['jobDetail']['progressInfo']:
+            if job_details['jobDetail']['progressInfo']['reasonForJobDelay']:
+                self._delay_reason = job_details['jobDetail']['progressInfo']['reasonForJobDelay']
+
+        return ('completed' in self.status.lower() or
+                'killed' in self.status.lower() or
+                'failed' in self.status.lower())
 
     @property
     def client_name(self):

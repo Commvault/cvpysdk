@@ -95,7 +95,7 @@ Job Operations:
 	>>> job.resume()	    # Resumes the Job
 	>>> job.kill()		    # Kills the Job
 	>>> job.status		    # Current Status the Job  --  Completed / Pending / Failed / .... / etc.
-	>>> job.finished	    # Job finished or not     --  True / False
+	>>> job.is_finished	    # Job finished or not     --  True / False
 	>>> job.delay_reason	    # Job delay reason (if any)
 	>>> job.pending_reason	    # Job pending reason (if any)
 
@@ -111,7 +111,7 @@ Alternatively, you can uninstall using the **pip** command::
 
 	pip uninstall cvpysdk
 
-	
+
 Contribution Guidelines
 -----------------------
 
