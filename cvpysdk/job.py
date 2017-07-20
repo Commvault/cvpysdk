@@ -281,9 +281,9 @@ class Job(object):
             if job_details['jobDetail']['progressInfo']['reasonForJobDelay']:
                 self._delay_reason = job_details['jobDetail']['progressInfo']['reasonForJobDelay']
 
-        return ('completed' in self.status.lower() or
-                'killed' in self.status.lower() or
-                'failed' in self.status.lower())
+        return ('completed' in self._status.lower() or
+                'killed' in self._status.lower() or
+                'failed' in self._status.lower())
 
     @property
     def client_name(self):
