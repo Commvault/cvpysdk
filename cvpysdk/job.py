@@ -21,14 +21,19 @@ Job:
 
     _is_valid_job()             --  checks if the job with the given id is a valid job or not.
 
-    is_finished()               --  checks for the status of the job.
-                                        Returns True if finished, else False
-
     _get_job_summary()          --  gets the summary of the job with the given job id
 
     _get_job_details()          --  gets the details of the job with the given job id
 
     _initialize_job_properties()--  initializes the properties of the job
+
+    _wait_for_status()          --  waits for 2 minutes or till the job status is changed
+                                        to given status, whichever is earlier
+
+    wait_for_completion()       --  waits for the job to finish, (job.is_finished == True)
+
+    is_finished()               --  checks for the status of the job.
+                                        Returns True if finished, else False
 
     pause()                     --  suspend the job
 
@@ -251,12 +256,36 @@ class Job(object):
         start_time = time.time()
 
         while self.status.lower() != status.lower():
-            if self.is_finished is True:
-                break
-            if time.time() - start_time > 120:
+            if (self.is_finished is True) or (time.time() - start_time > 120):
                 break
 
             time.sleep(3)
+
+    def wait_for_completion(self, timeout=20):
+        """Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
+            Or till the function times out.
+
+            Args:
+                timeout     (int)   --  minutes after which the function should exit
+                        if the job does not finish before timeout, the function will exit
+                    default: 20
+
+            Returns:
+                bool    -   boolean specifying whether the job had finished before timeout or not
+                    True    -   if the job had finished before timeout
+
+                    False   -   if the job had not finished before timeout
+        """
+        start_time = time.time()
+
+        while not self.is_finished:
+            time.sleep(5)
+            if (time.time() - start_time) / 60 > timeout:
+                break
+        else:
+            return True
+
+        return False
 
     @property
     def is_finished(self):
