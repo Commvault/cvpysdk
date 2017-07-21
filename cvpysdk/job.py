@@ -261,27 +261,58 @@ class Job(object):
 
             time.sleep(3)
 
-    def wait_for_completion(self, timeout=20):
+    def wait_for_completion(self, timeout=30):
         """Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
-            Or till the function times out.
+            Kills the job and exits, if the job has been in Pending / Waiting state for more than
+            the timeout value.
 
             Args:
-                timeout     (int)   --  minutes after which the function should exit
-                        if the job does not finish before timeout, the function will exit
-                    default: 20
+                timeout     (int)   --  minutes after which the job should be killed and exited,
+                        if the job has been in Pending / Waiting state
+                    default: 30
 
             Returns:
-                bool    -   boolean specifying whether the job had finished before timeout or not
-                    True    -   if the job had finished before timeout
+                bool    -   boolean specifying whether the job had finished or not
+                    True    -   if the job had finished successfully
 
-                    False   -   if the job had not finished before timeout
+                    False   -   if the job was killed
         """
         start_time = time.time()
+        pending_time = 0
+        waiting_time = 0
+        previous_status = None
+
+        status_list = ['pending', 'waiting']
 
         while not self.is_finished:
-            time.sleep(5)
-            if (time.time() - start_time) / 60 > timeout:
+            time.sleep(30)
+
+            # get the current status of the job
+            status = self.status.lower()
+
+            # set the value of start time as current time
+            # if the current status is pending / waiting but the previous status was not
+            # also if the current status is pending / waiting and same as previous,
+            # then don't update the value of start time
+            if status in status_list and previous_status not in status_list:
+                start_time = time.time()
+
+            if status == 'pending':
+                pending_time = (time.time() - start_time) / 60
+            else:
+                pending_time = 0
+
+            if status == 'waiting':
+                waiting_time = (time.time() - start_time) / 60
+            else:
+                waiting_time = 0
+
+            if pending_time > timeout or waiting_time > timeout:
+                self.kill()
                 break
+
+            # set the value of previous status as the value of current status
+            previous_status = status
         else:
             return True
 
