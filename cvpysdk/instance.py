@@ -235,7 +235,7 @@ class Instance(object):
                     default: None
 
             Returns:
-                object - instance of the Backupset class
+                object - instance of the Instance class
         """
         from .backupset import Backupsets
 
