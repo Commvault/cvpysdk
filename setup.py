@@ -27,13 +27,13 @@ def get_version():
 
 def readme():
     """Reads the README.rst file and returns its contents."""
-    with open('README.rst') as file_object:
+    with open(os.path.join(ROOT, 'README.rst')) as file_object:
         return file_object.read()
 
 
 def get_license():
     """Reads the LICENSE.txt file and returns its contents."""
-    with open('LICENSE.txt') as file_object:
+    with open(os.path.join(ROOT, 'LICENSE.txt')) as file_object:
         return file_object.read()
 
 setup(
