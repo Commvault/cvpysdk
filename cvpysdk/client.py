@@ -1089,6 +1089,15 @@ class Client(object):
 
                 script          (str)   --  path of the script to be executed on the client
 
+            Returns:
+                    (int, str)
+
+                int     -   exit code returned from executing the script on the client
+                    default: -1     (exit code not returned in the response)
+
+                str     -   output returned from executing the script on the client
+                    default: ''     (output not returned in the response)
+
             Raises:
                 SDKException:
                     if script type argument is not of type string
@@ -1147,7 +1156,7 @@ class Client(object):
 
         if flag:
             if response.json():
-                exit_code = None
+                exit_code = -1
                 output = ''
 
                 if 'processExitCode' in response.json():
@@ -1168,6 +1177,15 @@ class Client(object):
 
             Args:
                 command     (str)   --  command in string to be executed on the client
+
+            Returns:
+                    (int, str)
+
+                int     -   exit code returned from executing the command on the client
+                    default: -1     (exit code not returned in the response)
+
+                str     -   output returned from executing the command on the client
+                    default: ''     (output not returned in the response)
 
             Raises:
                 SDKException:
@@ -1198,7 +1216,7 @@ class Client(object):
 
         if flag:
             if response.json():
-                exit_code = None
+                exit_code = -1
                 output = ''
 
                 if 'processExitCode' in response.json():
