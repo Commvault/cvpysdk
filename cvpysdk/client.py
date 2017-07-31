@@ -1148,13 +1148,13 @@ class Client(object):
         if flag:
             if response.json():
                 exit_code = None
-                output = None
-
-                if 'commandLineOutput' in response.json():
-                    output = response.json()['commandLineOutput']
+                output = ''
 
                 if 'processExitCode' in response.json():
                     exit_code = response.json()['processExitCode']
+
+                if 'commandLineOutput' in response.json():
+                    output = response.json()['commandLineOutput']
 
                 return exit_code, output
             else:
@@ -1199,13 +1199,13 @@ class Client(object):
         if flag:
             if response.json():
                 exit_code = None
-                output = None
-
-                if 'commandLineOutput' in response.json():
-                    output = response.json()['commandLineOutput']
+                output = ''
 
                 if 'processExitCode' in response.json():
                     exit_code = response.json()['processExitCode']
+
+                if 'commandLineOutput' in response.json():
+                    output = response.json()['commandLineOutput']
 
                 return exit_code, output
             else:
