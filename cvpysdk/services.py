@@ -97,7 +97,9 @@ SERVICES_DICT_TEMPLATE = {
     'SOFTWARESTORE_PKGINFO': '{0}SoftwareStore/getPackagePublishInfo?packageName=%s',
     'SOFTWARESTORE_GETPKGID': '{0}SoftwareStoreItem',
 
-    'CREATE_TASK': '{0}CreateTask'
+    'CREATE_TASK': '{0}CreateTask',
+    'GLOBAL_FILTER': '{0}GlobalFilter',
+    'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8'
 }
 
 
