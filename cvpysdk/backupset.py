@@ -123,12 +123,14 @@ class Backupsets(object):
         )
 
         from .backupsets.nasbackupset import NASBackupset
+        from .backupsets.hanabackupset import HANABackupset
 
         self._backupsets_dict = {
-            'nas': NASBackupset
+            'nas': NASBackupset,
+            'sap hana': HANABackupset
         }
 
-        if self._agent_object.agent_name in ['cloud apps', 'sql server']:
+        if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
             self._BACKUPSETS += '&excludeHidden=0'
 
         self._backupsets = self._get_backupsets()
