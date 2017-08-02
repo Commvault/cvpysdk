@@ -75,6 +75,7 @@ from .workflow import WorkFlow
 from .exception import SDKException
 from .clientgroup import ClientGroups
 from .datacube import Datacube
+from .globalfilter import GlobalFilters
 
 
 class Commcell(object):
@@ -165,6 +166,7 @@ class Commcell(object):
             WorkFlow,
             ClientGroups,
             Datacube
+            GlobalFilters
         ]
 
         sdk_dict = self._attribs_(sdk_classes)
@@ -179,6 +181,7 @@ class Commcell(object):
         self.workflows = sdk_dict[WorkFlow]
         self.client_groups = sdk_dict[ClientGroups]
         self.datacube = sdk_dict[Datacube]
+        self.global_filters = sdk_dict[GlobalFilters]
 
         self._commserv_name = self._get_commserv_name()
 
@@ -270,6 +273,7 @@ class Commcell(object):
         del self.schedule_policies
         del self.user_groups
         del self.workflows
+        del self.global_filters
         del self.client_groups
         del self.datacube
         del self.__user_guid

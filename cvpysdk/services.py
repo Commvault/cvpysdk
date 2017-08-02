@@ -104,6 +104,9 @@ SERVICES_DICT_TEMPLATE = {
     'GET_DATASOURCE': '{0}dcube/getDataSource/%s',
     'GET_ALL_HANDLERS': '{0}dcube/getAllHandlers?dsId=%s',
     'GET_HANDLER': '{0}dcube/getHandler/?dsId=%s&handlerId=%s'
+  
+    'GLOBAL_FILTER': '{0}GlobalFilter',
+    'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8'
 }
 
 
