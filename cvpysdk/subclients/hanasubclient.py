@@ -31,6 +31,8 @@ HANAServerSubclient:
 """
 from __future__ import unicode_literals
 
+from past.builtins import basestring
+
 from ..subclient import Subclient
 from ..exception import SDKException
 
@@ -198,7 +200,7 @@ class SAPHANASubclient(Subclient):
 
                     if log backup storage policy name is not in string format
         """
-        if isinstance(value, str):
+        if isinstance(value, basestring):
             if value not in self._commcell_object.storage_policies._policies:
                 raise SDKException(
                     'Subclient',

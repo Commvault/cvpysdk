@@ -31,6 +31,9 @@ SAPHANAInstance:
     restore()                       --  runs the restore job for specified instance
 
 """
+from __future__ import unicode_literals
+
+from past.builtins import basestring
 
 import time
 import threading
@@ -132,7 +135,7 @@ class SAPHANAInstance(Instance):
         if point_in_time is None:
             pit = {}
         else:
-            if not isinstance(point_in_time, str):
+            if not isinstance(point_in_time, basestring):
                 raise SDKException(
                     'Instance', 103
                 )

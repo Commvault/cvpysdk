@@ -23,6 +23,8 @@ HANABackupset:
 
 from __future__ import unicode_literals
 
+from past.builtins import basestring
+
 from ..backupset import Backupset
 from ..exception import SDKException
 
@@ -30,11 +32,6 @@ from ..exception import SDKException
 class HANABackupset(Backupset):
     """Derived class from Backupset Base class, representing a SAP HANA backupset,
         and to perform operations on that backupset."""
-
-    def _get_backupset_properties(self):
-        """Derived class from Backupset Base class, representing a SAP HANA backupset,
-            and to perform operations on that backupset."""
-        super(HANABackupset, self)._get_backupset_properties()
 
     def restore(
             self,
@@ -103,7 +100,7 @@ class HANABackupset(Backupset):
         """
         from ..instance import Instance
 
-        if not (isinstance(instance, str) or isinstance(instance, basestring)):
+        if not (isinstance(instance, basestring) or isinstance(instance, basestring)):
             raise SDKException('Instance', '101')
 
         request_json = self._instance_object._restore_request_json(
