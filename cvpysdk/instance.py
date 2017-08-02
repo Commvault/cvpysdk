@@ -45,9 +45,16 @@ Instance:
 
     _get_instance_properties()      --  method to get the properties of the instance
 
+    browse()                        --  browse the content of the instance
+
+    find()                          --  find content in the instance
+
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
 
 from .subclient import Subclients
 from .exception import SDKException
@@ -68,7 +75,7 @@ class Instances(object):
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
-        self._INSTANCES = self._commcell_object._services.GET_ALL_INSTANCES % (
+        self._INSTANCES = self._commcell_object._services['GET_ALL_INSTANCES'] % (
             self._agent_object._client_object.client_id
         )
 
@@ -138,10 +145,10 @@ class Instances(object):
 
                     for dictionary in response.json()['instanceProperties']:
 
-                        agent = str(dictionary['instance']['appName']).lower()
+                        agent = dictionary['instance']['appName'].lower()
 
                         if self._agent_object.agent_name in agent:
-                            temp_name = str(dictionary['instance']['instanceName']).lower()
+                            temp_name = dictionary['instance']['instanceName'].lower()
                             temp_id = str(dictionary['instance']['instanceId']).lower()
                             return_dict[temp_name] = temp_id
 
@@ -171,10 +178,10 @@ class Instances(object):
                 SDKException:
                     if type of the instance name argument is not string
         """
-        if not isinstance(instance_name, str):
+        if not isinstance(instance_name, basestring):
             raise SDKException('Instance', '101')
 
-        return self._instances and str(instance_name).lower() in self._instances
+        return self._instances and instance_name.lower() in self._instances
 
     def get(self, instance_name):
         """Returns a instance object of the specified instance name.
@@ -191,10 +198,10 @@ class Instances(object):
 
                     if no instance exists with the given name
         """
-        if not isinstance(instance_name, str):
+        if not isinstance(instance_name, basestring):
             raise SDKException('Instance', '101')
         else:
-            instance_name = str(instance_name).lower()
+            instance_name = instance_name.lower()
 
             agent_name = self._agent_object.agent_name
 
@@ -228,14 +235,14 @@ class Instance(object):
                     default: None
 
             Returns:
-                object - instance of the Backupset class
+                object - instance of the Instance class
         """
         from .backupset import Backupsets
 
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
-        self._instance_name = str(instance_name).lower()
+        self._instance_name = instance_name.lower()
 
         if instance_id:
             # Use the instance id provided in the arguments
@@ -244,7 +251,7 @@ class Instance(object):
             # Get the id associated with this instance
             self._instance_id = self._get_instance_id()
 
-        self._INSTANCE = self._commcell_object._services.INSTANCE % (self.instance_id)
+        self._INSTANCE = self._commcell_object._services['INSTANCE'] % (self.instance_id)
 
         self._properties = None
 
@@ -283,7 +290,7 @@ class Instance(object):
                 self._properties = response.json()["instanceProperties"][0]
 
                 instance_name = self._properties["instance"]["instanceName"]
-                self._instance_name = str(instance_name).lower()
+                self._instance_name = instance_name.lower()
             else:
                 raise SDKException('Response', '102')
         else:
@@ -299,3 +306,107 @@ class Instance(object):
     def instance_name(self):
         """Treats the instance name as a read-only attribute."""
         return self._instance_name
+
+    def browse(self, *args, **kwargs):
+        """Browses the content of a Backupset.
+
+            Args:
+                Dictionary of browse options:
+                    Example:
+                        browse({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-21 12:00:00'
+                        })
+
+                    (OR)
+
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
+
+                Refer self._default_browse_options for all the supported options
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+
+        Raises:
+            SDKException:
+                if there are more than one backupsets in the instance
+        """
+        all_backupsets = self.backupsets._backupsets
+
+        # do browse operation if there is only one backupset in the instance
+        # raise `SDKException` if there is more than one backupset in the instance
+
+        if len(all_backupsets) == 1:
+            backupset_name = all_backupsets.keys()[0]
+            temp_backupset_obj = self.backupsets.get(backupset_name)
+            return temp_backupset_obj.browse(*args, **kwargs)
+        else:
+            raise SDKException('Instance', '104')
+
+    def find(self, *args, **kwargs):
+        """Searches a file/folder in the backupset backup content,
+            and returns all the files matching the filters given.
+
+         Args:
+            Dictionary of find options:
+                Example:
+                    find({
+                        'file_name': '*.txt',
+                        'show_deleted': True,
+                        'from_time': '2014-04-20 12:00:00',
+                        'to_time': '2016-04-21 12:00:00'
+                    })
+
+                (OR)
+
+            Keyword argument of find options:
+                Example:
+                    find(
+                        file_name='*.txt',
+                        show_deleted=True,
+                        from_time=2014-04-20 12:00:00,
+                        to_time='2016-04-21 12:00:00'
+                    )
+
+            Refer self._default_browse_options for all the supported options
+
+            Additional options supported:
+                file_name       (str)   --   Find files with name
+
+                file_size_gt    (int)   --   Find files with size greater than size
+
+                file_size_lt    (int)   --   Find files with size lesser than size
+
+                file_size_et    (int)   --   Find files with size equal to size
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+
+        Raises:
+            SDKException:
+                if there are more than one backupsets in the instance
+        """
+        all_backupsets = self.backupsets._get_backupsets()
+
+        # do find operation if there is only one backupset in the instance
+        # raise `SDKException` if there is more than one backupset in the instance
+
+        if len(all_backupsets) == 1:
+            backupset_name = all_backupsets.keys()[0]
+            temp_backupset_obj = self.backupsets.get(backupset_name)
+            return temp_backupset_obj.find(*args, **kwargs)
+        else:
+            raise SDKException('Instance', '104')

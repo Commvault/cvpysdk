@@ -21,6 +21,8 @@ DiskLibrary:      Class for representing a single disk library associated with t
 
 StoragePolicies:  Class for representing all the Storage Policies associated to the commcell.
 
+StoragePolicy:    Class for representing a single Storage Policy associated to the commcell.
+
 SchedulePolicies: Class for representing all the Schedule Policies associated to the commcell.
 
 
@@ -42,12 +44,26 @@ MediaAgents:
 MediaAgent:
     __init__(commcell_object,
              media_agent_name,
-             media_agent_id)    --  initialize the instance of MediaAgent class for a specific
-                                        media agent of the commcell
+             media_agent_id)                --  initialize the instance of MediaAgent class for a
+                                                    specific media agent of the commcell
 
-    __repr__()                  --  returns a string representation of the MediaAgent instance
+    __repr__()                              --  returns a string representation of the
+                                                    MediaAgent instance
 
-    _get_media_agent_id()       --  gets the id of the MediaAgent instance from commcell
+    _get_media_agent_id()                   --  gets the id of the MediaAgent instance from
+                                                    commcell
+
+    _get_media_agent_properties()           --  returns media agent properties
+
+    _initialize_media_agent_properties()    --  initializes media agent properties
+
+    media_agent_name()                      --  returns media agent name
+
+    media_agent_id()                        --  returns media agent id
+
+    is_online()                             --  returns True is media agent is online
+
+    platform()                              --  returns os info of the media agent
 
 
 DiskLibraries:
@@ -93,6 +109,33 @@ StoragePolicies:
 
     delete(storage_policy_name)  --  removes the specified storage policy from the commcell
 
+StoragePolicy:
+    __init__(commcell_object,
+             storage_policy_name,
+             storage_policy_id)             --  initialize the instance of StoragePolicy class for
+                                                 a specific storage policy of the commcell
+
+    __repr__()                              --  returns a string representation of the
+                                                 StoragePolicy instance
+
+    _get_storage_policy_id()                --  gets the id of the StoragePolicy instance
+
+    _get_storage_policy_propeerties()       --  returns the properties of this storage policy
+
+    _initialize_storage_policy_properties() --  initializes storage policy prperties
+
+    has_copy()                              --  checks if copy with given name exists
+
+    create_secondary_copy()                 --  creates a storage policy copy
+
+    delete_secondary_copy()                 --  deletes storage policy copy
+
+    copies()                                --  returns the storage policy copies associated with
+                                                 this storage policy
+
+    run_aux_copy()                          --  starts a aux copy job for this storage policy and
+                                                 returns the job object
+
 
 SchedulePolicies:
     __init__(commcell_object)    --  initialize the SchedulePolicies instance for the commcell
@@ -105,13 +148,16 @@ SchedulePolicies:
 
     has_policy(policy_name)      --  checks if a schedule policy exists with the given name
 
-
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
 from future.standard_library import install_aliases
 
 from .exception import SDKException
+from .job import Job
 
 install_aliases()
 
@@ -129,7 +175,7 @@ class MediaAgents(object):
                 object - instance of the MediaAgents class
         """
         self._commcell_object = commcell_object
-        self._MEDIA_AGENTS = self._commcell_object._services.GET_MEDIA_AGENTS
+        self._MEDIA_AGENTS = self._commcell_object._services['GET_MEDIA_AGENTS']
         self._media_agents = self._get_media_agents()
 
     def __str__(self):
@@ -178,7 +224,7 @@ class MediaAgents(object):
                 media_agents_dict = {}
 
                 for media_agent in media_agents:
-                    temp_name = str(media_agent['entityInfo']['name']).lower()
+                    temp_name = media_agent['entityInfo']['name'].lower()
                     temp_id = str(media_agent['entityInfo']['id']).lower()
                     media_agents_dict[temp_name] = temp_id
 
@@ -202,10 +248,10 @@ class MediaAgents(object):
                 SDKException:
                     if type of the media agent name argument is not string
         """
-        if not isinstance(media_agent_name, str):
+        if not isinstance(media_agent_name, basestring):
             raise SDKException('Storage', '101')
 
-        return self._media_agents and str(media_agent_name).lower() in self._media_agents
+        return self._media_agents and media_agent_name.lower() in self._media_agents
 
     def get(self, media_agent_name):
         """Returns a MediaAgent object of the specified media agent name.
@@ -222,10 +268,10 @@ class MediaAgents(object):
 
                     if no media agent exists with the given name
         """
-        if not isinstance(media_agent_name, str):
+        if not isinstance(media_agent_name, basestring):
             raise SDKException('Storage', '101')
         else:
-            media_agent_name = str(media_agent_name).lower()
+            media_agent_name = media_agent_name.lower()
 
             if self.has_media_agent(media_agent_name):
                 return MediaAgent(self._commcell_object,
@@ -255,11 +301,17 @@ class MediaAgent(object):
                 object - instance of the MediaAgent class
         """
         self._commcell_object = commcell_object
-        self._media_agent_name = str(media_agent_name).lower()
+        self._media_agent_name = media_agent_name.lower()
         if media_agent_id:
             self._media_agent_id = str(media_agent_id)
         else:
             self._media_agent_id = self._get_media_agent_id()
+
+        self._MEDIA_AGENT = self._commcell_object._services['MEDIA_AGENT'] % (
+            self._media_agent_name
+        )
+
+        self._initialize_media_agent_properties()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -278,6 +330,54 @@ class MediaAgent(object):
         media_agents = MediaAgents(self._commcell_object)
         return media_agents.get(self.media_agent_name).media_agent_id
 
+    def _get_media_agent_properties(self):
+        """Returns the media agent properties of this media agent.
+
+            Returns:
+                dict - dictionary consisting of the properties of this client
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._MEDIA_AGENT
+        )
+
+        if flag:
+            if response.json() and 'mediaAgentInfo' in response.json():
+                return response.json()['mediaAgentInfo']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _initialize_media_agent_properties(self):
+        """Initializes the properties for this Media Agent"""
+        self._status = None
+        self._platform = None
+
+        properties = self._get_media_agent_properties()
+
+        if 'status' in properties:
+            status = properties['status']
+            if status.lower() == 'ready':
+                self._is_online = True
+            else:
+                self._is_online = False
+
+        if 'osVersion' in properties:
+            platform = properties['osVersion']
+            if 'windows' in platform.lower():
+                self._platform = 'WINDOWS'
+            elif 'unix' in platform.lower() or 'linux' in platform.lower():
+                self._platform = 'UNIX'
+            else:
+                self._platform = platform
+
     @property
     def media_agent_name(self):
         """Treats the media agent name as a read-only attribute."""
@@ -287,6 +387,16 @@ class MediaAgent(object):
     def media_agent_id(self):
         """Treats the media agent id as a read-only attribute."""
         return self._media_agent_id
+
+    @property
+    def is_online(self):
+        """Treats the status as read-only attribute"""
+        return self._is_online
+
+    @property
+    def platform(self):
+        """Treats the platform as read-only attribute"""
+        return self._platform
 
 
 class DiskLibraries(object):
@@ -302,7 +412,7 @@ class DiskLibraries(object):
                 object - instance of the DiskLibraries class
         """
         self._commcell_object = commcell_object
-        self._LIBRARY = self._commcell_object._services.LIBRARY
+        self._LIBRARY = self._commcell_object._services['LIBRARY']
         self._libraries = self._get_libraries()
 
     def __str__(self):
@@ -349,7 +459,7 @@ class DiskLibraries(object):
                 libraries_dict = {}
 
                 for library in libraries:
-                    temp_name = str(library['entityInfo']['name']).lower()
+                    temp_name = library['entityInfo']['name'].lower()
                     temp_id = str(library['entityInfo']['id']).lower()
                     libraries_dict[temp_name] = temp_id
 
@@ -373,10 +483,10 @@ class DiskLibraries(object):
                 SDKException:
                     if type of the library name argument is not string
         """
-        if not isinstance(library_name, str):
+        if not isinstance(library_name, basestring):
             raise SDKException('Storage', '101')
 
-        return self._libraries and str(library_name).lower() in self._libraries
+        return self._libraries and library_name.lower() in self._libraries
 
     def add(self, library_name, media_agent, mount_path, username="", password=""):
         """Adds a new Disk Library to the Commcell.
@@ -415,15 +525,15 @@ class DiskLibraries(object):
 
                     if response is not success
         """
-        if not (isinstance(library_name, str) and
-                isinstance(mount_path, str) and
-                isinstance(username, str) and
-                isinstance(password, str)):
+        if not (isinstance(library_name, basestring) and
+                isinstance(mount_path, basestring) and
+                isinstance(username, basestring) and
+                isinstance(password, basestring)):
             raise SDKException('Storage', '101')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, str):
+        elif isinstance(media_agent, basestring):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
             raise SDKException('Storage', '103')
@@ -480,10 +590,10 @@ class DiskLibraries(object):
 
                     if no disk library exists with the given name
         """
-        if not isinstance(library_name, str):
+        if not isinstance(library_name, basestring):
             raise SDKException('Storage', '101')
         else:
-            library_name = str(library_name).lower()
+            library_name = library_name.lower()
 
             if self.has_library(library_name):
                 return DiskLibrary(self._commcell_object,
@@ -513,7 +623,7 @@ class DiskLibrary(object):
                 object - instance of the DiskLibrary class
         """
         self._commcell_object = commcell_object
-        self._library_name = str(library_name)
+        self._library_name = library_name
         if library_id:
             self._library_id = str(library_id)
         else:
@@ -559,7 +669,7 @@ class StoragePolicies(object):
                 object - instance of the StoragePolicies class
         """
         self._commcell_object = commcell_object
-        self._POLICY = self._commcell_object._services.STORAGE_POLICY
+        self._POLICY = self._commcell_object._services['STORAGE_POLICY']
         self._policies = self._get_policies()
 
     def __str__(self):
@@ -610,7 +720,7 @@ class StoragePolicies(object):
                 policies_dict = {}
 
                 for policy in policies:
-                    temp_name = str(policy['storagePolicyName']).lower()
+                    temp_name = policy['storagePolicyName'].lower()
                     temp_id = str(policy['storagePolicyId']).lower()
                     policies_dict[temp_name] = temp_id
 
@@ -634,10 +744,37 @@ class StoragePolicies(object):
                 SDKException:
                     if type of the storage policy name argument is not string
         """
-        if not isinstance(policy_name, str):
+        if not isinstance(policy_name, basestring):
             raise SDKException('Storage', '101')
 
-        return self._policies and str(policy_name).lower() in self._policies
+        return self._policies and policy_name.lower() in self._policies
+
+    def get(self, storage_policy_name):
+        """Returns a StoragePolicy object of the specified storage policy name.
+
+            Args:
+                storage_policy_name     (str)   --  name of the storage policy
+
+            Returns:
+                object - instance of the StoragePolicy class for the given policy name
+
+            Raises:
+                SDKException:
+                    if type of the storage policy name argument is not string
+
+                    if no storage policy exists with the given name
+        """
+        if not isinstance(storage_policy_name, basestring):
+            raise SDKException('Storage', '101')
+
+        if self.has_policy(storage_policy_name):
+            return StoragePolicy(
+                self._commcell_object, storage_policy_name, self._policies[storage_policy_name]
+            )
+        else:
+            raise SDKException(
+                'Storage', '102', 'No policy exists with name: {0}'.format(storage_policy_name)
+            )
 
     def add(self,
             storage_policy_name,
@@ -686,22 +823,22 @@ class StoragePolicies(object):
         """
         from urllib.parse import urlencode
 
-        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
-                (not (isinstance(storage_policy_name, str) and
+        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
+                (not (isinstance(storage_policy_name, basestring) and
                       isinstance(retention_period, int))) or
-                (incremental_sp is not None and not isinstance(incremental_sp, str))):
+                (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
             raise SDKException('Storage', '101')
 
         if isinstance(library, DiskLibrary):
             disk_library = library
-        elif isinstance(library, str):
+        elif isinstance(library, basestring):
             disk_library = DiskLibrary(self._commcell_object, library)
         else:
             raise SDKException('Storage', '104')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, str):
+        elif isinstance(media_agent, basestring):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
             raise SDKException('Storage', '103')
@@ -725,7 +862,7 @@ class StoragePolicies(object):
                 try:
                     if response.json():
                         if 'errorCode' in response.json() and 'errorMessage' in response.json():
-                            error_message = str(response.json()['errorMessage']).split('\n')[0]
+                            error_message = response.json()['errorMessage'].split('\n')[0]
                             o_str = 'Failed to add storage policy\nError: "{0}"'
 
                             raise SDKException('Storage', '102', o_str.format(error_message))
@@ -766,6 +903,10 @@ class StoragePolicies(object):
                         # initialize the policies again
                         # so the policies object has all the policies
                         self._policies = self._get_policies()
+                        return StoragePolicy(
+                            self._commcell_object, storage_policy_name,
+                            self._policies[storage_policy_name]
+                        )
                     elif 'error' in response.json():
                         error_message = response.json()['error']['errorMessage']
                         o_str = 'Failed to create storage policy\nError: "{0}"'
@@ -793,7 +934,7 @@ class StoragePolicies(object):
 
                     if response is not success
         """
-        if not isinstance(storage_policy_name, str):
+        if not isinstance(storage_policy_name, basestring):
             raise SDKException('Storage', '101')
 
         if self.has_policy(storage_policy_name):
@@ -807,7 +948,7 @@ class StoragePolicies(object):
                 try:
                     if response.json():
                         if 'errorCode' in response.json() and 'errorMessage' in response.json():
-                            error_message = str(response.json()['errorMessage'])
+                            error_message = response.json()['errorMessage']
                             o_str = 'Failed to delete storage policy\nError: "{0}"'
 
                             raise SDKException('Storage', '102', o_str.format(error_message))
@@ -826,6 +967,346 @@ class StoragePolicies(object):
             )
 
 
+class StoragePolicy(object):
+    """Class for performing storage policy operations for a specific storage policy"""
+
+    def __init__(self, commcell_object, storage_policy_name, storage_policy_id=None):
+        """Initialise the Storage Policy class instance."""
+        self._storage_policy_name = storage_policy_name
+        self._commcell_object = commcell_object
+
+        if storage_policy_id:
+            self._storage_policy_id = str(storage_policy_id)
+        else:
+            self._storage_policy_id = self._get_storage_policy_id()
+
+        self._STORAGE_POLICY = self._commcell_object._services['GET_STORAGE_POLICY'] % (
+            self.storage_policy_id
+        )
+
+        self._initialize_storage_policy_properties()
+
+    def __repr__(self):
+        """String representation of the instance of this class."""
+        representation_string = 'Storage Policy class instance for Storage Policy: "{0}"'
+        return representation_string.format(self.storage_policy_name)
+
+    def _get_storage_policy_id(self):
+        """Gets the storage policy id asscoiated with the storage policy"""
+
+        storage_policies = StoragePolicies(self._commcell_object)
+        return storage_policies.get(self.storage_policy_name).storage_policy_id
+
+    def _get_storage_policy_properties(self):
+        """Gets the storage policy properties of this storage policy.
+
+            Returns:
+                dict - dictionary consisting of the properties of this storage policy
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._STORAGE_POLICY
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _initialize_storage_policy_properties(self):
+        """Initializes the common properties for the storage policy."""
+        self._storage_policy_properties = self._get_storage_policy_properties()
+        self._copies = {}
+
+        if 'copy' in self._storage_policy_properties:
+            for copy in self._storage_policy_properties['copy']:
+                copy_type = copy['copyType']
+                active = copy['active']
+                copy_id = str(copy['StoragePolicyCopy']['copyId'])
+                copy_name = copy['StoragePolicyCopy']['copyName']
+                library_name = copy['library']['libraryName']
+                temp = {
+                    "copyType": copy_type,
+                    "active": active,
+                    "copyId": copy_id,
+                    "libraryName": library_name
+                }
+                self._copies[copy_name] = temp
+
+    def has_copy(self, copy_name):
+        """Checks if a storage policy copy exists for this storage
+            policy with the input storage policy name.
+
+            Args:
+                copy_name (str)  --  name of the storage policy copy
+
+            Returns:
+                bool - boolean output whether the storage policy copy exists or not
+
+            Raises:
+                SDKException:
+                    if type of the storage policy copy name argument is not string
+        """
+        if not isinstance(copy_name, basestring):
+            raise SDKException('Storage', '101')
+
+        return self._copies and copy_name.lower() in self._copies
+
+    def create_secondary_copy(self, copy_name, library_name, media_agent_name):
+        """Creates Synchronous copy for this storage policy
+
+            Args:
+                copy_name           (str)   --  copy name to create
+
+                library_name        (str)   --  library name to be assigned
+
+                media_agent_name    (str)   --  media_agent to be assigned
+
+            Raises:
+                SDKException:
+                    if type of inputs in not string
+
+                    if copy with given name already exists
+
+                    if failed to create copy
+
+                    if response received is empty
+
+                    if response is not success
+        """
+        if not (isinstance(copy_name, basestring) and
+                isinstance(library_name, basestring) and
+                isinstance(media_agent_name, basestring)):
+            raise SDKException('Storage', '101')
+
+        if self.has_copy(copy_name):
+            err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
+            raise SDKException('Storage', '102', err_msg)
+
+        library_id = self._commcell_object.disk_libraries._libraries[library_name]
+        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]
+
+        request_xml = """
+        <App_CreateStoragePolicyCopyReq copyName="{0}">
+            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
+                <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
+                <library _type_="9" libraryId="{3}" libraryName="{4}" />
+                <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
+            </storagePolicyCopyInfo>
+        </App_CreateStoragePolicyCopyReq>
+        """.format(copy_name, self.storage_policy_id, self.storage_policy_name, library_id,
+                   library_name, media_agent_id, media_agent_name)
+
+        create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_copy_service, request_xml
+        )
+
+        self._initialize_storage_policy_properties()
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 0:
+                        if 'errorMessage' in response.json()['error']:
+                            error_message = "Failed to create {0} Storage Policy copy with error \
+                            {1}".format(copy_name, str(response.json()['error']['errorMessage']))
+                        else:
+                            error_message = "Failed to create {0} Storage Policy copy".format(
+                                copy_name
+                            )
+
+                        raise SDKException('Storage', '102', error_message)
+
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def delete_secondary_copy(self, copy_name):
+        """Deletes the copy associated with this storage policy
+
+            Args:
+                copy_name   (str)   --  copy name to be deleted
+
+            Raises:
+                SDKException:
+                    if type of input parameters is not string
+
+                    if storage policy copy doesn't exist with given name
+
+                    if failed to delete storage policy copy
+
+                    if response received is empty
+
+                    if response is not success
+        """
+        if not isinstance(copy_name, basestring):
+            raise SDKException('Storage', '101')
+
+        if not self.has_copy(copy_name):
+            err_msg = 'Storage Policy copy "{0}" doesn\'t exists.'.format(copy_name)
+            raise SDKException('Storage', '102', err_msg)
+
+        delete_copy_service = self._commcell_object._services['DELETE_STORAGE_POLICY_COPY']
+
+        request_xml = """
+        <App_DeleteStoragePolicyCopyReq>
+            <archiveGroupCopy _type_="18" copyId="{0}" copyName="{1}" storagePolicyId="{2}" storagePolicyName="{3}" />
+        </App_DeleteStoragePolicyCopyReq>
+        """.format(self._copies[copy_name]['copyId'], copy_name, self.storage_policy_id,
+                   self.storage_policy_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', delete_copy_service, request_xml
+        )
+
+        self._initialize_storage_policy_properties()
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 0:
+                        error_message = "Failed to delete {0} Storage Policy copy".format(
+                            copy_name
+                        )
+                        raise SDKException('Storage', '102', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def copies(self):
+        """"Treatss the storage policy copies as a read-only attribute"""
+        return self._copies
+
+    @property
+    def storage_policy_id(self):
+        """Treats the storage policy id as a read-only attribute."""
+        return self._storage_policy_id
+
+    @property
+    def storage_policy_name(self):
+        """Treats the storage policy name as a read-only attribute."""
+        return self._storage_policy_name
+
+    def run_aux_copy(self, storage_policy_copy_name, media_agent, streams=0):
+        """Runs the aux copy job from the commcell.
+
+            Args:
+                storage_policy_copy_name (str)  --  name of the storage policy copy
+
+                media_agent              (str)  --  name of the media agent
+
+                streams                  (int)  --  number of streams to use
+
+            Returns:
+                object - instance of the Job class for this aux copy job
+
+            Raises:
+                SDKException:
+                    if type of the storage policy copy name argument is not string
+
+                    if aux copy job failed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not (isinstance(storage_policy_copy_name, basestring) and
+                isinstance(media_agent, basestring) and
+                isinstance(streams, int)):
+            raise SDKException('Storage', '101')
+
+        use_max_streams = True
+        if streams != 0:
+            use_max_streams = False
+
+        request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "copyName": storage_policy_copy_name,
+                        "storagePolicyName": self.storage_policy_name
+                    }
+                ],
+                "task": {
+                    "initiatedFrom": 2,
+                    "taskType": 1,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4003
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "mediaOpt": {
+                                    "auxcopyJobOption": {
+                                        "maxNumberOfStreams": streams,
+                                        "useMaximumStreams": use_max_streams,
+                                        "mediaAgent": {
+                                            "mediaAgentName": media_agent
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        aux_copy = self._commcell_object._services['CREATE_TASK']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', aux_copy, request_json
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '102', 'Failed to run the aux copy job')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+
 class SchedulePolicies(object):
     """Class for getting all the schedule policies associated with the commcell."""
 
@@ -839,7 +1320,7 @@ class SchedulePolicies(object):
                 object - instance of the SchedulePolicies class
         """
         self._commcell_object = commcell_object
-        self._POLICY = self._commcell_object._services.SCHEDULE_POLICY
+        self._POLICY = self._commcell_object._services['SCHEDULE_POLICY']
         self._policies = self._get_policies()
 
     def __str__(self):
@@ -886,7 +1367,7 @@ class SchedulePolicies(object):
                 policies_dict = {}
 
                 for policy in policies:
-                    temp_name = str(policy['task']['taskName']).lower()
+                    temp_name = policy['task']['taskName'].lower()
                     temp_id = str(policy['task']['taskId']).lower()
                     policies_dict[temp_name] = temp_id
 
@@ -910,7 +1391,7 @@ class SchedulePolicies(object):
                 SDKException:
                     if type of the schedule policy name argument is not string
         """
-        if not isinstance(policy_name, str):
+        if not isinstance(policy_name, basestring):
             raise SDKException('Storage', '101')
 
-        return self._policies and str(policy_name).lower() in self._policies
+        return self._policies and policy_name.lower() in self._policies

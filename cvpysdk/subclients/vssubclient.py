@@ -33,23 +33,11 @@ VirtualServerSubclient:
     browse()                        --  gets the content of the backup for this subclient
                                             at the vm path specified
 
-    browse_in_time()                --  gets the content of the backup for this subclient
-                                            at the input vm path in the time range specified
-
     guest_files_browse()            --  browses the Files and Folders inside a Virtual Machine
-
-    guest_files_browse_in_time()    --  browses the Files and Folders inside a Virtual Machine
-                                            in the time range specified
 
     vm_files_browse()               --  browses the Files and Folders of a Virtual Machine
 
-    vm_files_browse_in_time()       --  browses the Files and Folders of a Virtual Machine
-                                            in the time range specified
-
     disk_level_browse()             --  browses the Disks of a Virtual Machine
-
-    disk_level_browse_in_time()     --  browses the Disks of a Virtual Machine
-                                            in the time range specified
 
     restore_out_of_place()          --  restores the VM Guest Files specified in the paths list
                                             to the client, at the specified destionation location
@@ -58,7 +46,11 @@ VirtualServerSubclient:
 
 """
 
+from __future__ import unicode_literals
+
 import xmltodict
+
+from past.builtins import basestring
 
 from ..exception import SDKException
 from ..subclient import Subclient
@@ -77,12 +69,13 @@ class VirtualServerSubclient(Subclient):
         content = []
 
         content_types = {
-            '1': 'Host',
-            '2': 'Resource Pool',
-            '4': 'Datacenter',
-            '9': 'Virtual Machine',
-            '16': 'All unprotected VMs',
-            '17': 'Root'
+            1: 'Host',
+            2: 'Resource Pool',
+            4: 'Datacenter',
+            9: 'Virtual Machine',
+            16: 'All unprotected VMs',
+            17: 'Root',
+            35: 'Tag Category'
         }
 
         if 'vmContent' in self._subclient_properties:
@@ -92,10 +85,10 @@ class VirtualServerSubclient(Subclient):
                 children = subclient_content['children']
 
                 for child in children:
-                    path = str(child['path']) if 'path' in child else None
-                    display_name = str(child['displayName'])
-                    content_type = content_types[str(child['type'])]
-                    vm_id = str(child['name'])
+                    path = child['path'] if 'path' in child else None
+                    display_name = child['displayName']
+                    content_type = content_types[child['type']]
+                    vm_id = child['name']
 
                     temp_dict = {
                         'id': vm_id,
@@ -121,12 +114,13 @@ class VirtualServerSubclient(Subclient):
         content = []
 
         content_types = {
-            'Host': '1',
-            'Root': '17',
-            'Datacenter': '4',
-            'Resource Pool': '2',
-            'Virtual Machine': '9',
-            'All unprotected VMs': '16'
+            'Host': 1,
+            'Root': 17,
+            'Datacenter': 4,
+            'Tag Category': 35,
+            'Resource Pool': 2,
+            'Virtual Machine': 9,
+            'All unprotected VMs': 16
         }
 
         try:
@@ -236,359 +230,163 @@ class VirtualServerSubclient(Subclient):
 
         return restore_content
 
-    def browse(self, vm_path='\\', show_deleted_files=True, vm_disk_browse=False):
-        """Gets the content of the backup for this subclient at the path specified.
+    def browse(self, *args, **kwargs):
+        """Browses the content of the Subclient.
 
             Args:
-                vm_path             (str)   --  vm path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                Dictionary of browse options:
+                    Example:
+                        browse({
+                            'path': '\\vmname\\',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-21 12:00:00'
+                        })
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                    (OR)
 
-                vm_disk_browse      (bool)  --  browse virtual machine files
-                                                    e.g.; .vmdk files, etc.
-                    only applicable when browsing content inside a guest virtual machine
-                    default: False
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
 
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
+                Refer Backupset._default_browse_options for all the supported options
 
-                dict - path along with the details like name, file/folder, size, modification time
+        Returns:
+            list - List of only the file, folder paths from the browse response
 
-            Raises:
-                SDKException:
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        vm_ids, vm_names = self._get_vm_ids_and_names_dict()
-
-        vm_path = self._parse_vm_path(vm_names, vm_path)
-
-        browse_content = super(VirtualServerSubclient, self).browse(
-            vm_path, show_deleted_files, vm_disk_browse, True
-        )
-
-        return self._process_vsa_browse_response(vm_ids, browse_content)
-
-    def browse_in_time(
-            self,
-            vm_path='\\',
-            show_deleted_files=True,
-            restore_index=True,
-            vm_disk_browse=False,
-            from_date=None,
-            to_date=None):
-        """Gets the content of the backup for this subclient
-            at the path specified in the time range specified.
-
-            Args:
-                vm_path             (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
-
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
-
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
-
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
-
-                        gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-
-                        gets contents till current day if not specified
-                    default: None
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if from date value is incorrect
-
-                    if to date value is incorrect
-
-                    if to date is less than from date
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        vm_ids, vm_names = self._get_vm_ids_and_names_dict()
-
-        vm_path = self._parse_vm_path(vm_names, vm_path)
-
-        browse_content = super(VirtualServerSubclient, self).browse_in_time(
-            vm_path, show_deleted_files, restore_index, vm_disk_browse, from_date, to_date, True
-        )
-
-        return self._process_vsa_browse_response(vm_ids, browse_content)
-
-    def guest_files_browse(self, vm_path='\\', show_deleted_files=True):
-        """Browses the Files and Folders inside a Virtual Machine.
-
-            Args:
-                vm_path             (str)   --  vm path to get the contents of
-                    default: '\\'; returns the root of the Backup content
-
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        return self.browse(vm_path, show_deleted_files, False)
-
-    def guest_files_browse_in_time(
-            self,
-            vm_path='\\',
-            show_deleted_files=True,
-            restore_index=True,
-            from_date=None,
-            to_date=None):
-        """Browses the Files and Folders inside a Virtual Machine in the time range specified.
-
-            Args:
-                vm_path             (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
-
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
-
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
-
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
-
-                        gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-
-                        gets contents till current day if not specified
-                    default: None
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if from date value is incorrect
-
-                    if to date value is incorrect
-
-                    if to date is less than from date
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        return self.browse_in_time(
-            vm_path, show_deleted_files, restore_index, False, from_date, to_date
-        )
-
-    def vm_files_browse(self, vm_path='\\', show_deleted_files=True):
-        """Browses the Files and Folders of a Virtual Machine.
-
-            Args:
-                vm_path             (str)   --  vm path to get the contents of
-                    default: '\\'; returns the root of the Backup content
-
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        return self.browse(vm_path, show_deleted_files, True)
-
-    def vm_files_browse_in_time(
-            self,
-            vm_path='\\',
-            show_deleted_files=True,
-            restore_index=True,
-            from_date=None,
-            to_date=None):
-        """Browses the Files and Folders of a Virtual Machine in the time range specified.
-
-            Args:
-                vm_path             (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
-
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
-
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
-
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
-
-                        gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-
-                        gets contents till current day if not specified
-                    default: None
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if from date value is incorrect
-
-                    if to date value is incorrect
-
-                    if to date is less than from date
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        return self.browse_in_time(
-            vm_path, show_deleted_files, restore_index, True, from_date, to_date
-        )
-
-    def disk_level_browse(self, vm_path='\\', show_deleted_files=True):
-        """Browses the Disks of a Virtual Machine.
-
-            Args:
-                vm_path             (str)   --  vm path to get the contents of
-                    default: '\\'; returns the root of the Backup content
-
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-        """
-        browse_content = self.browse(vm_path, show_deleted_files, True)
-
-        paths_list = []
-
-        for path in browse_content[0]:
-            if path.endswith('.vmdk'):
-                paths_list.append(path)
-
-        paths_dict = {}
-
-        for path in browse_content[1]:
-            if path.endswith('.vmdk'):
-                paths_dict[path] = browse_content[1][path]
-
-        if paths_list and paths_dict:
-            return paths_list, paths_dict
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
         else:
-            return browse_content
+            options = kwargs
 
-    def disk_level_browse_in_time(
-            self,
-            vm_path='\\',
-            show_deleted_files=True,
-            restore_index=True,
-            from_date=None,
-            to_date=None):
-        """Browses the Disks of a Virtual Machine in the time range specified.
+        vm_ids, vm_names = self._get_vm_ids_and_names_dict()
+
+        if 'path' not in options:
+            options['path'] = '\\'
+
+        options['path'] = self._parse_vm_path(vm_names, options['path'])
+
+        browse_content = super(VirtualServerSubclient, self).browse(options)
+
+        return self._process_vsa_browse_response(vm_ids, browse_content)
+
+    def guest_files_browse(self, *args, **kwargs):
+        """Browses the content of the Subclient.
 
             Args:
-                vm_path             (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                Dictionary of browse options:
+                    Example:
+                        browse({
+                            'path': '\\vmname\\',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-21 12:00:00'
+                        })
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                    (OR)
 
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
 
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
+                Refer Backupset._default_browse_options for all the supported options
 
-                        gets contents from 01/01/1970 if not specified
-                    default: None
+        Returns:
+            list - List of only the file, folder paths from the browse response
 
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-
-                        gets contents till current day if not specified
-                    default: None
-
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
-
-                dict - path along with the details like name, file/folder, size, modification time
-
-            Raises:
-                SDKException:
-                    if from date value is incorrect
-
-                    if to date value is incorrect
-
-                    if to date is less than from date
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        browse_content = self.browse_in_time(
-            vm_path, show_deleted_files, restore_index, True, from_date, to_date
-        )
+        return self.browse(*args, **kwargs)
+
+    def vm_files_browse(self, *args, **kwargs):
+        """Browses the content of the Subclient.
+
+            Args:
+                Dictionary of browse options:
+                    Example:
+                        browse({
+                            'path': '\\vmname\\',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-21 12:00:00'
+                        })
+
+                    (OR)
+
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
+
+                Refer Backupset._default_browse_options for all the supported options
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+        """
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['vm_disk_browse'] = True
+        return self.browse(*args, **kwargs)
+
+    def disk_level_browse(self, *args, **kwargs):
+        """Browses the content of the Subclient.
+
+            Args:
+                Dictionary of browse options:
+                    Example:
+                        browse({
+                            'path': '\\vmname\\',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-21 12:00:00'
+                        })
+
+                    (OR)
+
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='\\vmname\\',
+                            show_deleted=True,
+                            from_time='2014-04-20 12:00:00',
+                            to_time='2016-04-21 12:00:00'
+                        )
+
+                Refer Backupset._default_browse_options for all the supported options
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+        """
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['vm_disk_browse'] = True
+        browse_content = self.browse(*args, **kwargs)
 
         paths_list = []
 
@@ -613,7 +411,10 @@ class VirtualServerSubclient(Subclient):
             destination_path,
             paths,
             overwrite=True,
-            restore_data_and_acl=True):
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None):
         """Restores the VM Guest files/folders specified in the input paths list to the client,
             at the specified destionation location.
 
@@ -651,8 +452,8 @@ class VirtualServerSubclient(Subclient):
         """
         from ..client import Client
 
-        if not ((isinstance(client, str) or isinstance(client, Client)) and
-                isinstance(destination_path, str) and
+        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
+                isinstance(destination_path, basestring) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -660,12 +461,12 @@ class VirtualServerSubclient(Subclient):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, str):
+        elif isinstance(client, basestring):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException('Subclient', '105')
 
-        vm_ids, vm_names = self._get_vm_ids_and_names_dict()
+        _, vm_names = self._get_vm_ids_and_names_dict()
 
         paths = self._process_restore_request(vm_names, paths)
 
@@ -721,12 +522,12 @@ class VirtualServerSubclient(Subclient):
 
                     if response is not success
         """
-        if not (isinstance(vm_to_restore, str) and
+        if not (isinstance(vm_to_restore, basestring) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
             raise SDKException('Subclient', '101')
 
-        vm_ids, vm_names = self._get_vm_ids_and_names_dict()
+        _, vm_names = self._get_vm_ids_and_names_dict()
 
         vms_to_restore = self._process_restore_request(vm_names, ['\\' + vm_to_restore])
 

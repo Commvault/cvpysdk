@@ -56,9 +56,12 @@ Agent:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import string
 import time
+
+from past.builtins import basestring
 
 from .backupset import Backupsets
 from .instance import Instances
@@ -81,7 +84,7 @@ class Agents(object):
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
 
-        self._AGENTS = self._commcell_object._services.GET_ALL_AGENTS % (
+        self._AGENTS = self._commcell_object._services['GET_ALL_AGENTS'] % (
             self._client_object.client_id
         )
 
@@ -132,7 +135,7 @@ class Agents(object):
                 agent_dict = {}
 
                 for dictionary in response.json()['agentProperties']:
-                    temp_name = str(dictionary['idaEntity']['appName']).lower()
+                    temp_name = dictionary['idaEntity']['appName'].lower()
                     temp_id = str(dictionary['idaEntity']['applicationId']).lower()
                     agent_dict[temp_name] = temp_id
 
@@ -156,10 +159,10 @@ class Agents(object):
                 SDKException:
                     if type of the agent name argument is not string
         """
-        if not isinstance(agent_name, str):
+        if not isinstance(agent_name, basestring):
             raise SDKException('Agent', '101')
 
-        return self._agents and str(agent_name).lower() in self._agents
+        return self._agents and agent_name.lower() in self._agents
 
     def get(self, agent_name):
         """Returns a agent object of the specified client.
@@ -176,10 +179,10 @@ class Agents(object):
 
                     if no agent exists with the given name
         """
-        if not isinstance(agent_name, str):
+        if not isinstance(agent_name, basestring):
             raise SDKException('Agent', '101')
         else:
-            agent_name = str(agent_name).lower()
+            agent_name = agent_name.lower()
 
             if self.has_agent(agent_name):
                 return Agent(self._client_object, agent_name, self._agents[agent_name])
@@ -206,9 +209,9 @@ class Agent(object):
         """
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
-        self._agent_name = str(agent_name)
+        self._agent_name = agent_name.lower()
 
-        self._AGENT = self._commcell_object._services.AGENT
+        self._AGENT = self._commcell_object._services['AGENT']
 
         if agent_id:
             # Use the agent id mentioned in the arguments

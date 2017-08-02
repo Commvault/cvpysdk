@@ -17,6 +17,7 @@ SDKException:       Class inheriting the "Exception" Base class for raising
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 # Common dictionary for all exceptions among the python package
 EXCEPTION_DICT = {
@@ -26,19 +27,22 @@ EXCEPTION_DICT = {
     },
     'Commcell': {
         '101': 'Commcell is not reachable. Please check the commcell name and services again',
-        '102': 'Authtoken not received. Please try again.'
+        '102': 'Authtoken not received. Please try again.',
+        '103': 'Failed to get CommServ name'
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
         '102': '',
         '103': 'Reached the maximum attempts limit',
-        '104': 'This session has expired. Please login again'
+        '104': 'This session has expired. Please login again',
+        '105': 'Script Type is not valid'
     },
     'Client': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Time Value should be greater than current time',
-        '104': 'Time Value entered is not of correct format'
+        '104': 'Time Value entered is not of correct format',
+        '105': 'Script is not a valid file'
     },
     'Agent': {
         '101': 'Data type of the input(s) is not valid',
@@ -53,7 +57,8 @@ EXCEPTION_DICT = {
     'Instance': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
-        '103': 'Input date is incorrect'
+        '103': 'Input date is incorrect',
+        '104': 'Instance Level Browse is not supported. Instance should have a single backupset'
     },
     'Subclient': {
         '101': 'Data type of the input(s) is not valid',
@@ -102,7 +107,8 @@ EXCEPTION_DICT = {
     },
     'Workflow': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'Workflow XML is not a valid file'
     }
 }
 
@@ -123,8 +129,8 @@ class SDKException(Exception):
             Returns:
                 object - instance of the SDKException class of type Exception
         """
-        self.exception_module = str(exception_module)
-        self.exception_id = str(exception_id)
+        self.exception_module = exception_module
+        self.exception_id = exception_id
         self.exception_message = EXCEPTION_DICT[exception_module][exception_id]
 
         if exception_message:

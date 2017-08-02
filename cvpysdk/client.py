@@ -54,26 +54,39 @@ Client:
 
     enable_backup_at_time()      --  enables the backup for the client at the input time specified
 
-    disble_backup()              --  disbles the backup for the client
+    disable_backup()             --  disables the backup for the client
 
     enable_restore()             --  enables the restore for the client
 
     enable_restore_at_time()     --  enables the restore for the client at the input time specified
 
-    disble_restore()             --  disbles the restore for the client
+    disable_restore()            --  disables the restore for the client
 
     enable_data_aging()          --  enables the data aging for the client
 
     enable_data_aging_at_time()  --  enables the data aging for the client at input time specified
 
-    disable_data_aging()         --  disbles the data aging for the clientt
+    disable_data_aging()         --  disables the data aging for the client
+
+    execute_script()             --  executes given script on the client
+
+    execute_command()            --  executes a command on the client
+
+    enable_intelli_snap()        --  enables intelli snap for the client
+
+    disable_intelli_snap()       --  disables intelli snap for the client
+
+    is_ready                     --  checks if CommServ is able to communicate to client
 
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
+import os
 import time
 
+from past.builtins import basestring
 from base64 import b64encode
 
 from .agent import Agents
@@ -94,8 +107,8 @@ class Clients(object):
                 object - instance of the Clients class
         """
         self._commcell_object = commcell_object
-        self._CLIENTS = self._commcell_object._services.GET_ALL_CLIENTS
-        self._ADD_CLIENT = self._commcell_object._services.GET_ALL_CLIENTS
+        self._CLIENTS = self._commcell_object._services['GET_ALL_CLIENTS']
+        self._ADD_CLIENT = self._commcell_object._services['GET_ALL_CLIENTS']
         self._clients = self._get_clients()
 
     def __str__(self):
@@ -141,7 +154,7 @@ class Clients(object):
                 clients_dict = {}
 
                 for dictionary in response.json()['clientProperties']:
-                    temp_name = str(dictionary['client']['clientEntity']['clientName']).lower()
+                    temp_name = dictionary['client']['clientEntity']['clientName'].lower()
                     temp_id = str(dictionary['client']['clientEntity']['clientId']).lower()
                     clients_dict[temp_name] = temp_id
 
@@ -190,7 +203,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, str):
+            if isinstance(client, basestring):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -221,10 +234,10 @@ class Clients(object):
                 SDKException:
                     if type of the client name argument is not string
         """
-        if not isinstance(client_name, str):
+        if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
 
-        return self._clients and str(client_name).lower() in self._clients
+        return self._clients and client_name.lower() in self._clients
 
     def add_vmware_client(
             self,
@@ -333,10 +346,10 @@ class Clients(object):
 
                     if no client exists with the given name
         """
-        if not isinstance(client_name, str):
+        if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
         else:
-            client_name = str(client_name).lower()
+            client_name = client_name.lower()
 
             if self.has_client(client_name):
                 return Client(self._commcell_object, client_name, self._clients[client_name])
@@ -363,14 +376,14 @@ class Clients(object):
 
                     if no client exists with the given name
         """
-        if not isinstance(client_name, str):
+        if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
         else:
-            client_name = str(client_name).lower()
+            client_name = client_name.lower()
 
             if self.has_client(client_name):
                 client_id = self._clients[client_name]
-                client_delete_service = self._commcell_object._services.CLIENT % (client_id)
+                client_delete_service = self._commcell_object._services['CLIENT'] % (client_id)
                 client_delete_service += "?forceDelete=1"
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -434,14 +447,14 @@ class Client(object):
                 object - instance of the Client class
         """
         self._commcell_object = commcell_object
-        self._client_name = str(client_name).lower()
+        self._client_name = client_name.lower()
 
         if client_id:
             self._client_id = str(client_id)
         else:
             self._client_id = self._get_client_id()
 
-        self._CLIENT = self._commcell_object._services.CLIENT % (self.client_id)
+        self._CLIENT = self._commcell_object._services['CLIENT'] % (self.client_id)
         self._get_client_properties()
 
         self.agents = Agents(self)
@@ -477,9 +490,9 @@ class Client(object):
 
         if flag:
             if response.json() and 'clientProperties' in response.json():
-                client_properties = response.json()['clientProperties'][0]
+                self._properties = response.json()['clientProperties'][0]
 
-                os_info = client_properties['client']['osInfo']
+                os_info = self._properties['client']['osInfo']
                 processor_type = os_info['OsDisplayInfo']['ProcessorType']
                 os_name = os_info['OsDisplayInfo']['OSName']
 
@@ -490,7 +503,11 @@ class Client(object):
                     os_name
                 )
 
-                client_props = client_properties['clientProps']
+                self._install_directory = None
+                self._version = None
+                self._service_pack = None
+
+                client_props = self._properties['clientProps']
 
                 self._is_data_recovery_enabled = client_props[
                     'activityControl']['EnableDataRecovery']
@@ -509,6 +526,22 @@ class Client(object):
                         self._is_restore_enabled = activity["enableActivityType"]
                     elif activity["activityType"] == 16:
                         self._is_data_aging_enabled = activity["enableActivityType"]
+
+                self._client_hostname = self._properties['client']['clientEntity']['hostName']
+
+                self._is_intelli_snap_enabled = bool(client_props['EnableSnapBackups'])
+
+                if 'installDirectory' in self._properties['client']:
+                    self._install_directory = self._properties['client']['installDirectory']
+
+                if 'GalaxyRelease' in self._properties['client']['versionInfo']:
+                    self._version = self._properties['client'][
+                        'versionInfo']['GalaxyRelease']['ReleaseString']
+
+                if 'version' in self._properties['client']['versionInfo']:
+                    patch_info = self._properties['client']['versionInfo']['version']
+
+                    self._service_pack = patch_info.split(',')[0]
             else:
                 raise SDKException('Response', '102')
         else:
@@ -578,6 +611,36 @@ class Client(object):
         else:
             return request_json1
 
+    def _update_client_props_json(self, properties_dict):
+        """Returns the update client properties JSON request to pass to the API as per
+            the property mentioned by the user.
+
+            Args:
+                properties_dict (dict)  --  client property dict which is to be updated
+                    e.g.: {
+                            "EnableSnapBackups": True
+                          }
+
+            Returns:
+                Client Properties update dict
+        """
+        request_json = {
+            "clientProperties": {
+                "clientProps": {}
+            },
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self.client_name
+                    }
+                ]
+            }
+        }
+
+        request_json['clientProperties']['clientProps'].update(properties_dict)
+
+        return request_json
+
     @property
     def client_id(self):
         """Treats the client id as a read-only attribute."""
@@ -587,6 +650,11 @@ class Client(object):
     def client_name(self):
         """Treats the client name as a read-only attribute."""
         return self._client_name
+
+    @property
+    def client_hostname(self):
+        """Treats the client host name as a read-only attribute."""
+        return self._client_hostname
 
     @property
     def os_info(self):
@@ -623,6 +691,26 @@ class Client(object):
         """Treats the is data aging enabled as a read-only attribute."""
         return self._is_data_aging_enabled
 
+    @property
+    def is_intelli_snap_enabled(self):
+        """Treats the is intelli snap enabled as a read-only attribute."""
+        return self._is_intelli_snap_enabled
+
+    @property
+    def install_directory(self):
+        """Treats the install directory as a read-only attribute."""
+        return self._install_directory
+
+    @property
+    def version(self):
+        """Treats the version as a read-only attribute."""
+        return self._version
+
+    @property
+    def service_pack(self):
+        """Treats the service pack as a read-only attribute."""
+        return self._service_pack
+
     def enable_backup(self):
         """Enable Backup for this Client.
 
@@ -639,6 +727,8 @@ class Client(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+
+        self._get_client_properties()
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -689,6 +779,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -723,6 +815,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -756,6 +850,8 @@ class Client(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+
+        self._get_client_properties()
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -806,6 +902,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -840,6 +938,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -873,6 +973,8 @@ class Client(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+
+        self._get_client_properties()
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -923,6 +1025,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -957,6 +1061,8 @@ class Client(object):
             'POST', self._CLIENT, request_json
         )
 
+        self._get_client_properties()
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response'][0]['errorCode']
@@ -968,6 +1074,274 @@ class Client(object):
 
                     o_str = 'Failed to disable Data Aging\nError: "{0}"'.format(error_message)
                     raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def execute_script(self, script_type, script):
+        """Executes the given script of the script type on this client.
+
+            Args:
+                script_type     (str)   --  type of script to be executed on the client
+                    JAVA / Python / PowerShell / WindowsBatch / UnixShell
+
+                script          (str)   --  path of the script to be executed on the client
+
+            Returns:
+                    (int, str)
+
+                int     -   exit code returned from executing the script on the client
+                    default: -1     (exit code not returned in the response)
+
+                str     -   output returned from executing the script on the client
+                    default: ''     (output not returned in the response)
+
+            Raises:
+                SDKException:
+                    if script type argument is not of type string
+
+                    if script argument is not of type string
+
+                    if script type is not valid
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not (isinstance(script_type, basestring) and (isinstance(script, basestring))):
+            raise SDKException('Client', '101')
+
+        script_types = {
+            'java': 0,
+            'python': 1,
+            'powershell': 2,
+            'windowsbatch': 3,
+            'unixshell': 4
+        }
+
+        if script_type.lower() not in script_types:
+            raise SDKException('Client', '105')
+
+        if os.path.isfile(script):
+            with open(script, 'r') as temp_file:
+                script_file = temp_file.read()
+        else:
+            raise SDKException('Client', '105')
+
+        import html
+        script = html.escape(script_file)
+        script_lines = ""
+        script_lines_template = '<scriptLines val="{0}"/>'
+
+        for line in script.split('\n'):
+            script_lines += script_lines_template.format(line)
+
+        xml_execute_script = """
+        <App_ExecuteCommandReq arguments="" scriptType="{0}" waitForProcessCompletion="1">
+            <client clientId="{1}" clientName="{2}"/>
+            "{3}"
+        </App_ExecuteCommandReq>
+        """.format(
+            script_types[script_type.lower()],
+            self.client_id,
+            self.client_name,
+            script_lines
+        )
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_script
+        )
+
+        if flag:
+            if response.json():
+                exit_code = -1
+                output = ''
+
+                if 'processExitCode' in response.json():
+                    exit_code = response.json()['processExitCode']
+
+                if 'commandLineOutput' in response.json():
+                    output = response.json()['commandLineOutput']
+
+                return exit_code, output
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def execute_command(self, command):
+        """Executes a command on this client.
+
+            Args:
+                command     (str)   --  command in string to be executed on the client
+
+            Returns:
+                    (int, str)
+
+                int     -   exit code returned from executing the command on the client
+                    default: -1     (exit code not returned in the response)
+
+                str     -   output returned from executing the command on the client
+                    default: ''     (output not returned in the response)
+
+            Raises:
+                SDKException:
+                    if command argument is not of type string
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not isinstance(command, basestring):
+            raise SDKException('Client', '101')
+
+        import html
+        command = html.escape(command)
+
+        xml_execute_command = """
+        <App_ExecuteCommandReq arguments="" command="{0}" waitForProcessCompletion="1">
+            <processinginstructioninfo>
+                <formatFlags continueOnError="1" elementBased="1" filterUnInitializedFields="0" formatted="0" ignoreUnknownTags="1" skipIdToNameConversion="0" skipNameToIdConversion="0"/>
+            </processinginstructioninfo>
+            <client clientId="{1}" clientName="{2}"/>
+        </App_ExecuteCommandReq>
+        """.format(command, self.client_id, self.client_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_command
+        )
+
+        if flag:
+            if response.json():
+                exit_code = -1
+                output = ''
+
+                if 'processExitCode' in response.json():
+                    exit_code = response.json()['processExitCode']
+
+                if 'commandLineOutput' in response.json():
+                    output = response.json()['commandLineOutput']
+
+                return exit_code, output
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_intelli_snap(self):
+        """Enables Intelli Snap for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to enable intelli snap
+
+                    if response is empty
+
+                    if response is not success
+        """
+        enable_intelli_snap_dict = {
+            "EnableSnapBackups": True
+        }
+
+        request_json = self._update_client_props_json(enable_intelli_snap_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
+
+        self._get_client_properties()
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    return
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = 'Failed to enable Inetlli Snap\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_intelli_snap(self):
+        """Disables Intelli Snap for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to disable intelli snap
+
+                    if response is empty
+
+                    if response is not success
+        """
+        disable_intelli_snap_dict = {
+            "EnableSnapBackups": False
+        }
+
+        request_json = self._update_client_props_json(disable_intelli_snap_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
+
+        self._get_client_properties()
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    return
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = 'Failed to disable Inetlli Snap\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_ready(self):
+        """Checks if CommServ is able to communicate to the client.
+
+            Returns:
+                True    -   if the CS is able to connect to the client
+
+                False   -   if communication fails b/w the CS and the client
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        request_xml = """
+        <EVGui_CheckReadinessReq >
+            <entity clientName="{0}" />
+        </EVGui_CheckReadinessReq>
+        """.format(self.client_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                if int(response.json()['isClientReady']) == 0:
+                    return False
+                return True
             else:
                 raise SDKException('Response', '102')
         else:

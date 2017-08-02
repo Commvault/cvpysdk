@@ -14,7 +14,7 @@ CVPySDK uses Commvault REST API to perform operations on a Commcell.
 
 CVPySDK is available on GitHub (https://github.com/CommvaultEngg/cvpysdk).
 
-CVPySDK will also be available as a package with Commvault Software v11 SP8.
+CVPySDK is now available as a package with Commvault Software v11 SP8.
 
 CVPySDK is compatible with both Python 2 and Python 3
 

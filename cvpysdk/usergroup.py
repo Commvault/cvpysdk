@@ -49,6 +49,9 @@ UserGroup:
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -66,7 +69,7 @@ class UserGroups(object):
                 object - instance of the UserGroups class
         """
         self._commcell_object = commcell_object
-        self._USERGROUPS = self._commcell_object._services.USERGROUPS
+        self._USERGROUPS = self._commcell_object._services['USERGROUPS']
         self._user_groups = self._get_user_groups()
 
     def __str__(self):
@@ -115,7 +118,7 @@ class UserGroups(object):
                 user_groups_dict = {}
 
                 for temp in response_value:
-                    temp_name = str(temp['userGroupEntity']['userGroupName']).lower()
+                    temp_name = temp['userGroupEntity']['userGroupName'].lower()
                     temp_id = str(temp['userGroupEntity']['userGroupId']).lower()
                     user_groups_dict[temp_name] = temp_id
 
@@ -139,10 +142,10 @@ class UserGroups(object):
                 SDKException:
                     if type of the user group name argument is not string
         """
-        if not isinstance(user_group_name, str):
+        if not isinstance(user_group_name, basestring):
             raise SDKException('UserGroup', '101')
 
-        return self._user_groups and str(user_group_name).lower() in self._user_groups
+        return self._user_groups and user_group_name.lower() in self._user_groups
 
     def get(self, user_group_name):
         """Returns a user group object of the specified user group name.
@@ -159,10 +162,10 @@ class UserGroups(object):
 
                     if no user group exists with the given name
         """
-        if not isinstance(user_group_name, str):
+        if not isinstance(user_group_name, basestring):
             raise SDKException('UserGroup', '101')
         else:
-            user_group_name = str(user_group_name).lower()
+            user_group_name = user_group_name.lower()
 
             if self.has_user_group(user_group_name):
                 return UserGroup(
@@ -194,15 +197,15 @@ class UserGroups(object):
                     if no usergroup exists with the given name
         """
 
-        if not isinstance(user_group_name, str):
+        if not isinstance(user_group_name, basestring):
             raise SDKException('UserGroup', '101')
         else:
-            user_group_name = str(user_group_name).lower()
+            user_group_name = user_group_name.lower()
 
             if self.has_user_group(user_group_name):
                 usergroup_id = self._user_groups[user_group_name]
 
-                delete_usergroup = self._commcell_object._services.USERGROUP % (usergroup_id)
+                delete_usergroup = self._commcell_object._services['USERGROUP'] % (usergroup_id)
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
                     'DELETE', delete_usergroup
@@ -215,7 +218,7 @@ class UserGroups(object):
                         error_message = None
 
                         if 'errorString' in response_value:
-                            error_message = str(response_value['errorString'])
+                            error_message = response_value['errorString']
 
                         if error_message:
                             o_str = 'Failed to delete user group\nError: "{0}"'
@@ -265,14 +268,14 @@ class UserGroup(object):
                 object - instance of the UserGroup class
         """
         self._commcell_object = commcell_object
-        self._user_group_name = str(user_group_name).lower()
+        self._user_group_name = user_group_name.lower()
 
         if user_group_id:
             self._user_group_id = str(user_group_id)
         else:
             self._user_group_id = self._get_usergroup_id()
 
-        self._USERGROUP = self._commcell_object._services.USERGROUP % (self.user_group_id)
+        self._USERGROUP = self._commcell_object._services['USERGROUP'] % (self.user_group_id)
 
         self._description = None
         self._email = None
@@ -317,14 +320,14 @@ class UserGroup(object):
                 usergroup_properties = response.json()['userGroups'][0]
 
                 if 'description' in usergroup_properties:
-                    self._description = str(usergroup_properties['description'])
+                    self._description = usergroup_properties['description']
 
                 if 'email' in usergroup_properties:
-                    self._email = str(usergroup_properties['email'])
+                    self._email = usergroup_properties['email']
 
                 if 'users' in usergroup_properties:
                     for user in usergroup_properties['users']:
-                        self._users.append(str(user['userName']))
+                        self._users.append(user['userName'])
 
                 if 'securityAssociations' in usergroup_properties:
                     if 'associations' in usergroup_properties['securityAssociations']:
@@ -334,9 +337,9 @@ class UserGroup(object):
                             entity = association['entities']['entity'][0]
 
                             if 'commCellName' in entity:
-                                name = str(entity['commCellName'])
+                                name = entity['commCellName']
                             elif 'userGroupName' in entity:
-                                name = str(entity['userGroupName'])
+                                name = entity['userGroupName']
                             else:
                                 return
 
@@ -354,11 +357,11 @@ class UserGroup(object):
                             if 'categoryPermission' in properties:
                                 permissions = properties['categoryPermission']
                                 permission_list = permissions['categoriesPermissionList'][0]
-                                permission = str(permission_list['permissionName'])
+                                permission = permission_list['permissionName']
                             elif 'permissions' in properties:
-                                permission = str(properties['permissions'][0]['permissionName'])
+                                permission = properties['permissions'][0]['permissionName']
                             elif 'role' in properties:
-                                role = str(properties['role']['roleName'])
+                                role = properties['role']['roleName']
 
                             if permission is not None:
                                 self._security_associations[name]['permissions'].add(

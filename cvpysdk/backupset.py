@@ -38,12 +38,10 @@ Backupsets:
 
 
 Backupset:
-    __init__(agent_object,
+    __init__(instance_object,
              backupset_name,
-             backupset_id=None,
-             instance_id=1,
-             instance_name=None)    -- initialise object of Backupset with the specified backupset
-                                         name and id, and associated to the specified agent
+             backupset_id=None)    -- initialise object of Backupset with the specified backupset
+                                         name and id, and associated to the specified instance
 
     __repr__()                      -- return the backupset name, the instance is associated with
 
@@ -57,17 +55,38 @@ Backupset:
 
     _update()                       -- updates the properties of the backupset
 
+    _get_epoch_time()               -- gets the Epoch time given the input time is in format
+                                           %Y-%m-%d %H:%M:%S
+
+    _set_defaults()                 -- recursively sets default values on a dictionary
+
+    _prepare_browse_options()       -- prepares the options for the Browse/find operation
+
+    _prepare_browse_json()          -- prepares the JSON object for the browse request
+
+    _process_browse_response()      -- retrieves the items from browse response
+
+    _do_browse()                    -- performs a browse operation with the given options
+
     set_default_backupset()         -- sets the backupset as the default backup set for the agent,
                                         if not already default
 
     backup()                        -- runs full backup for all subclients
                                         associated with this backupset
 
+    browse()                        -- browse the content of the backupset
+
+    find()                          -- find content in the backupset
+
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import threading
+import time
+
+from past.builtins import basestring
 
 from .subclient import Subclients
 from .schedules import Schedules
@@ -99,9 +118,15 @@ class Backupsets(object):
 
         self._commcell_object = self._agent_object._commcell_object
 
-        self._BACKUPSETS = (self._commcell_object._services.GET_ALL_BACKUPSETS) % (
+        self._BACKUPSETS = (self._commcell_object._services['GET_ALL_BACKUPSETS']) % (
             self._agent_object._client_object.client_id
         )
+
+        from .backupsets.nasbackupset import NASBackupset
+
+        self._backupsets_dict = {
+            'nas': NASBackupset
+        }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server']:
             self._BACKUPSETS += '&excludeHidden=0'
@@ -165,20 +190,20 @@ class Backupsets(object):
                 return_dict = {}
 
                 for dictionary in response.json()['backupsetProperties']:
-                    agent = str(dictionary['backupSetEntity']['appName']).lower()
-                    instance = str(dictionary['backupSetEntity']['instanceName']).lower()
+                    agent = dictionary['backupSetEntity']['appName'].lower()
+                    instance = dictionary['backupSetEntity']['instanceName'].lower()
 
                     if self._instance_object is not None:
                         if (self._instance_object.instance_name in instance and
                                 self._agent_object.agent_name in agent):
-                            temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
+                            temp_name = dictionary['backupSetEntity']['backupsetName'].lower()
                             temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
                             return_dict[temp_name] = {
                                 "id": temp_id,
                                 "instance": instance
                             }
                     elif self._agent_object.agent_name in agent:
-                        temp_name = str(dictionary['backupSetEntity']['backupsetName']).lower()
+                        temp_name = dictionary['backupSetEntity']['backupsetName'].lower()
                         temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
 
                         if len(self._agent_object.instances._instances) > 1:
@@ -212,10 +237,10 @@ class Backupsets(object):
                 SDKException:
                     if type of the backupset name argument is not string
         """
-        if not isinstance(backupset_name, str):
+        if not isinstance(backupset_name, basestring):
             raise SDKException('Backupset', '101')
 
-        return self._backupsets and str(backupset_name).lower() in self._backupsets
+        return self._backupsets and backupset_name.lower() in self._backupsets
 
     def add(self, backupset_name, on_demand_backupset=False):
         """Adds a new backup set to the agent.
@@ -242,17 +267,17 @@ class Backupsets(object):
 
                     if backupset with same name already exists
         """
-        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
+        if not (isinstance(backupset_name, basestring) and isinstance(on_demand_backupset, bool)):
             raise SDKException('Backupset', '101')
         else:
-            backupset_name = str(backupset_name).lower()
+            backupset_name = backupset_name.lower()
 
         if self.has_backupset(backupset_name):
             raise SDKException(
                 'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name)
             )
 
-        add_backupset_service = self._commcell_object._services.ADD_BACKUPSET
+        add_backupset_service = self._commcell_object._services['ADD_BACKUPSET']
 
         if self._instance_object is None:
             if self._agent_object.instances.has_instance('DefaultInstanceName'):
@@ -290,7 +315,7 @@ class Backupsets(object):
                     error_message = None
 
                     if 'errorString' in response_value:
-                        error_message = str(response_value['errorString'])
+                        error_message = response_value['errorString']
 
                     if error_message:
                         o_str = 'Failed to create new backupset\nError: "{0}"'.format(
@@ -344,10 +369,10 @@ class Backupsets(object):
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, str):
+        if not isinstance(backupset_name, basestring):
             raise SDKException('Backupset', '101')
         else:
-            backupset_name = str(backupset_name).lower()
+            backupset_name = backupset_name.lower()
 
             if self.has_backupset(backupset_name):
                 if self._instance_object is None:
@@ -355,11 +380,18 @@ class Backupsets(object):
                         self._backupsets[backupset_name]['instance']
                     )
 
-                return Backupset(
-                    self._instance_object,
-                    backupset_name,
-                    self._backupsets[backupset_name]["id"]
-                )
+                if self._agent_object.agent_name in self._backupsets_dict.keys():
+                    return self._backupsets_dict[self._agent_object.agent_name](
+                        self._instance_object,
+                        backupset_name,
+                        self._backupsets[backupset_name]["id"]
+                    )
+                else:
+                    return Backupset(
+                        self._instance_object,
+                        backupset_name,
+                        self._backupsets[backupset_name]["id"]
+                    )
 
             raise SDKException(
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
@@ -383,13 +415,13 @@ class Backupsets(object):
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, str):
+        if not isinstance(backupset_name, basestring):
             raise SDKException('Backupset', '101')
         else:
-            backupset_name = str(backupset_name).lower()
+            backupset_name = backupset_name.lower()
 
         if self.has_backupset(backupset_name):
-            delete_backupset_service = self._commcell_object._services.BACKUPSET % (
+            delete_backupset_service = self._commcell_object._services['BACKUPSET'] % (
                 self._backupsets[backupset_name]['id']
             )
 
@@ -405,7 +437,7 @@ class Backupsets(object):
                         error_message = None
 
                         if 'errorString' in response_value:
-                            error_message = str(response_value['errorString'])
+                            error_message = response_value['errorString']
 
                         if error_message:
                             o_str = 'Failed to delete backupset\nError: "{0}"'
@@ -457,7 +489,7 @@ class Backupset(object):
         self._agent_object = self._instance_object._agent_object
         self._commcell_object = self._instance_object._agent_object._commcell_object
 
-        self._backupset_name = str(backupset_name).split('\\')[-1].lower()
+        self._backupset_name = backupset_name.split('\\')[-1].lower()
         self._description = None
 
         if backupset_id:
@@ -467,15 +499,33 @@ class Backupset(object):
             # Get the id associated with this backupset
             self._backupset_id = self._get_backupset_id()
 
-        self._BACKUPSET = self._commcell_object._services.BACKUPSET % (self.backupset_id)
+        self._BACKUPSET = self._commcell_object._services['BACKUPSET'] % (self.backupset_id)
+        self._BROWSE = self._commcell_object._services['BROWSE']
 
         self._is_default = False
+        self._is_on_demand_backupset = False
         self._properties = None
 
         self._get_backupset_properties()
 
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
+
+        self._default_browse_options = {
+            'operation': 'browse',
+            'show_deleted': False,
+            'from_time': 0,         # value should either be the Epoch time or the Timestamp
+            'to_time': 0,           # value should either be the Epoch time or the Timestamp
+            'path': '\\',
+            'copy_precedence': 0,
+            'media_agent': '',
+            'page_size': 100000,
+            'skip_node': 0,
+            'restore_index': True,
+            'vm_disk_browse': False,
+            'filters': [],
+            '_subclient_id': 0
+        }
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -512,12 +562,18 @@ class Backupset(object):
                 self._properties = response.json()["backupsetProperties"][0]
 
                 backupset_name = self._properties["backupSetEntity"]["backupsetName"]
-                self._backupset_name = str(backupset_name).lower()
+                self._backupset_name = backupset_name.lower()
 
                 self._is_default = bool(self._properties["commonBackupSet"]["isDefaultBackupSet"])
 
+                if 'commonBackupSet' in self._properties:
+                    if 'onDemandBackupset' in self._properties['commonBackupSet']:
+                        self._is_on_demand_backupset = bool(
+                            self._properties['commonBackupSet']['onDemandBackupset']
+                        )
+
                 if "userDescription" in self._properties["commonBackupSet"]:
-                    self._description = str(self._properties["commonBackupSet"]["userDescription"])
+                    self._description = self._properties["commonBackupSet"]["userDescription"]
             else:
                 raise SDKException('Response', '102')
         else:
@@ -525,7 +581,9 @@ class Backupset(object):
             raise SDKException('Response', '101', response_string)
 
     def _run_backup(self, subclient_name, return_list):
-        """Triggers full backup job for the given subclient, and appends its Job object to the list.
+        """Triggers incremental backup job for the given subclient,
+            and appends its Job object to the list.
+
             The SDKExcpetion class instance is appended to the list,
             if any exception is raised while running the backup job for the Subclient.
 
@@ -541,6 +599,55 @@ class Backupset(object):
         except SDKException as excp:
             return_list.append(excp)
 
+    def _process_update_reponse(self, request_json):
+        """Runs the Backupset update API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._BACKUPSET, request_json
+        )
+
+        self._get_backupset_properties()
+
+        if flag:
+            if response.json() and "response" in response.json():
+                error_code = str(response.json()["response"][0]["errorCode"])
+
+                if error_code == "0":
+                    return (True, "0", "")
+                else:
+                    error_string = ""
+
+                    if "errorString" in response.json()["response"][0]:
+                        error_string = response.json()["response"][0]["errorString"]
+
+                    if error_string:
+                        return (False, error_code, error_string)
+                    else:
+                        return (False, error_code, "")
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def _update(self, backupset_name, backupset_description, default_backupset):
         """Updates the properties of the backupset.
 
@@ -552,7 +659,7 @@ class Backupset(object):
                 default_backupset     (bool)  --  default backupset property
 
             Returns:
-                (bool, str, str):
+                (bool, basestring, basestring):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -587,33 +694,292 @@ class Backupset(object):
             request_json["backupsetProperties"]["commonBackupSet"][
                 "userDescription"] = backupset_description
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._BACKUPSET, request_json
-        )
+        return self._process_update_reponse(request_json)
 
-        self._get_backupset_properties()
+    @staticmethod
+    def _get_epoch_time(timestamp):
+        """Returns the Epoch time given the input time is in format %Y-%m-%d %H:%M:%S.
+
+            Args:
+                timestamp   (int / str)     --  value should either be the Epoch time or, the
+                                                    Timestamp of the format %Y-%m-%d %H:%M:%S
+
+            Returns:
+                int - epoch time converted from the input timestamp
+
+            Raises:
+                SDKException:
+                    if the input timestamp is not of correct format
+        """
+        if str(timestamp) == '0':
+            return 0
+
+        try:
+            # return the timestamp value in int type
+            return int(timestamp)
+        except ValueError:
+            # if not convertible to int, then convert the timestamp input to Epoch time
+            try:
+                return int(time.mktime(time.strptime(timestamp, "%Y-%m-%d %H:%M:%S")))
+            except:
+                raise SDKException('Subclient', '106')
+
+    def _set_defaults(self, final_dict, defaults_dict):
+        """Iterates over the defaults_dict, and adds the default value to the final_dict,
+            for the key which is not present in the final dict.
+
+            Recursively sets default values on the final_dict dictionary.
+
+            Args:
+                final_dict      (dict)  --  the dictionary to be set with defaults, and to be used
+                                                to generate the Browse / Find JSON
+
+                defaults_dict   (dict)  --  the dictionary with default values
+
+            Returns:
+                None
+        """
+        for key in defaults_dict:
+            if key not in final_dict:
+                final_dict[key] = defaults_dict[key]
+
+            if isinstance(defaults_dict[key], dict):
+                self._set_defaults(final_dict[key], defaults_dict[key])
+
+    def _prepare_browse_options(self, options):
+        """Prepares the options for the Browse/find operation.
+
+            Args:
+                options     (dict)  --  a dictionary of browse options
+
+            Returns:
+                dict - The browse options with all the default options set
+        """
+        self._set_defaults(options, self._default_browse_options)
+        return options
+
+    def _prepare_browse_json(self, options):
+        """Prepares the JSON object for the browse request.
+
+            Args:
+                options     (dict)  --  the browse options dictionary
+
+            Returns:
+                dict - A JSON object for the browse response
+        """
+        operation_types = {
+            'browse': 0,
+            'find': 1
+        }
+
+        options['operation'] = options['operation'].lower()
+
+        if options['operation'] not in operation_types:
+            options['operation'] = 'find'
+
+        # add the browse mode value here, if it is different for an agent
+        # if agent is not added in the dict, default value 2 will be used
+        browse_mode = {
+            'virtual server': 4
+        }
+
+        mode = 2
+
+        if self._agent_object.agent_name in browse_mode:
+            mode = browse_mode[self._agent_object.agent_name]
+
+        request_json = {
+            "opType": operation_types[options['operation']],
+            "mode": {
+                "mode": mode
+            },
+            "paths": [{
+                "path": options['path']
+            }],
+            "options": {
+                "showDeletedFiles": options['show_deleted'],
+                "restoreIndex": options['restore_index'],
+                "vsDiskBrowse": options['vm_disk_browse']
+            },
+            "entity": {
+                "clientName": self._agent_object._client_object.client_name,
+                "clientId": int(self._agent_object._client_object.client_id),
+                "applicationId": int(self._agent_object.agent_id),
+                "instanceId": int(self._instance_object.instance_id),
+                "backupsetId": int(self.backupset_id),
+                "subclientId": int(options['_subclient_id'])
+            },
+            "timeRange": {
+                "fromTime": self._get_epoch_time(options['from_time']),
+                "toTime": self._get_epoch_time(options['to_time'])
+            },
+            "advOptions": {
+                "copyPrecedence": options['copy_precedence']
+            },
+            "ma": {
+                "clientName": options['media_agent']
+            },
+            "queries": [{
+                "type": 0,
+                "queryId": "dataQuery",
+                "dataParam": {
+                    "sortParam": {
+                        "ascending": False,
+                        "sortBy": [0]
+                    },
+                    "paging": {
+                        "pageSize": int(options['page_size']),
+                        "skipNode": int(options['skip_node']),
+                        "firstNode": 0
+                    }
+                }
+            }]
+        }
+
+        if len(options['filters']) > 0:
+            # [('FileName', '*.txt'), ('FileSize','GT','100')]
+            request_json['queries'][0]['whereClause'] = []
+
+            for browse_filter in options['filters']:
+                if browse_filter[0] in ('FileName', 'FileSize'):
+                    temp_dict = {
+                        'connector': 0,
+                        'criteria': {
+                            'field': browse_filter[0],
+                            'values': [browse_filter[1]]
+                        }
+                    }
+
+                    if browse_filter[0] == 'FileSize':
+                        temp_dict['criteria']['dataOperator'] = browse_filter[2]
+
+                    request_json['queries'][0]['whereClause'].append(temp_dict)
+
+        return request_json
+
+    def _process_browse_response(self, flag, response, options):
+        """Retrieves the items from browse response.
+
+        Args:
+            flag        (bool)  --  boolean, whether the response was success or not
+
+            response    (dict)  --  JSON response received for the request from the Server
+
+            options     (dict)  --  The browse options dictionary
+
+        Returns:
+            list - List of only the file / folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+
+        Raises:
+            SDKException:
+                if failed to browse/search for content
+
+                if response is empty
+
+                if response is not success
+        """
+
+        operation_types = {
+            "browse": ('110', 'Failed to browse for subclient backup content\nError: "{0}"'),
+            "find": ('111', 'Failed to Search\nError: "{0}"')
+        }
+
+        exception_code = operation_types[options['operation']][0]
+        exception_message = operation_types[options['operation']][1]
 
         if flag:
-            if response.json() and "response" in response.json():
-                error_code = str(response.json()["response"][0]["errorCode"])
 
-                if error_code == "0":
-                    return (True, "0", "")
-                else:
-                    error_string = ""
+            response_json = response.json()
+            paths_dict = {}
+            paths = []
 
-                    if "errorString" in response.json()["response"][0]:
-                        error_string = response.json()["response"][0]["errorString"]
+            if response_json and 'browseResponses' in response_json:
 
-                    if error_string:
-                        return (False, error_code, error_string)
+                if 'browseResult' in response_json['browseResponses'][0]:
+                    browse_result = response_json['browseResponses'][0]['browseResult']
+
+                    if 'dataResultSet' in browse_result:
+                        result_set = browse_result['dataResultSet']
+
+                        for result in result_set:
+
+                            name = str(result['displayName'])
+                            path = str(result['path'])
+
+                            if 'modificationTime' in result:
+                                mod_time = time.localtime(result['modificationTime'])
+                                mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
+                            else:
+                                mod_time = None
+
+                            if 'file' in result['flags']:
+                                if result['flags']['file'] is True:
+                                    file_or_folder = 'File'
+                                else:
+                                    file_or_folder = 'Folder'
+                            else:
+                                file_or_folder = 'Folder'
+
+                            if 'size' in result:
+                                size = result['size']
+                            else:
+                                size = None
+
+                            paths_dict[path] = {
+                                'name': name,
+                                'size': size,
+                                'modified_time': mod_time,
+                                'type': file_or_folder,
+                                'advanced_data': result['advancedData']
+                            }
+
+                            paths.append(path)
+
+                        return paths, paths_dict
                     else:
-                        return (False, error_code, "")
+                        raise SDKException('Subclient', exception_code)
+
+                elif 'messages' in response_json['browseResponses'][0]:
+                    message = response_json['browseResponses'][0]['messages'][0]
+                    error_message = message['errorMessage']
+
+                    o_str = exception_message
+                    raise SDKException('Subclient', '102', o_str.format(error_message))
+
+                else:
+                    raise SDKException('Subclient', exception_code)
+
             else:
                 raise SDKException('Response', '102')
+
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _do_browse(self, options=None):
+        """Performs a browse operation with the given options.
+
+        Args:
+            options     (dict)  --  dictionary of browse options
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+        """
+        if options is None:
+            options = {}
+
+        options = self._prepare_browse_options(options)
+        request_json = self._prepare_browse_json(options)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._BROWSE, request_json
+        )
+
+        return self._process_browse_response(flag, response, options)
 
     @property
     def backupset_id(self):
@@ -635,6 +1001,11 @@ class Backupset(object):
         """Treats the is default backupset as a read-only attribute."""
         return self._is_default
 
+    @property
+    def is_on_demand_backupset(self):
+        """Treats the is on demand backupset as a read-only attribute."""
+        return self._is_on_demand_backupset
+
     @backupset_name.setter
     def backupset_name(self, value):
         """Sets the name of the backupset as the value provided as input.
@@ -645,7 +1016,7 @@ class Backupset(object):
 
                     if type of value input is not string
         """
-        if isinstance(value, str):
+        if isinstance(value, basestring):
             output = self._update(
                 backupset_name=value,
                 backupset_description=self.description,
@@ -673,7 +1044,7 @@ class Backupset(object):
                     if description cannot be modified for this backupset
         """
         if self.description is not None:
-            if isinstance(value, str):
+            if isinstance(value, basestring):
                 output = self._update(
                     backupset_name=self.backupset_name,
                     backupset_description=value,
@@ -719,7 +1090,7 @@ class Backupset(object):
 
             Returns:
                 list  -  list consisting of the job objects for the backup jobs started for
-                             the subclients in the backupset
+                        the subclients in the backupset
         """
         return_list = []
         thread_list = []
@@ -738,3 +1109,109 @@ class Backupset(object):
             thread.join()
 
         return return_list
+
+    def browse(self, *args, **kwargs):
+        """Browses the content of a Backupset.
+
+            Args:
+                Dictionary of browse options:
+                    Example:
+                        browse({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
+                        })
+
+                    (OR)
+
+                Keyword argument of browse options:
+                    Example:
+                        browse(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            to_time='2016-04-31 12:00:00'
+                        )
+
+                Refer self._default_browse_options for all the supported options
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+        """
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['operation'] = 'browse'
+
+        return self._do_browse(options)
+
+    def find(self, *args, **kwargs):
+        """Searches a file/folder in the backupset backup content,
+            and returns all the files matching the filters given.
+
+         Args:
+            Dictionary of find options:
+                Example:
+                    find({
+                        'file_name': '*.txt',
+                        'show_deleted': True,
+                        'from_time': '2014-04-20 12:00:00',
+                        'to_time': '2016-04-31 12:00:00'
+                    })
+
+                (OR)
+
+            Keyword argument of find options:
+                Example:
+                    find(
+                        file_name='*.txt',
+                        show_deleted=True,
+                        to_time='2016-04-31 12:00:00'
+                    )
+
+            Refer self._default_browse_options for all the supported options
+
+            Additional options supported:
+                file_name       (str)   --   Find files with name
+
+                file_size_gt    (int)   --   Find files with size greater than size
+
+                file_size_lt    (int)   --   Find files with size lesser than size
+
+                file_size_et    (int)   --   Find files with size equal to size
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+        """
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['operation'] = 'find'
+
+        if 'path' not in options:
+            options['path'] = '\\**\\*'
+
+        if 'filters' not in options:
+            options['filters'] = []
+
+        if 'file_name' in options:
+            options['filters'].append(('FileName', options['file_name']))
+
+        if 'file_size_gt' in options:
+            options['filters'].append(('FileSize', options['file_size_gt'], 'GTE'))
+
+        if 'file_size_lt' in options:
+            options['filters'].append(('FileSize', options['file_size_lt'], 'LTE'))
+
+        if 'file_size_et' in options:
+            options['filters'].append(('FileSize', options['file_size_et'], 'EQUALSBLAH'))
+
+        return self._do_browse(options)

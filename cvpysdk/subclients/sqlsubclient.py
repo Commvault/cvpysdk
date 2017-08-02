@@ -21,14 +21,18 @@ SQLServerSubclient:
 
     _initialize_subclient_properties()  --  initializes additional properties of this subclient
 
-    content                             --  update the content of the subclient
+    content()                           --  update the content of the subclient
 
-    log_backup_storage_policy           --  updpates the log backup storage policy for this
+    log_backup_storage_policy()         --  updpates the log backup storage policy for this
                                                 subclient
 
     backup()                            --  run a backup job for the subclient
 
 """
+
+from __future__ import unicode_literals
+
+from past.builtins import basestring
 
 from ..subclient import Subclient
 from ..exception import SDKException
@@ -59,14 +63,14 @@ class SQLServerSubclient(Subclient):
         content_list = []
 
         if 'mssqlFFGDBName' in self._subclient_properties['mssqlSubClientProp']:
-            database_name = str(self._subclient_properties['mssqlSubClientProp']['mssqlFFGDBName'])
+            database_name = self._subclient_properties['mssqlSubClientProp']['mssqlFFGDBName']
 
         for content in subclient_content:
             if 'mssqlDbContent' in content:
-                content_list.append(str(content["mssqlDbContent"]["databaseName"]))
+                content_list.append(content["mssqlDbContent"]["databaseName"])
             elif 'mssqlFGContent' in content:
                 self._is_file_group_subclient = True
-                content_list.append(str(content['mssqlFGContent']['databaseName']))
+                content_list.append(content['mssqlFGContent']['databaseName'])
 
         if self._is_file_group_subclient:
             contents.append(database_name)
@@ -118,9 +122,9 @@ class SQLServerSubclient(Subclient):
         storage_device = self._subclient_properties['commonProperties']['storageDevice']
 
         if 'logBackupStoragePolicy' in storage_device:
-            self._log_backup_storage_policy = str(
-                storage_device['logBackupStoragePolicy']['storagePolicyName']
-            )
+            log_backup_storage_policy = storage_device['logBackupStoragePolicy']
+            if 'storagePolicyName' in log_backup_storage_policy:
+                self._log_backup_storage_policy = log_backup_storage_policy['storagePolicyName']
 
     @property
     def content(self):
@@ -213,13 +217,29 @@ class SQLServerSubclient(Subclient):
 
                     if log backup storage policy name is not in string format
         """
-        if isinstance(value, str):
-            output = self._update(
-                self.description,
-                self.content,
-                storage_policy=self._storage_policy,
-                log_backup_storage_policy=value
+        if isinstance(value, basestring):
+            if not self._commcell_object.storage_policies.has_policy(value):
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Storage Policy: "{0}" does not exist in the Commcell'.format(value)
+                )
+
+            properties_dict = {
+                "storageDevice": {
+                    "logBackupStoragePolicy": {
+                        "storagePolicyName": value
+                    }
+                }
+            }
+
+            request_json = self._update_subclient_props_json(properties_dict)
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', self._SUBCLIENT, request_json
             )
+
+            output = self._process_update_response(flag, response)
 
             if output[0]:
                 return
@@ -258,4 +278,12 @@ class SQLServerSubclient(Subclient):
         if backup_level not in ['full', 'transaction_log', 'differential']:
             raise SDKException('Subclient', '103')
 
-        return self._process_backup_request(backup_level)
+        backup_service = self._commcell_object._services['SUBCLIENT_BACKUP'] % (
+            self.subclient_id, backup_level
+        )
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', backup_service
+        )
+
+        return self._process_backup_response(flag, response)

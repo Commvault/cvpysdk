@@ -20,6 +20,8 @@ VirtualServerInstance:
 
 """
 
+from __future__ import unicode_literals
+
 from ..instance import Instance
 
 
@@ -44,13 +46,13 @@ class VirtualServerInstance(Instance):
 
         if 'virtualServerInstance' in self._properties:
             virtual_server_instance = self._properties['virtualServerInstance']
-            self._vs_instance_type = str(virtual_server_instance['vsInstanceType'])
+            self._vs_instance_type = virtual_server_instance['vsInstanceType']
 
             if 'vmwareVendor' in virtual_server_instance:
                 v_center = virtual_server_instance['vmwareVendor']['virtualCenter']
 
-                self._v_center_name = str(v_center['domainName'])
-                self._v_center_username = str(v_center['userName'])
+                self._v_center_name = v_center['domainName']
+                self._v_center_username = v_center['userName']
 
             if 'associatedClients' in virtual_server_instance:
                 associated_clients = virtual_server_instance['associatedClients']
@@ -65,13 +67,13 @@ class VirtualServerInstance(Instance):
 
                     if 'clientName' in client:
                         temp_dict = {
-                            'client_name': str(client['clientName']),
+                            'client_name': client['clientName'],
                             'client_id': str(client['clientId'])
                         }
                         self._associated_clients['Clients'].append(temp_dict)
                     elif 'clientGroupName' in client:
                         temp_dict = {
-                            'client_group_name': str(client['clientGroupName']),
+                            'client_group_name': client['clientGroupName'],
                             'client_group_id': str(client['clientGroupId'])
                         }
                         self._associated_clients['ClientGroups'].append(temp_dict)
