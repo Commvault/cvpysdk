@@ -74,6 +74,7 @@ from .usergroup import UserGroups
 from .workflow import WorkFlow
 from .exception import SDKException
 from .clientgroup import ClientGroups
+from .datacube import Datacube
 
 
 class Commcell(object):
@@ -162,7 +163,8 @@ class Commcell(object):
             SchedulePolicies,
             UserGroups,
             WorkFlow,
-            ClientGroups
+            ClientGroups,
+            Datacube
         ]
 
         sdk_dict = self._attribs_(sdk_classes)
@@ -176,6 +178,7 @@ class Commcell(object):
         self.user_groups = sdk_dict[UserGroups]
         self.workflows = sdk_dict[WorkFlow]
         self.client_groups = sdk_dict[ClientGroups]
+        self.datacube = sdk_dict[Datacube]
 
         self._commserv_name = self._get_commserv_name()
 
@@ -268,6 +271,7 @@ class Commcell(object):
         del self.user_groups
         del self.workflows
         del self.client_groups
+        del self.datacube
         del self.__user_guid
         del self._web_service
         del self._cvpysdk_object
