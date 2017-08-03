@@ -29,9 +29,8 @@ except ImportError:
     # Python 3 import
     from queue import Queue
 
-from .exception import SDKException
 from .datasource import Datasources
-
+from ..exception import SDKException
 
 class Datacube(object):
 
@@ -63,15 +62,19 @@ class Datacube(object):
 
         self.datasources = datacube_sdk_dict[Datasources]
 
-    def __str__(self):
-        """Representation string consisting of all datacube of the commcell.
+    def __repr__(self):
+        """String representation of the instance of this class
 
             Returns:
-                str - string of all the clients associated with the commcell
+                str - string about the details of datacube
 
-            TODO: Do this
         """
-        print("yet to do")
+
+        o_str = "Datacube class instance for CommServ '{0}'".format(
+            self._commcell_object.commserv_name
+        )
+
+        return o_str
 
     def _raise_response_not_success_exception_(self, response):
         """ Helper function to raise an exception when reponse status is not 200 OK
@@ -96,8 +99,9 @@ class Datacube(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request\
-        ('GET', self._ANALYTICS_ENGINES)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._ANALYTICS_ENGINES
+        )
 
         if flag:
             parsed_response = response.json()

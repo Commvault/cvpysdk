@@ -74,9 +74,8 @@ from .usergroup import UserGroups
 from .workflow import WorkFlow
 from .exception import SDKException
 from .clientgroup import ClientGroups
-from .datacube import Datacube
 from .globalfilter import GlobalFilters
-
+from .datacube.datacube import Datacube
 
 class Commcell(object):
     """Class for establishing a session to the Commcell via Commvault REST API."""
@@ -165,7 +164,6 @@ class Commcell(object):
             UserGroups,
             WorkFlow,
             ClientGroups,
-            Datacube
             GlobalFilters
         ]
 
@@ -180,10 +178,11 @@ class Commcell(object):
         self.user_groups = sdk_dict[UserGroups]
         self.workflows = sdk_dict[WorkFlow]
         self.client_groups = sdk_dict[ClientGroups]
-        self.datacube = sdk_dict[Datacube]
         self.global_filters = sdk_dict[GlobalFilters]
 
         self._commserv_name = self._get_commserv_name()
+
+        self.datacube = None
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -358,3 +357,8 @@ class Commcell(object):
         )
 
         return response
+
+    def get_datacube(self):
+        if(self.datacube is None):
+            self.datacube = Datacube(self)
+        return self.datacube

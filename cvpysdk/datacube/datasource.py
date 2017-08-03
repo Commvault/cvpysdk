@@ -6,7 +6,7 @@
 # See LICENSE.txt in the project root for
 # license information.
 # ---
-from exception import SDKException
+from ..exception import SDKException
 from sedstype import SEDSType
 
 
@@ -77,8 +77,9 @@ class Datasources(object):
                 datasource_dict['datasourceId'] = datasource['datasourceId']
                 datasource_dict['datasourceName'] = datasource['datasourceName']
                 datasource_dict['description'] = datasource['description']
-                datasource_dict['datasourceType'] = SEDSType.get_name_from_value\
-                (datasource['datasourceType'])
+                datasource_dict['datasourceType'] = SEDSType.get_name_from_value(
+                    datasource['datasourceType']
+                )
                 datasource_dict['totalcount'] = datasource['status']['totalcount']
                 datasource_dict['state'] = datasource['status']['state']
                 datasources.append(datasource_dict)
@@ -93,8 +94,9 @@ class Datasources(object):
                 Array of datasource objects
 
         """
-        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request\
-        ('GET', self._ALL_DATASOURCES)
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            'GET', self._ALL_DATASOURCES
+        )
 
         if flag:
             parsed_response = response.json()
@@ -116,8 +118,9 @@ class Datasources(object):
     def get(self, datasource_name):
         """
         Returns a datasource from datacube that matches the supplied datasource_name
-        :param datasource_name: name of the datasource
-        :return: Datasource object
+        Args:
+            datasource_name (string)    --  name of the datasource
+
 
         Raises:
             SDKException:
@@ -171,8 +174,9 @@ class Datasource(object):
         else:
             self._datasource_id = self._get_datasource_id()
 
-        self._DATASOURCE = self._datacube_object._commcell_object._services['GET_DATASOURCE'] % \
-            (self._datasource_id)
+        self._DATASOURCE = self._datacube_object._commcell_object._services['GET_DATASOURCE'] % (
+            self._datasource_id
+        )
 
         self._datasource_info = self._get_datasource_properties()
 

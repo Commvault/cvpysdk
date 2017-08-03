@@ -32,4 +32,3 @@ class SEDSType(object):
     @staticmethod
     def get_name_from_value(value):
         return SEDSType.ds_type_dict.get(value)
-
