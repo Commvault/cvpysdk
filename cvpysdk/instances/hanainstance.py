@@ -15,12 +15,13 @@ SAPHANAInstance: Derived class from Instance Base class, representing a hana ser
                        and to perform operations on that instance
 
 SAPHANAInstance:
+
     _restore_request_json()         --  returns the restore request json
 
     _get_hana_restore_options()     --  returns the dict containing destination SAP HANA instance
                                             names for the given client
 
-    _process_restore_response()      --  processes response received for Restore request
+    _process_restore_response()     --  processes response received for the Restore request
 
     _run_backup()                   --  runs full backup for this subclients and appends the
                                             job object to the return list
@@ -31,12 +32,14 @@ SAPHANAInstance:
     restore()                       --  runs the restore job for specified instance
 
 """
-from __future__ import unicode_literals
 
-from past.builtins import basestring
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import time
 import threading
+
+from past.builtins import basestring
 
 from ..instance import Instance
 from ..exception import SDKException
@@ -51,6 +54,7 @@ class SAPHANAInstance(Instance):
             self,
             destination_client,
             destination_instance,
+            backupset_name="default",
             backup_prefix=None,
             point_in_time=None,
             initialize_log_area=False,
@@ -58,97 +62,94 @@ class SAPHANAInstance(Instance):
             clone_env=False,
             check_access=False,
             destination_instance_dir=None,
-            ignore_delta_backups=False,
-            backupset_name="default"):
+            ignore_delta_backups=False):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
-                destination_client          (str)       -- The HANA client where the database
-                                                                should be restored
+                destination_client          (str)   --  HANA client to restore the database at
 
-                destination_instance        (str)       -- The destination instance where the
-                                                                database should be restored
+                destination_instance        (str)   --  destination instance to restore the db at
 
-                backupset_name               (str)       -- The backupset name of the instance to
-                                                                be restored. If the instance
-                                                                is a single DB instance then the
-                                                                backupset is default by default.
+                backupset_name              (str)   --  backupset name of the instance to be
+                                                            restored. If the instance is a single
+                                                            DB instance then the backupset name is
+                                                            ``default``.
                     default: default
 
-                backup_prefix               (str)       -- The prefix of the backup job
+                backup_prefix               (str)   --  prefix of the backup job
                     default: None
 
-                point_in_time               (str)       -- The time to which the database should
-                                                                be restored to
+                point_in_time               (str)   --  time to which db should be restored to
                     default: None
 
-                initialize_log_area         (bool)      -- Option to initialize new log area after
-                                                                restore
+                initialize_log_area         (bool)  --  boolean to specify whether to initialize
+                                                            the new log area after restore
                     default: False
 
-                use_hardware_revert         (bool)      -- Option to do a hardware revert in
-                                                                restore
+                use_hardware_revert         (bool)  --  boolean to specify whether to do a
+                                                            hardware revert in restore
                     default: False
 
-                clone_env                   (bool)      -- Option to decide whether the database
-                                                                should be cloned or not
+                clone_env                   (bool)  --  boolean to specify whether the database
+                                                            should be cloned or not
                     default: False
 
-                check_access                (bool)      -- Option to check access during restore
+                check_access                (bool)  --  check access during restore or not
                     default: True
 
-                destination_instance_dir      (str)       -- For snap cross instance restore or
-                                                                cross machine restores requires
-                                                                HANA data directory
+                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
+                                                            restore or cross machine restores
                     default: None
 
-                ignore_delta_backups          (bool)      -- Option to ignore delta backups during
-                                                                restore
+                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
+                                                            restore or not
                     default: True
 
             Returns:
-                dict - JSON request to pass to the API
-        """
+                dict    -   JSON request to pass to the API
 
+        """
         self._get_hana_restore_options(destination_client)
 
         if destination_instance is None:
             destination_instance = self.instance_name
         else:
-            if str(destination_instance) not in self.destination_instances_dict:
+            if destination_instance not in self.destination_instances_dict:
                 raise SDKException(
                     'Instance', '102', 'No Instance exists with name: {0}'.format(
-                        str(destination_instance)
+                        destination_instance
                     )
                 )
 
-        destination_hana_client = str(self.destination_instances_dict[destination_instance][
-            'destHANAClient'])
+        destination_hana_client = self.destination_instances_dict[destination_instance][
+            'destHANAClient']
 
         if backup_prefix is None:
             backup_prefix = ""
 
         databases = []
+
         if backupset_name != "default":
             databases.append(backupset_name)
 
         if point_in_time is None:
-            pit = {}
+            point_in_time = {}
         else:
             if not isinstance(point_in_time, basestring):
-                raise SDKException(
-                    'Instance', 103
-                )
-            pit = {'timeValue': str(point_in_time)}
+                raise SDKException('Instance', 103)
+
+            point_in_time = {
+                'timeValue': str(point_in_time)
+            }
 
         request_json = {
             "taskInfo": {
                 "associations": [{
-                    "suclientName": "",
-                    "clientName": str(self._agent_object._client_object.client_name),
-                    "appName": str(self._agent_object.agent_name),
-                    "instanceName": str(self.instance_name),
-                    "backupsetName": backupset_name
+                    "clientName": self._agent_object._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": self.instance_name,
+                    "backupsetName": backupset_name,
+                    "suclientName": ""
                 }],
                 "task": {
                     "initiatedFrom": 1,
@@ -172,13 +173,13 @@ class SAPHANAInstance(Instance):
                                 "ignoreDeltaBackups": ignore_delta_backups,
                                 "destClientName": destination_hana_client,
                                 "databases": databases,
-                                "pointInTime": pit
+                                "pointInTime": point_in_time
                             },
                             "destination": {
                                 "destinationInstance": {
-                                    "clientName": str(destination_client),
-                                    "instanceName": str(destination_instance),
-                                    "appName": str(self._agent_object.agent_name)
+                                    "clientName": destination_client,
+                                    "appName": self._agent_object.agent_name,
+                                    "instanceName": destination_instance
                                 },
                                 "destClient": {
                                     "clientName": destination_hana_client
@@ -186,7 +187,7 @@ class SAPHANAInstance(Instance):
                             },
                             "browseOption": {
                                 "backupset": {
-                                    "clientName": str(self._agent_object._client_object.client_name)
+                                    "clientName": self._agent_object._client_object.client_name
                                 }
                             }
                         }
@@ -196,7 +197,10 @@ class SAPHANAInstance(Instance):
         }
 
         if destination_instance_dir is not None:
-            instance_dir = {'destinationInstanceDir':destination_instance_dir}
+            instance_dir = {
+                'destinationInstanceDir': destination_instance_dir
+            }
+
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
                 'hanaOpt'].update(instance_dir)
 
@@ -207,10 +211,10 @@ class SAPHANAInstance(Instance):
             and returns the contents after parsing the response.
 
             Args:
-                destination_client_name   (str)  --  destination client to restore to
+                destination_client_name     (str)   --  destination client to restore to
 
             Returns:
-                dict - dictionary consisting of the HANA destination server options
+                dict    -   dictionary consisting of the HANA destination server options
 
             Raises:
                 SDKException:
@@ -222,25 +226,23 @@ class SAPHANAInstance(Instance):
 
                     if response is not success
         """
-
-        webservice = self._commcell_object._services['RESTORE_OPTIONS']%(
-            self._agent_object.agent_id)
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            "GET",
-            webservice
+        webservice = self._commcell_object._services['RESTORE_OPTIONS'] % (
+            self._agent_object.agent_id
         )
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", webservice)
 
         destination_clients_dict = {}
 
         if flag:
             if response.json():
-                if u'genericEntityList' in response.json():
-                    generic_entity_list = response.json()[u'genericEntityList']
+                if 'genericEntityList' in response.json():
+                    generic_entity_list = response.json()['genericEntityList']
+
                     for client_entity in generic_entity_list:
                         clients_dict = {
-                            str(client_entity[u'clientName']).lower(): {
-                                "clientId": int(client_entity[u'clientId'])
+                            client_entity['clientName'].lower(): {
+                                "clientId": client_entity['clientId']
                             }
                         }
                         destination_clients_dict.update(clients_dict)
@@ -256,11 +258,11 @@ class SAPHANAInstance(Instance):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-        webservice = self._commcell_object._services['GET_ALL_INSTANCES']%(
-            destination_clients_dict[destination_client_name]['clientId'])
+        webservice = self._commcell_object._services['GET_ALL_INSTANCES'] % (
+            destination_clients_dict[destination_client_name]['clientId']
+        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            "GET", webservice)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", webservice)
 
         self.destination_instances_dict = {}
 
@@ -269,11 +271,11 @@ class SAPHANAInstance(Instance):
                 if 'instanceProperties' in response.json():
                     for instance in response.json()['instanceProperties']:
                         instances_dict = {
-                            str(instance['instance']['instanceName']).lower(): {
-                                "instanceId": int(instance['instance']['instanceId']),
-                                "clientId": int(instance['instance']['clientId']),
-                                "destHANAClient": str(instance['saphanaInstance'][
-                                    'DBInstances'][0]['clientName'])
+                            instance['instance']['instanceName'].lower(): {
+                                "clientId": instance['instance']['clientId'],
+                                "instanceId": instance['instance']['instanceId'],
+                                "destHANAClient": instance['saphanaInstance'][
+                                    'DBInstances'][0]['clientName']
                             }
                         }
                         self.destination_instances_dict.update(instances_dict)
@@ -297,7 +299,7 @@ class SAPHANAInstance(Instance):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                object - instance of the Job class for this restore job
+                object  -   instance of the Job class for this restore job
 
             Raises:
                 SDKException:
@@ -329,14 +331,14 @@ class SAPHANAInstance(Instance):
             raise SDKException('Response', '101', response_string)
 
     def _run_backup(self, subclient_name, return_list):
-        """Triggers full backup job for the given subclient, and appends its Job object to list
+        """Triggers FULL backup job for the given subclient, and appends its Job object to list
             The SDKExcpetion class instance is appended to the list,
             if any exception is raised while running the backup job for the Subclient.
 
             Args:
-                subclient_name (str)   --  name of the subclient to trigger the backup for
+                subclient_name  (str)   --  name of the subclient to trigger the backup for
 
-                return_list    (list)  --  list to append the job object to
+                return_list     (list)  --  list to append the job object to
         """
         try:
             job = self.subclients.get(subclient_name).backup('Full')
@@ -374,6 +376,7 @@ class SAPHANAInstance(Instance):
             self,
             pseudo_client,
             instance,
+            backupset_name="default",
             backup_prefix=None,
             point_in_time=None,
             initialize_log_area=False,
@@ -381,56 +384,51 @@ class SAPHANAInstance(Instance):
             clone_env=False,
             check_access=True,
             destination_instance_dir=None,
-            ignore_delta_backups=True,
-            backupset_name="default"):
+            ignore_delta_backups=True):
         """Restores the databases specified in the input paths list.
 
             Args:
-                pseudo_client                (str)       -- The HANA client where the database
-                                                                should be restored
+                pseudo_client               (str)   --  HANA client to restore the database at
 
-                instance                    (str)       -- The destination instance where the
-                                                                database should be restored
+                instance                    (str)   --  destination instance to restore the db at
 
-                backupset_name               (str)       -- The backupset name of the instance to
-                                                                be restored. If the instance is a
-                                                                single DB instance then the
-                                                                backupset is default by default.
+                backupset_name              (str)   --  backupset name of the instance to be
+                                                            restored. If the instance is a single
+                                                            DB instance then the backupset name is
+                                                            ``default``.
                     default: default
 
-                backup_prefix               (str)       -- The prefix of the backup job
+                backup_prefix               (str)   --  prefix of the backup job
                     default: None
 
-                point_in_time               (str)       -- The time to which the database should be
-                                                                restored to
+                point_in_time               (str)   --  time to which db should be restored to
                     default: None
 
-                initialize_log_area         (bool)      -- Option to initialize new log area after
-                                                                restore
+                initialize_log_area         (bool)  --  boolean to specify whether to initialize
+                                                            the new log area after restore
                     default: False
 
-                use_hardware_revert         (bool)      -- Option to do a hardware revert in
-                                                                restore
+                use_hardware_revert         (bool)  --  boolean to specify whether to do a
+                                                            hardware revert in restore
                     default: False
 
-                clone_env                   (bool)      -- Option to decide whether the database
-                                                                should be cloned or not
+                clone_env                   (bool)  --  boolean to specify whether the database
+                                                            should be cloned or not
                     default: False
 
-                check_access                (bool)      -- Option to check access during restore
+                check_access                (bool)  --  check access during restore or not
                     default: True
 
-                destination_instance_dir      (str)       -- For snap cross instance restore or
-                                                                cross machine restores requires
-                                                                HANA data directory
+                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
+                                                            restore or cross machine restores
                     default: None
 
-                ignore_delta_backups          (bool)      -- Option to ignore delta backups during
-                                                                restore
+                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
+                                                            restore or not
                     default: True
 
             Returns:
-                object - instance of the Job class for this restore job
+                object  -   instance of the Job class for this restore job
 
             Raises:
                 SDKException:
@@ -440,12 +438,13 @@ class SAPHANAInstance(Instance):
 
                     if response is not success
         """
-        if not (isinstance(instance, str) or isinstance(instance, basestring)):
+        if not isinstance(instance, (basestring, Instance)):
             raise SDKException('Instance', '101')
 
         request_json = self._restore_request_json(
             pseudo_client,
             instance,
+            backupset_name,
             backup_prefix,
             point_in_time,
             initialize_log_area,
@@ -453,8 +452,7 @@ class SAPHANAInstance(Instance):
             clone_env,
             check_access,
             destination_instance_dir,
-            ignore_delta_backups,
-            backupset_name
+            ignore_delta_backups
         )
 
         return self._process_restore_response(request_json)
