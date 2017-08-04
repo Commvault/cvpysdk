@@ -115,6 +115,10 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to get the list of analytics engines',
         '104': 'Failed to get the datasources'
+    },
+    'GlobalFilter': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     }
 }
 
