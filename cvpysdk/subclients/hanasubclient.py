@@ -7,7 +7,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""File for operating on a HANA Server Subclient
+"""File for operating on a HANA Server Subclient.
 
 HANAServerSubclient is the only class defined in this file.
 
@@ -15,6 +15,7 @@ HANAServerSubclient: Derived class from Subclient Base class, representing a HAN
                         and to perform operations on that subclient
 
 HANAServerSubclient:
+
     _backup_request_json()              --  prepares the json for the backup request
 
     _get_subclient_content_()           --  gets the content of a HANA server subclient
@@ -36,34 +37,31 @@ from past.builtins import basestring
 from ..subclient import Subclient
 from ..exception import SDKException
 
+
 class SAPHANASubclient(Subclient):
     """Derived class from Subclient Base class, representing a file system subclient,
         and to perform operations on that subclient."""
 
-    def _backup_request_json(
-            self,
-            backup_level,
-            backup_prefix):
-        """
-        Returns the JSON request to pass to the API as per the options selected by the user.
+    def _backup_request_json(self, backup_level, backup_prefix):
+        """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
-                backup_level   (list)  --  level of backup the user wish to run
+                backup_level    (list)  --  level of backup the user wish to run
                         Full / Incremental / Differential
+
                 backup_prefix   (str)   --  the prefix that the user wish to add to the backup
 
             Returns:
-                dict - JSON request to pass to the API
+                dict    -   JSON request to pass to the API
         """
         request_json = {
             "taskInfo": {
                 "associations": [{
-                    "clientName": str(
-                        self._backupset_object._agent_object._client_object.client_name),
-                    "subclientName": str(self.subclient_name),
-                    "backupsetName": str(self._backupset_object.backupset_name),
-                    "instanceName": str(self._backupset_object._instance_object.instance_name),
-                    "appName": str(self._backupset_object._agent_object.agent_name)
+                    "clientName": self._backupset_object._agent_object._client_object.client_name,
+                    "appName": self._backupset_object._agent_object.agent_name,
+                    "instanceName": self._backupset_object._instance_object.instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": self.subclient_name
                 }],
                 "task": {
                     "taskType": 1,
@@ -76,9 +74,9 @@ class SAPHANASubclient(Subclient):
                     },
                     "options": {
                         "backupOpts": {
-                            "backupLevel": str(backup_level),
+                            "backupLevel": backup_level,
                             "hanaOptions": {
-                                "backupPrefix": str(backup_prefix)
+                                "backupPrefix": backup_prefix
                             }
                         }
                     }
@@ -111,7 +109,6 @@ class SAPHANASubclient(Subclient):
 
     def _initialize_subclient_properties(self):
         """Initializes properties of this subclient"""
-
         super(SAPHANASubclient, self)._initialize_subclient_properties()
 
         self._log_backup_storage_policy = None
@@ -142,23 +139,14 @@ class SAPHANASubclient(Subclient):
                     if value list is empty
         """
         raise SDKException(
-            'Subclient',
-            '102',
-            ('Updating SAP HANA subclient Content is not allowed. ')
-            )
+            'Subclient', '102', 'Updating the content of a SAP HANA subclient is not permitted.'
+        )
 
     @property
     def browse(self):
         raise AttributeError("'{0}' object has no attribute '{1}'".format(
             self.__class__.__name__,
             'browse'
-        ))
-
-    @property
-    def browse_in_time(self):
-        raise AttributeError("'{0}' object has no attribute '{1}'".format(
-            self.__class__.__name__,
-            'browse_in_time'
         ))
 
     @property
@@ -235,10 +223,7 @@ class SAPHANASubclient(Subclient):
                 'Subclient', '102', 'Subclient log backup storage policy should be a string value'
             )
 
-    def backup(
-            self,
-            backup_level="Differential",
-            backup_prefix=None):
+    def backup(self, backup_level="Differential", backup_prefix=None):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -250,7 +235,7 @@ class SAPHANASubclient(Subclient):
                     default: None
 
             Returns:
-                object - instance of the Job class for this backup job
+                object  -   instance of the Job class for this backup job
 
             Raises:
                 SDKException:
@@ -270,7 +255,9 @@ class SAPHANASubclient(Subclient):
 
         else:
             request_json = self._backup_request_json(backup_level, backup_prefix)
+
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'POST', self._commcell_object._services['CREATE_TASK'], request_json
             )
+
             return self._process_backup_response(flag, response)
