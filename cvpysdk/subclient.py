@@ -166,12 +166,14 @@ class Subclients(object):
         from .subclients.casubclient import CloudAppsSubclient
         from .subclients.sqlsubclient import SQLServerSubclient
         from .subclients.nassubclient import NASSubclient
+        from .subclients.hanasubclient import SAPHANASubclient
 
         globals()['FileSystemSubclient'] = FileSystemSubclient
         globals()['VirtualServerSubclient'] = VirtualServerSubclient
         globals()['CloudAppsSubclient'] = CloudAppsSubclient
         globals()['SQLServerSubclient'] = SQLServerSubclient
         globals()['NASSubclient'] = NASSubclient
+        globals()['SAPHANASubclient'] = SAPHANASubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent

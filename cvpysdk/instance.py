@@ -84,13 +84,15 @@ class Instances(object):
         from .instances.vsinstance import VirtualServerInstance
         from .instances.cainstance import CloudAppsInstance
         from .instances.sqlinstance import SQLServerInstance
+        from .instances.hanainstance import SAPHANAInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._instances_dict = {
             'virtual server': VirtualServerInstance,
             'cloud apps': CloudAppsInstance,
-            'sql server': SQLServerInstance
+            'sql server': SQLServerInstance,
+            'sap hana': SAPHANAInstance
         }
 
     def __str__(self):
