@@ -7,20 +7,20 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""File for operating on a SAP HANA Backupset
+"""File for operating on a SAP HANA Backupset.
 
 HANABackupset is the only class defined in this file.
 
-HANABackupset: Derived class from Backupset Base class, representing a SAP HANA backupset,
-                        and to perform operations on that subclient
+HANABackupset:  Derived class from Backupset Base class, representing a SAP HANA backupset,
+                    and to perform operations on that subclient
 
 HANABackupset:
-    _get_backupset_properties()     --  gets the properties of this subclient
 
-    restore()                       --  runs the restore job for specified backupset
+    restore()       --      runs the restore job for specified backupset
 
 """
 
+from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from past.builtins import basestring
@@ -31,7 +31,8 @@ from ..exception import SDKException
 
 class HANABackupset(Backupset):
     """Derived class from Backupset Base class, representing a SAP HANA backupset,
-        and to perform operations on that backupset."""
+        and to perform operations on that backupset.
+    """
 
     def restore(
             self,
@@ -48,47 +49,41 @@ class HANABackupset(Backupset):
         """Restores the databases specified in the input paths list.
 
             Args:
-                pseudo_client                (str)       -- The HANA client where the database
-                                                                should be restored
+                pseudo_client               (str)   --  HANA client to restore the database at
 
-                instance                     (str)       -- The destination instance where the
-                                                                database should be restored
+                instance                    (str)   --  destination instance to restore the db at
 
-                backup_prefix                (str)       -- The prefix of the backup job
+                backup_prefix               (str)   --  prefix of the backup job
                     default: None
 
-                point_in_time                (str)       -- The time to which the database
-                                                                should be restored to
+                point_in_time               (str)   --  time to which db should be restored to
                     default: None
 
-                initialize_log_area           (bool)      -- Option to initialize new log area after
-                                                                restore
+                initialize_log_area         (bool)  --  boolean to specify whether to initialize
+                                                            the new log area after restore
                     default: False
 
-                use_hardware_revert           (bool)      -- Option to do a hardware revert in
-                                                                restore
+                use_hardware_revert         (bool)  --  boolean to specify whether to do a
+                                                            hardware revert in restore
                     default: False
 
-                clone_env                    (bool)      -- Option to decide whether the database
-                                                                should be cloned or not
+                clone_env                   (bool)  --  boolean to specify whether the database
+                                                            should be cloned or not
                     default: False
 
-                check_access                 (bool)      -- Option to check access during restore
+                check_access                (bool)  --  check access during restore or not
                     default: True
 
-                destination_instance_dir      (str)       -- For snap cross instance restore or
-                                                                cross machine restores requires
-                                                                HANA data directory
+                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
+                                                            restore or cross machine restores
                     default: None
 
-                ignore_delta_backups          (bool)      -- Option to ignore delta backups during
-                                                                restore
+                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
+                                                            restore or not
                     default: True
-
-                    default: default
 
             Returns:
-                object - instance of the Job class for this restore job
+                object  -   instance of the Job class for this restore job
 
             Raises:
                 SDKException:
@@ -100,8 +95,8 @@ class HANABackupset(Backupset):
         """
         from ..instance import Instance
 
-        if not (isinstance(instance, basestring) or isinstance(instance, basestring)):
-            raise SDKException('Instance', '101')
+        if not (isinstance(instance, basestring) or isinstance(instance, Instance)):
+            raise SDKException('Backupset', '101')
 
         request_json = self._instance_object._restore_request_json(
             pseudo_client,
@@ -118,4 +113,3 @@ class HANABackupset(Backupset):
         )
 
         return self._instance_object._process_restore_response(request_json)
-        
