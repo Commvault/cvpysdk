@@ -101,6 +101,7 @@ class HANABackupset(Backupset):
         request_json = self._instance_object._restore_request_json(
             pseudo_client,
             instance,
+            self.backupset_name,
             backup_prefix,
             point_in_time,
             initialize_log_area,
@@ -108,8 +109,7 @@ class HANABackupset(Backupset):
             clone_env,
             check_access,
             destination_instance_dir,
-            ignore_delta_backups,
-            self.backupset_name
+            ignore_delta_backups
         )
 
         return self._instance_object._process_restore_response(request_json)
