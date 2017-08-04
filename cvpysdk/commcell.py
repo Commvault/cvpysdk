@@ -51,15 +51,11 @@ from __future__ import unicode_literals
 import getpass
 
 from base64 import b64encode
-from threading import Thread
-from requests.exceptions import ConnectionError, SSLError
 
-try:
-    # Python 2 import
-    from Queue import Queue
-except ImportError:
-    # Python 3 import
-    from queue import Queue
+from requests.exceptions import SSLError
+
+# ConnectionError is a built-in exception, do not override it
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 
 from .services import get_services
@@ -76,6 +72,13 @@ from .exception import SDKException
 from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
+
+
+USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
+"""str:     Message to be returned to the user, when trying the get the value of an attribute
+                of the Commcell class, after the user was logged out.
+"""
+
 
 class Commcell(object):
     """Class for establishing a session to the Commcell via Commvault REST API."""
@@ -131,7 +134,7 @@ class Commcell(object):
             try:
                 if self._cvpysdk_object._is_valid_service_():
                     break
-            except (ConnectionError, SSLError):
+            except (RequestsConnectionError, SSLError):
                 continue
         else:
             raise SDKException('Commcell', '101')
@@ -154,35 +157,19 @@ class Commcell(object):
         if not self._headers['Authtoken']:
             raise SDKException('Commcell', '102')
 
-        sdk_classes = [
-            Clients,
-            Alerts,
-            MediaAgents,
-            DiskLibraries,
-            StoragePolicies,
-            SchedulePolicies,
-            UserGroups,
-            WorkFlow,
-            ClientGroups,
-            GlobalFilters
-        ]
-
-        sdk_dict = self._attribs_(sdk_classes)
-
-        self.clients = sdk_dict[Clients]
-        self.alerts = sdk_dict[Alerts]
-        self.media_agents = sdk_dict[MediaAgents]
-        self.disk_libraries = sdk_dict[DiskLibraries]
-        self.storage_policies = sdk_dict[StoragePolicies]
-        self.schedule_policies = sdk_dict[SchedulePolicies]
-        self.user_groups = sdk_dict[UserGroups]
-        self.workflows = sdk_dict[WorkFlow]
-        self.client_groups = sdk_dict[ClientGroups]
-        self.global_filters = sdk_dict[GlobalFilters]
-
         self._commserv_name = self._get_commserv_name()
 
-        self.datacube = None
+        self._clients = None
+        self._media_agents = None
+        self._workflows = None
+        self._alerts = None
+        self._disk_libraries = None
+        self._storage_policies = None
+        self._schedule_policies = None
+        self._user_groups = None
+        self._client_groups = None
+        self._global_filters = None
+        self._datacube = None
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -207,45 +194,6 @@ class Commcell(object):
         self._remove_attribs_()
         return output
 
-    def _attribs_(self, sdk_classes):
-        """Initializes the objects of the classes in the sdk_classes list given as input.
-
-            Args:
-                sdk_classes (list)  --  list containing the classes to initialize the object of
-
-            Returns:
-                dict - dict consisting of the class name as key and the class object as its value
-        """
-        sdk_dict = {}
-
-        self._queue = Queue()
-
-        for sdk_class in sdk_classes:
-            thread = Thread(target=self._init_attrib_, args=(sdk_class, sdk_dict))
-            thread.start()
-            self._queue.put(thread)
-
-        self._queue.join()
-
-        return sdk_dict
-
-    def _init_attrib_(self, sdk_class, sdk_dict):
-        """Initializes the object of the sdk_class given as input, and stores it
-            with the class name as the key to the sdk_dict.
-
-            Args:
-                sdk_class (class)  --  sdk class to initialize the object of
-
-                sdk_dict  (dict)   --  dict to store the class object as value,
-                                        with the class name as key
-        """
-        try:
-            sdk_dict[sdk_class] = sdk_class(self)
-        except SDKException:
-            sdk_dict[sdk_class] = None
-        finally:
-            self._queue.task_done()
-
     def _update_response_(self, input_string):
         """Returns only the relevant response from the response received from the server.
 
@@ -259,22 +207,23 @@ class Commcell(object):
             response_string = input_string.split("<title>")[1]
             response_string = response_string.split("</title>")[0]
             return response_string
-        else:
-            return input_string
+
+        return input_string
 
     def _remove_attribs_(self):
         """Removes all the attributes associated with the instance of this class."""
-        del self.clients
-        del self.alerts
-        del self.media_agents
-        del self.disk_libraries
-        del self.storage_policies
-        del self.schedule_policies
-        del self.user_groups
-        del self.workflows
-        del self.global_filters
-        del self.client_groups
-        del self.datacube
+        del self._clients
+        del self._media_agents
+        del self._workflows
+        del self._alerts
+        del self._disk_libraries
+        del self._storage_policies
+        del self._schedule_policies
+        del self._user_groups
+        del self._client_groups
+        del self._global_filters
+        del self._datacube
+
         del self.__user_guid
         del self._web_service
         del self._cvpysdk_object
@@ -283,12 +232,10 @@ class Commcell(object):
         del self
 
     def _get_commserv_name(self):
-        """Returns the CommServ name
+        """Returns the name of the CommServ, the commcell is connected to.
 
             Returns:
-                commserv name if found
-
-                None if commserv name is not found
+                str     -   name of the CommServ
 
             Raises:
                 SDKException:
@@ -300,15 +247,12 @@ class Commcell(object):
         """
         request_url = self._services['COMMSERV']
 
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', request_url
-        )
+        flag, response = self._cvpysdk_object.make_request('GET', request_url)
 
         if flag:
             if response.json():
-                if 'commcell' in response.json():
-                    if 'commCellName' in response.json()['commcell']:
-                        return response.json()['commcell']['commCellName']
+                if 'commcell' in response.json() and 'commCellName' in response.json()['commcell']:
+                    return response.json()['commcell']['commCellName']
                 else:
                     raise SDKException('Commcell', '103')
             else:
@@ -317,21 +261,162 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-        return None
-
     @property
     def commserv_name(self):
-        """Returns the commserver name"""
+        """Returns the value of the CommServ name attribute."""
         return self._commserv_name
+
+    @property
+    def clients(self):
+        """Returns the instance of the Clients class."""
+        try:
+            if self._clients is None:
+                self._clients = Clients(self)
+
+            return self._clients
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def media_agents(self):
+        """Returns the instance of the MediaAgents class."""
+        try:
+            if self._media_agents is None:
+                self._media_agents = MediaAgents(self)
+
+            return self._media_agents
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def workflows(self):
+        """Returns the instance of the Workflow class."""
+        try:
+            if self._workflows is None:
+                self._workflows = WorkFlow(self)
+
+            return self._workflows
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def alerts(self):
+        """Returns the instance of the Alerts class."""
+        try:
+            if self._alerts is None:
+                self._alerts = Alerts(self)
+
+            return self._alerts
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def disk_libraries(self):
+        """Returns the instance of the DiskLibraries class."""
+        try:
+            if self._disk_libraries is None:
+                self._disk_libraries = DiskLibraries(self)
+
+            return self._disk_libraries
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def storage_policies(self):
+        """Returns the instance of the StoragePolicies class."""
+        try:
+            if self._storage_policies is None:
+                self._storage_policies = StoragePolicies(self)
+
+            return self._storage_policies
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def schedule_policies(self):
+        """Returns the instance of the SchedulePolicies class."""
+        try:
+            if self._schedule_policies is None:
+                self._schedule_policies = SchedulePolicies(self)
+
+            return self._schedule_policies
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def user_groups(self):
+        """Returns the instance of the UserGroups class."""
+        try:
+            if self._user_groups is None:
+                self._user_groups = UserGroups(self)
+
+            return self._user_groups
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def client_groups(self):
+        """Returns the instance of the ClientGroups class."""
+        try:
+            if self._client_groups is None:
+                self._client_groups = ClientGroups(self)
+
+            return self._client_groups
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def global_filters(self):
+        """Returns the instance of the GlobalFilters class."""
+        try:
+            if self._global_filters is None:
+                self._global_filters = GlobalFilters(self)
+
+            return self._global_filters
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def datacube(self):
+        """Returns the instance of the Datacube class."""
+        try:
+            if self._datacube is None:
+                self._datacube = Datacube(self)
+
+            return self._datacube
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
 
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
             return 'User already logged out.'
-        else:
-            output = self._cvpysdk_object._logout_()
-            self._remove_attribs_()
-            return output
+
+        output = self._cvpysdk_object._logout_()
+        self._remove_attribs_()
+        return output
 
     def request(self, request_type, request_url, request_body=None):
         """Runs the request of the type specified on the request URL, with the body passed
@@ -352,13 +437,8 @@ class Commcell(object):
         """
         request_url = self._web_service + request_url
 
-        flag, response = self._cvpysdk_object.make_request(
+        _, response = self._cvpysdk_object.make_request(
             request_type.upper(), request_url, request_body
         )
 
         return response
-
-    def get_datacube(self):
-        if(self.datacube is None):
-            self.datacube = Datacube(self)
-        return self.datacube

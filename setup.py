@@ -36,6 +36,7 @@ def get_license():
     with open(os.path.join(ROOT, 'LICENSE.txt')) as file_object:
         return file_object.read()
 
+
 setup(
     name='cvpysdk',
     version=get_version(),
