@@ -98,6 +98,13 @@ SERVICES_DICT_TEMPLATE = {
     'SOFTWARESTORE_GETPKGID': '{0}SoftwareStoreItem',
 
     'CREATE_TASK': '{0}CreateTask',
+
+    'GET_ANALYTICS_ENGINES': '{0}dcube/getAnalyticsEngine',
+    'GET_ALL_DATASOURCES': '{0}dcube/GetDataSources?summary=1',
+    'GET_DATASOURCE': '{0}dcube/getDataSource/%s',
+    'GET_ALL_HANDLERS': '{0}dcube/getAllHandlers?dsId=%s',
+    'GET_HANDLER': '{0}dcube/getHandler/?dsId=%s&handlerId=%s',
+  
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8'
 }
@@ -105,7 +112,6 @@ SERVICES_DICT_TEMPLATE = {
 
 def get_services(web_service):
     """Initializes the SERVICES DICT with the web service for APIs.
-
         Args:
             web_service     (str)   --  web service string for APIs
 

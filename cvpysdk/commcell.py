@@ -75,7 +75,7 @@ from .workflow import WorkFlow
 from .exception import SDKException
 from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
-
+from .datacube.datacube import Datacube
 
 class Commcell(object):
     """Class for establishing a session to the Commcell via Commvault REST API."""
@@ -182,6 +182,8 @@ class Commcell(object):
 
         self._commserv_name = self._get_commserv_name()
 
+        self.datacube = None
+
     def __repr__(self):
         """String representation of the instance of this class.
 
@@ -272,6 +274,7 @@ class Commcell(object):
         del self.workflows
         del self.global_filters
         del self.client_groups
+        del self.datacube
         del self.__user_guid
         del self._web_service
         del self._cvpysdk_object
@@ -354,3 +357,8 @@ class Commcell(object):
         )
 
         return response
+
+    def get_datacube(self):
+        if(self.datacube is None):
+            self.datacube = Datacube(self)
+        return self.datacube
