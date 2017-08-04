@@ -111,10 +111,10 @@ EXCEPTION_DICT = {
         '103': 'Workflow XML is not a valid file'
     },
     'Datacube': {
-        '101': 'Failed to get analytics engine list',
-        '102': 'Could not retrieve datasources',
-        '103': 'Invalid input type',
-        '104': ''
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get the list of analytics engines',
+        '104': 'Failed to get the datasources'
     }
 }
 

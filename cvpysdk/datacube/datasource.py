@@ -189,7 +189,7 @@ class Datasources(object):
                 collections = response.json()['collections']
                 return self._get_datasources_from_collections(collections)
             else:
-                raise SDKException('Datacube', '102')
+                raise SDKException('Datacube', '104')
         else:
             self._datacube_object._response_not_success(response)
 
@@ -207,7 +207,7 @@ class Datasources(object):
                     if type of the datasource name argument is not string
         """
         if not isinstance(datasource_name, basestring):
-            raise SDKException('Datacube', '103')
+            raise SDKException('Datacube', '101')
 
         return self._datasources and datasource_name.lower() in self._datasources
 
@@ -227,7 +227,7 @@ class Datasources(object):
                     if no datasource exists with the given name
         """
         if not isinstance(datasource_name, basestring):
-            raise SDKException('Datacube', '103')
+            raise SDKException('Datacube', '101')
 
         datasource_name = datasource_name.lower()
 
@@ -239,7 +239,7 @@ class Datasources(object):
             )
 
         raise SDKException(
-            'Datacube', '104' 'No datasource exists with the name: {0}'.format(datasource_name)
+            'Datacube', '102' 'No datasource exists with the name: {0}'.format(datasource_name)
         )
 
 

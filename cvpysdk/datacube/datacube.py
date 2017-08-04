@@ -109,7 +109,7 @@ class Datacube(object):
             if response.json() and 'listOfCIServer' in response.json():
                 return response.json()['listOfCIServer']
             else:
-                raise SDKException('Datacube', '101')
+                raise SDKException('Datacube', '103')
         else:
             self._response_not_success(response)
 
