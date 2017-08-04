@@ -5,92 +5,94 @@
 # Copyright ©2016 Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
-# ---
+# --------------------------------------------------------------------------
+
+"""Main file for performing operations related to Datacube APIs.
+
+The class `Datacube` is defined here in this file,
+that will directly interact with all the Datacube APIs.
+
+
+Datacube:
+
+    __init__(commcell_object)   --  initialise object of the Datacube class
+
+    __repr__()                  --  returns the string representation of an instance of this class
+
+    _response_not_success()     --  parses through the exception response, and raises SDKException
+
+    _get_analytics_engines()    --  returns the list of all Content Indexing (CI) Servers
+
+    datasources()               --  returns an instance of the Datasources class
 
 """
-    Main file for performing Datacube related operations
 
-    The class 'Datacube' is defined here
-
-    Datacube:
-    __init__(commcell_object)    --  initialise object of the Datacube class
-    _attribs_()                  --  initializes the objects of the classes given in the input list
-
-    _init_attrib_()              --  initializes the object of the class given as input and stores
-                                        in the given input dictionary with class name as key
-
-"""
-from threading import Thread
-
-try:
-    # Python 2 import
-    from Queue import Queue
-except ImportError:
-    # Python 3 import
-    from queue import Queue
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from .datasource import Datasources
+
 from ..exception import SDKException
+
+
+USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
+"""str:     Message to be returned to the user, when trying the get the value of an attribute
+                of the Commcell class, after the user was logged out.
+"""
+
 
 class Datacube(object):
 
     """ Represents a datacube running on the commcell """
 
     def __init__(self, commcell_object):
-        """Initialize object of the Datacube class.
+        """Initialize an instance of the Datacube class.
 
             Args:
-                commcell_object (object)  --  instance of the Commcell class
+                commcell_object     (object)    --  instance of the Commcell class
 
             Returns:
-                object - instance of the Datacube class
+                object  -   instance of the Datacube class
         """
         self._commcell_object = commcell_object
 
-        # APIs
         self._ANALYTICS_ENGINES = self._commcell_object._services['GET_ANALYTICS_ENGINES']
         self._ALL_DATASOURCES = self._commcell_object._services['GET_ALL_DATASOURCES']
 
-        # API results
-        self.analytics_engines = self._get_analytics_engines()
+        self._analytics_engines = self._get_analytics_engines()
 
-        datacube_sdk_classes = [
-            Datasources
-        ]
-
-        datacube_sdk_dict = self._attribs_(datacube_sdk_classes)
-
-        self.datasources = datacube_sdk_dict[Datasources]
+        self._datasources = None
 
     def __repr__(self):
-        """String representation of the instance of this class
+        """String representation of the instance of this class.
 
             Returns:
-                str - string about the details of datacube
-
+                str     -   string consisting of the details of the instance of this class
         """
-
         o_str = "Datacube class instance for CommServ '{0}'".format(
             self._commcell_object.commserv_name
         )
 
         return o_str
 
-    def _raise_response_not_success_exception_(self, response):
-        """ Helper function to raise an exception when reponse status is not 200 OK
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
             Args:
-                 response   (object)    --  request response object
+                response    (object)    --  response class object,
+                                                received upon running an API request,
+                                                using the `requests` python package
         """
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
     def _get_analytics_engines(self):
-        """Gets all the analytics engines associated with the datacube
+        """Gets the list all the analytics engines associated with the datacube.
 
             Returns:
-                dict - consists of all clients in the commcell
+                dict    -   consists of all clients in the commcell
                     {
-                         "listOfCIServer": [] //array of analytics engines
+                        "listOfCIServer": []    # array of analytics engines
                     }
 
             Raises:
@@ -104,51 +106,27 @@ class Datacube(object):
         )
 
         if flag:
-            parsed_response = response.json()
-            if(parsed_response and 'listOfCIServer' in parsed_response):
+            if response.json() and 'listOfCIServer' in response.json():
                 return response.json()['listOfCIServer']
             else:
                 raise SDKException('Datacube', '101')
         else:
-            self._raise_response_not_success_exception_(response)
+            self._response_not_success(response)
 
-    def _attribs_(self, datacube_sdk_classes):
-        """Initializes the objects of the classes in the datacube_sdk_classes list given as input.
+    @property
+    def analytics_engines(self):
+        """Returns the value of the analytics engines attributes."""
+        return self._analytics_engines
 
-            Args:
-                datacube_sdk_classes (list)  --  list containing the classes to initialize the
-                object of
-
-            Returns:
-                dict - dict consisting of the class name as key and the class object as its value
-        """
-        datacube_sdk_dict = {}
-
-        self._queue = Queue()
-
-        for datacube_sdk_class in datacube_sdk_classes:
-            thread = Thread(target=self._init_attrib_, args=(datacube_sdk_class,
-                                                             datacube_sdk_dict))
-            self._queue.put(thread)
-            thread.start()
-
-        self._queue.join()
-
-        return datacube_sdk_dict
-
-    def _init_attrib_(self, datacube_sdk_class, datacube_sdk_dict):
-        """Initializes the object of the datacube_sdk_class given as input, and stores it
-            with the class name as the key to the datacube_sdk_dict.
-
-            Args:
-                datacube_sdk_class (class)  --  sdk class to initialize the object of
-
-                datacube_sdk_dict  (dict)   --  dict to store the class object as value,
-                                        with the class name as key
-        """
+    @property
+    def datasources(self):
+        """Returns the instance of the Datasources class."""
         try:
-            datacube_sdk_dict[datacube_sdk_class] = datacube_sdk_class(self)
+            if self._datasources is None:
+                self._datasources = Datasources(self)
+
+            return self._datasources
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
         except SDKException:
-            datacube_sdk_dict[datacube_sdk_class] = None
-        finally:
-            self._queue.task_done()
+            return None
