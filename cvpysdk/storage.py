@@ -156,6 +156,8 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 from future.standard_library import install_aliases
 
+from base64 import b64encode
+
 from .exception import SDKException
 from .job import Job
 
