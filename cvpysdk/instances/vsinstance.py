@@ -11,74 +11,100 @@
 
 VirualServerInstance is the only class defined in this file.
 
-VirtualServerInstance: Derived class from Instance Base class, representing a
+VirtualServerInstance:  Derived class from Instance Base class, representing a
                             virtual server instance, and to perform operations on that instance
 
 VirtualServerInstance:
-    _get_instance_properties()              --  Instance class method overwritten to add virtual
-                                                   server instance properties as well
-    _prepare_instance_json()                -- request json for updating Virtual server Instance
-                                                properties
-    _update_instance_properties_request()   --update the Instance properties with request json and
-                                                raise Exception if response is not correct
-    _vendor_id()                            -- Vendor ID Corresponds to hypervisor
-    _default_FBRWindows_MediaAgent()        -- Setter for Default FBR Windows Media Agent property
-    _default_FBRWindows_MediaAgent()        -- Setter for Default unix Media Agent property
-    _vcPassword()                           -- Setter for VCenter password credentials Property
-    _appId()                                -- Getter for Association property
-    _docker()                               -- Setter for docker property
-    _open_stack()                           -- Setter for Open Stack property
-    _azure                                  --Setter for Azure property
-    _azure_Resource_Manager                 --Setter for Azure Resource Manager property
-    _oracle_cloud                           -- Setter for oracle Cloud property
-    _associated_Member_Server               -- Setter for Associated Member servers property
-    _get_instance_common_properties         -- Method for common properties of
-                                                Virtual Server Instance
 
+    _get_instance_properties()              --  Instance class method overwritten to add virtual
+                                                    server instance properties as well
+
+    _prepare_instance_json()                --  request json for updating Virtual server Instance
+                                                    properties
+
+    _update_instance_properties_request()   --  update the Instance properties with request json
+
+    _vendor_id()                            --  Vendor ID Corresponds to hypervisor
+
+    _default_FBRWindows_MediaAgent()        --  Setter for Default FBR Windows Media Agent property
+
+    _default_FBRWindows_MediaAgent()        --  Setter for Default unix Media Agent property
+
+    _vcPassword()                           --  Setter for VCenter password credentials Property
+
+    _appId()                                --  Getter for Association property
+
+    _docker()                               --  Setter for docker property
+
+    _open_stack()                           --  Setter for Open Stack property
+
+    _azure                                  --  Setter for Azure property
+
+    _azure_Resource_Manager                 --  Setter for Azure Resource Manager property
+
+    _oracle_cloud                           --  Setter for oracle Cloud property
+
+    _associated_Member_Server               --  Setter for Associated Member servers property
+
+    _get_instance_common_properties         --  Method for common properties of
+                                                    Virtual Server Instance
 
 """
 
 from __future__ import unicode_literals
 
+from past.builtins import basestring
+
 from ..instance import Instance
 from ..client import Client
 from ..exception import SDKException
-from ..constants import HyperVisorType
+from ..constants import HyperVisor
 
 
 class VirtualServerInstance(Instance):
     """Class for representing an Instance of the Virtual Server agent."""
 
     def __new__(cls, agent_object, instance_name, instance_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+        """Initializes the Instance object for the given Virtual Server instance.
 
             Args:
-                class_object (agent_object,
-                              instance_name,
-                              instance_id)  --  instance of the Agent class, instance name,
-                                                    instance id
+                agent_object        (object)    --  instance of the Agent class
+
+                instance_name       (str)       --  name of the instance
+
+                instance_id         (str)       --  id of the instance
+                    default: None
 
             Returns:
-                object - instance of the Corresponding Hypervisor instance from sub class
-          """
-        hv_type = HyperVisorType
-        if instance_name == hv_type.MS_VIRTUAL_SERVER:
+                object  -   instance of the Hypervisor instance,
+                                if present in the HyperVisorType class
+                                otherwise a new object
+        """
+        if instance_name == HyperVisor.MS_VIRTUAL_SERVER:
             from virtualserver.hypervinstance import HyperVInstance
             return object.__new__(HyperVInstance)
+        else:
+            return object.__new__()
 
     def __init__(self, agent_object, instance_name, instance_id):
-        """Initialize the Instance object for the given Virtual Server instance.
+        """Initializes the Instance object for the given Virtual Server instance.
 
             Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the Agent
-                                                                            class, instance name,
-                                                                                instance id
+                agent_object        (object)    --  instance of the Agent class
 
-                """
+                instance_name       (str)       --  name of the instance
+
+                instance_id         (str)       --  id of the instance
+                    default: None
+
+            Returns:
+                object  -   instance of the VirtualServerInstance class
+
+        """
         super(VirtualServerInstance, self).__init__(agent_object, instance_name, instance_id)
+
         self._properties_dict = {}
-        self._UPDATE_INSTANCE = self._commcell_object._services['INSTANCE'] % (
-            self.instance_id)
+        self._UPDATE_INSTANCE = self._commcell_object._services['INSTANCE'] % (self.instance_id)
 
     def _vendor_id(self, value):
         """setter for Vendor ID attribute in Instance"""
@@ -106,8 +132,7 @@ class VirtualServerInstance(Instance):
         }
 
     def _vcPassword(self, value):
-        """ setter for Credential tag  in Instance Property Json"""
-
+        """ setter for Credential tag in Instance Property Json"""
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
 
@@ -223,7 +248,6 @@ class VirtualServerInstance(Instance):
 
                     if response is not success
         """
-
         self._associated_clients = None
 
         if 'virtualServerInstance' in self._properties:
@@ -241,14 +265,14 @@ class VirtualServerInstance(Instance):
 
                     if 'clientName' in client:
                         temp_dict = {
-                            'client_name': str(client['clientName']),
-                            'client_id': str(client['clientId'])
+                            'client_name': client['clientName'],
+                            'client_id': client['clientId']
                         }
                         self._associated_clients['Clients'].append(temp_dict)
                     elif 'clientGroupName' in client:
                         temp_dict = {
-                            'client_group_name': str(client['clientGroupName']),
-                            'client_group_id': str(client['clientGroupId'])
+                            'client_group_name': client['clientGroupName'],
+                            'client_group_id': client['clientGroupId']
                         }
                         self._associated_clients['ClientGroups'].append(temp_dict)
                     else:
@@ -391,10 +415,9 @@ class VirtualServerInstance(Instance):
 
                 if input is not client of CS
         """
-
         if isinstance(client_name, Client):
             client = client_name
-        elif isinstance(client_name, str):
+        elif isinstance(client_name, basestring):
             client = Client(self._commcell_object, client_name)
         else:
             raise SDKException('Subclient', '105')
