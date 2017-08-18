@@ -12,7 +12,7 @@ File for operating on a Virtual Server Hyper-V Instance.
 
 HyperVInstance is the only class defined in this file.
 
-HyperVInstance:     Derived class from VirtualServer  Base class, representing a
+HyperVInstance:     Derived class from VirtualServerInstance Base class, representing a
                         Hyper-V instance, and to perform operations on that instance.
 
 HyperVInstance:
