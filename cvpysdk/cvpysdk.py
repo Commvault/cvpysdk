@@ -219,7 +219,7 @@ class CVPySDK(object):
             headers = self._commcell_object._headers.copy()
 
             if method == 'POST':
-                if isinstance(payload, dict):
+                if isinstance(payload, (dict, list)):
                     response = requests.post(url, headers=headers, json=payload)
                 else:
                     headers['Content-type'] = 'application/xml'
