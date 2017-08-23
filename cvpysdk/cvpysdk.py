@@ -70,9 +70,11 @@ class CVPySDK(object):
 
             Raises:
                 requests Connection Error   --  requests.exceptions.ConnectionError
+
+                requests Timeout Error      --  requests.exceptions.Timeout
         """
         try:
-            response = requests.get(self._commcell_object._web_service)
+            response = requests.get(self._commcell_object._web_service, timeout=6.09)
 
             # Valid service if the status code is 200 and response is True
             return response.status_code == httplib.OK and response.ok

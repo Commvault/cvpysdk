@@ -54,6 +54,7 @@ import socket
 from base64 import b64encode
 
 from requests.exceptions import SSLError
+from requests.exceptions import Timeout
 
 # ConnectionError is a built-in exception, do not override it
 from requests.exceptions import ConnectionError as RequestsConnectionError
@@ -137,7 +138,7 @@ class Commcell(object):
             try:
                 if self._cvpysdk_object._is_valid_service_():
                     break
-            except (RequestsConnectionError, SSLError):
+            except (RequestsConnectionError, SSLError, Timeout):
                 continue
         else:
             raise SDKException('Commcell', '101')
