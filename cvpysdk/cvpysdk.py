@@ -76,8 +76,8 @@ class CVPySDK(object):
 
             # Valid service if the status code is 200 and response is True
             return response.status_code == httplib.OK and response.ok
-        except requests.exceptions.ConnectionError as con_err:
-            raise con_err
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
+            raise error
 
     def _login(self):
         """Posts a login request to the server.
