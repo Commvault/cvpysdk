@@ -156,8 +156,6 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 from future.standard_library import install_aliases
 
-from base64 import b64encode
-
 from .exception import SDKException
 from .job import Job
 
@@ -547,7 +545,7 @@ class DiskLibraries(object):
                 "libraryName": library_name,
                 "mountPath": mount_path,
                 "loginName": username,
-                "password": b64encode(password),
+                "password": password,
                 "opType": 1
             }
         }

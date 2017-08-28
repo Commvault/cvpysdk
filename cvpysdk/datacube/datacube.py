@@ -24,6 +24,8 @@ Datacube:
     _get_analytics_engines()    --  returns the list of all Content Indexing (CI) Servers
 
     datasources()               --  returns an instance of the Datasources class
+    
+    get_jdbc_drivers()          --  gets the list all jdbc_drivers associated with the datacube.
 
 """
 
@@ -58,9 +60,7 @@ class Datacube(object):
 
         self._ANALYTICS_ENGINES = self._commcell_object._services['GET_ANALYTICS_ENGINES']
         self._ALL_DATASOURCES = self._commcell_object._services['GET_ALL_DATASOURCES']
-
         self._analytics_engines = self._get_analytics_engines()
-
         self._datasources = None
 
     def __repr__(self):
@@ -83,7 +83,8 @@ class Datacube(object):
                                                 received upon running an API request,
                                                 using the `requests` python package
         """
-        response_string = self._commcell_object._update_response_(response.text)
+        response_string = self._commcell_object._update_response_(
+            response.text)
         raise SDKException('Response', '101', response_string)
 
     def _get_analytics_engines(self):
@@ -130,3 +131,42 @@ class Datacube(object):
             return USER_LOGGED_OUT_MESSAGE
         except SDKException:
             return None
+
+    def get_jdbc_drivers(self, analytics_engine):
+        """Gets the list all jdbc_drivers associated with the datacube.
+
+            Args:            
+                analytics_engine (str) -- client name of analytics_engine
+
+            Returns:
+                list    -   consists of all jdbc_drivers in the datacube
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+
+        if not isinstance(analytics_engine, basestring):
+            raise SDKException('Datacube', '101')
+
+        engine_index = (self.analytics_engines.index(engine)
+                        for engine in self.analytics_engines
+                        if engine["clientName"] == analytics_engine
+                       ).next()
+
+        self._GET_JDBC_DRIVERS = self._commcell_object._services['GET_JDBC_DRIVERS'] % (
+            self.analytics_engines[engine_index]["cloudID"]
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._GET_JDBC_DRIVERS
+        )
+
+        if flag:
+            if response.json() and 'drivers' in response.json():
+                return response.json()['drivers']
+            else:
+                raise SDKException('Datacube', '103')
+        else:
+            self._response_not_success(response)

@@ -49,7 +49,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import getpass
-import socket
 
 from base64 import b64encode
 
@@ -118,8 +117,6 @@ class Commcell(object):
             'Authtoken': None
         }
 
-        self._device_id = socket.gethostbyname(socket.getfqdn())
-
         if commcell_password is None:
             commcell_password = getpass.getpass('Please enter the Commcell Password: ')
 
@@ -145,6 +142,8 @@ class Commcell(object):
         # Initialize all the services with this commcell service
         self._services = get_services(self._web_service)
 
+        self.__user_guid = None
+
         if isinstance(commcell_password, dict):
             if self._password['Authtoken'].startswith('QSDK '):
                 self._headers['Authtoken'] = self._password['Authtoken']
@@ -153,7 +152,7 @@ class Commcell(object):
         else:
             # Login to the commcell with the credentials provided
             # and store the token in the headers
-            self._headers['Authtoken'] = self._cvpysdk_object._login()
+            self._headers['Authtoken'], self.__user_guid = self._cvpysdk_object._login_()
 
         if not self._headers['Authtoken']:
             raise SDKException('Commcell', '102')
@@ -171,8 +170,6 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
-
-        del self._password
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -193,7 +190,7 @@ class Commcell(object):
 
     def __exit__(self, exception_type, exception_value, traceback):
         """Logs out the user associated with the current instance."""
-        output = self._cvpysdk_object._logout()
+        output = self._cvpysdk_object._logout_()
         self._remove_attribs_()
         return output
 
@@ -230,7 +227,7 @@ class Commcell(object):
         del self.__user_guid
         del self._web_service
         del self._cvpysdk_object
-        del self._device_id
+        del self._password
         del self._services
         del self
 
@@ -268,14 +265,6 @@ class Commcell(object):
     def commserv_name(self):
         """Returns the value of the CommServ name attribute."""
         return self._commserv_name
-
-    @property
-    def device_id(self):
-        """Returns the value of the Device ID attribute."""
-        try:
-            return self._device_id
-        except AttributeError:
-            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def clients(self):
@@ -425,7 +414,7 @@ class Commcell(object):
         if self._headers['Authtoken'] is None:
             return 'User already logged out.'
 
-        output = self._cvpysdk_object._logout()
+        output = self._cvpysdk_object._logout_()
         self._remove_attribs_()
         return output
 
