@@ -15,9 +15,12 @@ CloudAppsSubclient: Derived class from Subclient Base class, representing a
                         cloud apps subclient, and to perform operations on that subclient
 
 CloudAppsSubclient:
-    _get_subclient_content_()   --  gets the content of a cloud apps subclient
 
-    _set_subclient_content_()   --  sets the content of a cloud apps subclient
+    _get_subclient_properties()          --  gets the subclient  related properties of File System subclient.
+    
+    _get_subclient_properties_json()     --  gets all the subclient  related properties of File System subclient.
+    
+    content()                            --  update the content of the subclient
 
     restore_out_of_place()      --  runs out-of-place restore for the subclient
 
@@ -34,8 +37,39 @@ from ..subclient import Subclient
 class CloudAppsSubclient(Subclient):
     """Derived class from Subclient Base class, representing a CloudApps subclient,
         and to perform operations on that subclient."""
-
-    def _get_subclient_content_(self):
+    
+    
+    
+    def _get_subclient_properties(self):
+        """Gets the subclient  related properties of File System subclient.           
+           
+        """
+        super(CloudAppsSubclient,self)._get_subclient_properties()       
+        if 'content' in self._subclient_properties:
+            self._content = self._subclient_properties['content']
+    
+    def _get_subclient_properties_json(self):
+        """get the all subclient related properties of this subclient.        
+           
+           Returns:
+                dict - all subclient properties put inside a dict
+           
+        """
+        subclient_json = {
+            "subClientProperties":
+                {
+                    "impersonateUser": self._impersonateUser,
+                    "proxyClient": self._proxyClient,
+                    "subClientEntity": self._subClientEntity,
+                    "content": self._content,
+                    "commonProperties": self._commonProperties,
+                    "contentOperationType": 1
+                }
+        }
+        return subclient_json
+    
+    @property
+    def content(self):
         """Gets the appropriate content from the Subclient relevant to the user.
 
             Returns:
@@ -43,7 +77,7 @@ class CloudAppsSubclient(Subclient):
         """
         content = []
 
-        for account in self._subclient_properties['content']:
+        for account in self._content:
             temp_account = account["cloudconnectorContent"]["includeAccounts"]
 
             content_dict = {
@@ -54,8 +88,9 @@ class CloudAppsSubclient(Subclient):
             content.append(content_dict)
 
         return content
-
-    def _set_subclient_content_(self, subclient_content):
+    
+    @content.setter
+    def content(self, subclient_content): 
         """Creates the list of content JSON to pass to the API to add/update content of a
             Cloud Apps Subclient.
 
@@ -83,7 +118,7 @@ class CloudAppsSubclient(Subclient):
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
-        return content
+        self._set_subclient_properties("_content",content)
 
     def restore_out_of_place(
             self,
