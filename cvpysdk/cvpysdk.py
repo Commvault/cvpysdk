@@ -68,14 +68,16 @@ class CVPySDK(object):
 
             Raises:
                 requests Connection Error   --  requests.exceptions.ConnectionError
+
+                requests Timeout Error      --  requests.exceptions.Timeout
         """
         try:
-            response = requests.get(self._commcell_object._web_service)
+            response = requests.get(self._commcell_object._web_service, timeout=6.09)
 
             # Valid service if the status code is 200 and response is True
             return response.status_code == httplib.OK and response.ok
-        except requests.exceptions.ConnectionError as con_err:
-            raise con_err
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
+            raise error
 
     def _login_(self):
         """Posts a login request to the server
@@ -172,7 +174,7 @@ class CVPySDK(object):
             headers = self._commcell_object._headers.copy()
 
             if method == 'POST':
-                if isinstance(payload, dict) or isinstance(payload, list):
+                if isinstance(payload, (dict, list)):
                     response = requests.post(url, headers=headers, json=payload)
                 else:
                     headers['Content-type'] = 'application/xml'
