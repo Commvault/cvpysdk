@@ -1,0 +1,546 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cvpysdk.instances.hanainstance &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.instances.hanainstance</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a SAP HANA Instance.</span>
+
+<span class="sd">SAPHANAInstance is the only class defined in this file.</span>
+
+<span class="sd">SAPHANAInstance: Derived class from Instance Base class, representing a hana server instance,</span>
+<span class="sd">                       and to perform operations on that instance</span>
+
+<span class="sd">SAPHANAInstance:</span>
+
+<span class="sd">    _restore_request_json()         --  returns the restore request json</span>
+
+<span class="sd">    _get_hana_restore_options()     --  returns the dict containing destination SAP HANA instance</span>
+<span class="sd">                                            names for the given client</span>
+
+<span class="sd">    _process_restore_response()     --  processes response received for the Restore request</span>
+
+<span class="sd">    _run_backup()                   --  runs full backup for this subclients and appends the</span>
+<span class="sd">                                            job object to the return list</span>
+
+<span class="sd">    backup()                        --  runs full backup for all subclients associated</span>
+<span class="sd">                                            with this instance</span>
+
+<span class="sd">    restore()                       --  runs the restore job for specified instance</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
+
+
+<div class="viewcode-block" id="SAPHANAInstance"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.hanainstance.SAPHANAInstance">[docs]</a><span class="k">class</span> <span class="nc">SAPHANAInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Instance Base class, representing a SAP HANA instance,</span>
+<span class="sd">        and to perform operations on that Instance.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_restore_request_json</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="p">,</span>
+            <span class="n">backupset_name</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
+            <span class="n">backup_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">point_in_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">initialize_log_area</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">use_hardware_revert</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">clone_env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">check_access</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">destination_instance_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">ignore_delta_backups</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                destination_client          (str)   --  HANA client to restore the database at</span>
+
+<span class="sd">                destination_instance        (str)   --  destination instance to restore the db at</span>
+
+<span class="sd">                backupset_name              (str)   --  backupset name of the instance to be</span>
+<span class="sd">                                                            restored. If the instance is a single</span>
+<span class="sd">                                                            DB instance then the backupset name is</span>
+<span class="sd">                                                            ``default``.</span>
+<span class="sd">                    default: default</span>
+
+<span class="sd">                backup_prefix               (str)   --  prefix of the backup job</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                point_in_time               (str)   --  time to which db should be restored to</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                initialize_log_area         (bool)  --  boolean to specify whether to initialize</span>
+<span class="sd">                                                            the new log area after restore</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                use_hardware_revert         (bool)  --  boolean to specify whether to do a</span>
+<span class="sd">                                                            hardware revert in restore</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                clone_env                   (bool)  --  boolean to specify whether the database</span>
+<span class="sd">                                                            should be cloned or not</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                check_access                (bool)  --  check access during restore or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                destination_instance_dir    (str)   --  HANA data directory for snap cross instance</span>
+<span class="sd">                                                            restore or cross machine restores</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                ignore_delta_backups        (bool)  --  whether to ignore delta backups during</span>
+<span class="sd">                                                            restore or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   JSON request to pass to the API</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_hana_restore_options</span><span class="p">(</span><span class="n">destination_client</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Instance exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">destination_instance</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="n">destination_hana_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="p">[</span><span class="n">destination_instance</span><span class="p">][</span>
+            <span class="s1">&#39;destHANAClient&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">backup_prefix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">backup_prefix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">databases</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">backupset_name</span> <span class="o">!=</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+            <span class="n">databases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">point_in_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_in_time</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">point_in_time</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="mi">103</span><span class="p">)</span>
+
+            <span class="n">point_in_time</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;timeValue&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">point_in_time</span><span class="p">)</span>
+            <span class="p">}</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                    <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="n">backupset_name</span><span class="p">,</span>
+                    <span class="s2">&quot;suclientName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+                <span class="p">}],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                        <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">1001</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;hanaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;initializeLogArea&quot;</span><span class="p">:</span> <span class="n">initialize_log_area</span><span class="p">,</span>
+                                <span class="s2">&quot;useHardwareRevert&quot;</span><span class="p">:</span> <span class="n">use_hardware_revert</span><span class="p">,</span>
+                                <span class="s2">&quot;cloneEnv&quot;</span><span class="p">:</span> <span class="n">clone_env</span><span class="p">,</span>
+                                <span class="s2">&quot;checkAccess&quot;</span><span class="p">:</span> <span class="n">check_access</span><span class="p">,</span>
+                                <span class="s2">&quot;backupPrefix&quot;</span><span class="p">:</span> <span class="n">backup_prefix</span><span class="p">,</span>
+                                <span class="s2">&quot;destDbName&quot;</span><span class="p">:</span> <span class="n">destination_instance</span><span class="p">,</span>
+                                <span class="s2">&quot;destPseudoClientName&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">destination_client</span><span class="p">),</span>
+                                <span class="s2">&quot;ignoreDeltaBackups&quot;</span><span class="p">:</span> <span class="n">ignore_delta_backups</span><span class="p">,</span>
+                                <span class="s2">&quot;destClientName&quot;</span><span class="p">:</span> <span class="n">destination_hana_client</span><span class="p">,</span>
+                                <span class="s2">&quot;databases&quot;</span><span class="p">:</span> <span class="n">databases</span><span class="p">,</span>
+                                <span class="s2">&quot;pointInTime&quot;</span><span class="p">:</span> <span class="n">point_in_time</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;destination&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span><span class="p">,</span>
+                                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">destination_instance</span>
+                                <span class="p">},</span>
+                                <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_hana_client</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;browseOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">destination_instance_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">instance_dir</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;destinationInstanceDir&#39;</span><span class="p">:</span> <span class="n">destination_instance_dir</span>
+            <span class="p">}</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;hanaOpt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">instance_dir</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_get_hana_restore_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_client_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the /GetDestinationsToRestore API,</span>
+<span class="sd">            and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                destination_client_name     (str)   --  destination client to restore to</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of the HANA destination server options</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to get HANA clients</span>
+
+<span class="sd">                    if no client exits on commcell</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">webservice</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE_OPTIONS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
+        <span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">webservice</span><span class="p">)</span>
+
+        <span class="n">destination_clients_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;genericEntityList&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">generic_entity_list</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericEntityList&#39;</span><span class="p">]</span>
+
+                    <span class="k">for</span> <span class="n">client_entity</span> <span class="ow">in</span> <span class="n">generic_entity_list</span><span class="p">:</span>
+                        <span class="n">clients_dict</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="n">client_entity</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="p">{</span>
+                                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">client_entity</span><span class="p">[</span><span class="s1">&#39;clientId&#39;</span><span class="p">]</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                        <span class="n">destination_clients_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">clients_dict</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">]:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No client exists on commcell&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="n">webservice</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_INSTANCES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">destination_clients_dict</span><span class="p">[</span><span class="n">destination_client_name</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">webservice</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;instanceProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;instanceProperties&#39;</span><span class="p">]:</span>
+                        <span class="n">instances_dict</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="p">{</span>
+                                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">],</span>
+                                <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;instanceId&#39;</span><span class="p">],</span>
+                                <span class="s2">&quot;destHANAClient&quot;</span><span class="p">:</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;saphanaInstance&#39;</span><span class="p">][</span>
+                                    <span class="s1">&#39;DBInstances&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">instances_dict</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">]:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Instance exists on commcell&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_process_restore_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the CreateTask API with the request JSON provided for Restore,</span>
+<span class="sd">            and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_json    (dict)  --  JSON request to run for the API</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if restore job failed</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Restore job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to run the restore job&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_run_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">return_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Triggers FULL backup job for the given subclient, and appends its Job object to list</span>
+<span class="sd">            The SDKExcpetion class instance is appended to the list,</span>
+<span class="sd">            if any exception is raised while running the backup job for the Subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_name  (str)   --  name of the subclient to trigger the backup for</span>
+
+<span class="sd">                return_list     (list)  --  list to append the job object to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="s1">&#39;Full&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">job</span><span class="p">:</span>
+                <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">SDKException</span> <span class="k">as</span> <span class="n">excp</span><span class="p">:</span>
+            <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">excp</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SAPHANAInstance.backup"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.hanainstance.SAPHANAInstance.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run full backup job for all subclients in this instance.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list containing the job objects for the full backup jobs started for</span>
+<span class="sd">                           the subclients in the backupset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">return_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">thread_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">all_subclients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">_subclients</span>
+
+        <span class="k">if</span> <span class="n">all_subclients</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">subclient</span> <span class="ow">in</span> <span class="n">all_subclients</span><span class="p">:</span>
+                <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+                    <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_backup</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">subclient</span><span class="p">,</span> <span class="n">return_list</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">thread_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+                <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">thread_list</span><span class="p">:</span>
+            <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">return_list</span></div>
+
+<div class="viewcode-block" id="SAPHANAInstance.restore"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.hanainstance.SAPHANAInstance.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">pseudo_client</span><span class="p">,</span>
+            <span class="n">instance</span><span class="p">,</span>
+            <span class="n">backupset_name</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
+            <span class="n">backup_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">point_in_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">initialize_log_area</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">use_hardware_revert</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">clone_env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">check_access</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">destination_instance_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">ignore_delta_backups</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the databases specified in the input paths list.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                pseudo_client               (str)   --  HANA client to restore the database at</span>
+
+<span class="sd">                instance                    (str)   --  destination instance to restore the db at</span>
+
+<span class="sd">                backupset_name              (str)   --  backupset name of the instance to be</span>
+<span class="sd">                                                            restored. If the instance is a single</span>
+<span class="sd">                                                            DB instance then the backupset name is</span>
+<span class="sd">                                                            ``default``.</span>
+<span class="sd">                    default: default</span>
+
+<span class="sd">                backup_prefix               (str)   --  prefix of the backup job</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                point_in_time               (str)   --  time to which db should be restored to</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                initialize_log_area         (bool)  --  boolean to specify whether to initialize</span>
+<span class="sd">                                                            the new log area after restore</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                use_hardware_revert         (bool)  --  boolean to specify whether to do a</span>
+<span class="sd">                                                            hardware revert in restore</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                clone_env                   (bool)  --  boolean to specify whether the database</span>
+<span class="sd">                                                            should be cloned or not</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                check_access                (bool)  --  check access during restore or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                destination_instance_dir    (str)   --  HANA data directory for snap cross instance</span>
+<span class="sd">                                                            restore or cross machine restores</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                ignore_delta_backups        (bool)  --  whether to ignore delta backups during</span>
+<span class="sd">                                                            restore or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if instance is not a string or object</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="p">(</span><span class="n">basestring</span><span class="p">,</span> <span class="n">Instance</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_request_json</span><span class="p">(</span>
+            <span class="n">pseudo_client</span><span class="p">,</span>
+            <span class="n">instance</span><span class="p">,</span>
+            <span class="n">backupset_name</span><span class="p">,</span>
+            <span class="n">backup_prefix</span><span class="p">,</span>
+            <span class="n">point_in_time</span><span class="p">,</span>
+            <span class="n">initialize_log_area</span><span class="p">,</span>
+            <span class="n">use_hardware_revert</span><span class="p">,</span>
+            <span class="n">clone_env</span><span class="p">,</span>
+            <span class="n">check_access</span><span class="p">,</span>
+            <span class="n">destination_instance_dir</span><span class="p">,</span>
+            <span class="n">ignore_delta_backups</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

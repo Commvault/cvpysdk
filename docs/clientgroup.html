@@ -1,0 +1,540 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Client Group &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Commcell" href="commcell.html" />
+    <link rel="prev" title="Client" href="client.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.clientgroup">
+<span id="client-group"></span><h1>Client Group<a class="headerlink" href="#module-cvpysdk.clientgroup" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing client group operations.</p>
+<p>ClientGroups and ClientGroup are the classes defined in this file.</p>
+<p>ClientGroups: Class for representing all the client groups associated with a commcell</p>
+<p>ClientGroup:  Class for representing a single Client Group of the commcell</p>
+<dl class="docutils">
+<dt>ClientGroups:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object)  – initialise instance of the ClientGroups associated with</dt>
+<dd>the specified commcell</dd>
+</dl>
+<p>__repr__()                 – return all the clientgroup associated with the specified commcell</p>
+<p>_get_clientgroups()        – gets all the clientgroups associated with the commcell specified</p>
+<dl class="docutils">
+<dt>_valid_clients()           – returns the list of all the valid clients,</dt>
+<dd>from the list of clients provided</dd>
+</dl>
+<p>has_clientgroup()          – checks if a client group exists with the given name or not</p>
+<p>add(clientgroup_name)      – adds a new client group to the commcell</p>
+<dl class="docutils">
+<dt>get(clientgroup_name)      – returns the instance of the ClientGroup class,</dt>
+<dd>for the the input client group name</dd>
+</dl>
+<p class="last">delete(clientgroup_name)   – deletes the client group from the commcell</p>
+</dd>
+<dt>ClientGroup:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><p class="first">clientgroup_name,
+clientgroup_id=None)  – initialise object of ClientGroup class with the specified</p>
+<blockquote class="last">
+<div>client group name and id</div></blockquote>
+</dd>
+</dl>
+<p>__repr__()                     – return the client group name, the instance is associated with</p>
+<p>_get_clientgroup_id()          – method to get the clientgroup id, if not specified</p>
+<p>_get_clientgroup_properties()  – get the properties of this clientgroup</p>
+<p>_initialize_clientgroup_properties() –  initializes the properties of this ClientGroup</p>
+<dl class="docutils">
+<dt>_request_json_()               – returns the appropriate JSON to pass for enabling/disabling</dt>
+<dd>an activity</dd>
+</dl>
+<p>_process_request_()            – processes the response received for the CG properties request</p>
+<p>_update()                      – updates the client group properties</p>
+<p>_add_or_remove_clients()       – adds/removes clients to/from a ClientGroup</p>
+<p>enable_backup_at_time()        – enables backup for the client group at the time specified</p>
+<p>enable_backup()                – enables the backup flag</p>
+<p>disable_backup()               – disables the backup flag</p>
+<p>enable_restore_at_time()       – enables restore for the client group at the time specified</p>
+<p>enable_restore()               – enables the restore flag</p>
+<p>disable_restore()              – disables the restore flag</p>
+<p>enable_data_aging_at_time()    – enables data aging for the client group at the time specified</p>
+<p>enable_data_aging()            – enables the data aging flag</p>
+<p>disable_data_aging()           – disables the data aging flag</p>
+<p>add_clients()                  – adds the valid clients to client group</p>
+<p>remove_clients()               – removes the valid clients from client group</p>
+<p class="last">remove_all_clients()           – removes all the associated clients from client group</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.clientgroup.ClientGroup">
+<em class="property">class </em><code class="descclassname">cvpysdk.clientgroup.</code><code class="descname">ClientGroup</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>clientgroup_name</em>, <em>clientgroup_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for performing operations for a specific ClientGroup.</p>
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.add_clients">
+<code class="descname">add_clients</code><span class="sig-paren">(</span><em>clients</em>, <em>overwrite=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.add_clients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.add_clients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds clients to the ClientGroup.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>clients     (str/list)  –  ‘,’ separated string of client names,</dt>
+<dd>or a list of clients,
+to be added under client group</dd>
+<dt>overwrite   (bool)      –  if set to true will remove old clients,</dt>
+<dd><blockquote class="first">
+<div>and add new clients</div></blockquote>
+<p class="last">default: False</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="last docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if clients is not of type string / list</p>
+<p>if no valid clients are found</p>
+<p class="last">if failed to add clients to client group</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.clientgroup.ClientGroup.associated_clients">
+<code class="descname">associated_clients</code><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.associated_clients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the clients associated to the ClientGroup as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.clientgroup.ClientGroup.clientgroup_id">
+<code class="descname">clientgroup_id</code><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.clientgroup_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the clientgroup id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.clientgroup.ClientGroup.clientgroup_name">
+<code class="descname">clientgroup_name</code><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.clientgroup_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the clientgroup name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.clientgroup.ClientGroup.description">
+<code class="descname">description</code><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the clientgroup description as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.disable_backup">
+<code class="descname">disable_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.disable_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.disable_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Backup for this ClientGroup.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to disable backup</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.disable_data_aging">
+<code class="descname">disable_data_aging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.disable_data_aging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.disable_data_aging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Data Aging for this ClientGroup.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to disable data aging</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.disable_restore">
+<code class="descname">disable_restore</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.disable_restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.disable_restore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Restore for this ClientGroup.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to disable restore</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.enable_backup">
+<code class="descname">enable_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.enable_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.enable_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable Backup for this ClientGroup.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to enable backup</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.enable_backup_at_time">
+<code class="descname">enable_backup_at_time</code><span class="sig-paren">(</span><em>enable_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.enable_backup_at_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.enable_backup_at_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Backup if not already disabled, and enables at the time specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>enable_time (str)  –  UTC time to enable the backup at, in 24 Hour format</dt>
+<dd>format: YYYY-MM-DD HH:mm:ss</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if time value entered is less than the current time</p>
+<p>if time value entered is not of correct format</p>
+<p class="last">if failed to enable backup</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.enable_data_aging">
+<code class="descname">enable_data_aging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.enable_data_aging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.enable_data_aging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable Data Aging for this ClientGroup.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to enable data aging</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.enable_data_aging_at_time">
+<code class="descname">enable_data_aging_at_time</code><span class="sig-paren">(</span><em>enable_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.enable_data_aging_at_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.enable_data_aging_at_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Data Aging if not already disabled, and enables at the time specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>enable_time (str)  –  UTC time to enable the backup at, in 24 Hour format</dt>
+<dd>format: YYYY-MM-DD HH:mm:ss</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if time value entered is less than the current time</p>
+<p>if time value entered is not of correct format</p>
+<p class="last">if failed to enable Data Aging</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.enable_restore">
+<code class="descname">enable_restore</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.enable_restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.enable_restore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable Restore for this ClientGroup.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to enable restore</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.enable_restore_at_time">
+<code class="descname">enable_restore_at_time</code><span class="sig-paren">(</span><em>enable_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.enable_restore_at_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.enable_restore_at_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables restore if not already disabled, and enables at the time specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>enable_time (str)  –  UTC time to enable the backup at, in 24 Hour format</dt>
+<dd>format: YYYY-MM-DD HH:mm:ss</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if time value entered is less than the current time</p>
+<p>if time value entered is not of correct format</p>
+<p class="last">if failed to enable Restore</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.clientgroup.ClientGroup.is_backup_enabled">
+<code class="descname">is_backup_enabled</code><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.is_backup_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the clientgroup backup attribute as a property of the ClientGroup class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.clientgroup.ClientGroup.is_data_aging_enabled">
+<code class="descname">is_data_aging_enabled</code><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.is_data_aging_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the clientgroup data aging attribute as a property of the ClientGroup class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.clientgroup.ClientGroup.is_restore_enabled">
+<code class="descname">is_restore_enabled</code><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.is_restore_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the clientgroup restore attribute as a propetry of the ClientGroup class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.remove_all_clients">
+<code class="descname">remove_all_clients</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.remove_all_clients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.remove_all_clients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the associated clients from client group</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to remove all clients from client group</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroup.remove_clients">
+<code class="descname">remove_clients</code><span class="sig-paren">(</span><em>clients</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup.remove_clients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup.remove_clients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes clients from the ClientGroup.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>clients     (str/list)  –  ‘,’ separated string of client names,</dt>
+<dd>or a list of clients,
+to be removed from the client group</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if clients is not of type string / list</p>
+<p>if no valid clients are found</p>
+<p class="last">if failed to remove clients from client group</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.clientgroup.ClientGroups">
+<em class="property">class </em><code class="descclassname">cvpysdk.clientgroup.</code><code class="descname">ClientGroups</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for representing all the clientgroups associated with a Commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroups.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>clientgroup_name</em>, <em>clients=[]</em>, <em>clientgroup_description=”</em>, <em>enable_backup=True</em>, <em>enable_restore=True</em>, <em>enable_data_aging=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new Client Group to the Commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">clientgroup_name        (str)        –  name of the new client group to add</p>
+<dl class="last docutils">
+<dt>clients                 (str/list)   –  ‘,’ separated string of client names,</dt>
+<dd><blockquote class="first">
+<div>or a list of clients,
+to be added under client group</div></blockquote>
+<p class="last">default: []</p>
+</dd>
+<dt>clientgroup_description (str)        –  description of the client group</dt>
+<dd>default: “”</dd>
+<dt>enable_backup           (bool)       –  enable or disable backup</dt>
+<dd>default: True</dd>
+<dt>enable_restore          (bool)       –  enable or disable restore</dt>
+<dd>default: True</dd>
+<dt>enable_data_aging       (bool)       –  enable or disable data aging</dt>
+<dd>default: True</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the ClientGroup class created by this method</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of client group name and description is not of type string</p>
+<p>if clients argument is not of type list / string</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if client group already exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroups.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>clientgroup_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the clientgroup from the commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>clientgroup_name (str)  –  name of the clientgroup</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the clientgroup name argument is not string</p>
+<p>if response is empty</p>
+<p>if failed to delete the client group</p>
+<p class="last">if no clientgroup exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroups.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>clientgroup_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a client group object of the specified client group name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>clientgroup_name (str)  –  name of the client group</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the ClientGroup class for the given clientgroup name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the client group name argument is not string</p>
+<p class="last">if no client group exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroups.has_clientgroup">
+<code class="descname">has_clientgroup</code><span class="sig-paren">(</span><em>clientgroup_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.has_clientgroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.has_clientgroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a client group exists in the commcell with the input client group name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>clientgroup_name (str)  –  name of the client group</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the client group exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the client group name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="client.html" title="previous chapter">Client</a></li>
+      <li>Next: <a href="commcell.html" title="next chapter">Commcell</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/clientgroup.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/clientgroup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
