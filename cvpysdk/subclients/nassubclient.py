@@ -33,7 +33,7 @@ from __future__ import unicode_literals
 
 from past.builtins import basestring
 
-from fssubclient import FileSystemSubclient
+from .fssubclient import FileSystemSubclient
 from ..exception import SDKException
 
 

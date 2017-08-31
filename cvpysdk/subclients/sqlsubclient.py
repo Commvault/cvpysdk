@@ -33,7 +33,7 @@ SQLServerSubclient:
 
 from __future__ import unicode_literals
 
-from dbsubclient import DatabaseSubclient
+from .dbsubclient import DatabaseSubclient
 from ..exception import SDKException
 
 
