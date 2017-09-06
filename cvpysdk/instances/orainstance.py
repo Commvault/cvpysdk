@@ -190,7 +190,7 @@ class OracleInstance(Instance):
         :returns: string
 
         """
-        return r'Instance: {} Subclients: {}'.format(self._instance_name, self.subclients)
+        return r'Oracle Class For Instance: {} Subclients: {}'.format(self._instance_name, self.subclients)
 
 
     def __repr__(self):
@@ -199,4 +199,4 @@ class OracleInstance(Instance):
         :returns: string
 
         """
-        pass
+        return r'Oracle Class For Instance: {} Subclients: {}'.format(self._instance_name, self.subclients)

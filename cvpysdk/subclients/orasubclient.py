@@ -15,9 +15,6 @@ OracleSubclient: Derived class from DatabaseSubclient Base class, representing a
                         and to perform operations on that subclient
 
 OracleSubclient:
-    _backup_request_json()               --  prepares the json for the backup request
-
-    _get_subclient_properties()          --  gets the subclient  related properties of File System subclient.
 
     content()                            --  update the content of the subclient
 
@@ -38,68 +35,42 @@ class OracleSubclient(DatabaseSubclient):
     OracleSubclient: Class to work on Oracle subclients
     """
 
-    def __init__(self):
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """
         __init__: Constructor for the class
+        :backupset_object:  instance of the Backupset class
+        :subclient_name: name of the subclient
+        :subclient_id: id of the subclient
 
         """
-        DatabaseSubclient.__init__(self)
-        self._data_backup_storage_policy = None
-        self._log_backup_storage_policy = None
+        super(OracleSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
 
     @property
-    def data_backup_storage_policy(self):
+    def data_sp(self):
         """
-        data_backup_storage_policy: Getter for data storage policy
+        data_sp: Getter for data storage policy
         :returns: string
 
         """
-        return self._data_backup_storage_policy
-
-    @data_backup_storage_policy.setter
-    def data_backup_storage_policy(self, data_sp):
-        """
-        data_backup_storage_policy: Setter for data storage policy
-
-        :data_sp: Storage Policy to be set for Oracle Data
-
-        """
-        pass
+        return self._commonProperties['storageDevice']['dataBackupStoragePolicy']['storagePolicyName']
 
     @property
-    def log_backup_storage_policy(self):
+    def log_sp(self):
         """
-        log_backup_storage_policy: Getter for log storage policy
-
+        data_sp: Getter for log storage policy
         :returns: string
 
         """
-        return self._log_backup_storage_policy
+        return self._commonProperties['storageDevice']['logBackupStoragePolicy']['storagePolicyName']
 
-    @log_backup_storage_policy.setter
-    def log_backup_storage_policy(self, log_sp):
+    @property
+    def is_snap_enabled(self):
         """
-        log_backup_storage_policy: Setter for log storage policy
-        :log_sp: Log storage policy
-
-        """
-        pass
-
-    def _backup_request_json(self):
-        """
-        _backup_request_json: Prepares backup request
-        :returns: JSON representation of backup request
+        is_snap_enabled: Getter to check whether the subclient has snap enabled
+        :returns: Bool
 
         """
-        pass
-
-    def _get_subclient_properties(self):
-        """
-        _get_subclient_properties: Gets the subclient  related properties for an instance
-        :returns: TODO
-
-        """
-        pass
+        return self._commonProperties['snapCopyInfo']['isSnapBackupEnabled']
 
     def content(self):
         """
@@ -108,3 +79,19 @@ class OracleSubclient(DatabaseSubclient):
 
         """
         pass
+
+    def __str__(self):
+        """
+        __str__: Dunder to represent the class as a string
+        :returns: string
+
+        """
+        return 'Class for Oracle subclient: {}'.format(self.subclient_name)
+
+    def __repr__(self):
+        """
+        __repr__: Dunder for representing the class
+        :returns: string
+
+        """
+        return 'Class for Oracle subclient: {}'.format(self.subclient_name)
