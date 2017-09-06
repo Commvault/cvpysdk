@@ -14,9 +14,6 @@ OracleInstance is the only class defined in this file.
 OracleInstance: Derived class from Instance Base class, representing an
                             oracle instance, and to perform operations on that instance
 
-OracleInstance:
-    _get_instance_properties()  --  Instance class method overwritten to add virtual server
-                                        instance properties as well
 
 """
 from __future__ import unicode_literals
