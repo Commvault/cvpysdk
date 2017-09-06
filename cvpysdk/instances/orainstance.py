@@ -33,6 +33,78 @@ class OracleInstance(Instance):
     OracleInstance: Class to represent an Oracle Instance
     """
 
+    def __init__(self, agent_object, instance_name, instance_id=None):
+        """
+        __init__: Constructor for the class
+        :agent_object: instance of the Agent class
+        :instance_name: name of the instance
+        :instance_id: id of the instance
+
+        """
+        super(OracleInstance, self).__init__(agent_object, instance_name, instance_id)
+
+    @property
+    def oracle_home(self):
+        """
+        oracle_home: getter for oracle home
+        :returns: string
+
+        """
+        return self._properties['oracleInstance']['oracleHome']
+
+    @property
+    def user(self):
+        """
+        user: Getter for oracle user
+        :returns: string
+
+        """
+        return self._properties['oracleInstance']['oracleUser']['userName']
+
+    @property
+    def version(self):
+        """
+        version: Getter for oracle version
+        :returns: string
+
+        """
+        return self._properties['version']
+
+    @property
+    def archive_log_dest(self):
+        """
+        archive_log_dest: Getter for the instance's archive log dest
+        :returns: string
+
+        """
+        return self._properties['oracleInstance']['archiveLogDest']
+
+    @property
+    def cmd_sp(self):
+        """
+        cmd_sp: Getter for Command Line storage policy
+        :returns: string
+
+        """
+        return self._properties['oracleInstance']['oracleStorageDevice']['commandLineStoragePolicy']['storagePolicyName']
+
+    @property
+    def log_sp(self):
+        """
+        log_sp: Oracle Instance's Log Storage Poplicy
+        :returns: string
+
+        """
+        return self._properties['oracleInstance']['oracleStorageDevice']['logBackupStoragePolicy']['storagePolicyName']
+        
+    @property
+    def autobackup_on(self):
+        """
+        autobackup_on: Getter to check whether autobackup is set to ON
+        :returns: Bool
+
+        """
+        return True if self._properties['oracleInstance']['ctrlFileAutoBackup'] == 1 else Fase
 
     def _restore_request_json(self, arg1):
         """
