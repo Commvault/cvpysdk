@@ -38,60 +38,79 @@ Subclients:
 Subclient:
     __init__(backupset_object,
              subclient_name,
-             subclient_id)              --  initialise instance of the Subclient class,
-                                                associated to the specified backupset
+             subclient_id)          --  initialise instance of the Subclient class,
+                                            associated to the specified backupset
 
-    __repr__()                          --  return the subclient name, the instance is associated
-                                                with
+    __repr__()                      --  return the subclient name, the instance is associated with
 
-    _get_subclient_id()                 --  method to get subclient id, if not specified in
-                                                __init__ method
+    _get_subclient_id()             --  method to get subclient id, if not specified in __init__
 
-    _get_subclient_properties()         --  get the properties of this subclient
+    _get_subclient_properties()     --  get the properties of this subclient
 
     _initialize_subclient_properties()  --  initializes the properties of this subclient
 
-    _update()                           --  updates the properties of a subclient
+    _update()                       --  updates the properties of a subclient
 
-    _filter_paths()                     --  filters the path as per the OS, and the Agent
+    _filter_paths()                 --  filters the path as per the OS, and the Agent
 
-    _process_backup_response()          --  process response received from backup request
+    _process_backup_request()       --  runs the backup request provided, and process the response
 
-    _restore_json()                     --  returns the apppropriate JSON request to pass for
-                                                either Restore In-Place or Out-of-Place operation
+    _browse_and_find_json()         --  returns the appropriate JSON request to pass for either
+                                            Browse operation or Find operation
 
-    _process_restore_response()         --  processes response received for the Restore request
+    _process_browse_response()      --  process response received for both Browse and Find request
 
-    description()                       --  update the description of the subclient
+    _restore_json()                 --  returns the apppropriate JSON request to pass for either
+                                            Restore In-Place or Out-of-Place operation
 
-    content()                           --  update the content of the subclient
+    _task_json()                    --  setter for task property
 
-    storage_policy()                    --  update the storage policy for this subclient
+    _restore_subtask_json()         --  setter for sub task property
 
-    enable_backup()                     --  enables the backup for the subclient
+    _association_json()             --  setter for association property
 
-    enable_backup_at_time()             --  enables backup for the subclient at the input time
-                                                specified
+    _impersonation_json()           --  setter for impersonation Property
 
-    disable_backup()                    --  disables the backup for the subclient
+    _restore_browse_option_json()   --  setter for  browse option  property in restore
 
-    enable_intelli_snap()               --  enables the intelli snap for the subclient
+    _restore_commonoptions_json()   --  setter for common options property in restore
 
-    disable_intelli_snap()              --  disables the intelli snap for subclient
+    _restore_destination_json()     --  setter for destination options property in restore
 
-    backup()                            --  run a backup job for the subclient
+    _restore_fileoption_json()      --  setter for file option property in restore
 
-    browse()                            --  gets the content of the backup for this subclient
-                                                at the path specified
+    _restore_destination_json()     --  setter for destination property in restore
 
-    find()                              --  searches a given file/folder in the subclient content
+    _restore_sharepoint_json()      --  setter for the sharepoint property in restore
 
-    restore_in_place()                  --  restores the files/folders specified in the
-                                                input paths list to the same location
+    _process_restore_response()     --  processes response received for the Restore request
 
-    restore_out_of_place()              --  restores the files/folders specified in the input paths
-                                                list to the given client,
-                                                at the specified destionation location
+    description()                   --  update the description of the subclient
+
+    content()                       --  update the content of the subclient
+
+    enable_backup()                 --  enables the backup for the subclient
+
+    enable_backup_at_time()         --  enable backup for the subclient at the input time specified
+
+    disble_backup()                 --  disbles the backup for the subclient
+
+    backup()                        --  run a backup job for the subclient
+
+    browse()                        --  gets the content of the backup for this subclient
+                                            at the path specified
+
+    browse_in_time()                --  gets the content of the backup for this subclient
+                                            at the input path in the time range specified
+
+    find()                          --  searches a given file/folder name in the subclient content
+
+    restore_in_place()              --  Restores the files/folders specified in the
+                                            input paths list to the same location
+
+    restore_out_of_place()          --  Restores the files/folders specified in the input paths
+                                            list to the input client,
+                                            at the specified destionation location
 
 """
 
@@ -182,7 +201,8 @@ class Subclients(object):
             'virtual server': VirtualServerSubclient,
             'cloud apps': CloudAppsSubclient,
             'sql server': SQLServerSubclient,
-            'nas': NASSubclient
+            'nas': NASSubclient,
+            'sap hana': SAPHANASubclient
         }
 
     def __str__(self):
@@ -713,8 +733,8 @@ class Subclient(object):
 
                         if error_message:
                             return (False, error_code, error_message)
-                        else:
-                            return (False, error_code, "")
+
+                        return (False, error_code, "")
                 elif "errorCode" in response.json():
                     error_code = str(response.json()['errorCode'])
                     error_message = response.json()['errorMessage']
@@ -724,8 +744,8 @@ class Subclient(object):
 
                     if error_message:
                         return (False, error_code, error_message)
-                    else:
-                        return (False, error_code, "")
+
+                    return (False, error_code, "")
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -912,8 +932,8 @@ class Subclient(object):
 
         if is_single_path:
             return paths[0]
-        else:
-            return paths
+
+        return paths
 
     def _process_backup_response(self, flag, response):
         """Runs the Backup for a subclient with the request provided and returns the Job object.
@@ -1187,6 +1207,140 @@ class Subclient(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _task_json(self):
+        """Returns the value for the task information JSON"""
+        _taks_option_json = {
+            "initiatedFrom": 2,
+            "taskType": 1,
+            "policyType": 0,
+            "taskFlags": {
+                "disabled": False
+            }
+        }
+
+        return _taks_option_json
+
+    def _restore_subtask_json(self):
+        """Returns the subtask JSON for restores."""
+        _subtask_restore_json = {
+            "subTaskType": 3,
+            "operationType": 1001
+        }
+
+        return _subtask_restore_json
+
+    def _association_json(self):
+        """Returns the value of the Association entity JSON"""
+        _association_json_ = {
+            "type": 0,
+            "hostName": "",
+            "clientName": self._backupset_object._agent_object._client_object.client_name,
+            "appName": self._backupset_object._agent_object.agent_name,
+            "instanceName": self._backupset_object._instance_object.instance_name,
+            "backupsetName": self._backupset_object.backupset_name,
+            "subclientName": self.subclient_name,
+            "consumeLicense": True,
+            "flags": {}
+        }
+
+        return _association_json_
+
+    def _impersonation_json(self, value):
+        """Sets the value of the Impersonation JSON entity for Restores."""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._impersonation_json_ = {
+            "useImpersonation": False,
+            "user": {
+                "userName": value.get('username', "")
+            }
+        }
+
+    def _restore_browse_option_json(self, value):
+        """Sets the value of the Browse options for restores in the JSON."""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._browse_restore_json = {
+            "listMedia": False,
+            "useExactIndex": False,
+            "noImage": False,
+            "commCellId": 2,
+            "mediaOption": {
+                "mediaAgent": {
+                    "mediaAgentName": ""
+                },
+                "library": {},
+                "copyPrecedence": {
+                    "copyPrecedenceApplicable": value.get("copy_preceedence_applicable", False),
+                    "copyPrecedence": value.get("copy_preceedence", 0)
+                },
+
+                "drivePool": {}
+            },
+            "backupset": {
+                "clientName": value.get("client_name", ""),
+                "appName": self._backupset_object._agent_object.agent_name
+            },
+            "timeZone": {
+                "TimeZoneName": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi"
+            },
+            "timeRange": {}
+        }
+
+    def _restore_commonoptions_json(self, value):
+        """Sets the value of the Common options in the Restore JSON."""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._commonoption_restore_json = {
+            "systemStateBackup": False,
+            "clusterDBBackedup": False,
+            "powerRestore": False,
+            "restoreToDisk": False,
+            "offlineMiningRestore": False,
+            "onePassRestore": False,
+            "detectRegularExpression": True,
+            "wildCard": False,
+            "preserveLevel": value.get("preserve_level", 0),
+            "restoreToExchange": False,
+            "stripLevel": 0,
+            "restoreACLs": value.get("restore_ACL", True),
+            "stripLevelType": value.get("striplevel_type", 0),
+            "unconditionalOverwrite": value.get("unconditional_overwrite", False)
+
+        }
+
+    def _restore_destination_json(self, value):
+        """Sets the value of the Destination Restore options in the Restore JSON."""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._destination_restore_json = {
+            "isLegalHold": False,
+            "inPlace": True,
+            "destPath": [value.get("destination_path", "")],
+            "destClient": {
+                "clientName": value.get("client_name", "")
+            }
+        }
+
+    def _restore_fileoption_json(self, value):
+        """Sets the value of the File Option Restore options in the Restore JSON.."""
+        self._fileoption_restore_json = {
+            "sourceItem": value.get("source_item", []),
+            "browseFilters": value.get("browse_filters", [])
+        }
+
+    def _restore_sharepoint_json(self):
+        """Sets the value of the Share Point Restore options JSON."""
+        _sharepoint_restore_json = {
+            "is90OrUpgradedClient": False
+        }
+
+        return _sharepoint_restore_json
 
     @property
     def subclient_id(self):
@@ -1503,6 +1657,7 @@ class Subclient(object):
             backup_level="Incremental",
             incremental_backup=False,
             incremental_level='BEFORE_SYNTH',
+            collect_metadata=False,
             on_demand_input=None):
         """Runs a backup job for the subclient of the level specified.
 
@@ -1575,6 +1730,8 @@ class Subclient(object):
                 else:
                     backup_request += '&runIncrementalBackup=False'
 
+            backup_request += '&collectMetaInfo=%s' % collect_metadata
+
             backup_service = self._commcell_object._services['SUBCLIENT_BACKUP'] % (
                 self.subclient_id, backup_request
             )
@@ -1616,7 +1773,7 @@ class Subclient(object):
 
             dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        if len(args) > 0 and type(args[0]) == dict:
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -1666,7 +1823,7 @@ class Subclient(object):
 
             dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        if len(args) > 0 and type(args[0]) == dict:
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -1800,7 +1957,7 @@ class Subclient(object):
         """
         from .client import Client
 
-        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
+        if not (isinstance(client, (basestring, Client)) and
                 isinstance(destination_path, basestring) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
