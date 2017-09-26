@@ -1,0 +1,227 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cvpysdk.services &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.services</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Service URLs for REST API operations.</span>
+
+<span class="sd">SERVICES_DICT:  A python dictionary for holding all the API services endpoints.</span>
+
+<span class="sd">get_services(web_service):  updates the SERVICES_DICT with the WebConsole API URL</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+
+<span class="n">SERVICES_DICT_TEMPLATE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;LOGIN&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Login&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;LOGOUT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Logout&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RENEW_LOGIN_TOKEN&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">RenewLoginToken&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;COMMSERV&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ALL_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_VIRTUAL_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?PseudoClientType=VSPseudo&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLIENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ALL_AGENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Agent?clientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;AGENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Agent&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ALL_BACKUPSETS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Backupset?clientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BACKUPSET&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Backupset/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ADD_BACKUPSET&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Backupset&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ALL_INSTANCES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Instance?clientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;INSTANCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Instance/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ALL_SUBCLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Subclient?clientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ADD_SUBCLIENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Subclient&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SUBCLIENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Subclient/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SUBCLIENT_BACKUP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Subclient/</span><span class="si">%s</span><span class="s1">/action/backup?backupLevel=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_JOBS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job?clientId=</span><span class="si">%s</span><span class="s1">&amp;jobFilter=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;JOB_DETAILS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">JobDetails&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SUSPEND_JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">/action/pause&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RESUME_JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">/action/resume&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;KILL_JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">/action/kill&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_MEDIA_AGENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">MediaAgent&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;LIBRARY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Library&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;STORAGE_POLICY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePolicy&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_STORAGE_POLICY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePolicy/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CREATE_STORAGE_POLICY_COPY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePolicy?Action=createCopy&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DELETE_STORAGE_POLICY_COPY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePolicy?Action=deleteCopy&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SCHEDULE_POLICY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">SchedulePolicy&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;MEDIA_AGENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">MediaAgent/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ALL_ALERTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_ALL_CONSOLE_ALERTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Alert?pageNo=</span><span class="si">%s</span><span class="s1">&amp;pageCount=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ENABLE_ALERT_NOTIFICATION&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/notificationType/</span><span class="si">%s</span><span class="s1">/Action/Enable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DISABLE_ALERT_NOTIFICATION&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/notificationType/</span><span class="si">%s</span><span class="s1">/Action/Disable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ENABLE_ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/Action/Enable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DISABLE_ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/Action/Disable&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;CLIENT_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;AGENT_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&amp;apptypeId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BACKUPSET_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&amp;apptypeId=</span><span class="si">%s</span><span class="s1">&amp;backupsetId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SUBCLIENT_SCHEDULES&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&amp;apptypeId=</span><span class="si">%s</span><span class="s1">&amp;&#39;</span>
+                            <span class="s1">&#39;backupsetId=</span><span class="si">%s</span><span class="s1">&amp;subclientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">),</span>
+
+    <span class="s1">&#39;CLIENTGROUPS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">ClientGroup&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLIENTGROUP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">ClientGroup/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;USERGROUPS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">UserGroup&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;USERGROUP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">UserGroup/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;BROWSE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">DoBrowse&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RESTORE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CreateTask&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_WORKFLOWS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DEPLOY_WORKFLOW&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow/</span><span class="si">%s</span><span class="s1">/action/deploy&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EXECUTE_WORKFLOW&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">wapi/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;INSTANCE_BROWSE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">/Instance/</span><span class="si">%s</span><span class="s1">/Browse&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;SQL_RESTORE_OPTIONS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">SQL/RestoreOptions&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Qcommand/qoperation execute&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;SOFTWARESTORE_DOWNLOADITEM&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">DownloadFile&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SOFTWARESTORE_PKGINFO&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">SoftwareStore/getPackagePublishInfo?packageName=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SOFTWARESTORE_GETPKGID&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">SoftwareStoreItem&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CreateTask&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ANALYTICS_ENGINES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/getAnalyticsEngine&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_ALL_DATASOURCES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/GetDataSources?summary=1&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/getDataSource/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_ALL_HANDLERS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/getAllHandlers?dsId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_HANDLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/getHandler/?dsId=</span><span class="si">%s</span><span class="s1">&amp;handlerId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_CRAWL_HISTORY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/GetHistory/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_HANDLERS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/gethandler?datasourceId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CREATE_HANDLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/savehandler&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_DATASOURCE_SCHEMA&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/getDSSchema/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UPDATE_DATASOURCE_SCHEMA&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/updateschema&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_JDBC_DRIVERS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/GetJDBCDrivers/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DELETE_DATASOURCE_CONTENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/deletedata/</span><span class="si">%s</span><span class="s1">?softdelete=true&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DELETE_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/deleteDataSource/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CREATE_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/createDataSource&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DATACUBE_IMPORT_DATA&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/post/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    
+    
+
+    <span class="s1">&#39;GLOBAL_FILTER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">GlobalFilter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RESTORE_OPTIONS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Restore/GetDestinationsToRestore?clientId=</span><span class="si">%s</span><span class="s1">&amp;appId=</span><span class="si">%s</span><span class="s1">&amp;flag=8&#39;</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_services"><a class="viewcode-back" href="../../services.html#cvpysdk.services.get_services">[docs]</a><span class="k">def</span> <span class="nf">get_services</span><span class="p">(</span><span class="n">web_service</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Initializes the SERVICES DICT with the web service for APIs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            web_service     (str)   --  web service string for APIs</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict    -   services dict consisting of all APIs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">services_dict</span> <span class="o">=</span> <span class="n">SERVICES_DICT_TEMPLATE</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">services_dict</span><span class="p">:</span>
+        <span class="n">services_dict</span><span class="p">[</span><span class="n">service</span><span class="p">]</span> <span class="o">=</span> <span class="n">services_dict</span><span class="p">[</span><span class="n">service</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">web_service</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">services_dict</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

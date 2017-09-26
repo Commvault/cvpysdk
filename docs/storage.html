@@ -1,0 +1,631 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Storage &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Subclient" href="subclient.html" />
+    <link rel="prev" title="Services" href="services.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.storage">
+<span id="storage"></span><h1>Storage<a class="headerlink" href="#module-cvpysdk.storage" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing storage related operations on the commcell.</p>
+<p>This file has all the classes related to Storage operations.</p>
+<p>MediaAgents:      Class for representing all the media agents attached to the commcell.</p>
+<p>MediaAgent:       Class for representing a single media agent attached to the commcell.</p>
+<p>DiskLibraries:    Class for representing all the disk libraries attached to the commcell.</p>
+<p>DiskLibrary:      Class for representing a single disk library associated with the commcell.</p>
+<p>StoragePolicies:  Class for representing all the Storage Policies associated to the commcell.</p>
+<p>StoragePolicy:    Class for representing a single Storage Policy associated to the commcell.</p>
+<p>SchedulePolicies: Class for representing all the Schedule Policies associated to the commcell.</p>
+<dl class="docutils">
+<dt>MediaAgents:</dt>
+<dd><p class="first">__init__(commcell_object)   –  initialize the MediaAgents class instance for the commcell</p>
+<p>__str__()                   –  returns all the media agents associated with the commcell</p>
+<p>__repr__()                  –  returns the string for the instance of the MediaAgents class</p>
+<p>_get_media_agents()         –  gets all the media agents of the commcell</p>
+<p>has_media_agent()           –  checks if a media agent exists with the given name or not</p>
+<dl class="last docutils">
+<dt>get(media_agent_name)       –  returns the instance of MediaAgent class</dt>
+<dd>of the media agent specified</dd>
+</dl>
+</dd>
+<dt>MediaAgent:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><p class="first">media_agent_name,
+media_agent_id)                –  initialize the instance of MediaAgent class for a</p>
+<blockquote class="last">
+<div>specific media agent of the commcell</div></blockquote>
+</dd>
+<dt>__repr__()                              –  returns a string representation of the</dt>
+<dd>MediaAgent instance</dd>
+<dt>_get_media_agent_id()                   –  gets the id of the MediaAgent instance from</dt>
+<dd>commcell</dd>
+</dl>
+<p>_get_media_agent_properties()           –  returns media agent properties</p>
+<p>_initialize_media_agent_properties()    –  initializes media agent properties</p>
+<p>media_agent_name()                      –  returns media agent name</p>
+<p>media_agent_id()                        –  returns media agent id</p>
+<p>is_online()                             –  returns True is media agent is online</p>
+<p class="last">platform()                              –  returns os info of the media agent</p>
+</dd>
+<dt>DiskLibraries:</dt>
+<dd><p class="first">__init__(commcell_object)   –  initialize the DiskLibraries class instance for the commcell</p>
+<p>__str__()                   –  returns all the disk libraries associated with the commcell</p>
+<p>__repr__()                  –  returns the string for the instance of the DiskLibraries class</p>
+<p>_get_libraries()            –  gets all the disk libraries of the commcell</p>
+<p>has_library(library_name)   –  checks if a disk library exists with the given name or not</p>
+<p>add()                       –  adds a new disk library to the commcell</p>
+<dl class="last docutils">
+<dt>get(library_name)           –  returns the instance of the DiskLibrary class</dt>
+<dd>for the library specified</dd>
+</dl>
+</dd>
+<dt>DiskLibrary:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><p class="first">library_name,
+library_id)        –  initialize the instance of DiskLibrary class for a specific</p>
+<blockquote class="last">
+<div>disk library of the commcell</div></blockquote>
+</dd>
+</dl>
+<p>__repr__()                  –  returns a string representation of the DiskLibrary instance</p>
+<p class="last">_get_library_id()           –  gets the id of the DiskLibrary instance from commcell</p>
+</dd>
+<dt>StoragePolicies:</dt>
+<dd><p class="first">__init__(commcell_object)    –  initialize the StoragePolicies instance for the commcell</p>
+<p>__str__()                    –  returns all the storage policies associated with the commcell</p>
+<p>__repr__()                   –  returns a string for the instance of the StoragePolicies class</p>
+<p>_get_policies()              –  gets all the storage policies of the commcell</p>
+<p>has_policy(policy_name)      –  checks if a storage policy exists with the given name</p>
+<p>add()                        –  adds a new storage policy to the commcell</p>
+<p class="last">delete(storage_policy_name)  –  removes the specified storage policy from the commcell</p>
+</dd>
+<dt>StoragePolicy:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><p class="first">storage_policy_name,
+storage_policy_id)             –  initialize the instance of StoragePolicy class for</p>
+<blockquote class="last">
+<div>a specific storage policy of the commcell</div></blockquote>
+</dd>
+<dt>__repr__()                              –  returns a string representation of the</dt>
+<dd>StoragePolicy instance</dd>
+</dl>
+<p>_get_storage_policy_id()                –  gets the id of the StoragePolicy instance</p>
+<p>_get_storage_policy_propeerties()       –  returns the properties of this storage policy</p>
+<p>_initialize_storage_policy_properties() –  initializes storage policy prperties</p>
+<p>has_copy()                              –  checks if copy with given name exists</p>
+<p>create_secondary_copy()                 –  creates a storage policy copy</p>
+<p>delete_secondary_copy()                 –  deletes storage policy copy</p>
+<dl class="last docutils">
+<dt>copies()                                –  returns the storage policy copies associated with</dt>
+<dd>this storage policy</dd>
+<dt>run_aux_copy()                          –  starts a aux copy job for this storage policy and</dt>
+<dd>returns the job object</dd>
+</dl>
+</dd>
+<dt>SchedulePolicies:</dt>
+<dd><p class="first">__init__(commcell_object)    –  initialize the SchedulePolicies instance for the commcell</p>
+<p>__str__()                    –  returns all the schedule policies associated with the commcell</p>
+<p>__repr__()                   –  returns a string for instance of the SchedulePolicies class</p>
+<p>_get_policies()              –  gets all the schedule policies of the commcell</p>
+<p class="last">has_policy(policy_name)      –  checks if a schedule policy exists with the given name</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.storage.DiskLibraries">
+<em class="property">class </em><code class="descclassname">cvpysdk.storage.</code><code class="descname">DiskLibraries</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#DiskLibraries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.DiskLibraries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the disk libraries associated with the commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.storage.DiskLibraries.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>library_name</em>, <em>media_agent</em>, <em>mount_path</em>, <em>username=”</em>, <em>password=”</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#DiskLibraries.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.DiskLibraries.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new Disk Library to the Commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">library_name (str)        –  name of the new library to add</p>
+<p>media_agent  (str/object) –  name or instance of media agent to add the library to</p>
+<p>mount_path   (str)        –  full path of the folder to mount the library at</p>
+<dl class="last docutils">
+<dt>username     (str)        –  username to access the mount path</dt>
+<dd>default: “”</dd>
+<dt>password     (str)        –  password to access the mount path</dt>
+<dd>default: “”</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the DiskLibrary class, if created successfully</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the library name argument is not string</p>
+<p>if type of the mount path argument is not string</p>
+<p>if type of the username argument is not string</p>
+<p>if type of the password argument is not string</p>
+<p>if type of the media agent argument is not either string or MediaAgent instance</p>
+<p>if failed to create disk library</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.DiskLibraries.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>library_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#DiskLibraries.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.DiskLibraries.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a DiskLibrary object of the specified disk library name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>library_name (str)  –  name of the disk library</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the DiskLibrary class for the given library name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the library name argument is not string</p>
+<p class="last">if no disk library exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.DiskLibraries.has_library">
+<code class="descname">has_library</code><span class="sig-paren">(</span><em>library_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#DiskLibraries.has_library"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.DiskLibraries.has_library" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a library exists in the commcell with the input library name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>library_name (str)  –  name of the library</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the library exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the library name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.storage.DiskLibrary">
+<em class="property">class </em><code class="descclassname">cvpysdk.storage.</code><code class="descname">DiskLibrary</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>library_name</em>, <em>library_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#DiskLibrary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.DiskLibrary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for a specific disk library.</p>
+<dl class="attribute">
+<dt id="cvpysdk.storage.DiskLibrary.library_id">
+<code class="descname">library_id</code><a class="headerlink" href="#cvpysdk.storage.DiskLibrary.library_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the library id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.storage.DiskLibrary.library_name">
+<code class="descname">library_name</code><a class="headerlink" href="#cvpysdk.storage.DiskLibrary.library_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the library name as a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.storage.MediaAgent">
+<em class="property">class </em><code class="descclassname">cvpysdk.storage.</code><code class="descname">MediaAgent</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>media_agent_name</em>, <em>media_agent_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#MediaAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.MediaAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for a specific media agent.</p>
+<dl class="attribute">
+<dt id="cvpysdk.storage.MediaAgent.is_online">
+<code class="descname">is_online</code><a class="headerlink" href="#cvpysdk.storage.MediaAgent.is_online" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the status as read-only attribute</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.storage.MediaAgent.media_agent_id">
+<code class="descname">media_agent_id</code><a class="headerlink" href="#cvpysdk.storage.MediaAgent.media_agent_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the media agent id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.storage.MediaAgent.media_agent_name">
+<code class="descname">media_agent_name</code><a class="headerlink" href="#cvpysdk.storage.MediaAgent.media_agent_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the media agent name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.storage.MediaAgent.platform">
+<code class="descname">platform</code><a class="headerlink" href="#cvpysdk.storage.MediaAgent.platform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the platform as read-only attribute</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.storage.MediaAgents">
+<em class="property">class </em><code class="descclassname">cvpysdk.storage.</code><code class="descname">MediaAgents</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#MediaAgents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.MediaAgents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the media agents associated with the commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.storage.MediaAgents.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>media_agent_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#MediaAgents.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.MediaAgents.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a MediaAgent object of the specified media agent name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>media_agent_name (str)  –  name of the media agent</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the MediaAgent class for the given media agent name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the media agent name argument is not string</p>
+<p class="last">if no media agent exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.MediaAgents.has_media_agent">
+<code class="descname">has_media_agent</code><span class="sig-paren">(</span><em>media_agent_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#MediaAgents.has_media_agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.MediaAgents.has_media_agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a media agent exists in the commcell with the input media agent name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>media_agent_name (str)  –  name of the media agent</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the media agent exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the media agent name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.storage.SchedulePolicies">
+<em class="property">class </em><code class="descclassname">cvpysdk.storage.</code><code class="descname">SchedulePolicies</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#SchedulePolicies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.SchedulePolicies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the schedule policies associated with the commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.storage.SchedulePolicies.has_policy">
+<code class="descname">has_policy</code><span class="sig-paren">(</span><em>policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#SchedulePolicies.has_policy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.SchedulePolicies.has_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a schedule policy exists in the commcell with the input schedule policy name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>policy_name (str)  –  name of the schedule policy</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the schedule policy exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the schedule policy name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.storage.StoragePolicies">
+<em class="property">class </em><code class="descclassname">cvpysdk.storage.</code><code class="descname">StoragePolicies</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the storage policies associated with the commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicies.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>storage_policy_name</em>, <em>library</em>, <em>media_agent</em>, <em>dedup_path=None</em>, <em>incremental_sp=None</em>, <em>retention_period=5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicies.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicies.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new Storage Policy to the Commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">storage_policy_name (str)         –  name of the new storage policy to add</p>
+<dl class="last docutils">
+<dt>library             (str/object)  –  name or instance of the library</dt>
+<dd>to add the policy to</dd>
+<dt>media_agent         (str/object)  –  name or instance of media agent</dt>
+<dd>to add the policy to</dd>
+<dt>dedup_path          (str)         –  the path of the deduplication database</dt>
+<dd>default: None</dd>
+<dt>incremental_sp      (str)         –  the name of the incremental storage policy</dt>
+<dd><blockquote class="first">
+<div>associated with the storage policy</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>retention_period    (int)         –  time period in days to retain</dt>
+<dd><blockquote class="first">
+<div>the data backup for</div></blockquote>
+<p class="last">default: 5</p>
+</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the storage policy name argument is not string</p>
+<p>if type of the retention period argument is not int</p>
+<p>if type of the library argument is not either string or DiskLibrary instance</p>
+<p>if type of the media agent argument is not either string or MediaAgent instance</p>
+<p>if failed to create storage policy</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicies.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>storage_policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicies.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicies.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes a storage policy from the commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>storage_policy_name (str)  –  name of the storage policy to delete</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the storage policy name argument is not string</p>
+<p>if failed to delete storage policy</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicies.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>storage_policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicies.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicies.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a StoragePolicy object of the specified storage policy name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>storage_policy_name     (str)   –  name of the storage policy</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the StoragePolicy class for the given policy name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the storage policy name argument is not string</p>
+<p class="last">if no storage policy exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicies.has_policy">
+<code class="descname">has_policy</code><span class="sig-paren">(</span><em>policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicies.has_policy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicies.has_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a storage policy exists in the commcell with the input storage policy name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>policy_name (str)  –  name of the storage policy</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the storage policy exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the storage policy name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.storage.StoragePolicy">
+<em class="property">class </em><code class="descclassname">cvpysdk.storage.</code><code class="descname">StoragePolicy</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>storage_policy_name</em>, <em>storage_policy_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for performing storage policy operations for a specific storage policy</p>
+<dl class="attribute">
+<dt id="cvpysdk.storage.StoragePolicy.copies">
+<code class="descname">copies</code><a class="headerlink" href="#cvpysdk.storage.StoragePolicy.copies" title="Permalink to this definition">¶</a></dt>
+<dd><p>“Treatss the storage policy copies as a read-only attribute</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicy.create_secondary_copy">
+<code class="descname">create_secondary_copy</code><span class="sig-paren">(</span><em>copy_name</em>, <em>library_name</em>, <em>media_agent_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicy.create_secondary_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicy.create_secondary_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates Synchronous copy for this storage policy</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">copy_name           (str)   –  copy name to create</p>
+<p>library_name        (str)   –  library name to be assigned</p>
+<p class="last">media_agent_name    (str)   –  media_agent to be assigned</p>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of inputs in not string</p>
+<p>if copy with given name already exists</p>
+<p>if failed to create copy</p>
+<p>if response received is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicy.delete_secondary_copy">
+<code class="descname">delete_secondary_copy</code><span class="sig-paren">(</span><em>copy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicy.delete_secondary_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicy.delete_secondary_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the copy associated with this storage policy</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>copy_name   (str)   –  copy name to be deleted</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of input parameters is not string</p>
+<p>if storage policy copy doesn’t exist with given name</p>
+<p>if failed to delete storage policy copy</p>
+<p>if response received is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicy.has_copy">
+<code class="descname">has_copy</code><span class="sig-paren">(</span><em>copy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicy.has_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicy.has_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a storage policy copy exists for this storage
+policy with the input storage policy name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>copy_name (str)  –  name of the storage policy copy</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the storage policy copy exists or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the storage policy copy name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.storage.StoragePolicy.run_aux_copy">
+<code class="descname">run_aux_copy</code><span class="sig-paren">(</span><em>storage_policy_copy_name</em>, <em>media_agent</em>, <em>streams=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/storage.html#StoragePolicy.run_aux_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.storage.StoragePolicy.run_aux_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the aux copy job from the commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">storage_policy_copy_name (str)  –  name of the storage policy copy</p>
+<p>media_agent              (str)  –  name of the media agent</p>
+<p class="last">streams                  (int)  –  number of streams to use</p>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this aux copy job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the storage policy copy name argument is not string</p>
+<p>if aux copy job failed</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.storage.StoragePolicy.storage_policy_id">
+<code class="descname">storage_policy_id</code><a class="headerlink" href="#cvpysdk.storage.StoragePolicy.storage_policy_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the storage policy id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.storage.StoragePolicy.storage_policy_name">
+<code class="descname">storage_policy_name</code><a class="headerlink" href="#cvpysdk.storage.StoragePolicy.storage_policy_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the storage policy name as a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="services.html" title="previous chapter">Services</a></li>
+      <li>Next: <a href="subclient.html" title="next chapter">Subclient</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/storage.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/storage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

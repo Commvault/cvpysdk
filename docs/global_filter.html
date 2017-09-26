@@ -1,0 +1,233 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Global Filter &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Instance" href="instance.html" />
+    <link rel="prev" title="Exception" href="exception.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.globalfilter">
+<span id="global-filter"></span><h1>Global Filter<a class="headerlink" href="#module-cvpysdk.globalfilter" title="Permalink to this headline">¶</a></h1>
+<p>Main file for managing global filters for this commcell</p>
+<p>GlobalFilters and GlobalFilter are the only classes defined in this file</p>
+<p>GlobalFilters: Class for managing global filters for this commcell</p>
+<p>GlobalFilter: Class to represent one agent specific global filter</p>
+<dl class="docutils">
+<dt>GlobalFilters:</dt>
+<dd><p class="first">__init__()                      –  initializes global filter class object</p>
+<dl class="docutils">
+<dt>__repr__()                      –  returns the string for the instance of the GlobalFilter</dt>
+<dd>class</dd>
+</dl>
+<p class="last">get()                           –  returns the GlobalFilter object for specified filter name</p>
+</dd>
+<dt>GlobalFilter:</dt>
+<dd><p class="first">__init__()                      –  initializes global filter object</p>
+<p>__repr__()                      –  returns string representing this class</p>
+<dl class="docutils">
+<dt>_get_global_filters()           –  gets the global filters associated with commcell</dt>
+<dd>for specified filter</dd>
+</dl>
+<p>_initialize_global_filters()    –  initializes GlobalFilter class objects</p>
+<p>_update()                       –  updates the global filters list on commcell</p>
+<p>content()                       –  returns the list of filters associated with this agent</p>
+<p>add()                           –  adds the specified filter to global list</p>
+<p>overwrite()                     –  overwrites existing global list with specified</p>
+<p class="last">delete_all()                    –  removes all the filters from global filters list</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.globalfilter.GlobalFilter">
+<em class="property">class </em><code class="descclassname">cvpysdk.globalfilter.</code><code class="descname">GlobalFilter</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>filter_name</em>, <em>filter_key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/globalfilter.html#GlobalFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.globalfilter.GlobalFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class to represent any one particular agent global filter</p>
+<dl class="method">
+<dt id="cvpysdk.globalfilter.GlobalFilter.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>filters_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/globalfilter.html#GlobalFilter.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.globalfilter.GlobalFilter.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the filters list to the specified agent global filters list</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filters_list    (list)  –  list of filters to be added to this agent</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p>if failed to update global filter content</p>
+<p>if response received is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.globalfilter.GlobalFilter.content">
+<code class="descname">content</code><a class="headerlink" href="#cvpysdk.globalfilter.GlobalFilter.content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats filter content as read-only property</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.globalfilter.GlobalFilter.delete_all">
+<code class="descname">delete_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/globalfilter.html#GlobalFilter.delete_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.globalfilter.GlobalFilter.delete_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes all the filters from given agent filters list</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to update global filter content</p>
+<p>if response received is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.globalfilter.GlobalFilter.overwrite">
+<code class="descname">overwrite</code><span class="sig-paren">(</span><em>filters_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/globalfilter.html#GlobalFilter.overwrite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.globalfilter.GlobalFilter.overwrite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overwrites the existing filters list with given filter list</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filters_list    (list)  –  list of filters to be replaced with existing</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p>if failed to update global filter content</p>
+<p>if response received is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.globalfilter.GlobalFilters">
+<em class="property">class </em><code class="descclassname">cvpysdk.globalfilter.</code><code class="descname">GlobalFilters</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/globalfilter.html#GlobalFilters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.globalfilter.GlobalFilters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for managing global filters for this commcell</p>
+<dl class="method">
+<dt id="cvpysdk.globalfilter.GlobalFilters.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/globalfilter.html#GlobalFilters.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.globalfilter.GlobalFilters.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the global filter agent object for specified filter name</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>filter_name     (str)   – Global filter name for which the object is to be created</dt>
+<dd>Accepted values: WINDOWS/ UNIX/ NAS</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - GlobalFilter object for specified global filter</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p class="last">if specified global filter doesn’t exist</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="exception.html" title="previous chapter">Exception</a></li>
+      <li>Next: <a href="instance.html" title="next chapter">Instance</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/global_filter.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/global_filter.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

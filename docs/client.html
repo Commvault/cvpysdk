@@ -1,0 +1,631 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Client &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Client Group" href="clientgroup.html" />
+    <link rel="prev" title="Backupset" href="backupset.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.client">
+<span id="client"></span><h1>Client<a class="headerlink" href="#module-cvpysdk.client" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing client operations.</p>
+<p>Clients and Client are 2 classes defined in this file.</p>
+<p>Clients: Class for representing all the clients associated with the commcell</p>
+<p>Client: Class for a single client of the commcell</p>
+<dl class="docutils">
+<dt>Clients:</dt>
+<dd><p class="first">__init__(commcell_object) –  initialise object of Clients class associated with the commcell</p>
+<p>__str__()                 –  returns all the clients associated with the commcell</p>
+<p>__repr__()                –  returns the string to represent the instance of the Clients class</p>
+<p>_get_clients()            –  gets all the clients associated with the commcell</p>
+<p>_get_client_dict()        –  returns the client dict for client to be added to member server</p>
+<p>_member_servers()         –  returns member clients to be associated with the Virtual Client</p>
+<p>has_client(client_name)   –  checks if a client exists with the given name or not</p>
+<p>add_vmware_client()       –  adds a new VMWare Virtualization Client to the Commcell</p>
+<p>get(client_name)          –  returns the Client class object of the input client name</p>
+<p class="last">delete(client_name)       –  deletes the client specified by the client name from the commcell</p>
+</dd>
+<dt>Client:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><p class="first">client_name,
+client_id=None)     –  initialise object of Class with the specified client name</p>
+<blockquote class="last">
+<div>and id, and associated to the commcell</div></blockquote>
+</dd>
+</dl>
+<p>__repr__()                   –  return the client name and id, the instance is associated with</p>
+<p>_get_client_id()             –  method to get the client id, if not specified in __init__</p>
+<p>_get_client_properties()     –  get the properties of this client</p>
+<p>enable_backup()              –  enables the backup for the client</p>
+<p>enable_backup_at_time()      –  enables the backup for the client at the input time specified</p>
+<p>disable_backup()             –  disables the backup for the client</p>
+<p>enable_restore()             –  enables the restore for the client</p>
+<p>enable_restore_at_time()     –  enables the restore for the client at the input time specified</p>
+<p>disable_restore()            –  disables the restore for the client</p>
+<p>enable_data_aging()          –  enables the data aging for the client</p>
+<p>enable_data_aging_at_time()  –  enables the data aging for the client at input time specified</p>
+<p>disable_data_aging()         –  disables the data aging for the client</p>
+<p>execute_script()             –  executes given script on the client</p>
+<p>execute_command()            –  executes a command on the client</p>
+<p>enable_intelli_snap()        –  enables intelli snap for the client</p>
+<p>disable_intelli_snap()       –  disables intelli snap for the client</p>
+<p class="last">is_ready                     –  checks if CommServ is able to communicate to client</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.client.Client">
+<em class="property">class </em><code class="descclassname">cvpysdk.client.</code><code class="descname">Client</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>client_name</em>, <em>client_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for performing client operations for a specific client.</p>
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.client_hostname">
+<code class="descname">client_hostname</code><a class="headerlink" href="#cvpysdk.client.Client.client_hostname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the client host name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.client_id">
+<code class="descname">client_id</code><a class="headerlink" href="#cvpysdk.client.Client.client_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the client id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.client_name">
+<code class="descname">client_name</code><a class="headerlink" href="#cvpysdk.client.Client.client_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the client name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.disable_backup">
+<code class="descname">disable_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.disable_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.disable_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Backup for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to disable backup</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.disable_data_aging">
+<code class="descname">disable_data_aging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.disable_data_aging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.disable_data_aging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Data Aging for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to disable data aging</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.disable_intelli_snap">
+<code class="descname">disable_intelli_snap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.disable_intelli_snap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.disable_intelli_snap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Intelli Snap for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to disable intelli snap</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.disable_restore">
+<code class="descname">disable_restore</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.disable_restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.disable_restore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Restore for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to disable restore</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.enable_backup">
+<code class="descname">enable_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.enable_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.enable_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable Backup for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to enable backup</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.enable_backup_at_time">
+<code class="descname">enable_backup_at_time</code><span class="sig-paren">(</span><em>enable_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.enable_backup_at_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.enable_backup_at_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Backup if not already disabled, and enables at the time specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>enable_time (str)  –  UTC time to enable the backup at, in 24 Hour format</dt>
+<dd>format: YYYY-MM-DD HH:mm:ss</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if time value entered is less than the current time</p>
+<p>if time value entered is not of correct format</p>
+<p>if failed to enable backup</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.enable_data_aging">
+<code class="descname">enable_data_aging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.enable_data_aging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.enable_data_aging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable Data Aging for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to enable data aging</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.enable_data_aging_at_time">
+<code class="descname">enable_data_aging_at_time</code><span class="sig-paren">(</span><em>enable_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.enable_data_aging_at_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.enable_data_aging_at_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Data Aging if not already disabled, and enables at the time specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>enable_time (str)  –  UTC time to enable the data aging at, in 24 Hour format</dt>
+<dd>format: YYYY-MM-DD HH:mm:ss</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if time value entered is less than the current time</p>
+<p>if time value entered is not of correct format</p>
+<p>if failed to enable data aging</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.enable_intelli_snap">
+<code class="descname">enable_intelli_snap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.enable_intelli_snap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.enable_intelli_snap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables Intelli Snap for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to enable intelli snap</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.enable_restore">
+<code class="descname">enable_restore</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.enable_restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.enable_restore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable Restore for this Client.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to enable restore</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.enable_restore_at_time">
+<code class="descname">enable_restore_at_time</code><span class="sig-paren">(</span><em>enable_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.enable_restore_at_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.enable_restore_at_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Restore if not already disabled, and enables at the time specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>enable_time (str)  –  UTC time to enable the restore at, in 24 Hour format</dt>
+<dd>format: YYYY-MM-DD HH:mm:ss</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if time value entered is less than the current time</p>
+<p>if time value entered is not of correct format</p>
+<p>if failed to enable restore</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.execute_command">
+<code class="descname">execute_command</code><span class="sig-paren">(</span><em>command</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.execute_command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.execute_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes a command on this client.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>command     (str)   –  command in string to be executed on the client</dd>
+<dt>Returns:</dt>
+<dd><blockquote class="first">
+<div>(int, str)</div></blockquote>
+<dl class="last docutils">
+<dt>int     -   exit code returned from executing the command on the client</dt>
+<dd>default: -1     (exit code not returned in the response)</dd>
+<dt>str     -   output returned from executing the command on the client</dt>
+<dd>default: ”     (output not returned in the response)</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if command argument is not of type string</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.execute_script">
+<code class="descname">execute_script</code><span class="sig-paren">(</span><em>script_type</em>, <em>script</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.execute_script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.execute_script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the given script of the script type on this client.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>script_type     (str)   –  type of script to be executed on the client</dt>
+<dd>JAVA / Python / PowerShell / WindowsBatch / UnixShell</dd>
+</dl>
+<p class="last">script          (str)   –  path of the script to be executed on the client</p>
+</dd>
+<dt>Returns:</dt>
+<dd><blockquote class="first">
+<div>(int, str)</div></blockquote>
+<dl class="last docutils">
+<dt>int     -   exit code returned from executing the script on the client</dt>
+<dd>default: -1     (exit code not returned in the response)</dd>
+<dt>str     -   output returned from executing the script on the client</dt>
+<dd>default: ”     (output not returned in the response)</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if script type argument is not of type string</p>
+<p>if script argument is not of type string</p>
+<p>if script type is not valid</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.install_directory">
+<code class="descname">install_directory</code><a class="headerlink" href="#cvpysdk.client.Client.install_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the install directory as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_backup_enabled">
+<code class="descname">is_backup_enabled</code><a class="headerlink" href="#cvpysdk.client.Client.is_backup_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is backup enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_ci_enabled">
+<code class="descname">is_ci_enabled</code><a class="headerlink" href="#cvpysdk.client.Client.is_ci_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is online content index enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_data_aging_enabled">
+<code class="descname">is_data_aging_enabled</code><a class="headerlink" href="#cvpysdk.client.Client.is_data_aging_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is data aging enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_data_management_enabled">
+<code class="descname">is_data_management_enabled</code><a class="headerlink" href="#cvpysdk.client.Client.is_data_management_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is data management enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_data_recovery_enabled">
+<code class="descname">is_data_recovery_enabled</code><a class="headerlink" href="#cvpysdk.client.Client.is_data_recovery_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is data recovery enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_intelli_snap_enabled">
+<code class="descname">is_intelli_snap_enabled</code><a class="headerlink" href="#cvpysdk.client.Client.is_intelli_snap_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is intelli snap enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_ready">
+<code class="descname">is_ready</code><a class="headerlink" href="#cvpysdk.client.Client.is_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if CommServ is able to communicate to the client.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><p class="first">True    -   if the CS is able to connect to the client</p>
+<p class="last">False   -   if communication fails b/w the CS and the client</p>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.is_restore_enabled">
+<code class="descname">is_restore_enabled</code><a class="headerlink" href="#cvpysdk.client.Client.is_restore_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is restore enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.os_info">
+<code class="descname">os_info</code><a class="headerlink" href="#cvpysdk.client.Client.os_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the os information as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.service_pack">
+<code class="descname">service_pack</code><a class="headerlink" href="#cvpysdk.client.Client.service_pack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the service pack as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.version">
+<code class="descname">version</code><a class="headerlink" href="#cvpysdk.client.Client.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the version as a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.client.Clients">
+<em class="property">class </em><code class="descclassname">cvpysdk.client.</code><code class="descname">Clients</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for representing all the clients associated with the commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.client.Clients.add_vmware_client">
+<code class="descname">add_vmware_client</code><span class="sig-paren">(</span><em>client_name</em>, <em>vcenter_hostname</em>, <em>vcenter_username</em>, <em>vcenter_password</em>, <em>clients</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients.add_vmware_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.add_vmware_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new VMWare Virtualization Client to the Commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">client_name         (str)   –  name of the new VMWare Virtual Client
+vcenter_hostname    (str)   –  hostname of the vcenter to connect to
+vcenter_username    (str)   –  login username for the vcenter
+vcenter_password    (str)   –  plain-text password for the vcenter
+clients             (list)  –  list cotaining client names / client objects,</p>
+<blockquote class="last">
+<div>to associate with the Virtual Client</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>object  -   instance of the Client class for this new client</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if client with given name already exists</p>
+<p>if failed to add the client</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Clients.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>client_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the client from the commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>client_name (str)  –  name of the client to remove from the commcell</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the client name argument is not string</p>
+<p>if failed to delete client</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if no client exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Clients.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>client_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a client object of the specified client name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>client_name (str)  –  name of the client</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Client class for the given client name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the client name argument is not string</p>
+<p class="last">if no client exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Clients.has_client">
+<code class="descname">has_client</code><span class="sig-paren">(</span><em>client_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients.has_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.has_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a client exists in the commcell with the input client name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>client_name (str)  –  name of the client</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the client exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the client name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="backupset.html" title="previous chapter">Backupset</a></li>
+      <li>Next: <a href="clientgroup.html" title="next chapter">Client Group</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/client.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/client.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

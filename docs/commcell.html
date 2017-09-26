@@ -1,0 +1,254 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Commcell &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Constants" href="constants.html" />
+    <link rel="prev" title="Client Group" href="clientgroup.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.commcell">
+<span id="commcell"></span><h1>Commcell<a class="headerlink" href="#module-cvpysdk.commcell" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing operations on Commcell via REST API.</p>
+<p>Commcell is the main class for the CVPySDK python package.</p>
+<p>Commcell: Initializes a connection to the commcell and is a wrapper for the entire commcell ops.</p>
+<dl class="docutils">
+<dt>Commcell:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(webconsole_hostname,</dt>
+<dd>commcell_username,
+commcell_password)  –  initialise object of the Commcell class</dd>
+<dt>__repr__()                   –  return the name of the commcell, user is connected to,</dt>
+<dd>along with the user name of the connected user</dd>
+</dl>
+<p>__enter__()                  –  returns the current instance, using the “with” context manager</p>
+<p>__exit__()                   –  logs out the user associated with the current instance</p>
+<p>_attribs_()                  –  initializes the objects of the classes given in the input list</p>
+<dl class="docutils">
+<dt>_init_attrib_()              –  initializes the object of the class given as input and stores</dt>
+<dd>in the given input dictionary with class name as key</dd>
+<dt>_update_response_()          –  returns only the relevant response for the response received</dt>
+<dd>from the server</dd>
+<dt>_remove_attribs_()           –  removes all the attributs associated with the commcell</dt>
+<dd>object upon logout</dd>
+</dl>
+<p>_get_commserv_name()         –  returns the commserv name</p>
+<p>logout()                     –  logs out the user associated with the current instance</p>
+<dl class="last docutils">
+<dt>request()                    –  runs an input HTTP request on the API specified,</dt>
+<dd>and returns its response</dd>
+</dl>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.commcell.Commcell">
+<em class="property">class </em><code class="descclassname">cvpysdk.commcell.</code><code class="descname">Commcell</code><span class="sig-paren">(</span><em>webconsole_hostname</em>, <em>commcell_username</em>, <em>commcell_password=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for establishing a session to the Commcell via Commvault REST API.</p>
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.alerts">
+<code class="descname">alerts</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.alerts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Alerts class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.client_groups">
+<code class="descname">client_groups</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.client_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the ClientGroups class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.clients">
+<code class="descname">clients</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.clients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Clients class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.commserv_name">
+<code class="descname">commserv_name</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.commserv_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the CommServ name attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.datacube">
+<code class="descname">datacube</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.datacube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Datacube class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.device_id">
+<code class="descname">device_id</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.device_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the Device ID attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.disk_libraries">
+<code class="descname">disk_libraries</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.disk_libraries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the DiskLibraries class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.global_filters">
+<code class="descname">global_filters</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.global_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the GlobalFilters class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.logout">
+<code class="descname">logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs out the user associated with the current instance.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.media_agents">
+<code class="descname">media_agents</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.media_agents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the MediaAgents class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.request">
+<code class="descname">request</code><span class="sig-paren">(</span><em>request_type</em>, <em>request_url</em>, <em>request_body=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the request of the type specified on the request URL, with the body passed
+in the arguments.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>request_type (str)   –  type of HTTP request to run on the Commcell</dt>
+<dd>e.g.; POST, GET, PUT, DELETE</dd>
+<dt>request_url  (str)   –  API name to run the request on with params, if any</dt>
+<dd>e.g.; Backupset, Agent, Client, Client/{clientId}, …, etc.</dd>
+<dt>request_body (dict)  –  JSON request body to pass along with the request</dt>
+<dd>default: None</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - the response received from the server</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.schedule_policies">
+<code class="descname">schedule_policies</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.schedule_policies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the SchedulePolicies class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.storage_policies">
+<code class="descname">storage_policies</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.storage_policies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the StoragePolicies class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.user_groups">
+<code class="descname">user_groups</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.user_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the UserGroups class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.workflows">
+<code class="descname">workflows</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.workflows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Workflow class.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="cvpysdk.commcell.USER_LOGGED_OUT_MESSAGE">
+<code class="descclassname">cvpysdk.commcell.</code><code class="descname">USER_LOGGED_OUT_MESSAGE</code><em class="property"> = ‘User Logged Out. Please initialize the Commcell object again.’</em><a class="headerlink" href="#cvpysdk.commcell.USER_LOGGED_OUT_MESSAGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>str:     Message to be returned to the user, when trying the get the value of an attribute
+of the Commcell class, after the user was logged out.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="clientgroup.html" title="previous chapter">Client Group</a></li>
+      <li>Next: <a href="constants.html" title="next chapter">Constants</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/commcell.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/commcell.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,634 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cvpysdk.agent &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.agent</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing agent specific operations.</span>
+
+<span class="sd">Agents and Agent are 2 classes defined in this file.</span>
+
+<span class="sd">Agents: Class for representing all the agents associated with a specific client</span>
+
+<span class="sd">Agent: Class for a single agent selected for a client, and to perform operations on that agent</span>
+
+
+<span class="sd">Agents:</span>
+<span class="sd">    __init__(client_object)     --  initialise object of Agents class associated with</span>
+<span class="sd">                                        the specified client</span>
+
+<span class="sd">    __str__()                   --  returns all the agents associated with the client</span>
+
+<span class="sd">    __repr__()                  --  returns the string for the instance of the Agents class</span>
+
+<span class="sd">    _get_agents()               --  gets all the agents associated with the client specified</span>
+
+<span class="sd">    has_agent(agent_name)       --  checks if an agent exists with the given name</span>
+
+<span class="sd">    get(agent_name)             --  returns the Agent class object of the input agent name</span>
+
+
+<span class="sd">Agent:</span>
+<span class="sd">    __init__(client_object,</span>
+<span class="sd">             agent_name,</span>
+<span class="sd">             agent_id=None)     --   initialise object of Agent with the specified agent name</span>
+<span class="sd">                                         and id, and associated to the specified client</span>
+
+<span class="sd">    __repr__()                  --   return the agent name, the instance is associated with</span>
+
+<span class="sd">    _get_agent_id()             --   method to get the agent id</span>
+
+<span class="sd">    enable_backup()             --   enables the backup for the agent</span>
+
+<span class="sd">    enable_backup_at_time()     --   enables the backup for the agent at the input time specified</span>
+
+<span class="sd">    disble_backup()             --   disbles the backup for the agent</span>
+
+<span class="sd">    enable_restore()            --   enables the restore for the agent</span>
+
+<span class="sd">    enable_restore_at_time()    --   enables the restore for the agent at the input time specified</span>
+
+<span class="sd">    disble_restore()            --   disbles the restore for the agent</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupsets</span>
+<span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instances</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="Agents"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agents">[docs]</a><span class="k">class</span> <span class="nc">Agents</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for getting all the agents associated with a client.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the Agents class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_object (object)  --  instance of the Client class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Agents class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span> <span class="o">=</span> <span class="n">client_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">_commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_AGENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_AGENTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_agents</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all agents of the client.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the agents of a client</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;Client&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">agent</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agents</span><span class="p">):</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">agent</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+            <span class="p">)</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Agents class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Agents class instance for Client: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets all the agents associated to the client specified with this client object.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - consists of all agents in the client</span>
+<span class="sd">                    {</span>
+<span class="sd">                         &quot;agent1_name&quot;: agent1_id,</span>
+<span class="sd">                         &quot;agent2_name&quot;: agent2_id</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AGENTS</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;agentProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">agent_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;agentProperties&#39;</span><span class="p">]:</span>
+                    <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;idaEntity&#39;</span><span class="p">][</span><span class="s1">&#39;appName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;idaEntity&#39;</span><span class="p">][</span><span class="s1">&#39;applicationId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">agent_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+
+                <span class="k">return</span> <span class="n">agent_dict</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Agents.has_agent"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agents.has_agent">[docs]</a>    <span class="k">def</span> <span class="nf">has_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if an agent is installed for the client with the input agent name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                agent_name (str)  --  name of the agent</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean output whether the agent is installed for the client or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the agent name argument is not string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">agent_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agents</span> <span class="ow">and</span> <span class="n">agent_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agents</span></div>
+
+<div class="viewcode-block" id="Agents.get"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agents.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a agent object of the specified client.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                agent_name (str)  --  name of the agent</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Agent class for the given agent name</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the agent name argument is not string</span>
+
+<span class="sd">                    if no agent exists with the given name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">agent_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">agent_name</span> <span class="o">=</span> <span class="n">agent_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_agent</span><span class="p">(</span><span class="n">agent_name</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">Agent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agents</span><span class="p">[</span><span class="n">agent_name</span><span class="p">])</span>
+
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No agent exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">agent_name</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="Agent"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agent">[docs]</a><span class="k">class</span> <span class="nc">Agent</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing agent operations of an agent for a specific client.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_object</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">,</span> <span class="n">agent_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the agent object.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_object (object)  --  instance of the Client class to which the agent belongs</span>
+
+<span class="sd">                agent_name    (str)     --  name of the agent (File System, Virtual Server, etc.)</span>
+
+<span class="sd">                agent_id      (str)     --  id of the associated agent</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Agent class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span> <span class="o">=</span> <span class="n">client_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">_commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_name</span> <span class="o">=</span> <span class="n">agent_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_AGENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;AGENT&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">agent_id</span><span class="p">:</span>
+            <span class="c1"># Use the agent id mentioned in the arguments</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">agent_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get the agent id if agent id is not provided</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_agent_id</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">instances</span> <span class="o">=</span> <span class="n">Instances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span> <span class="o">=</span> <span class="n">Backupsets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;&quot;</span><span class="si">{0}</span><span class="s1">&quot; Agent instance for Client: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">string</span><span class="o">.</span><span class="n">capwords</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_agent_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the agent id associated with this agent.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - id associated with this agent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">agents</span> <span class="o">=</span> <span class="n">Agents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span><span class="o">.</span><span class="n">agent_id</span>
+
+    <span class="k">def</span> <span class="nf">_request_json_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">enable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                option (str)  --  string option for which to run the API for</span>
+<span class="sd">                    e.g.; Backup / Restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - JSON request to pass to the API</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">options_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Backup&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;Restore&quot;</span><span class="p">:</span> <span class="mi">2</span>
+        <span class="p">}</span>
+
+        <span class="n">request_json1</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span>
+                <span class="p">}]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;agentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;idaActivityControl&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;activityControlOptions&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                        <span class="s2">&quot;activityType&quot;</span><span class="p">:</span> <span class="n">options_dict</span><span class="p">[</span><span class="n">option</span><span class="p">],</span>
+                        <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">enable</span>
+                    <span class="p">}]</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">request_json2</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span>
+                <span class="p">}]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;agentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;idaActivityControl&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;activityControlOptions&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                        <span class="s2">&quot;activityType&quot;</span><span class="p">:</span> <span class="n">options_dict</span><span class="p">[</span><span class="n">option</span><span class="p">],</span>
+                        <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;dateTime&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;timeValue&quot;</span><span class="p">:</span> <span class="n">enable_time</span>
+                        <span class="p">}</span>
+                    <span class="p">}]</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">enable_time</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">request_json2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">request_json1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">agent_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the agent id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">agent_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the agent name as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_name</span>
+
+<div class="viewcode-block" id="Agent.enable_backup"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agent.enable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enable Backup for this Agent.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to enable backup</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AGENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to enable Backup</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agent.enable_backup_at_time"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agent.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables Backup if not already disabled, and enables at the time specified.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format</span>
+<span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if time value entered is less than the current time</span>
+
+<span class="sd">                    if time value entered is not of correct format</span>
+
+<span class="sd">                    if failed to enable backup</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">time_tuple</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">enable_time</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">time_tuple</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AGENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to enable Backup</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agent.disable_backup"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agent.disable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">disable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables Backup for this Agent.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to disable backup</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AGENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to disable Backup</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agent.enable_restore"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agent.enable_restore">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enable Restore for this Agent.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to enable restore</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AGENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to enable Restore</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agent.enable_restore_at_time"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agent.enable_restore_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables Restore if not already disabled, and enables at the time specified.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format</span>
+<span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if time value entered is less than the current time</span>
+
+<span class="sd">                    if time value entered is not of correct format</span>
+
+<span class="sd">                    if failed to enable restore</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">time_tuple</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">enable_time</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">time_tuple</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AGENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to enable Restore</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agent.disable_restore"><a class="viewcode-back" href="../../agent.html#cvpysdk.agent.Agent.disable_restore">[docs]</a>    <span class="k">def</span> <span class="nf">disable_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables Restore for this Agent.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to disable restore</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AGENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to disable Backup</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,502 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cvpysdk.instance &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.instance</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing instance operations.</span>
+
+<span class="sd">Instances and Instance are 2 classes defined in this file.</span>
+
+<span class="sd">Instances: Class for representing all the instances associated with a specific agent</span>
+
+<span class="sd">Instance:  Class for a single instance selected for an agent,</span>
+<span class="sd">                and to perform operations on that instance</span>
+
+
+<span class="sd">Instances:</span>
+<span class="sd">    __init__(agent_object)          --  initialise object of Instances class associated with</span>
+<span class="sd">                                            the specified agent</span>
+
+<span class="sd">    __str__()                       --  returns all the instances associated with the agent</span>
+
+<span class="sd">    __repr__()                      --  returns the string for the object of the Instances class</span>
+
+<span class="sd">    _get_instances()                --  gets all the instances associated with the agent specified</span>
+
+<span class="sd">    has_instance(instance_name)     --  checks if a instance exists with the given name or not</span>
+
+<span class="sd">    get(instance_name)              --  returns the Instance class object</span>
+<span class="sd">                                            of the input backup set name</span>
+
+
+<span class="sd">Instance:</span>
+<span class="sd">    __init__(agent_object,</span>
+<span class="sd">             instance_name,</span>
+<span class="sd">             instance_id=None)      --  initialise object of Instance with the specified instance</span>
+<span class="sd">                                             name and id, and associated to the specified agent</span>
+
+<span class="sd">    __repr__()                      --  return the instance name, the object is associated with</span>
+
+<span class="sd">    _get_instance_id()              --  method to get the instance id, if not specified in __init__</span>
+
+<span class="sd">    _get_instance_properties()      --  method to get the properties of the instance</span>
+
+<span class="sd">    browse()                        --  browse the content of the instance</span>
+
+<span class="sd">    find()                          --  find content in the instance</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclients</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="Instances"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instances">[docs]</a><span class="k">class</span> <span class="nc">Instances</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for getting all the instances associated with a client.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the Instances class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                agent_object (object)  --  instance of the Agent class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Instances class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="n">agent_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_INSTANCES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_INSTANCES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_instances</span><span class="p">()</span>
+
+        <span class="kn">from</span> <span class="nn">.instances.vsinstance</span> <span class="k">import</span> <span class="n">VirtualServerInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.cainstance</span> <span class="k">import</span> <span class="n">CloudAppsInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.sqlinstance</span> <span class="k">import</span> <span class="n">SQLServerInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.hanainstance</span> <span class="k">import</span> <span class="n">SAPHANAInstance</span>
+
+        <span class="c1"># add the agent name to this dict, and its class as the value</span>
+        <span class="c1"># the appropriate class object will be initialized based on the agent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instances_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="n">VirtualServerInstance</span><span class="p">,</span>
+            <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="n">CloudAppsInstance</span><span class="p">,</span>
+            <span class="s1">&#39;sql server&#39;</span><span class="p">:</span> <span class="n">SQLServerInstance</span><span class="p">,</span>
+            <span class="s1">&#39;sap hana&#39;</span><span class="p">:</span> <span class="n">SAPHANAInstance</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all instances of the agent of a client.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the instances of an agent of a client</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;Client&#39;</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">instance</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">):</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">instance</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+            <span class="p">)</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Instances class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Instances class instance for Agent: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_instances</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets all the instances associated to the agent specified by agent_object.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - consists of all instances of the agent</span>
+<span class="sd">                    {</span>
+<span class="sd">                         &quot;instance1_name&quot;: instance1_id,</span>
+<span class="sd">                         &quot;instance2_name&quot;: instance2_id</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to get instances</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_INSTANCES</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;instanceProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+                    <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;instanceProperties&#39;</span><span class="p">]:</span>
+
+                        <span class="n">agent</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;appName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">:</span>
+                            <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                            <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;instanceId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                            <span class="n">return_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+
+                    <span class="k">return</span> <span class="n">return_dict</span>
+                <span class="k">elif</span> <span class="s1">&#39;errors&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">error</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">error_string</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Instances.has_instance"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instances.has_instance">[docs]</a>    <span class="k">def</span> <span class="nf">has_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a instance exists for the agent with the input instance name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                instance_name (str)  --  name of the instance</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean output whether the instance exists for the agent or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the instance name argument is not string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instance_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span> <span class="ow">and</span> <span class="n">instance_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span></div>
+
+<div class="viewcode-block" id="Instances.get"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instances.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a instance object of the specified instance name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                instance_name (str)  --  name of the instance</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Instance class for the given instance name</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the instance name argument is not string</span>
+
+<span class="sd">                    if no instance exists with the given name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instance_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">instance_name</span> <span class="o">=</span> <span class="n">instance_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="n">agent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_instance</span><span class="p">(</span><span class="n">instance_name</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">agent_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances_dict</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">](</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">instance_name</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">Instance</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">instance_name</span><span class="p">]</span>
+                    <span class="p">)</span>
+
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No instance exists with name: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance_name</span><span class="p">)</span>
+            <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Instance"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instance">[docs]</a><span class="k">class</span> <span class="nc">Instance</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing instance operations for a specific instance.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the instance object.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                agent_object    (object)  --  instance of the Agent class</span>
+
+<span class="sd">                instance_name   (str)     --  name of the instance</span>
+
+<span class="sd">                instance_id     (str)     --  id of the instance</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Instance class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupsets</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="n">agent_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_name</span> <span class="o">=</span> <span class="n">instance_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">instance_id</span><span class="p">:</span>
+            <span class="c1"># Use the instance id provided in the arguments</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get the id associated with this instance</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_instance_id</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_INSTANCE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INSTANCE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_instance_properties</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span> <span class="o">=</span> <span class="n">Backupsets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span> <span class="o">=</span> <span class="n">Subclients</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Instance class instance for Instance: &quot;</span><span class="si">{0}</span><span class="s1">&quot; of Agent: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_instance_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the instance id associated with this backupset.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - id associated with this instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="n">Instances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span><span class="o">.</span><span class="n">instance_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_instance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the properties of this instance.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_INSTANCE</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">&quot;instanceProperties&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;instanceProperties&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">instance_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;instance&quot;</span><span class="p">][</span><span class="s2">&quot;instanceName&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_name</span> <span class="o">=</span> <span class="n">instance_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">instance_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the instance id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">instance_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the instance name as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_name</span>
+
+<div class="viewcode-block" id="Instance.browse"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instance.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Browses the content of a Backupset.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                Dictionary of browse options:</span>
+<span class="sd">                    Example:</span>
+<span class="sd">                        browse({</span>
+<span class="sd">                            &#39;path&#39;: &#39;c:\\hello&#39;,</span>
+<span class="sd">                            &#39;show_deleted&#39;: True,</span>
+<span class="sd">                            &#39;from_time&#39;: &#39;2014-04-20 12:00:00&#39;,</span>
+<span class="sd">                            &#39;to_time&#39;: &#39;2016-04-21 12:00:00&#39;</span>
+<span class="sd">                        })</span>
+
+<span class="sd">                    (OR)</span>
+
+<span class="sd">                Keyword argument of browse options:</span>
+<span class="sd">                    Example:</span>
+<span class="sd">                        browse(</span>
+<span class="sd">                            path=&#39;c:\\hello&#39;,</span>
+<span class="sd">                            show_deleted=True,</span>
+<span class="sd">                            from_time=&#39;2014-04-20 12:00:00&#39;,</span>
+<span class="sd">                            to_time=&#39;2016-04-21 12:00:00&#39;</span>
+<span class="sd">                        )</span>
+
+<span class="sd">                Refer self._default_browse_options for all the supported options</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list - List of only the file, folder paths from the browse response</span>
+
+<span class="sd">            dict - Dictionary of all the paths with additional metadata retrieved from browse</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if there are more than one backupsets in the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_backupsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">_backupsets</span>
+
+        <span class="c1"># do browse operation if there is only one backupset in the instance</span>
+        <span class="c1"># raise `SDKException` if there is more than one backupset in the instance</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_backupsets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">backupset_name</span> <span class="o">=</span> <span class="n">all_backupsets</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">temp_backupset_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">temp_backupset_obj</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Instance.find"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instance.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Searches a file/folder in the backupset backup content,</span>
+<span class="sd">            and returns all the files matching the filters given.</span>
+
+<span class="sd">         Args:</span>
+<span class="sd">            Dictionary of find options:</span>
+<span class="sd">                Example:</span>
+<span class="sd">                    find({</span>
+<span class="sd">                        &#39;file_name&#39;: &#39;*.txt&#39;,</span>
+<span class="sd">                        &#39;show_deleted&#39;: True,</span>
+<span class="sd">                        &#39;from_time&#39;: &#39;2014-04-20 12:00:00&#39;,</span>
+<span class="sd">                        &#39;to_time&#39;: &#39;2016-04-21 12:00:00&#39;</span>
+<span class="sd">                    })</span>
+
+<span class="sd">                (OR)</span>
+
+<span class="sd">            Keyword argument of find options:</span>
+<span class="sd">                Example:</span>
+<span class="sd">                    find(</span>
+<span class="sd">                        file_name=&#39;*.txt&#39;,</span>
+<span class="sd">                        show_deleted=True,</span>
+<span class="sd">                        from_time=2014-04-20 12:00:00,</span>
+<span class="sd">                        to_time=&#39;2016-04-21 12:00:00&#39;</span>
+<span class="sd">                    )</span>
+
+<span class="sd">            Refer self._default_browse_options for all the supported options</span>
+
+<span class="sd">            Additional options supported:</span>
+<span class="sd">                file_name       (str)   --   Find files with name</span>
+
+<span class="sd">                file_size_gt    (int)   --   Find files with size greater than size</span>
+
+<span class="sd">                file_size_lt    (int)   --   Find files with size lesser than size</span>
+
+<span class="sd">                file_size_et    (int)   --   Find files with size equal to size</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list - List of only the file, folder paths from the browse response</span>
+
+<span class="sd">            dict - Dictionary of all the paths with additional metadata retrieved from browse</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if there are more than one backupsets in the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_backupsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">_get_backupsets</span><span class="p">()</span>
+
+        <span class="c1"># do find operation if there is only one backupset in the instance</span>
+        <span class="c1"># raise `SDKException` if there is more than one backupset in the instance</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_backupsets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">backupset_name</span> <span class="o">=</span> <span class="n">all_backupsets</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">temp_backupset_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">temp_backupset_obj</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

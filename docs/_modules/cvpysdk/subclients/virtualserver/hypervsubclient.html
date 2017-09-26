@@ -1,0 +1,479 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cvpysdk.subclients.virtualserver.hypervsubclient &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.subclients.virtualserver.hypervsubclient</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright ?2016 Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a Virtual Server Hyper-V Subclient.</span>
+
+<span class="sd">HyperVVirtualServerSubclient is the only class defined in this file.</span>
+
+<span class="sd">HyperVVirtualServerSubclient: Derived class from VirtualServerSubClient  Base class, representing a</span>
+<span class="sd">                           Hyper-V Subclient, and to perform operations on that Subclient</span>
+
+<span class="sd">HyperVInstance:</span>
+
+<span class="sd">	__init__(,backupset_object, subclient_name, subclient_id)    --  initialize object of hyper-v</span>
+<span class="sd">                                                                             subclient object</span>
+<span class="sd">                                                                                 associated with</span>
+<span class="sd">                                                                        the VirtualServer subclient</span>
+
+<span class="sd">    disk_restore()                                               -- Perform Disk Restore on</span>
+<span class="sd">                                                                        Hyper-V Subclient</span>
+
+<span class="sd">    full_vm_restore_out_of_place()                  --  restores the VM  specified in</span>
+<span class="sd">                                                     to the specified client, at the</span>
+<span class="sd">                                                        specified destination location</span>
+
+<span class="sd">    full_vm_restore_in_place()              --  restores the VM specified by the</span>
+<span class="sd">                                                    user to the same location</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">..vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">...client</span> <span class="k">import</span> <span class="n">Client</span>
+
+
+<div class="viewcode-block" id="HyperVVirtualServerSubclient"><a class="viewcode-back" href="../../../../cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient">[docs]</a><span class="k">class</span> <span class="nc">HyperVVirtualServerSubclient</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from VirtualServerSubclient  Base class, representing a</span>
+<span class="sd">    Hyper-V  virtual server subclient,and to perform operations on that subclient.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given Virtual Server instance.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                class_object (backupset_object, subclient_name, subclient_id)  --  instance of the</span>
+<span class="sd">                                            backupset class, subclient name, subclient id</span>
+
+<span class="sd">                &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HyperVVirtualServerSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HyperVVirtualServerSubclient.disk_restore"><a class="viewcode-back" href="../../../../cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.disk_restore">[docs]</a>    <span class="k">def</span> <span class="nf">disk_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">vm_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">destination_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">copy_preceedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                     <span class="n">disk_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">convert_to</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the disk specified in the input paths list to the same location</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                vm_name             (str)   -- VM from which disk is to be restored</span>
+
+<span class="sd">                destination_client  (str)   -- Destination client to whihc disk is to be restored</span>
+
+<span class="sd">                client              (str)   --  name of the client to restore disk</span>
+
+<span class="sd">                destinationpath     (str)   --path where the disk needs to be restored</span>
+
+<span class="sd">                copy_preceedence    (int)   -- SP copy precedence from which browse</span>
+<span class="sd">                                                    has to be performed</span>
+
+<span class="sd">                disk_Name           (str)   -- name of the disk which has to be restored</span>
+
+<span class="sd">                overwrite           (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                convert_to          (str)   --  to convert the disk to the specified format</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if destinationpath is not str</span>
+
+<span class="sd">                    if client is not str or object</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_vm_names</span><span class="p">,</span> <span class="n">_vm_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_ids_and_names_dict_from_browse</span><span class="p">()</span>
+        <span class="n">_disk_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check if inputs are correct</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span><span class="ow">and</span>
+                <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_name</span><span class="p">,</span> <span class="nb">list</span><span class="p">)))):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">overwrite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_commonOptions_json</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+
+        <span class="n">client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_default_client</span><span class="p">(</span><span class="n">destination_client</span><span class="p">)</span>
+        <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_destination_json</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+
+        <span class="c1"># if conversion option is given</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">convert_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_disk_extn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_disk_extension</span><span class="p">(</span><span class="n">disk_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_disk_extn</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s2">&quot;destination_vendor&quot;</span><span class="p">],</span> \
+                    <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s2">&quot;destination_disktype&quot;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_conversion_disk_type</span><span class="p">(</span><span class="n">_disk_extn</span><span class="p">,</span> <span class="n">convert_to</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s2">&quot;destination_vendor&quot;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_vendorid</span>
+            <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s2">&quot;destination_disktype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_volumeRstOption</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+
+        <span class="c1"># if disk list is given</span>
+        <span class="n">disk_list</span><span class="p">,</span> <span class="n">disk_info_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">disk_level_browse</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">_vm_ids</span><span class="p">[</span><span class="n">vm_name</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">disk_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">disk_name</span> <span class="ow">in</span> <span class="n">disk_list</span><span class="p">:</span>
+                <span class="n">disk_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">disk_list</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;111&#39;</span><span class="p">)</span>
+
+        <span class="c1"># set Source item List</span>
+        <span class="n">_src_item_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">each_disk</span> <span class="ow">in</span> <span class="n">disk_list</span><span class="p">:</span>
+            <span class="n">_src_item_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">_vm_ids</span><span class="p">[</span><span class="n">vm_name</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">each_disk</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_src_item_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_fileoption_json</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+
+        <span class="c1"># set the rest setter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_impersonation_json</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_browse_option_json</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_virtualServerRstOption</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_diskLevelVMRestoreOption</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_disk_restore_json</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HyperVVirtualServerSubclient.full_vm_restore_out_of_place"><a class="viewcode-back" href="../../../../cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.full_vm_restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">full_vm_restore_out_of_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                             <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">destination_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">power_on</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                             <span class="n">add_to_failover</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">restore_new_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the FULL Virtual machine specified  in the input  list to the client,</span>
+<span class="sd">            at the specified destination location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client                (str/object) --  either the name of the client or</span>
+<span class="sd">                                                           the instance of the Client</span>
+
+<span class="sd">                destination_path      (str)        --  full path of the restore location on client</span>
+
+<span class="sd">                vm_to_restore         (list)       --  provide the VM name to restore</span>
+
+<span class="sd">                overwrite</span>
+<span class="sd">                        default:False   (bool)      --  overwrite the existing VM</span>
+
+<span class="sd">                poweron</span>
+<span class="sd">                        default:False   (bool)      --  power on the  restored VM</span>
+
+<span class="sd">                add_to_failover</span>
+<span class="sd">                        default:False   (bool)      --  Add the Restored VM to Failover Cluster</span>
+
+
+<span class="sd">                restore_option      (dict)     --  complete dictionary with all advanced optio</span>
+<span class="sd">                    default: {}</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if destination_path is not a string</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_vm_names</span><span class="p">,</span> <span class="n">_vm_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_ids_and_names_dict_from_browse</span><span class="p">()</span>
+
+        <span class="c1"># restore options</span>
+        <span class="k">if</span> <span class="n">restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check input parameters are correct</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">restore_option</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">power_on</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">add_to_failover</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_default_client</span><span class="p">(</span><span class="n">destination_client</span><span class="p">)</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">client_name</span>
+
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;vm_to_restore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span><span class="n">restore_option</span><span class="p">)</span>
+
+        <span class="c1"># set attr for all the option in restore xml from user inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_advanced_attribute</span><span class="p">(</span><span class="n">restore_option</span><span class="p">,</span><span class="n">unconditional_overwrite</span><span class="o">=</span> <span class="n">overwrite</span><span class="p">,</span>\
+                                        <span class="n">power_on</span> <span class="o">=</span> <span class="n">power_on</span><span class="p">,</span><span class="n">add_to_failover</span> <span class="o">=</span> <span class="n">add_to_failover</span><span class="p">,</span> \
+                                        <span class="n">destination_path</span> <span class="o">=</span> <span class="n">destination_path</span><span class="p">)</span>
+
+        <span class="c1"># set common parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_commonOptions_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_impersonation_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_volumeRstOption</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_commonOptions_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_browse_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_destination_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_diskLevelVMRestoreOption</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_virtualServerRstOption</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+
+        <span class="c1"># set advanced restore options</span>
+        <span class="n">vm_disks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;source_item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_each_vm_to_restore</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;vm_to_restore&#39;</span><span class="p">]:</span>
+
+            <span class="c1"># populate restore source item</span>
+            <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;source_item&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">_vm_ids</span><span class="p">[</span><span class="n">_each_vm_to_restore</span><span class="p">])</span>
+
+            <span class="c1"># populate restore disk</span>
+            <span class="n">disk_list</span><span class="p">,</span> <span class="n">disk_info_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">disk_level_browse</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">_vm_ids</span><span class="p">[</span><span class="n">_each_vm_to_restore</span><span class="p">])</span>
+            
+            <span class="k">for</span> <span class="n">each_disk</span> <span class="ow">in</span> <span class="n">disk_list</span><span class="p">:</span>
+                <span class="n">disk_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">each_disk</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="s2">&quot;DestinationPath&quot;</span><span class="p">:</span> <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;destination_path&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+
+                <span class="n">vm_disks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">disk_dict</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">vm_disks</span> <span class="o">==</span> <span class="p">[]:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="mi">104</span><span class="p">)</span>
+
+            <span class="c1"># populate VM Specific values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_attribute</span><span class="p">(</span><span class="n">restore_option</span><span class="p">,</span><span class="n">disks</span> <span class="o">=</span> <span class="n">vm_disks</span><span class="p">,</span><span class="n">guid</span> <span class="o">=</span> <span class="n">_vm_ids</span><span class="p">[</span><span class="n">_each_vm_to_restore</span><span class="p">],</span> \
+                                   <span class="n">restore_new_name</span> <span class="o">=</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restore_new_name&quot;</span><span class="p">,</span>\
+                                  <span class="p">(</span><span class="s2">&quot;Delete&quot;</span> <span class="o">+</span> <span class="n">_each_vm_to_restore</span><span class="p">)),</span><span class="n">esxHost</span> <span class="o">=</span> <span class="n">vs_metadata</span><span class="p">[</span><span class="s1">&#39;esxHost&#39;</span><span class="p">],</span> \
+                                   <span class="n">name</span> <span class="o">=</span> <span class="n">_each_vm_to_restore</span><span class="p">)</span>
+            
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_advancedRestoreOptions</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_restore_option</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_option_restore_json</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_fileoption_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HyperVVirtualServerSubclient.full_vm_restore_in_place"><a class="viewcode-back" href="../../../../cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.full_vm_restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">full_vm_restore_in_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                 <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">power_on</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                 <span class="n">add_to_failover</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the FULL Virtual machine specified  in the input  list to the client,</span>
+<span class="sd">            to the location same as source .</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                vm_to_restore         (list)       --  provide the VM name to restore</span>
+
+<span class="sd">                overwrite</span>
+<span class="sd">                        default:False   (bool)      --  overwrite the existing VM</span>
+
+<span class="sd">                poweron</span>
+<span class="sd">                        default:False   (bool)      --  power on the  restored VM</span>
+
+<span class="sd">                add_to_failover</span>
+<span class="sd">                        default:False   (bool)      --  Add the Restored VM to Failover Cluster</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_vm_names</span><span class="p">,</span> <span class="n">_vm_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_ids_and_names_dict_from_browse</span><span class="p">()</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check input parameters are correct</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">restore_option</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">power_on</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">add_to_failover</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;vm_to_restore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">)</span>
+        <span class="n">browse_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vm_files_browse</span><span class="p">()</span>
+
+        <span class="c1"># set attr for all the option in restore xml from user inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_advanced_attributes</span><span class="p">(</span><span class="n">restore_option</span><span class="p">,</span><span class="n">unconditional_overwrite</span><span class="o">=</span> <span class="n">overwrite</span><span class="p">,</span>\
+                                        <span class="n">power_on</span> <span class="o">=</span> <span class="n">power_on</span><span class="p">,</span><span class="n">add_to_failover</span> <span class="o">=</span> <span class="n">add_to_failover</span><span class="p">)</span>
+        
+       
+        <span class="c1"># set common parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_commonOptions_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_impersonation_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_volumeRstOption</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_commonOptions_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_browse_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_destination_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_diskLevelVMRestoreOption</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_virtualServerRstOption</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+
+        <span class="c1"># set advanced restore options</span>
+        <span class="n">vm_disks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;source_item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_each_vm_to_restore</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;vm_to_restore&#39;</span><span class="p">]:</span>
+
+            <span class="c1"># vs metadata from browse result</span>
+            <span class="n">_metadata</span> <span class="o">=</span>  <span class="n">browse_result</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">_each_vm_to_restore</span><span class="p">)]</span>
+            <span class="n">vs_metadata</span> <span class="o">=</span> <span class="n">_metadata</span><span class="p">[</span><span class="s2">&quot;advanced_data&quot;</span><span class="p">][</span><span class="s2">&quot;browseMetaData&quot;</span><span class="p">][</span><span class="s2">&quot;virtualServerMetaData&quot;</span><span class="p">]</span>
+
+            <span class="c1"># populate restore source item</span>
+            <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;source_item&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">_vm_ids</span><span class="p">[</span><span class="n">_each_vm_to_restore</span><span class="p">])</span>
+
+            <span class="c1"># populate restore disk</span>
+            <span class="n">disk_list</span><span class="p">,</span> <span class="n">disk_info_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">disk_level_browse</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">_vm_ids</span><span class="p">[</span><span class="n">_each_vm_to_restore</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">disk</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">disk_info_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">disk_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">disk</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="s2">&quot;DestinationPath&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;advanced_data&quot;</span><span class="p">][</span><span class="s2">&quot;browseMetaData&quot;</span><span class="p">]</span>
+                                                <span class="p">[</span><span class="s2">&quot;virtualServerMetaData&quot;</span><span class="p">][</span><span class="s1">&#39;datastore&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+
+                <span class="n">vm_disks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">disk_dict</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">vm_disks</span> <span class="o">==</span> <span class="p">[]:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="mi">104</span><span class="p">)</span>
+
+            <span class="c1"># populate VM Specific values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_attributes</span><span class="p">(</span><span class="n">restore_option</span><span class="p">,</span><span class="n">disks</span> <span class="o">=</span> <span class="n">vm_disks</span><span class="p">,</span><span class="n">guid</span> <span class="o">=</span> <span class="n">_vm_ids</span><span class="p">[</span><span class="n">_each_vm_to_restore</span><span class="p">],</span> \
+                                   <span class="n">restore_new_name</span> <span class="o">=</span> <span class="n">_each_vm_to_restore</span><span class="p">,</span><span class="n">esxHost</span> <span class="o">=</span> <span class="n">vs_metadata</span><span class="p">[</span><span class="s1">&#39;esxHost&#39;</span><span class="p">],</span> \
+                                   <span class="n">name</span> <span class="o">=</span> <span class="n">_each_vm_to_restore</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_advancedRestoreOptions</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_restore_option</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_option_restore_json</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_fileoption_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
