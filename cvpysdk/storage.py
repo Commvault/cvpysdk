@@ -1033,8 +1033,8 @@ class StoragePolicy(object):
             for copy in self._storage_policy_properties['copy']:
                 copy_type = copy['copyType']
                 active = copy['active']
-                copy_id = str(copy['StoragePolicyCopy']['copyId'])
-                copy_name = copy['StoragePolicyCopy']['copyName']
+                copy_id = copy['StoragePolicyCopy']['copyId']
+                copy_name = copy['StoragePolicyCopy']['copyName'].lower()
                 library_name = copy['library']['libraryName']
                 temp = {
                     "copyType": copy_type,
@@ -1160,6 +1160,8 @@ class StoragePolicy(object):
         """
         if not isinstance(copy_name, basestring):
             raise SDKException('Storage', '101')
+        else:
+            copy_name = copy_name.lower()
 
         if not self.has_copy(copy_name):
             err_msg = 'Storage Policy copy "{0}" doesn\'t exists.'.format(copy_name)

@@ -907,8 +907,8 @@ class Backupset(object):
 
                         for result in result_set:
 
-                            name = str(result['displayName'])
-                            path = str(result['path'])
+                            name = result['displayName']
+                            path = result['path']
 
                             if 'modificationTime' in result:
                                 mod_time = time.localtime(result['modificationTime'])

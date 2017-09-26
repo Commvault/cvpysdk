@@ -11,10 +11,12 @@
 
 import os
 import re
+import ssl
 
 from setuptools import setup, find_packages
 
 
+ssl._create_default_https_context = ssl._create_unverified_context
 ROOT = os.path.dirname(__file__)
 VERSION = re.compile(r'''__version__ = ['"]([0-9.]+)['"]''')
 
@@ -27,15 +29,16 @@ def get_version():
 
 def readme():
     """Reads the README.rst file and returns its contents."""
-    with open(os.path.join(ROOT, 'README.rst')) as file_object:
+    read_me_file = os.path.join(ROOT, 'README.rst')
+    with open(read_me_file) as file_object:
         return file_object.read()
 
 
 def get_license():
     """Reads the LICENSE.txt file and returns its contents."""
-    with open(os.path.join(ROOT, 'LICENSE.txt')) as file_object:
+    license_file = os.path.join(ROOT, 'LICENSE.txt')
+    with open(license_file) as file_object:
         return file_object.read()
-
 
 setup(
     name='cvpysdk',

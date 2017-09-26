@@ -11,102 +11,63 @@
 
 CloudAppsInstance is the only class defined in this file.
 
-CloudAppsInstance: Derived class from Instance Base class, representing a
-                            cloud apps instance, and to perform operations on that instance
+CloudAppsInstance:  Derived class from Instance Base class, representing a
+                        cloud apps instance, and to perform operations on that instance
 
 CloudAppsInstance:
-    _get_instance_properties()  --  Instance class method overwritten to add cloud apps
-                                        instance properties as well
+
+    __new__()   --  Method to create object based on specific cloud apps instance type
+
+
+Usage
+=====
+
+To add a new Instance for Cloud Apps agent, please follow these steps:
+
+    1. Add the module for the new instance type under the location:
+        **/cvpysdk/instances/cloudapps**,
+        with the module name **<new instance type>_instance.py**
+        (e.g. "google_instance.py", "salesforce_instance.py")
+
+    #. Create a class for your instance type and inherit the CloudAppsInstance class.
+
+    #. Add the import statement inside the __new__ method.
+        **NOTE:** If you add the import statement at the top,
+        it'll cause cyclic import, and the call will fail
+
+    #. After adding the import statement:
+        - In the **instance_type** dict
+            - Add the cloud apps instance type as the key, and the class as its value
 
 """
 
 from __future__ import unicode_literals
 
 from ..instance import Instance
+from ..exception import SDKException
 
 
 class CloudAppsInstance(Instance):
     """Class for representing an Instance of the Cloud Apps agent."""
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def __new__(cls, agent_object, instance_name, instance_id=None):
+        from .cloudapps.google_instance import GoogleInstance
 
-            Raises:
-                SDKException:
-                    if response is empty
+        instance_type = {
+            1: GoogleInstance,
+            2: GoogleInstance
+        }
 
-                    if response is not success
-        """
-        super(CloudAppsInstance, self)._get_instance_properties()
+        commcell_object = agent_object._commcell_object
+        instance_service = 'Instance/{0}'.format(instance_id)
 
-        self._ca_instance_type = None
-        self._manage_content_automatically = None
-        self._auto_discovery_enabled = None
-        self._app_email_id = None
-        self._google_admin_id = None
-        self._service_account_key_file = None
-        self._app_client_id = None
-        self._proxy_client = None
+        response = commcell_object.request('GET', instance_service)
 
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
-            self._ca_instance_type = cloud_apps_instance['instanceType']
-
-            if 'gInstance' in cloud_apps_instance:
-                ginstance = cloud_apps_instance['gInstance']
-
-                self._manage_content_automatically = ginstance['manageContentAutomatically']
-                self._auto_discovery_enabled = ginstance['isAutoDiscoveryEnabled']
-                self._app_email_id = ginstance['appEmailId']
-                self._google_admin_id = ginstance['emailId']
-                self._service_account_key_file = ginstance['appKey']
-                self._app_client_id = ginstance['appClientId']
-
-        if 'generalCloudProperties' in cloud_apps_instance:
-            self._proxy_client = cloud_apps_instance[
-                'generalCloudProperties']['proxyServers'][0]['clientName']
-
-    @property
-    def ca_instance_type(self):
-        """Treats the CloudApps instance type as a read-only attribute."""
-        if self._ca_instance_type == 1:
-            return 'GMAIL'
-        elif self._ca_instance_type == 2:
-            return 'GDRIVE'
+        if response.json() and "instanceProperties" in response.json():
+            properties = response.json()["instanceProperties"][0]
         else:
-            return self._ca_instance_type
+            raise SDKException('Instance', '102', 'Failed to get the properties of the Instance')
 
-    @property
-    def manage_content_automatically(self):
-        """Treats the CloudApps Manage Content Automatically property as a read-only attribute."""
-        return self._manage_content_automatically
+        cloud_apps_instance_type = properties['cloudAppsInstance']['instanceType']
 
-    @property
-    def auto_discovery_status(self):
-        """Treats the Auto discovery property as a read-only attribute."""
-        return self._auto_discovery_enabled
-
-    @property
-    def app_email_id(self):
-        """Treats the service account mail id as a read-only attribute."""
-        return self._app_email_id
-
-    @property
-    def google_admin_id(self):
-        """Treats the Google admin mail id as a read-only attribute."""
-        return self._google_admin_id
-
-    @property
-    def key_file_path(self):
-        """Treats the service account key file path as a read-only attribute."""
-        return self._service_account_key_file
-
-    @property
-    def google_client_id(self):
-        """Treats the service account client id as a read-only attribute."""
-        return self._app_client_id
-
-    @property
-    def proxy_client(self):
-        """Treats the proxy client name to this instance as a read-only attribute."""
-        return self._proxy_client
+        return object.__new__(instance_type[cloud_apps_instance_type])

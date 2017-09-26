@@ -105,6 +105,18 @@ SERVICES_DICT_TEMPLATE = {
     'GET_DATASOURCE': '{0}dcube/getDataSource/%s',
     'GET_ALL_HANDLERS': '{0}dcube/getAllHandlers?dsId=%s',
     'GET_HANDLER': '{0}dcube/getHandler/?dsId=%s&handlerId=%s',
+    'GET_CRAWL_HISTORY': '{0}dcube/GetHistory/%s',
+    'GET_HANDLERS': '{0}dcube/gethandler?datasourceId=%s',
+    'CREATE_HANDLER': '{0}dcube/savehandler',
+    'GET_DATASOURCE_SCHEMA': '{0}dcube/getDSSchema/%s',
+    'UPDATE_DATASOURCE_SCHEMA': '{0}dcube/updateschema',
+    'GET_JDBC_DRIVERS': '{0}dcube/GetJDBCDrivers/%s',
+    'DELETE_DATASOURCE_CONTENTS': '{0}dcube/deletedata/%s?softdelete=true',
+    'DELETE_DATASOURCE': '{0}dcube/deleteDataSource/%s',
+    'CREATE_DATASOURCE': '{0}dcube/createDataSource',
+    'DATACUBE_IMPORT_DATA': '{0}dcube/post/%s/%s',
+    
+    
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8'

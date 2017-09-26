@@ -15,15 +15,16 @@ SQLServerSubclient: Derived class from Subclient Base class, representing a sql 
                         and to perform operations on that subclient
 
 SQLServerSubclient:
-    _get_subclient_content_()           --  gets the content of a sql server subclient
-
-    _set_subclient_content_()           --  sets the content of a sql server subclient
+    
+    _get_subclient_properties()          --  gets the subclient  related properties of SQL subclient.
+    
+    _get_subclient_properties_json()     --  gets all the subclient  related properties of SQL subclient.
 
     _initialize_subclient_properties()  --  initializes additional properties of this subclient
 
     content()                           --  update the content of the subclient
 
-    log_backup_storage_policy()         --  updpates the log backup storage policy for this
+    log_backup_storage_policy()         --  updates the log backup storage policy for this
                                                 subclient
 
     backup()                            --  run a backup job for the subclient
@@ -32,17 +33,16 @@ SQLServerSubclient:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
-from ..subclient import Subclient
+from .dbsubclient import DatabaseSubclient
 from ..exception import SDKException
 
 
-class SQLServerSubclient(Subclient):
+class SQLServerSubclient(DatabaseSubclient):
     """Derived class from Subclient Base class, representing a file system subclient,
         and to perform operations on that subclient."""
 
-    def _get_subclient_content_(self):
+    @property
+    def content(self):
         """Gets the appropriate content from the Subclient relevant to the user.
 
             Args:
@@ -80,7 +80,8 @@ class SQLServerSubclient(Subclient):
 
         return contents
 
-    def _set_subclient_content_(self, subclient_content):
+    @content.setter
+    def content(self, subclient_content):
         """Creates the list of content JSON to pass to the API to add a new File System Subclient
             with the content passed in subclient content.
 
@@ -109,61 +110,41 @@ class SQLServerSubclient(Subclient):
                 }
                 content.append(sql_server_dict)
 
-        return content
+        self._set_subclient_properties("_content",content)
 
-    def _initialize_subclient_properties(self):
-        """Initializes properties of this subclient"""
-        self._is_file_group_subclient = False
-
-        super(SQLServerSubclient, self)._initialize_subclient_properties()
-
-        self._log_backup_storage_policy = None
-
-        storage_device = self._subclient_properties['commonProperties']['storageDevice']
-
-        if 'logBackupStoragePolicy' in storage_device:
-            log_backup_storage_policy = storage_device['logBackupStoragePolicy']
-            if 'storagePolicyName' in log_backup_storage_policy:
-                self._log_backup_storage_policy = log_backup_storage_policy['storagePolicyName']
-
-    @property
-    def content(self):
-        """Treats the subclient content as a property of the Subclient class."""
-        return self._content
-
-    @content.setter
-    def content(self, value):
-        """Sets the content of the subclient as the value provided as input.
-
-            Raises:
-                SDKException:
-                    if failed to update content of subclient
-
-                    if the type of value input is not list
-
-                    if value list is empty
+    def _get_subclient_properties(self):
+        """Gets the subclient  related properties of File System subclient.           
+           
         """
-        if self._is_file_group_subclient:
-            raise SDKException(
-                'Subclient',
-                '102',
-                ('Updating File/File Group Content is not allowed. '
-                 'Please use Commcell Console to update content.')
-            )
-
-        if isinstance(value, list) and value != []:
-            output = self._update(self.description, value, self.is_backup_enabled)
-
-            if output[0]:
-                return
-            else:
-                o_str = 'Failed to update the content of the subclient\nError: "{0}"'
-                raise SDKException('Subclient', '102', o_str.format(output[2]))
-        else:
-            raise SDKException(
-                'Subclient', '102', 'Subclient content should be a list value and not empty'
-            )
-
+        super(DatabaseSubclient,self)._get_subclient_properties()
+        if 'impersonateUser' in self._subclient_properties:
+            self._impersonateUser = self._subclient_properties['impersonateUser']
+        if 'fsSubClientProp' in self._subclient_properties:
+            self._fsSubClientProp = self._subclient_properties['fsSubClientProp']
+        if 'content' in self._subclient_properties:
+            self._content = self._subclient_properties['content']
+    
+    def _get_subclient_properties_json(self):
+        """get the all subclient related properties of this subclient.        
+           
+           Returns:
+                dict - all subclient properties put inside a dict
+           
+        """
+        subclient_json = {
+            "subClientProperties":
+                {
+                    "impersonateUser": self._impersonateUser,
+                    "proxyClient": self._proxyClient,
+                    "subClientEntity": self._subClientEntity,
+                    "content": self._content,
+                    "commonProperties": self._commonProperties,
+                    "contentOperationType": 1
+                }
+        }
+        return subclient_json
+    
+    
     @property
     def browse(self):
         raise AttributeError("'{0}' object has no attribute '{1}'".format(
@@ -199,59 +180,7 @@ class SQLServerSubclient(Subclient):
             'restore_out_of_place'
         ))
 
-    @property
-    def log_backup_storage_policy(self):
-        """Treats the subclient description as a property of the Subclient class."""
-        return self._log_backup_storage_policy
-
-    @log_backup_storage_policy.setter
-    def log_backup_storage_policy(self, value):
-        """Sets the log backup storage policy of subclient as the value provided as input.
-
-            Args:
-                value   (str)   -- Log backup Storage policy name to be assigned to subclient
-
-            Raises:
-                SDKException:
-                    if failed to update log backup storage policy name
-
-                    if log backup storage policy name is not in string format
-        """
-        if isinstance(value, basestring):
-            if not self._commcell_object.storage_policies.has_policy(value):
-                raise SDKException(
-                    'Subclient',
-                    '102',
-                    'Storage Policy: "{0}" does not exist in the Commcell'.format(value)
-                )
-
-            properties_dict = {
-                "storageDevice": {
-                    "logBackupStoragePolicy": {
-                        "storagePolicyName": value
-                    }
-                }
-            }
-
-            request_json = self._update_subclient_props_json(properties_dict)
-
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._SUBCLIENT, request_json
-            )
-
-            output = self._process_update_response(flag, response)
-
-            if output[0]:
-                return
-            else:
-                o_str = ('Failed to update the log backup storage policy of the Subclient'
-                         '\nError: "{0}"')
-                raise SDKException('Subclient', '102', o_str.format(output[2]))
-        else:
-            raise SDKException(
-                'Subclient', '102', 'Subclient log backup storage policy should be a string value'
-            )
-
+   
     def backup(
             self,
             backup_level="Differential"):

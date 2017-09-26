@@ -48,7 +48,7 @@ Instance:
     browse()                        --  browse the content of the instance
 
     find()                          --  find content in the instance
-
+    
 """
 
 from __future__ import absolute_import
@@ -244,16 +244,14 @@ class Instance(object):
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
-        self._instance_name = instance_name.lower()
-
         if instance_id:
             # Use the instance id provided in the arguments
             self._instance_id = str(instance_id)
         else:
             # Get the id associated with this instance
             self._instance_id = self._get_instance_id()
-
-        self._INSTANCE = self._commcell_object._services['INSTANCE'] % (self.instance_id)
+            
+        self._INSTANCE = self._commcell_object._services['INSTANCE'] % (instance_id)
 
         self._properties = None
 
@@ -262,19 +260,19 @@ class Instance(object):
         self.backupsets = Backupsets(self)
         self.subclients = Subclients(self)
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
-        representation_string = 'Instance class instance for Instance: "{0}" of Agent: "{1}"'
-        return representation_string.format(self.instance_name, self._agent_object.agent_name)
-
     def _get_instance_id(self):
         """Gets the instance id associated with this backupset.
-
-            Returns:
+        
+             Returns:
                 str - id associated with this instance
         """
         instances = Instances(self._agent_object)
         return instances.get(self.instance_name).instance_id
+
+    def __repr__(self):
+        """String representation of the instance of this class."""
+        representation_string = 'Instance class instance for Instance: "{0}" of Agent: "{1}"'
+        return representation_string.format(self._instance["instanceName"], self._agent_object.agent_name)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.
@@ -285,29 +283,111 @@ class Instance(object):
 
                     if response is not success
         """
+       
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._INSTANCE)
-
+       
         if flag:
             if response.json() and "instanceProperties" in response.json():
                 self._properties = response.json()["instanceProperties"][0]
 
-                instance_name = self._properties["instance"]["instanceName"]
-                self._instance_name = instance_name.lower()
+                self._instance = self._properties["instance"]
+                self.instance_name = self._properties["instance"]["instanceName"].lower()
+                self._instanceActivityControl = self._properties["instanceActivityControl"]
             else:
                 raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    @property
-    def instance_id(self):
-        """Treats the instance id as a read-only attribute."""
-        return self._instance_id
 
-    @property
-    def instance_name(self):
-        """Treats the instance name as a read-only attribute."""
-        return self._instance_name
+    def _set_instance_properties(self, attr_name, value):
+        """sets the properties of this sub client.value is updated to instance once when post call
+            succeeds
+
+            Args:
+                attr_name (str)  --  old value of the property. this should be instance variable.
+                value (str)  --  new value of the property. this should be instance variable.
+
+            Raises:
+                SDKException:
+                    if failed to update number properties for subclient
+
+
+        """
+        backup = None
+        exec("backup = self.%s" % (attr_name))          #Take backup of old value
+        exec("self.%s = %s" % (attr_name, 'value'))       #set new value
+
+        request_json = self._get_instance_properties_json()
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._INSTANCE, request_json
+        )
+        
+        output = self._process_update_response(flag, response)
+        if output[0]:
+            return
+        else:
+            o_str = 'Failed to update properties of subclient\nError: "{0}"'
+            exec("self.%s = %s" % (attr_name, backup)) # Restore original value from backup on failure
+            raise SDKException('Subclient', '102', o_str.format(output[2]))
+
+    def _process_update_response(self, flag, response):
+        """Updates the subclient properties with the request provided.
+
+            Args:
+                update_request  (str)  --  update request specifying the details to update
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if failed to update properties
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if flag:
+            if response.json():
+                if "response" in response.json():
+                    error_code = str(response.json()["response"][0]["errorCode"])
+
+                    if error_code == "0":
+                        return (True, "0", "")
+                    else:
+                        error_message = ""
+
+                        if "errorString" in response.json()["response"][0]:
+                            error_message = response.json()["response"][0]["errorString"]
+
+                        if error_message:
+                            return (False, error_code, error_message)
+                        else:
+                            return (False, error_code, "")
+                elif "errorCode" in response.json():
+                    error_code = str(response.json()['errorCode'])
+                    error_message = response.json()['errorMessage']
+
+                    if error_code == "0":
+                        return (True, "0", "")
+
+                    if error_message:
+                        return (False, error_code, error_message)
+                    else:
+                        return (False, error_code, "")
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def browse(self, *args, **kwargs):
         """Browses the content of a Backupset.
@@ -412,3 +492,8 @@ class Instance(object):
             return temp_backupset_obj.find(*args, **kwargs)
         else:
             raise SDKException('Instance', '104')
+    
+    @property
+    def instance_id(self):
+        """Treats the instance id as a read-only attribute."""
+        return self._instance_id

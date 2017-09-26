@@ -7,7 +7,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""Initialize Backupsets for the SDK."""
+"""Initialize Cloud Apps Instances for the SDK."""
 
 __author__ = 'Commvault Systems Inc.'
 __version__ = '1.0.0'

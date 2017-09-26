@@ -136,7 +136,7 @@ class Commcell(object):
         for service in web_service:
             self._web_service = service
             try:
-                if self._cvpysdk_object._is_valid_service_():
+                if self._cvpysdk_object._is_valid_service():
                     break
             except (RequestsConnectionError, SSLError, Timeout):
                 continue
@@ -228,7 +228,6 @@ class Commcell(object):
         del self._global_filters
         del self._datacube
 
-        del self.__user_guid
         del self._web_service
         del self._cvpysdk_object
         del self._device_id
