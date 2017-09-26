@@ -271,17 +271,20 @@ class Subclients(object):
                 for dictionary in response.json()['subClientProperties']:
                     backupset = dictionary['subClientEntity']['backupsetName'].lower()
                     instance = dictionary['subClientEntity']['instanceName'].lower()
+                    agent = dictionary['subClientEntity']['appName'].lower()
 
                     if self._backupset_object is not None:
                         if (self._instance_object.instance_name in instance and
-                                self._backupset_object.backupset_name in backupset):
+                                self._backupset_object.backupset_name in backupset and
+                                self._instance_object._agent_object.agent_name in agent):
                             temp_name = dictionary['subClientEntity']['subclientName'].lower()
                             temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
                             return_dict[temp_name] = {
                                 "id": temp_id,
                                 "backupset": backupset
                             }
-                    elif self._instance_object.instance_name in instance:
+                    elif (self._instance_object.instance_name in instance and
+                          self._instance_object._agent_object.agent_name in agent):
                         temp_name = dictionary['subClientEntity']['subclientName'].lower()
                         temp_id = str(dictionary['subClientEntity']['subclientId']).lower()
 
@@ -566,6 +569,7 @@ class Subclient(object):
         self._RESTORE = self._commcell_object._services['RESTORE']
 
         self._subclient_properties = {}
+        self._content = []
         self._get_subclient_properties()
 
         self.schedules = Schedules(self)
@@ -595,7 +599,7 @@ class Subclient(object):
 
                     if response is not success
         """
-        
+
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._SUBCLIENT)
 
         if flag:
@@ -632,8 +636,8 @@ class Subclient(object):
 
         """
         backup = None
-        exec("backup = self.%s" % (attr_name))          #Take backup of old value
-        exec("self.%s = %s" % (attr_name, 'value'))       #set new value
+        exec("backup = self.%s" % (attr_name))  # Take backup of old value
+        exec("self.%s = %s" % (attr_name, 'value'))  # set new value
 
         request_json = self._get_subclient_properties_json()
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -646,9 +650,9 @@ class Subclient(object):
             return
         else:
             o_str = 'Failed to update properties of subclient\nError: "{0}"'
-            exec("self.%s = %s" % (attr_name, backup)) # Restore original value from backup on failure
+            # Restore original value from backup on failure
+            exec("self.%s = %s" % (attr_name, backup))
             raise SDKException('Subclient', '102', o_str.format(output[2]))
-
 
     @staticmethod
     def _convert_size(input_size):
@@ -726,7 +730,6 @@ class Subclient(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-
 
     def _filter_paths(self, paths, is_single_path=False):
         """Filters the paths based on the Operating System, and Agent.
@@ -806,7 +809,8 @@ class Subclient(object):
             restore_data_and_acl=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None):
+            to_time=None,
+            fs_options=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -830,7 +834,7 @@ class Subclient(object):
                     "appName": self._backupset_object._agent_object.agent_name,
                     "appTypeId": int(self._backupset_object._agent_object.agent_id),
                     "instanceName": self._backupset_object._instance_object.instance_name,
-                    "instanceId": int(self._backupset_object._instance_object.instance_id),
+                    "instanceId": int(self._backupset_object._instance_object._instance_id),
                     "backupsetName": self._backupset_object.backupset_name,
                     "backupSetId": int(self._backupset_object.backupset_id),
                     "subclientName": self.subclient_name,
@@ -852,12 +856,16 @@ class Subclient(object):
                     },
                     "options": {
                         "restoreOptions": {
+                            "browseOption": {
+                                "mediaOption": {}
+                            },
                             "commonOptions": {
                                 "unconditionalOverwrite": overwrite,
-                                "preserveLevel": 1,
+                                "preserveLevel": fs_options.get("preserve_level", 1),
                                 "stripLevel": 2,
                                 "stripLevelType": 0
                             },
+                            "impersonation": {},
                             "destination": {
                                 "inPlace": in_place,
                                 "destClient": {
@@ -884,17 +892,37 @@ class Subclient(object):
 
         if copy_precedence:
             temp = {
-                "browseOption": {
-                    "mediaOption": {
-                        "copyPrecedence": {
-                            "copyPrecedenceApplicable": True,
-                            "synchronousCopyPrecedence": copy_precedence,
-                            "copyPrecedence": copy_precedence
-                        }
-                    }
+                "copyPrecedence": {
+                    "copyPrecedenceApplicable": True,
+                    "synchronousCopyPrecedence": copy_precedence,
+                    "copyPrecedence": copy_precedence
                 }
             }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(temp)
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'browseOption']['mediaOption'].update(temp)
+
+        if fs_options.get("proxy_client"):
+            temp = {
+                "proxyForSnapClients":
+                {
+                    "clientName": fs_options.get("proxy_client", '')
+                }
+            }
+
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'browseOption']['mediaOption'].update(temp)
+
+        if fs_options.get("impersonate_user"):
+            temp = {
+                "useImpersonation": True,
+                "user": {
+                    "userName": fs_options['impersonate_user'],
+                    "password": fs_options['impersonate_password']
+                }
+            }
+
+            request_json['taskInfo']['subTasks'][0]['options'][
+                'restoreOptions']['impersonation'] = temp
 
         restore_option = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']
 
@@ -1033,7 +1061,6 @@ class Subclient(object):
             }
         }
 
-
     def _restore_browse_option_json(self, Value):
         """setter  the Browse options for restore in Json"""
 
@@ -1052,7 +1079,7 @@ class Subclient(object):
                 "library": {},
                 "copyPrecedence": {
                     "copyPrecedenceApplicable": Value.get("copy_preceedence_applicable", False),
-                    "copyPrecedence":Value.get("copy_preceedence", 0)
+                    "copyPrecedence": Value.get("copy_preceedence", 0)
                 },
                 "drivePool": {}
             },
@@ -1081,13 +1108,12 @@ class Subclient(object):
             "detectRegularExpression": True,
             "wildCard": False,
             "preserveLevel": Value.get("preserve_level", 0),
-            "restoreToExchange":False,
-            "stripLevel":0,
+            "restoreToExchange": False,
+            "stripLevel": 0,
             "restoreACLs": Value.get("restore_ACL", True),
             "stripLevelType": Value.get("striplevel_type", 0),
             "unconditionalOverwrite": Value.get("unconditional_overwrite", False)
         }
-
 
     def _restore_destination_json(self, Value):
         """setter for  the destination restore option in restore JSON"""
@@ -1260,7 +1286,6 @@ class Subclient(object):
             raise SDKException(
                 'Subclient', '102', 'Subclient description should be a string value'
             )
-
 
     @storage_policy.setter
     def storage_policy(self, value):
@@ -1451,7 +1476,7 @@ class Subclient(object):
                 else:
                     backup_request += '&runIncrementalBackup=False'
 
-            backup_request += '&collectMetaInfo=%s'%collect_metadata
+            backup_request += '&collectMetaInfo=%s' % collect_metadata
 
             backup_service = self._commcell_object._services['SUBCLIENT_BACKUP'] % (
                 self.subclient_id, backup_request
@@ -1494,7 +1519,7 @@ class Subclient(object):
 
             dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        if len(args) > 0 and type(args[0]) == dict:
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -1544,7 +1569,7 @@ class Subclient(object):
 
             dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        if len(args) > 0 and type(args[0]) == dict:
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -1627,7 +1652,8 @@ class Subclient(object):
             restore_data_and_acl=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None):
+            to_time=None,
+            fs_options=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1659,6 +1685,14 @@ class Subclient(object):
 
                     default: None
 
+                fs_options      (dict)          -- dictionary that includes all advanced options
+                    options:
+                        preserve_level      : preserve level option to set in restore
+                        proxy_client        : proxy that needed to be used for restore
+                        impersonate_user    : Impersonate user options for restore
+                        impersonate_password: Impersonate password option for restore
+                                                                        in base64 encoded form
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1685,6 +1719,9 @@ class Subclient(object):
                 isinstance(restore_data_and_acl, bool)):
             raise SDKException('Subclient', '101')
 
+        if fs_options is None:
+            fs_options = {}
+
         if isinstance(client, Client):
             client = client
         elif isinstance(client, basestring):
@@ -1708,7 +1745,8 @@ class Subclient(object):
             restore_data_and_acl=restore_data_and_acl,
             copy_precedence=copy_precedence,
             from_time=from_time,
-            to_time=to_time
+            to_time=to_time,
+            fs_options=fs_options
         )
 
         return self._process_restore_response(request_json)

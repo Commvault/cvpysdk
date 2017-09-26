@@ -7,6 +7,8 @@
 # license information.
 # --------------------------------------------------------------------------
 
+# pylint: disable=R1705
+
 """Helper file for session operations.
 
 CVPySDK: Class for common operations for the CS, as well as the python package
@@ -14,12 +16,14 @@ CVPySDK: Class for common operations for the CS, as well as the python package
 CVPySDK:
     __init__(commcell_object)   --  initialise object of the CVPySDK class and bind to the commcell
 
-    _is_valid_service_()        --  checks if the service is valid and running or not
+    _is_valid_service()         --  checks if the service is valid and running or not
 
-    _login_()                   --  sign in the user to the commcell with the credentials provided
+    _login()                    --  sign in the user to the commcell with the credentials provided
 
-    _logout_()                  --  sign out the current logged in user from the commcell,
-                                        and end the session
+    _renew_login_token()        --  renews the Authtoken for the currently logged in user
+
+    _logout()                   --  sign out the current logged in user from the commcell,
+                                        and ends the session
 
     make_request()              --  run the http request specified on the URL/WebService provided,
                                         and return the flag specifying success/fail, and response
@@ -58,7 +62,7 @@ class CVPySDK(object):
         """
         self._commcell_object = commcell_object
 
-    def _is_valid_service_(self):
+    def _is_valid_service(self):
         """Checks if the service url is a valid url or not.
 
             Returns:
@@ -72,18 +76,18 @@ class CVPySDK(object):
                 requests Timeout Error      --  requests.exceptions.Timeout
         """
         try:
-            response = requests.get(self._commcell_object._web_service, timeout=6.09)
+            response = requests.get(self._commcell_object._web_service, timeout=184)
 
             # Valid service if the status code is 200 and response is True
             return response.status_code == httplib.OK and response.ok
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
             raise error
 
-    def _login_(self):
-        """Posts a login request to the server
+    def _login(self):
+        """Posts a login request to the server.
 
             Returns:
-                tuple - (token, user_GUID), when response is success
+                str     -   Authtoken received from the WebServer upon successfull login
 
             Raises:
                 SDKException:
@@ -102,7 +106,8 @@ class CVPySDK(object):
             json_login_request = {
                 "mode": 4,
                 "username": self._commcell_object._user,
-                "password": self._commcell_object._password
+                "password": self._commcell_object._password,
+                "deviceId": self._commcell_object.device_id
             }
 
             flag, response = self.make_request(
@@ -112,7 +117,7 @@ class CVPySDK(object):
             if flag:
                 if response.json():
                     if "userName" in response.json() and "token" in response.json():
-                        return response.json()['token'], response.json()['userGUID']
+                        return response.json()['token']
                     else:
                         error_message = response.json()['errList'][0]['errLogMessage']
                         err_msg = 'Error: "{0}"'.format(error_message)
@@ -123,10 +128,52 @@ class CVPySDK(object):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         except requests.exceptions.ConnectionError as con_err:
-            raise con_err.message
+            raise con_err
 
-    def _logout_(self):
-        """Posts a logout request to the server
+    def _renew_login_token(self):
+        """Posts a Renew Login Token request to the server.
+
+            Returns:
+                str     -   new token received from the WebServer
+
+            Raises:
+                SDKException:
+                    if token renew failed
+
+                    if response is empty
+
+                    if response is not success
+
+                requests Connection Error   --  requests.exceptions.ConnectionError
+        """
+        try:
+            token_renew_request = {
+                "sessionId": self._commcell_object._headers['Authtoken'],
+                "deviceId": self._commcell_object.device_id
+            }
+
+            flag, response = self.make_request(
+                'POST', self._commcell_object._services['RENEW_LOGIN_TOKEN'], token_renew_request
+            )
+
+            if flag:
+                if response.json():
+                    if "token" in response.json():
+                        return response.json()['token']
+                    else:
+                        error_message = response.json()['error']['errLogMessage']
+                        err_msg = 'Error: "{0}"'.format(error_message)
+                        raise SDKException('CVPySDK', '101', err_msg)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        except requests.exceptions.ConnectionError as con_err:
+            raise con_err
+
+    def _logout(self):
+        """Posts a logout request to the server.
 
             Returns:
                 str - response string from server upon logout success
@@ -135,6 +182,7 @@ class CVPySDK(object):
 
         if flag:
             self._commcell_object._headers['Authtoken'] = None
+
             if response.status_code == httplib.OK:
                 return response.text
             else:
@@ -190,7 +238,7 @@ class CVPySDK(object):
 
             if response.status_code == httplib.UNAUTHORIZED and headers['Authtoken'] is not None:
                 if attempts < 3:
-                    self._commcell_object._headers['Authtoken'], _ = self._login_()
+                    self._commcell_object._headers['Authtoken'] = self._renew_login_token()
                     return self.make_request(method, url, payload, attempts + 1)
                 else:
                     # Raise max attempts exception, if attempts exceeds 3
@@ -201,4 +249,4 @@ class CVPySDK(object):
             else:
                 return (False, response)
         except requests.exceptions.ConnectionError as con_err:
-            raise con_err.message
+            raise con_err

@@ -22,6 +22,7 @@ from __future__ import unicode_literals
 SERVICES_DICT_TEMPLATE = {
     'LOGIN': '{0}Login',
     'LOGOUT': '{0}Logout',
+    'RENEW_LOGIN_TOKEN': '{0}RenewLoginToken',
     'COMMSERV': '{0}CommServ',
 
     'GET_ALL_CLIENTS': '{0}Client',

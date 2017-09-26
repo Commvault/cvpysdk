@@ -18,48 +18,52 @@ Datasource:     Class for representing a single Datasource in the Datacube.
 
 Datasources:
 
-    __init__(datacube_object)                                    --  initialise object of the Datasources class
+    __init__(datacube_object)           --  initialise object of the Datasources class
 
-    __str__()                                                    --  prints all the datasources
+    __str__()                           --  prints all the datasources
 
-    __repr__()                                                   --  returns the string representation of this instance
+    __repr__()                          --  returns the string representation of this instance
 
-    _get_datasources_from_collections()                          --  gets all the datasources from a list of collections
+    _get_datasources_from_collections() --  gets all the datasources from a list of collections
 
-    _get_all_datasources()                                       --  gets the collections, and all datasources in it
+    _get_all_datasources()              --  gets the collections, and all datasources in it
 
-    has_datasource()                                             --  checks if a datasource exists with the given name
+    has_datasource()                    --  checks if a datasource exists with the given name
 
-    get(datasource_name)                                         --  returns an instance of the Datasource class,
-                                                                            for the input datasource name
-                                                    
-    add(datasource_name, analytics_engine, datasource_type)      --  adds new datasource to the datacube
-    
-    delete(datasource_name)                                         --  deletes the give datasource to the datacube
+    get(datasource_name)                --  returns an instance of the Datasource class,
+                                                for the input datasource name
+
+    add(datasource_name,
+        analytics_engine,
+        datasource_type)                --  adds new datasource to the datacube
+
+    delete(datasource_name)             --  deletes the give datasource to the datacube
 
 Datasource:
 
     __init__(
         datacube_object,
         datasource_name,
-        datasource_id=None)     --  initialize an object of Class with the given datasource name
-                                        and id, and associated to the datacube
+        datasource_id=None)             --  initialize an object of Class with the given datasource
+                                                name and id, and associated to the datacube
 
-    __repr__()                  --  return the datasource name, the instance is associated with
+    __repr__()                          --  return the datasource name, the instance is
+                                                associated with
 
-    _get_datasource_id()        --  method to get the data source id, if not specified in __init__
+    _get_datasource_id()                --  method to get the data source id, if not specified
+                                                in __init__
 
-    _get_datasource_properties()--  get the properties of this data source
-    
-    get_crawl_history()         --  get the crawl history of the data source.
-    
-    get_datasource_schema()     --  returns information about the schema of a data source
-    
-    update_datasource_schema(schema)  --  updates the schema for the given data source
-    
-    import_data(data)                 -- imports/pumps given data into data source.
-    
-    delete_content()                  -- deletes the contents of the data source.
+    _get_datasource_properties()        --  get the properties of this data source
+
+    get_crawl_history()                 --  get the crawl history of the data source.
+
+    get_datasource_schema()             --  returns information about the schema of a data source
+
+    update_datasource_schema(schema)    --  updates the schema for the given data source
+
+    import_data(data)                   --  imports/pumps given data into data source.
+
+    delete_content()                    --  deletes the contents of the data source.
 
 """
 
@@ -103,7 +107,6 @@ class Datasources(object):
         """
         representation_string = '{:^5}\t{:30}\n\n'.format(
             'ID', 'Data Source Name')
-        print self._datasources
         for datasource in self._datasources.values():
             sub_str = '{:^5}\t{:30}\n'.format(
                 datasource['data_source_id'], datasource['data_source_name']
@@ -267,7 +270,8 @@ class Datasources(object):
             Args:
                 datasource_name (str)   --  name of the datasource to add to the datacube
 
-                analytics_engine (str)  --  name of the analytics engine to be associated with this datacube.
+                analytics_engine (str)  --  name of the analytics engine to be associated with this
+                                                datacube.
 
                 datasource_type (list)  --  type of datasource to add
 
@@ -474,7 +478,7 @@ class Datasource(object):
                 last_crawl_history (bool)    -- if set to True , returns
                 the status of and information about the most recent crawling
                 operation for a data source in Data Cube
-                
+
             Returns:
                 list - list consisting of key value pair for history details of this datasource
 
@@ -486,7 +490,7 @@ class Datasource(object):
                         "numAccessDenied": ,
                         "numAdded": ,
                         "startUTCTime": ,
-                        "state": 
+                        "state":
                     }
                 ]
 
@@ -527,8 +531,8 @@ class Datasource(object):
 
                 {
                 "uniqueKey": "contentid",
-                "schemaFields": [{properties of field},list of fields]			
-               "dynSchemaFields":[{properties of field},list of fields]			
+                "schemaFields": [{properties of field},list of fields]
+               "dynSchemaFields":[{properties of field},list of fields]
 
             Raises:
                 SDKException:
@@ -555,18 +559,19 @@ class Datasource(object):
                 schema (list)   -- list of  properties of schemas represented as key value pair.
                 [{
                                     "fieldName": "",
-                                    "indexed": "", 
+                                    "indexed": "",
                                     "autocomplete": "",
                                     "type": "",
                                     "searchDefault": "",
                                     "multiValued": ""
                                 }]
-                Valid values for type are as follows: [string, int, float, long, double, date, longstring]
+                Valid values for type are as follows: 
+                    [string, int, float, long, double, date, longstring]
                 indexed, autocomplete, searchDefault, multiValued takes 0/1
 
             Raises:
                 SDKException:
-                    if response is empty                   
+                    if response is empty
 
                     if type of the schema argument is not list
 
@@ -612,7 +617,7 @@ class Datasource(object):
 
             Raises:
                 SDKException:
-                    if response is empty  
+                    if response is empty
 
                     if response is not success
         """
@@ -638,12 +643,12 @@ class Datasource(object):
 
     def delete_content(self):
         """deletes the content of a data source from Data Cube.
-           The data source itself is not deleted using this API. 
+           The data source itself is not deleted using this API.
 
             Raises:
                 SDKException:
 
-                    if response is empty  
+                    if response is empty
 
                     if response is not success
         """

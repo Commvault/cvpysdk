@@ -84,10 +84,11 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import os
+import re
 import time
 
-from past.builtins import basestring
 from base64 import b64encode
+from past.builtins import basestring
 
 from .agent import Agents
 from .schedules import Schedules
@@ -539,9 +540,13 @@ class Client(object):
                         'versionInfo']['GalaxyRelease']['ReleaseString']
 
                 if 'version' in self._properties['client']['versionInfo']:
-                    patch_info = self._properties['client']['versionInfo']['version']
+                    service_pack = re.findall(
+                        r'ServicePack:([\d]*)',
+                        self._properties['client']['versionInfo']['version']
+                    )
 
-                    self._service_pack = patch_info.split(',')[0]
+                    if service_pack:
+                        self._service_pack = service_pack[0]
             else:
                 raise SDKException('Response', '102')
         else:

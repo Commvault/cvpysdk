@@ -266,6 +266,9 @@ class Job(object):
             Kills the job and exits, if the job has been in Pending / Waiting state for more than
             the timeout value.
 
+            In case of job failure job status and failure reason can be obtained
+                using status and delay_reason property
+
             Args:
                 timeout     (int)   --  minutes after which the job should be killed and exited,
                         if the job has been in Pending / Waiting state
@@ -275,7 +278,7 @@ class Job(object):
                 bool    -   boolean specifying whether the job had finished or not
                     True    -   if the job had finished successfully
 
-                    False   -   if the job was killed
+                    False   -   if the job was killed/failed
         """
         start_time = time.time()
         pending_time = 0
@@ -314,7 +317,7 @@ class Job(object):
             # set the value of previous status as the value of current status
             previous_status = status
         else:
-            return True
+            return status not in ["failed", "killed"]
 
         return False
 
