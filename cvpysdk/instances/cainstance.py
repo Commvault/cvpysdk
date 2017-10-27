@@ -50,7 +50,7 @@ from ..exception import SDKException
 class CloudAppsInstance(Instance):
     """Class for representing an Instance of the Cloud Apps agent."""
 
-    def __new__(cls, agent_object, instance_name, instance_id=None):
+    def __new__(cls, agent_object, instance_name, instance_id):
         from .cloudapps.google_instance import GoogleInstance
 
         instance_type = {
