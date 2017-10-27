@@ -23,11 +23,11 @@ NASBackupset:
 
 from __future__ import unicode_literals
 
-from ..backupset import Backupset
+from .fsbackupset import FSBackupset
 from ..exception import SDKException
 
 
-class NASBackupset(Backupset):
+class NASBackupset(FSBackupset):
     """Derived class from Backupset Base class, representing a nas backupset,
         and to perform operations on that backupset."""
 
