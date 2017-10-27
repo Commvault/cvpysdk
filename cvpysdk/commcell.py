@@ -74,6 +74,7 @@ from .exception import SDKException
 from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
+from .plan import Plans
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -172,6 +173,7 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
+        self._plans = None
 
         del self._password
 
@@ -227,6 +229,7 @@ class Commcell(object):
         del self._client_groups
         del self._global_filters
         del self._datacube
+        del self._plans
 
         del self._web_service
         del self._cvpysdk_object
@@ -415,6 +418,19 @@ class Commcell(object):
                 self._datacube = Datacube(self)
 
             return self._datacube
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def plans(self):
+        """Returns the instance of the Plans class."""
+        try:
+            if self._plans is None:
+                self._plans = Plans(self)
+
+            return self._plans
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
         except SDKException:

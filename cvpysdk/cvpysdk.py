@@ -34,6 +34,9 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import requests
+import xmltodict
+
+from xml.parsers.expat import ExpatError
 
 try:
     # Python 2 import
@@ -190,7 +193,7 @@ class CVPySDK(object):
         else:
             return 'User already logged out'
 
-    def make_request(self, method, url, payload=None, attempts=0):
+    def make_request(self, method, url, payload=None, attempts=0, headers=None):
         """Makes the request of the type specified in the argument 'method'
 
             Args:
@@ -203,6 +206,10 @@ class CVPySDK(object):
 
                 attempts  (int)         --  number of attempts made with the same request
                     default: 0
+
+                headers   (dict)        --  specific dict of request headers that is to be passed
+                                                if not specified we use default headers
+                    default: None
 
             Returns:
                 tuple:
@@ -219,14 +226,21 @@ class CVPySDK(object):
                 requests Connection Error   --  requests.exceptions.ConnectionError
         """
         try:
-            headers = self._commcell_object._headers.copy()
+            if headers is None:
+                headers = self._commcell_object._headers.copy()
 
             if method == 'POST':
                 if isinstance(payload, (dict, list)):
                     response = requests.post(url, headers=headers, json=payload)
                 else:
-                    headers['Content-type'] = 'application/xml'
-                    response = requests.post(url, headers=headers, data=payload)
+                    try:
+                        if payload is not None:
+                            xmltodict.parse(payload)
+                        headers['Content-type'] = 'application/xml'
+                    except ExpatError:
+                        headers['Content-type'] = 'text/plain'
+                    finally:
+                        response = requests.post(url, headers=headers, data=payload)
             elif method == 'GET':
                 response = requests.get(url, headers=headers)
             elif method == 'PUT':

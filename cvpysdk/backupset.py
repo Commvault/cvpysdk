@@ -43,6 +43,8 @@ Backupset:
              backupset_id=None)    -- initialise object of Backupset with the specified backupset
                                          name and id, and associated to the specified instance
 
+    __getattr__()                   -- provides access to restore helper methods
+
     __repr__()                      -- return the backupset name, the instance is associated with
 
     _get_backupset_id()             -- method to get the backupset id, if not specified in __init__
@@ -122,10 +124,12 @@ class Backupsets(object):
             self._agent_object._client_object.client_id
         )
 
+        from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset
 
         self._backupsets_dict = {
+            'file system': FSBackupset,
             'nas': NASBackupset,
             'sap hana': HANABackupset
         }
@@ -491,6 +495,8 @@ class Backupset(object):
         self._agent_object = self._instance_object._agent_object
         self._commcell_object = self._instance_object._agent_object._commcell_object
 
+        self._restore_methods = ['_process_restore_response', '_filter_paths', '_restore_json']
+
         self._backupset_name = backupset_name.split('\\')[-1].lower()
         self._description = None
 
@@ -503,10 +509,12 @@ class Backupset(object):
 
         self._BACKUPSET = self._commcell_object._services['BACKUPSET'] % (self.backupset_id)
         self._BROWSE = self._commcell_object._services['BROWSE']
+        self._RESTORE = self._commcell_object._services['RESTORE']
 
         self._is_default = False
         self._is_on_demand_backupset = False
         self._properties = None
+        self._backupset_association = {}
 
         self._get_backupset_properties()
 
@@ -528,6 +536,11 @@ class Backupset(object):
             'filters': [],
             '_subclient_id': 0
         }
+
+    def __getattr__(self, attribute):
+        """Returns the persistent attributes"""
+        if attribute in self._restore_methods:
+            return getattr(self._instance_object, attribute)
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -565,6 +578,8 @@ class Backupset(object):
 
                 backupset_name = self._properties["backupSetEntity"]["backupsetName"]
                 self._backupset_name = backupset_name.lower()
+
+                self._backupset_association = self._properties['backupSetEntity']
 
                 self._is_default = bool(self._properties["commonBackupSet"]["isDefaultBackupSet"])
 

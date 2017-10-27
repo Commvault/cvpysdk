@@ -115,11 +115,16 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_DATASOURCE': '{0}dcube/deleteDataSource/%s',
     'CREATE_DATASOURCE': '{0}dcube/createDataSource',
     'DATACUBE_IMPORT_DATA': '{0}dcube/post/%s/%s',
-    
-    
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
-    'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8'
+    'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8',
+    
+    'UPLOAD_FULL_FILE': '{0}Client/%s/file/action/upload?uploadType=fullFile',
+    'UPLOAD_CHUNKED_FILE': '{0}Client/%s/file/action/upload?uploadType=chunkedFile',
+
+    'PLANS': '{0}V2/Plan',
+    'PLAN': '{0}V2/Plan/%s',
+    'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True'
 }
 
 

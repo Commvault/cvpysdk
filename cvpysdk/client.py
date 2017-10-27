@@ -50,6 +50,8 @@ Client:
 
     _get_client_properties()     --  get the properties of this client
 
+    _make_request()              --  makes the upload request to the server
+
     enable_backup()              --  enables the backup for the client
 
     enable_backup_at_time()      --  enables the backup for the client at the input time specified
@@ -77,6 +79,10 @@ Client:
     disable_intelli_snap()       --  disables intelli snap for the client
 
     is_ready                     --  checks if CommServ is able to communicate to client
+
+    upload_file()                --  uploads the specified file on controller to the client machine
+
+    upload_folder()              --  uploads the specified folder on controller to client machine
 
 """
 
@@ -646,6 +652,77 @@ class Client(object):
 
         return request_json
 
+    def _make_request(self,
+                      upload_url,
+                      file_contents,
+                      headers,
+                      request_id=None,
+                      chunk_offset=None):
+        """Makes the request to the server to upload the specified file contents on the
+            client machine
+
+            Args:
+                upload_url      (str)   --  request url on which the request is to be done
+
+                file_contents   (str)   --  data from the file which is to be copied
+
+                headers         (str)   --  request headers for this api
+
+                request_id      (int)   --  request id received from the first upload request.
+                                                request id is used to uniquely identify
+                                                chunks of data
+                    default: None
+
+                chunk_offset    (int)   --  number of bytes written till previous upload request.
+                                                chunk_offset is used to specify from where to
+                                                write data on specified file
+                    default: None
+
+            Returns:
+                (int, int)  -   request id and chunk_offset returned from the response
+
+            Raises:
+                SDKException:
+                    if failed to upload the file
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if request_id is not None:
+            upload_url += '&requestId={0}'.format(request_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', upload_url, file_contents, headers=headers
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json()['errorCode'])
+
+                    if error_code != 0:
+                        error_string = response.json()['errorString']
+                        raise SDKException(
+                            'Client', '102', 'Failed to upload file with error: {0}'.format(
+                                error_string
+                            )
+                        )
+
+                if 'requestId' in response.json():
+                    request_id = response.json()['requestId']
+
+                if 'chunkOffset' in response.json():
+                    chunk_offset = response.json()['chunkOffset']
+
+                return request_id, chunk_offset
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def client_id(self):
         """Treats the client id as a read-only attribute."""
@@ -1163,6 +1240,7 @@ class Client(object):
             if response.json():
                 exit_code = -1
                 output = ''
+                error_message = ''
 
                 if 'processExitCode' in response.json():
                     exit_code = response.json()['processExitCode']
@@ -1170,7 +1248,10 @@ class Client(object):
                 if 'commandLineOutput' in response.json():
                     output = response.json()['commandLineOutput']
 
-                return exit_code, output
+                if 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+
+                return exit_code, output, error_message
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1223,6 +1304,7 @@ class Client(object):
             if response.json():
                 exit_code = -1
                 output = ''
+                error_message = ''
 
                 if 'processExitCode' in response.json():
                     exit_code = response.json()['processExitCode']
@@ -1230,7 +1312,10 @@ class Client(object):
                 if 'commandLineOutput' in response.json():
                     output = response.json()['commandLineOutput']
 
-                return exit_code, output
+                if 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+
+                return exit_code, output, error_message
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1352,3 +1437,101 @@ class Client(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def upload_file(self, source_file_path, destination_folder):
+        """Upload the specified source file to destination path on the client machine
+
+            Args:
+                source_file_path    (str)   --  path on the controller machine
+
+                destination_folder  (str)   --  path on the client machine where the files
+                                                    are to be copied
+
+            Raises:
+                SDKException:
+                    if failed to upload the file
+
+                    if response is empty
+
+                    if response is not success
+        """
+        chunk_size = 1024
+        request_id = None
+        chunk_offset = None
+
+        file_name = os.path.split(source_file_path)[-1]
+
+        file_size = os.path.getsize(source_file_path)
+        headers = {
+            'Authtoken': self._commcell_object._headers['Authtoken'],
+            'Accept': 'application/json',
+            'FileName': b64encode(file_name.encode('utf-8')),
+            'FileSize': None,
+            'ParentFolderPath': b64encode(destination_folder.encode('utf-8'))
+        }
+
+        file_stream = open(source_file_path, 'r')
+
+        if file_size <= chunk_size:
+            upload_url = self._commcell_object._services['UPLOAD_FULL_FILE'] % (self.client_id)
+            headers['FileSize'] = str(file_size)
+            self._make_request(upload_url, file_stream.read(), headers)
+        else:
+            upload_url = self._commcell_object._services['UPLOAD_CHUNKED_FILE'] % (self.client_id)
+            while file_size > chunk_size:
+                file_size = file_size - chunk_size
+                headers['FileSize'] = str(chunk_size)
+                headers['FileEOF'] = str(0)
+                request_id, chunk_offset = self._make_request(
+                    upload_url, file_stream.read(chunk_size), headers, request_id, chunk_offset
+                )
+
+            headers['FileSize'] = str(file_size)
+            headers['FileEOF'] = str(1)
+            self._make_request(
+                upload_url, file_stream.read(file_size), headers, request_id, chunk_offset
+            )
+
+    def upload_folder(self, source_dir, destination_dir):
+        """Uploads the specified source dir to destination path on the client machine
+
+            Args:
+                source_dir          (str)   --  path on the controller machine
+
+                destination_dir     (str)   --  path on the client machine where the files
+                                                    are to be copied
+
+            Raises:
+                SDKException:
+                    if failed to upload the file
+
+                    if response is empty
+
+                    if response is not success
+        """
+        def _create_destination_path(base_path, *args):
+            """Returns the path obtained by joining the items in argument
+
+                The final path to be generated is done based on the operating system path
+            """
+            if 'windows' in self.os_info.lower():
+                delimiter = "\\"
+            else:
+                delimiter = "/"
+
+            if args:
+                for argv in args:
+                    base_path = "{0}{1}{2}".format(base_path, delimiter, argv)
+
+            return base_path
+
+        source_list = os.listdir(source_dir)
+
+        destination_dir = _create_destination_path(destination_dir, os.path.split(source_dir)[-1])
+
+        for item in source_list:
+            item = os.path.join(source_dir, item)
+            if os.path.isfile(item):
+                self.upload_file(item, destination_dir)
+            else:
+                self.upload_folder(item, destination_dir)
