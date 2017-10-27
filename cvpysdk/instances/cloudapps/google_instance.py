@@ -64,9 +64,9 @@ class GoogleInstance(CloudAppsInstance):
                 self._service_account_key_file = ginstance['appKey']
                 self._app_client_id = ginstance['appClientId']
 
-        if 'generalCloudProperties' in cloud_apps_instance:
-            self._proxy_client = cloud_apps_instance[
-                'generalCloudProperties']['proxyServers'][0]['clientName']
+            if 'generalCloudProperties' in cloud_apps_instance:
+                self._proxy_client = cloud_apps_instance[
+                    'generalCloudProperties']['proxyServers'][0]['clientName']
 
     @property
     def ca_instance_type(self):
