@@ -47,27 +47,15 @@ class VirtualServerInstance(Instance):
     def __new__(cls,agent_object, instance_name, instance_id=None):
         """Decides which instance object needs to be created"""
         
-        hv_type = constants.hypervisor_type
+        hv_type = constants.HypervisorType
         if(instance_name == hv_type.VIRTUAL_CENTER.value.lower()):
             from .virtualserver.VMwareInstance import VMwareInstance
             return object.__new__(VMwareInstance)
         
         elif(instance_name  == hv_type.MS_VIRTUAL_SERVER.value.lower()):
             from .virtualserver.hypervinstance import HyperVInstance
-            return object.__new__(HyperVInstance)
-        
-        elif(instance_name  == hv_type.AMAZON.value.lower()):
-            from .virtualserver.amazoninstance import AmazonInstance
-            return object.__new__(AmazonInstance)
-        
-        elif(instance_name  == hv_type.AZURE.value.lower()):
-            from .virtualserver.azureinstance import AzureInstance
-            return object.__new__(AzureInstance)
-        
-        elif(instance_name  == hv_type.AZURE_V2.value.lower()):
-            from .virtualserver.azureRMinstance import AzureRMInstance
-            return object.__new__(AzureRMInstance)
-        
+            return object.__new__(HyperVInstance)    
+    
     def _get_instance_properties(self):
         """Gets the properties of this instance.
 
@@ -85,7 +73,7 @@ class VirtualServerInstance(Instance):
             self._vsinstancetype = self._virtualserverinstance['vsInstanceType']
             self._asscociatedclients = self._virtualserverinstance['associatedClients']
     
-        
+
     @property
     def associated_clients(self):
         """Treats the clients associated to this instance as a read-only attribute."""
@@ -163,32 +151,4 @@ class VirtualServerInstance(Instance):
     def co_ordinator(self):
         """Returns the Co_ordinator of this instance it is read-only attribute"""
         _associated_clients = self.associated_clients
-        return _associated_clients['Clients'][0]
-    
-    def _get_instance_properties_json(self):
-        """get the all instances related properties of the instances for which the json is same.
-        
-           eg. amazon and azure have similar structure
-           
-           Returns:
-                dict - all instance properties put inside a dict
-           
-        """
-        instance_json = {
-                            "instanceProperties":
-                                {
-                                    "isDeleted": False,
-                                    "instance": self._instance,
-                                    "instanceActivityControl": self._instanceActivityControl,
-                                    "virtualServerInstance": {
-                                        "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                                        "associatedClients": self._virtualserverinstance['associatedClients'],
-                                
-                                    }
-                                }
-                        }
-        return instance_json
-    
-    
-    
-   
+        return _associated_clients[0]

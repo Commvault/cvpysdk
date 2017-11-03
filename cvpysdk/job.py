@@ -317,7 +317,7 @@ class Job(object):
             # set the value of previous status as the value of current status
             previous_status = status
         else:
-            return status not in ["failed", "killed"]
+            return self._status.lower() not in ["failed", "killed"]
 
         return False
 
