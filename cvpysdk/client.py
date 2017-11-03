@@ -17,25 +17,33 @@ Client: Class for a single client of the commcell
 
 
 Clients:
-    __init__(commcell_object) --  initialise object of Clients class associated with the commcell
+    __init__(commcell_object)       --  initialise object of Clients class associated with the
+                                            commcell
 
-    __str__()                 --  returns all the clients associated with the commcell
+    __str__()                       --  returns all the clients associated with the commcell
 
-    __repr__()                --  returns the string to represent the instance of the Clients class
+    __repr__()                      --  returns the string to represent the instance of the Clients
+                                            class
 
-    _get_clients()            --  gets all the clients associated with the commcell
+    _get_clients()                  --  gets all the clients associated with the commcell
 
-    _get_client_dict()        --  returns the client dict for client to be added to member server
+    _get_client_dict()              --  returns the client dict for client to be added to member
+                                            server
 
-    _member_servers()         --  returns member clients to be associated with the Virtual Client
+    _member_servers()               --  returns member clients to be associated with the Virtual
+                                            Client
 
-    has_client(client_name)   --  checks if a client exists with the given name or not
+    _get_client_from_hostname()     --  returns the client name if associated with specified
+                                            hostname if exists
 
-    add_vmware_client()       --  adds a new VMWare Virtualization Client to the Commcell
+    has_client(client_name)         --  checks if a client exists with the given name or not
 
-    get(client_name)          --  returns the Client class object of the input client name
+    add_vmware_client()             --  adds a new VMWare Virtualization Client to the Commcell
 
-    delete(client_name)       --  deletes the client specified by the client name from the commcell
+    get(client_name)                --  returns the Client class object of the input client name
+
+    delete(client_name)             --  deletes the client specified by the client name from the
+                                            commcell
 
 
 Client:
@@ -100,7 +108,6 @@ from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
 
-
 class Clients(object):
     """Class for representing all the clients associated with the commcell."""
 
@@ -163,7 +170,11 @@ class Clients(object):
                 for dictionary in response.json()['clientProperties']:
                     temp_name = dictionary['client']['clientEntity']['clientName'].lower()
                     temp_id = str(dictionary['client']['clientEntity']['clientId']).lower()
-                    clients_dict[temp_name] = temp_id
+                    temp_hostname = dictionary['client']['clientEntity']['hostName'].lower()
+                    clients_dict[temp_name] = {
+                        'id': temp_id,
+                        'hostname': temp_hostname
+                    }
 
                 return clients_dict
             else:
@@ -227,6 +238,20 @@ class Clients(object):
                     member_servers.append(client_dict)
 
         return member_servers
+
+    def _get_client_from_hostname(self, hostname):
+        """Checks if client associated given hostname exists and returns the client name
+
+            Args:
+                hostname    (str)   --  host name of the client on this commcell
+
+            Return:
+                str  -  name of the client associated with this hostname
+
+        """
+        for client in self._clients:
+            if hostname in self._clients[client]['hostname']:
+                return client
 
     def has_client(self, client_name):
         """Checks if a client exists in the commcell with the input client name.
@@ -338,11 +363,13 @@ class Clients(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def get(self, client_name):
-        """Returns a client object of the specified client name.
+    def get(self, name):
+        """Returns a client object if client name or host name matches specified name
+            We check if specified name matches any of the existing client names else
+            compare specified name with host names of existing clients
 
             Args:
-                client_name (str)  --  name of the client
+                name (str)  --  name of the client
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -353,13 +380,16 @@ class Clients(object):
 
                     if no client exists with the given name
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(name, basestring):
             raise SDKException('Client', '101')
         else:
-            client_name = client_name.lower()
+            client_name = name.lower()
 
-            if self.has_client(client_name):
-                return Client(self._commcell_object, client_name, self._clients[client_name])
+            if not self.has_client(client_name):
+                client_name = self._get_client_from_hostname(client_name)
+
+            if client_name is not None:
+                return Client(self._commcell_object, client_name, self._clients[client_name]['id'])
 
             raise SDKException(
                 'Client', '102', 'No client exists with name: {0}'.format(client_name)
@@ -389,7 +419,7 @@ class Clients(object):
             client_name = client_name.lower()
 
             if self.has_client(client_name):
-                client_id = self._clients[client_name]
+                client_id = self._clients[client_name]['id']
                 client_delete_service = self._commcell_object._services['CLIENT'] % (client_id)
                 client_delete_service += "?forceDelete=1"
 

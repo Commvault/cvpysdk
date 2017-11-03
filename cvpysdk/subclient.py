@@ -1376,6 +1376,12 @@ class Subclient(object):
 
                     default: None
 
+                fs_options      (dict)          -- dictionary that includes all advanced options
+                    options:
+                        all_versions        : if set to True restores all the versions of the
+                                                specified file
+                        versions            : list of version numbers to be backed up
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1449,7 +1455,10 @@ class Subclient(object):
                         proxy_client        : proxy that needed to be used for restore
                         impersonate_user    : Impersonate user options for restore
                         impersonate_password: Impersonate password option for restore
-                                                                        in base64 encoded form
+                                                in base64 encoded form
+                        all_versions        : if set to True restores all the versions of the
+                                                specified file
+                        versions            : list of version numbers to be backed up
 
             Returns:
                 object - instance of the Job class for this restore job

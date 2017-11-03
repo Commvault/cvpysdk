@@ -50,6 +50,7 @@ SERVICES_DICT_TEMPLATE = {
     'SUSPEND_JOB': '{0}Job/%s/action/pause',
     'RESUME_JOB': '{0}Job/%s/action/resume',
     'KILL_JOB': '{0}Job/%s/action/kill',
+    'ALL_JOBS': '{0}Jobs',
 
     'GET_MEDIA_AGENTS': '{0}MediaAgent',
     'LIBRARY': '{0}Library',
@@ -74,6 +75,9 @@ SERVICES_DICT_TEMPLATE = {
     'BACKUPSET_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s',
     'SUBCLIENT_SCHEDULES': ('{0}Schedules?clientId=%s&apptypeId=%s&'
                             'backupsetId=%s&subclientId=%s'),
+    'SCHEDULE': '{0}Schedules/%s',
+    'ENABLE_SCHEDULE': '{0}Schedules/task/Action/Enable',
+    'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',

@@ -50,6 +50,7 @@ from __future__ import unicode_literals
 
 import getpass
 import socket
+import functools
 
 from base64 import b64encode
 
@@ -75,6 +76,7 @@ from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
 from .plan import Plans
+from .job import JobController
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -120,7 +122,7 @@ class Commcell(object):
             'Authtoken': None
         }
 
-        self._device_id = socket.gethostbyname(socket.getfqdn())
+        self._device_id = socket.getfqdn()
 
         if commcell_password is None:
             commcell_password = getpass.getpass('Please enter the Commcell Password: ')
@@ -174,6 +176,7 @@ class Commcell(object):
         self._global_filters = None
         self._datacube = None
         self._plans = None
+        self._job_controller = None
 
         del self._password
 
@@ -230,6 +233,7 @@ class Commcell(object):
         del self._global_filters
         del self._datacube
         del self._plans
+        del self._job_controller
 
         del self._web_service
         del self._cvpysdk_object
@@ -436,6 +440,19 @@ class Commcell(object):
         except SDKException:
             return None
 
+    @property
+    def job_controller(self):
+        """Returns the instance of the Jobs class."""
+        try:
+            if self._job_controller is None:
+                self._job_controller = JobController(self)
+
+            return self._job_controller
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
@@ -444,7 +461,7 @@ class Commcell(object):
         output = self._cvpysdk_object._logout()
         self._remove_attribs_()
         return output
-
+    
     def request(self, request_type, request_url, request_body=None):
         """Runs the request of the type specified on the request URL, with the body passed
             in the arguments.
