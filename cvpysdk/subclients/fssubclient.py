@@ -145,3 +145,42 @@ class FileSystemSubclient(Subclient):
             raise SDKException(
                 'Subclient', '102', 'Subclient filter content should be a list value and not empty'
             )
+
+    def find_all_versions(self, *args, **kwargs):
+        """Searches the content of a Subclient.
+
+            Args:
+                Dictionary of browse options:
+                    Example:
+                        find_all_versions({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2014-04-20 12:00:00',
+                            'to_time': '2016-04-31 12:00:00'
+                        })
+
+                    (OR)
+
+                Keyword argument of browse options:
+                    Example:
+                        find_all_versions(
+                            path='c:\\hello.txt',
+                            show_deleted=True,
+                            to_time='2016-04-31 12:00:00'
+                        )
+
+                Refer self._default_browse_options for all the supported options
+
+        Returns:
+            list - List of only the file, folder paths from the browse response
+
+            dict - Dictionary of all the paths with additional metadata retrieved from browse
+        """
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['operation'] = 'all_versions'
+
+        return self._backupset_object._do_browse(options)
