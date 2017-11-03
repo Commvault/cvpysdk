@@ -1,0 +1,673 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Subclient &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User Group" href="usergroup.html" />
+    <link rel="prev" title="Storage" href="storage.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.subclient">
+<span id="subclient"></span><h1>Subclient<a class="headerlink" href="#module-cvpysdk.subclient" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing subclient operations.</p>
+<p>Subclients and Subclient are 2 classes defined in this file.</p>
+<p>Subclients: Class for representing all the subclients associated with a backupset / instance</p>
+<p>Subclient: Base class consisting of all the common properties and operations for a Subclient</p>
+<dl class="docutils">
+<dt>Subclients:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(class_object)      –  initialise object of subclients object associated with</dt>
+<dd>the specified backup set/instance.</dd>
+</dl>
+<p>__str__()                   –  returns all the subclients associated with the backupset</p>
+<p>__repr__()                  –  returns the string for the instance of the Subclients class</p>
+<p>_get_subclients()           –  gets all the subclients associated with the backupset specified</p>
+<p>has_subclient()             –  checks if a subclient exists with the given name or not</p>
+<p>add()                       –  adds a new subclient to the backupset</p>
+<p>get(subclient_name)         –  returns the subclient object of the input subclient name</p>
+<p class="last">delete(subclient_name)      –  deletes the subclient (subclient name) from the backupset</p>
+</dd>
+<dt>Subclient:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(backupset_object,</dt>
+<dd><p class="first">subclient_name,
+subclient_id)      –  initialise instance of the Subclient class,</p>
+<blockquote class="last">
+<div>associated to the specified backupset</div></blockquote>
+</dd>
+</dl>
+<p>__repr__()                  –  return the subclient name, the instance is associated with</p>
+<p>_get_subclient_id()         –  method to get subclient id, if not specified in __init__ method</p>
+<p>_get_subclient_properties() –  get the properties of this subclient</p>
+<p>_set_subclient_properties() –  sets the properties of this sub client .</p>
+<p>_filter_paths()             –  filters the path as per the OS, and the Agent</p>
+<p>_process_backup_request()   –  runs the backup request provided, and processes the response</p>
+<dl class="docutils">
+<dt>_browse_and_find_json()     –  returns the appropriate JSON request to pass for either</dt>
+<dd>Browse operation or Find operation</dd>
+</dl>
+<p>_process_browse_response()  –  processes response received for both Browse and Find request</p>
+<dl class="docutils">
+<dt>_restore_json()             –  returns the apppropriate JSON request to pass for either</dt>
+<dd>Restore In-Place or Out-of-Place operation</dd>
+</dl>
+<p>_json_task()                –  setter for task property</p>
+<p>_json_restore_subtask()     –  setter for sub task property</p>
+<p>_association_json()         –  setter for association property</p>
+<p>_impersonation_json()       –  setter for impersonation Property</p>
+<p>_restore_browse_option_json()-  setter for  browse option  property in restore</p>
+<p>_restore_commonOptions_json()-  setter for common options property in restore</p>
+<p>_restore_destination_json() –  setter for destination options property in restore</p>
+<p>_restore_fileoption_json()  – setter for file option property in restore</p>
+<p>_restore_destination_json() – setter for destination property in restore</p>
+<p>_restore_sharepoint_json()  – setter for the sharepoint property in restore</p>
+<p>_process_restore_response() –  processes response received for the Restore request</p>
+<p>description()               –  update the description of the subclient</p>
+<p>content()                   –  update the content of the subclient</p>
+<p>enable_backup()             –  enables the backup for the subclient</p>
+<p>enable_backup_at_time()     –  enables backup for the subclient at the input time specified</p>
+<p>disble_backup()             –  disbles the backup for the subclient</p>
+<p>backup()                    –  run a backup job for the subclient</p>
+<dl class="docutils">
+<dt>browse()                    –  gets the content of the backup for this subclient</dt>
+<dd>at the path specified</dd>
+<dt>browse_in_time()            –  gets the content of the backup for this subclient</dt>
+<dd>at the input path in the time range specified</dd>
+</dl>
+<p>find()                      –  searches a given file/folder name in the subclient content</p>
+<dl class="last docutils">
+<dt>restore_in_place()          –  Restores the files/folders specified in the</dt>
+<dd>input paths list to the same location</dd>
+<dt>restore_out_of_place()      –  Restores the files/folders specified in the input paths list</dt>
+<dd>to the input client, at the specified destionation location</dd>
+</dl>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.subclient.Subclient">
+<em class="property">class </em><code class="descclassname">cvpysdk.subclient.</code><code class="descname">Subclient</code><span class="sig-paren">(</span><em>backupset_object</em>, <em>subclient_name</em>, <em>subclient_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base class consisting of all the common properties and operations for a Subclient</p>
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.backup">
+<code class="descname">backup</code><span class="sig-paren">(</span><em>backup_level=’Incremental’</em>, <em>incremental_backup=False</em>, <em>incremental_level=’BEFORE_SYNTH’</em>, <em>collect_metadata=False</em>, <em>on_demand_input=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a backup job for the subclient of the level specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>backup_level        (str)   –  level of backup the user wish to run</dt>
+<dd><blockquote class="first">
+<div>Full / Incremental / Differential / Synthetic_full</div></blockquote>
+<p class="last">default: Incremental</p>
+</dd>
+<dt>incremental_backup  (bool)  –  run incremental backup</dt>
+<dd><blockquote class="first">
+<div>only applicable in case of Synthetic_full backup</div></blockquote>
+<p class="last">default: False</p>
+</dd>
+<dt>incremental_level   (str)   –  run incremental backup before/after synthetic full</dt>
+<dd><blockquote class="first">
+<div><p>BEFORE_SYNTH / AFTER_SYNTH</p>
+<p>only applicable in case of Synthetic_full backup</p>
+</div></blockquote>
+<p class="last">default: BEFORE_SYNTH</p>
+</dd>
+<dt>on_demand_input     (str)   –  input directive file location for on</dt>
+<dd><blockquote class="first">
+<div><blockquote>
+<div>demand subclient</div></blockquote>
+<p>only applicable in case of on demand subclient</p>
+</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this backup job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if backup level specified is not correct</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.browse">
+<code class="descname">browse</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.browse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Browses the content of a Subclient.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>Dictionary of browse options:</dt>
+<dd><dl class="first docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>browse({</dt>
+<dd>‘path’: ‘c:hello’,
+‘show_deleted’: True,
+‘from_time’: ‘2014-04-20 12:00:00’,
+‘to_time’: ‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">})</p>
+</dd>
+</dl>
+<p class="last">(OR)</p>
+</dd>
+<dt>Keyword argument of browse options:</dt>
+<dd><dl class="first last docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>browse(</dt>
+<dd>path=’c:hello’,
+show_deleted=True,
+from_time=‘2014-04-20 12:00:00’,
+to_time=‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="last">Refer Backupset._default_browse_options for all the supported options</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
+<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.data_readers">
+<code class="descname">data_readers</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.data_readers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the data readers as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.description">
+<code class="descname">description</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the subclient description as a property of the Subclient class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.disable_backup">
+<code class="descname">disable_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.disable_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.disable_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Backup for the subclient.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to disable backup of subclient</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.disable_intelli_snap">
+<code class="descname">disable_intelli_snap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.disable_intelli_snap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.disable_intelli_snap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Intelli Snap for the subclient.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to disable intelli snap for subclient</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.enable_backup">
+<code class="descname">enable_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.enable_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.enable_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables Backup for the subclient.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to enable backup of subclient</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.enable_backup_at_time">
+<code class="descname">enable_backup_at_time</code><span class="sig-paren">(</span><em>enable_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.enable_backup_at_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.enable_backup_at_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables Backup if not already disabled, and enables at the time specified.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>enable_time (str)  –  UTC time to enable the backup at, in 24 Hour format</dt>
+<dd>format: YYYY-MM-DD HH:mm:ss</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if time value entered is less than the current time</p>
+<p>if time value entered is not of correct format</p>
+<p>if failed to enable backup</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.enable_intelli_snap">
+<code class="descname">enable_intelli_snap</code><span class="sig-paren">(</span><em>snap_engine_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.enable_intelli_snap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.enable_intelli_snap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables Intelli Snap for the subclient.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>snap_engine_name    (str)   –  Snap Engine Name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to enable intelli snap for subclient</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.find">
+<code class="descname">find</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.find"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.find" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Searches a file/folder in the subclient backup content,</dt>
+<dd><blockquote class="first">
+<div>and returns all the files matching the filters given.</div></blockquote>
+<dl class="last docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>Dictionary of find options:</dt>
+<dd><dl class="first docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>find({</dt>
+<dd>‘file_name’: ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.txt’,
+‘show_deleted’: True,
+‘from_time’: ‘2014-04-20 12:00:00’,
+‘to_time’: ‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">})</p>
+</dd>
+</dl>
+<p class="last">(OR)</p>
+</dd>
+<dt>Keyword argument of find options:</dt>
+<dd><dl class="first last docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>find(</dt>
+<dd>file_name=’<a href="#id3"><span class="problematic" id="id4">*</span></a>.txt’,
+show_deleted=True,
+from_time=2014-04-20 12:00:00,
+to_time=‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Refer Backupset._default_browse_options for all the supported options</p>
+<dl class="last docutils">
+<dt>Additional options supported:</dt>
+<dd><p class="first">file_name       (str)   –   Find files with name</p>
+<p>file_size_gt    (int)   –   Find files with size greater than size</p>
+<p>file_size_lt    (int)   –   Find files with size lesser than size</p>
+<p class="last">file_size_et    (int)   –   Find files with size equal to size</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
+<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.is_backup_enabled">
+<code class="descname">is_backup_enabled</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_backup_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is backup enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.is_intelli_snap_enabled">
+<code class="descname">is_intelli_snap_enabled</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_intelli_snap_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the is intelli snap enabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.is_on_demand_subclient">
+<code class="descname">is_on_demand_subclient</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_on_demand_subclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the on demand subclient as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.last_backup_time">
+<code class="descname">last_backup_time</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.last_backup_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the last backup time as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.next_backup_time">
+<code class="descname">next_backup_time</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.next_backup_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the next backup time as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.restore_in_place">
+<code class="descname">restore_in_place</code><span class="sig-paren">(</span><em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.restore_in_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the files/folders specified in the input paths list to the same location.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">paths                   (list)  –  list of full paths of files/folders to restore</p>
+<dl class="last docutils">
+<dt>overwrite               (bool)  –  unconditional overwrite files during restore</dt>
+<dd>default: True</dd>
+<dt>restore_data_and_acl    (bool)  –  restore data and ACL files</dt>
+<dd>default: True</dd>
+<dt>copy_precedence         (int)   –  copy precedence value of storage policy copy</dt>
+<dd>default: None</dd>
+<dt>from_time           (str)       –  time to retore the contents after</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>to_time           (str)         –  time to retore the contents before</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.restore_out_of_place">
+<code class="descname">restore_out_of_place</code><span class="sig-paren">(</span><em>client</em>, <em>destination_path</em>, <em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the files/folders specified in the input paths list to the input client,
+at the specified destionation location.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>client                (str/object) –  either the name of the client or</dt>
+<dd>the instance of the Client</dd>
+</dl>
+<p>destination_path      (str)        –  full path of the restore location on client</p>
+<dl class="last docutils">
+<dt>paths                 (list)       –  list of full paths of</dt>
+<dd>files/folders to restore</dd>
+<dt>overwrite             (bool)       –  unconditional overwrite files during restore</dt>
+<dd>default: True</dd>
+<dt>restore_data_and_acl  (bool)       –  restore data and ACL files</dt>
+<dd>default: True</dd>
+<dt>copy_precedence         (int)   –  copy precedence value of storage policy copy</dt>
+<dd>default: None</dd>
+<dt>from_time           (str)       –  time to retore the contents after</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>to_time           (str)         –  time to retore the contents before</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if client is not a string or Client instance</p>
+<p>if destination_path is not a string</p>
+<p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.storage_policy">
+<code class="descname">storage_policy</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.storage_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the subclient storage policy as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.subclient_id">
+<code class="descname">subclient_id</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.subclient_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the subclient id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.subclient_name">
+<code class="descname">subclient_name</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.subclient_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the subclient name as a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.subclient.Subclients">
+<em class="property">class </em><code class="descclassname">cvpysdk.subclient.</code><code class="descname">Subclients</code><span class="sig-paren">(</span><em>class_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the subclients associated with a client.</p>
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclients.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>subclient_name</em>, <em>storage_policy</em>, <em>description=”</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclients.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new subclient to the backupset.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">subclient_name      (str)   –  name of the new subclient to add</p>
+<dl class="docutils">
+<dt>storage_policy      (str)   –  name of the storage policy to</dt>
+<dd>associate with the subclient</dd>
+</dl>
+<p class="last">description         (str)   –  description for the subclient (optional)</p>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Subclient class</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if subclient name argument is not of type string</p>
+<p>if storage policy argument is not of type string</p>
+<p>if description argument is not of type string</p>
+<p>if failed to create subclient</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if subclient already exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclients.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>subclient_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclients.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the subclient specified by the subclient_name from the backupset.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>subclient_name (str)  –  name of the subclient to remove from the backupset</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the subclient name argument is not string</p>
+<p>if failed to delete subclient</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if no subclient exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclients.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>subclient_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclients.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a subclient object of the specified backupset name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>subclient_name (str)  –  name of the subclient</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Subclient class for the given subclient name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the subclient name argument is not string</p>
+<p class="last">if no subclient exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclients.has_subclient">
+<code class="descname">has_subclient</code><span class="sig-paren">(</span><em>subclient_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclients.has_subclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.has_subclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a subclient exists in the commcell with the input subclient name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>subclient_name (str)  –  name of the subclient</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the subclient exists in the backupset or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the subclient name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="storage.html" title="previous chapter">Storage</a></li>
+      <li>Next: <a href="usergroup.html" title="next chapter">User Group</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/subclient.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/subclient.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

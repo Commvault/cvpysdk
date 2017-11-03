@@ -1,0 +1,613 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cvpysdk.instances.sqlinstance &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.instances.sqlinstance</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a SQL Server Instance.</span>
+
+<span class="sd">SQLServerInstance is the only class defined in this file.</span>
+
+<span class="sd">SQLServerInstance: Derived class from Instance Base class, representing a sql server instance,</span>
+<span class="sd">                       and to perform operations on that instance</span>
+
+<span class="sd">SQLServerInstance:</span>
+<span class="sd">    _restore_request_json()         --  returns the restore request json</span>
+
+<span class="sd">    _process_restore_response()     --  processes response received for the Restore request</span>
+
+<span class="sd">    _get_sql_restore_options()      --  returns the dict containing destination sql server names</span>
+
+<span class="sd">    _run_backup()                   --  runs full backup for this subclients and appends the</span>
+<span class="sd">                                            job object to the return list</span>
+
+<span class="sd">    _process_browse_request()       --  processes response received for Browse request</span>
+
+<span class="sd">    backup()                        --  runs full backup for all subclients associated</span>
+<span class="sd">                                            with this instance</span>
+
+<span class="sd">    browse()                        --  gets the content of the backup for this instance</span>
+
+<span class="sd">    browse_in_time()                --  gets the content of the backup for this instance</span>
+<span class="sd">                                            in the time range specified</span>
+
+<span class="sd">    restore()                       --  runs the restore job for specified</span>
+
+<span class="sd">    restore_to_destination_server() --  restores the database on destination server</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
+
+
+<div class="viewcode-block" id="SQLServerInstance"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance">[docs]</a><span class="k">class</span> <span class="nc">SQLServerInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Instance Base class, representing a SQL Server instance,</span>
+<span class="sd">        and to perform operations on that Instance.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_restore_request_json</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">content_to_restore</span><span class="p">,</span>
+            <span class="n">restore_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content_to_restore   (list)  --  databases list to restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - JSON request to pass to the API</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_sql_restore_options</span><span class="p">(</span><span class="n">content_to_restore</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;No Instance exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="n">destination_client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="p">[</span><span class="n">destination_instance</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">destination_instance_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="p">[</span><span class="n">destination_instance</span><span class="p">][</span><span class="s1">&#39;instanceId&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
+                <span class="p">}],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                        <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">1001</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;sqlServerRstOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;sqlRecoverType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                <span class="s2">&quot;dropConnectionsToDatabase&quot;</span><span class="p">:</span> <span class="n">drop_connections_to_databse</span><span class="p">,</span>
+                                <span class="s2">&quot;overWrite&quot;</span><span class="p">:</span> <span class="n">overwrite</span><span class="p">,</span>
+                                <span class="s2">&quot;sqlRestoreType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                <span class="s2">&quot;database&quot;</span><span class="p">:</span> <span class="n">content_to_restore</span><span class="p">,</span>
+                                <span class="s2">&quot;restoreSource&quot;</span><span class="p">:</span> <span class="n">content_to_restore</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;commonOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;destination&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">destination_client_id</span><span class="p">,</span>
+                                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">destination_instance</span><span class="p">,</span>
+                                    <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="n">destination_instance_id</span>
+                                <span class="p">},</span>
+                                <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">destination_client_id</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">restore_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">restore_path_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;restoreToDiskPath&quot;</span><span class="p">:</span> <span class="n">restore_path</span><span class="p">,</span>
+                <span class="s2">&quot;restoreToDisk&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">}</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;sqlServerRstOption&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">restore_path_dict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_process_restore_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the CreateTask API with the request JSON provided for Restore,</span>
+<span class="sd">            and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_json    (dict)  --  JSON request to run for the API</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if restore job failed</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Restore job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to run the restore job&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_sql_restore_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content_to_restore</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the SQL/Restoreoptions API with the request JSON provided,</span>
+<span class="sd">            and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content_to_restore   (list)  --  databases list to restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - dictionary consisting of the sql destination server options</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to get SQL instances</span>
+
+<span class="sd">                    if no instance exits on commcell</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">contents_dict</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">content_to_restore</span><span class="p">:</span>
+            <span class="n">database_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;databaseName&quot;</span><span class="p">:</span> <span class="n">content</span>
+            <span class="p">}</span>
+            <span class="n">contents_dict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">database_dict</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;restoreDbType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;sourceInstanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">),</span>
+            <span class="s2">&quot;selectedDatabases&quot;</span><span class="p">:</span> <span class="n">contents_dict</span>
+        <span class="p">}</span>
+
+        <span class="n">webservice</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SQL_RESTORE_OPTIONS&#39;</span><span class="p">]</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="n">webservice</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;sqlDestinationInstances&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;sqlDestinationInstances&#39;</span><span class="p">]:</span>
+                        <span class="n">instances_dict</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;genericEntity&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="p">{</span>
+                                <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">instance</span><span class="p">[</span><span class="s1">&#39;genericEntity&#39;</span><span class="p">][</span><span class="s1">&#39;instanceId&#39;</span><span class="p">]),</span>
+                                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">instance</span><span class="p">[</span><span class="s1">&#39;genericEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">])</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">instances_dict</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">]:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Instance exists on commcell&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_run_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">return_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Triggers full backup job for the given subclient, and appends its Job object to list</span>
+<span class="sd">            The SDKExcpetion class instance is appended to the list,</span>
+<span class="sd">            if any exception is raised while running the backup job for the Subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_name (str)   --  name of the subclient to trigger the backup for</span>
+
+<span class="sd">                return_list    (list)  --  list to append the job object to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="s1">&#39;Full&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">job</span><span class="p">:</span>
+                <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">SDKException</span> <span class="k">as</span> <span class="n">excp</span><span class="p">:</span>
+            <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">excp</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_process_browse_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">browse_request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the SQL Instance Browse API with the request JSON provided for the operation</span>
+<span class="sd">            specified, and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                browse_request    (dict)  --  JSON request to be sent to Server</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list of all databases</span>
+
+<span class="sd">                dict - database names along with details like backup created time</span>
+<span class="sd">                           and database version</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">browse_request</span><span class="p">)</span>
+
+        <span class="n">full_result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">databases</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;sqlDatabase&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">database</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;sqlDatabase&#39;</span><span class="p">]:</span>
+
+                        <span class="n">database_name</span> <span class="o">=</span> <span class="n">database</span><span class="p">[</span><span class="s1">&#39;databaseName&#39;</span><span class="p">]</span>
+
+                        <span class="n">created_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span>
+                            <span class="nb">int</span><span class="p">(</span><span class="n">database</span><span class="p">[</span><span class="s1">&#39;createdTime&#39;</span><span class="p">])</span>
+                        <span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">-%m-%Y %H:%M:%S&#39;</span><span class="p">)</span>
+
+                        <span class="n">version</span> <span class="o">=</span> <span class="n">database</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span>
+
+                        <span class="n">temp</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="n">database_name</span><span class="p">:</span> <span class="p">[</span><span class="n">created_time</span><span class="p">,</span> <span class="n">version</span><span class="p">]</span>
+                        <span class="p">}</span>
+
+                        <span class="n">databases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">database_name</span><span class="p">)</span>
+                        <span class="n">full_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">databases</span><span class="p">,</span> <span class="n">full_result</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SQLServerInstance.backup"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run full backup job for all subclients in this instance.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list containing the job objects for the full backup jobs started for</span>
+<span class="sd">                           the subclients in the backupset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">return_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">thread_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">all_subclients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">_subclients</span>
+
+        <span class="k">if</span> <span class="n">all_subclients</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">subclient</span> <span class="ow">in</span> <span class="n">all_subclients</span><span class="p">:</span>
+                <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+                    <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_backup</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">subclient</span><span class="p">,</span> <span class="n">return_list</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">thread_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+                <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">thread_list</span><span class="p">:</span>
+            <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">return_list</span></div>
+
+<div class="viewcode-block" id="SQLServerInstance.browse"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the list of the backed up databases for this instance.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list of all databases</span>
+
+<span class="sd">                dict - database names along with details like backup created time</span>
+<span class="sd">                           and database version</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">browse_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INSTANCE_BROWSE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="s2">&quot;SQL&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_request</span><span class="p">(</span><span class="n">browse_request</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SQLServerInstance.browse_in_time"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.browse_in_time">[docs]</a>    <span class="k">def</span> <span class="nf">browse_in_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">to_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the list of the backed up databases for this instance in the given time frame.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                from_date           (str)   --  date to get the contents after</span>
+<span class="sd">                        format: dd/MM/YYYY</span>
+<span class="sd">                        gets contents from 01/01/1970 if not specified</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                to_date             (str)  --  date to get the contents before</span>
+<span class="sd">                        format: dd/MM/YYYY</span>
+<span class="sd">                        gets contents till current day if not specified</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list of all databases</span>
+
+<span class="sd">                dict - database names along with details like backup created timen</span>
+<span class="sd">                           and database version</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">from_date</span> <span class="ow">and</span> <span class="p">(</span><span class="n">from_date</span> <span class="o">!=</span> <span class="s1">&#39;01/01/1970&#39;</span> <span class="ow">and</span> <span class="n">from_date</span> <span class="o">!=</span> <span class="s1">&#39;1/1/1970&#39;</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">from_date</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span>
+                    <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">32</span> <span class="ow">and</span>
+                    <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">13</span> <span class="ow">and</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1969</span> <span class="ow">and</span>
+                    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">r&#39;\d\d/\d\d/\d\d\d\d&#39;</span><span class="p">,</span> <span class="n">from_date</span><span class="p">)</span> <span class="ow">or</span>
+                     <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">r&#39;\d/\d/\d\d\d\d&#39;</span><span class="p">,</span> <span class="n">from_date</span><span class="p">))):</span>
+                <span class="n">from_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">from_date</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">from_date</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">to_date</span> <span class="ow">and</span> <span class="p">(</span><span class="n">to_date</span> <span class="o">!=</span> <span class="s1">&#39;01/01/1970&#39;</span> <span class="ow">and</span> <span class="n">to_date</span> <span class="o">!=</span> <span class="s1">&#39;1/1/1970&#39;</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">to_date</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span>
+                    <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">32</span> <span class="ow">and</span>
+                    <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">13</span> <span class="ow">and</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1969</span> <span class="ow">and</span>
+                    <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">r&#39;\d\d/\d\d/\d\d\d\d&#39;</span><span class="p">,</span> <span class="n">to_date</span><span class="p">)</span> <span class="ow">or</span>
+                     <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">r&#39;\d/\d/\d\d\d\d&#39;</span><span class="p">,</span> <span class="n">to_date</span><span class="p">))):</span>
+                <span class="n">today</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">today</span> <span class="o">==</span> <span class="n">to_date</span><span class="p">:</span>
+                    <span class="n">to_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">to_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">to_date</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">to_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+
+        <span class="n">browse_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INSTANCE_BROWSE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="s2">&quot;SQL&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span>
+        <span class="p">)</span>
+
+        <span class="n">browse_request</span> <span class="o">+=</span> <span class="s1">&#39;?fromTime=</span><span class="si">{0}</span><span class="s1">&amp;toTime=</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_request</span><span class="p">(</span><span class="n">browse_request</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SQLServerInstance.restore"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">content_to_restore</span><span class="p">,</span>
+            <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">restore_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the databases specified in the input paths list.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content_to_restore             (list)  --  list of databases to restore</span>
+
+<span class="sd">                drop_connections_to_databse    (bool)  --  Drop connections to database</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                overwrite                      (bool)  --  unconditional overwrite files during</span>
+<span class="sd">                                                               restore</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                restore_path                   (str)   --  existing path on disk to restore</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if content_to_restore is not a list</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_request_json</span><span class="p">(</span>
+            <span class="n">content_to_restore</span><span class="p">,</span>
+            <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="n">drop_connections_to_databse</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">restore_path</span><span class="o">=</span><span class="n">restore_path</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SQLServerInstance.restore_to_destination_server"><a class="viewcode-back" href="../../../instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.restore_to_destination_server">[docs]</a>    <span class="k">def</span> <span class="nf">restore_to_destination_server</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">content_to_restore</span><span class="p">,</span>
+            <span class="n">destination_server</span><span class="p">,</span>
+            <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">restore_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the databases specified in the input paths list.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content_to_restore             (list)  --  list of databases to restore</span>
+
+<span class="sd">                destination_server             (str)   --  Destination server(instance) name</span>
+
+<span class="sd">                drop_connections_to_databse    (bool)  --  Drop connections to database</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                overwrite                      (bool)  --  unconditional overwrite files during</span>
+<span class="sd">                                                               restore</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                restore_path                   (str)   --  existing path on disk to restore</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if content_to_restore is not a list</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_request_json</span><span class="p">(</span>
+            <span class="n">content_to_restore</span><span class="p">,</span>
+            <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="n">drop_connections_to_databse</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">restore_path</span><span class="o">=</span><span class="n">restore_path</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="n">destination_server</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

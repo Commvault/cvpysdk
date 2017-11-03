@@ -1,0 +1,325 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Instance &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Job" href="job.html" />
+    <link rel="prev" title="Global Filter" href="global_filter.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.instance">
+<span id="instance"></span><h1>Instance<a class="headerlink" href="#module-cvpysdk.instance" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing instance operations.</p>
+<p>Instances and Instance are 2 classes defined in this file.</p>
+<p>Instances: Class for representing all the instances associated with a specific agent</p>
+<dl class="docutils">
+<dt>Instance:  Class for a single instance selected for an agent,</dt>
+<dd>and to perform operations on that instance</dd>
+<dt>Instances:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(agent_object)          –  initialise object of Instances class associated with</dt>
+<dd>the specified agent</dd>
+</dl>
+<p>__str__()                       –  returns all the instances associated with the agent</p>
+<p>__repr__()                      –  returns the string for the object of the Instances class</p>
+<p>_get_instances()                –  gets all the instances associated with the agent specified</p>
+<p>has_instance(instance_name)     –  checks if a instance exists with the given name or not</p>
+<dl class="last docutils">
+<dt>get(instance_name)              –  returns the Instance class object</dt>
+<dd>of the input backup set name</dd>
+</dl>
+</dd>
+<dt>Instance:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(agent_object,</dt>
+<dd><p class="first">instance_name,
+instance_id=None)      –  initialise object of Instance with the specified instance</p>
+<blockquote class="last">
+<div>name and id, and associated to the specified agent</div></blockquote>
+</dd>
+</dl>
+<p>__repr__()                      –  return the instance name, the object is associated with</p>
+<p>_get_instance_id()              –  method to get the instance id, if not specified in __init__</p>
+<p>_get_instance_properties()      –  method to get the properties of the instance</p>
+<p>browse()                        –  browse the content of the instance</p>
+<p class="last">find()                          –  find content in the instance</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.instance.Instance">
+<em class="property">class </em><code class="descclassname">cvpysdk.instance.</code><code class="descname">Instance</code><span class="sig-paren">(</span><em>agent_object</em>, <em>instance_name</em>, <em>instance_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for performing instance operations for a specific instance.</p>
+<dl class="method">
+<dt id="cvpysdk.instance.Instance.browse">
+<code class="descname">browse</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance.browse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Browses the content of a Backupset.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>Dictionary of browse options:</dt>
+<dd><dl class="first docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>browse({</dt>
+<dd>‘path’: ‘c:hello’,
+‘show_deleted’: True,
+‘from_time’: ‘2014-04-20 12:00:00’,
+‘to_time’: ‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">})</p>
+</dd>
+</dl>
+<p class="last">(OR)</p>
+</dd>
+<dt>Keyword argument of browse options:</dt>
+<dd><dl class="first last docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>browse(</dt>
+<dd>path=’c:hello’,
+show_deleted=True,
+from_time=‘2014-04-20 12:00:00’,
+to_time=‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="last">Refer self._default_browse_options for all the supported options</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
+<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if there are more than one backupsets in the instance</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instance.find">
+<code class="descname">find</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance.find"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance.find" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Searches a file/folder in the backupset backup content,</dt>
+<dd><blockquote class="first">
+<div>and returns all the files matching the filters given.</div></blockquote>
+<dl class="last docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>Dictionary of find options:</dt>
+<dd><dl class="first docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>find({</dt>
+<dd>‘file_name’: ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.txt’,
+‘show_deleted’: True,
+‘from_time’: ‘2014-04-20 12:00:00’,
+‘to_time’: ‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">})</p>
+</dd>
+</dl>
+<p class="last">(OR)</p>
+</dd>
+<dt>Keyword argument of find options:</dt>
+<dd><dl class="first last docutils">
+<dt>Example:</dt>
+<dd><dl class="first docutils">
+<dt>find(</dt>
+<dd>file_name=’<a href="#id3"><span class="problematic" id="id4">*</span></a>.txt’,
+show_deleted=True,
+from_time=2014-04-20 12:00:00,
+to_time=‘2016-04-21 12:00:00’</dd>
+</dl>
+<p class="last">)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Refer self._default_browse_options for all the supported options</p>
+<dl class="last docutils">
+<dt>Additional options supported:</dt>
+<dd><p class="first">file_name       (str)   –   Find files with name</p>
+<p>file_size_gt    (int)   –   Find files with size greater than size</p>
+<p>file_size_lt    (int)   –   Find files with size lesser than size</p>
+<p class="last">file_size_et    (int)   –   Find files with size equal to size</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
+<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if there are more than one backupsets in the instance</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instance.Instance.instance_id">
+<code class="descname">instance_id</code><a class="headerlink" href="#cvpysdk.instance.Instance.instance_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the instance id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instance.Instance.instance_name">
+<code class="descname">instance_name</code><a class="headerlink" href="#cvpysdk.instance.Instance.instance_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the instance name as a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.instance.Instances">
+<em class="property">class </em><code class="descclassname">cvpysdk.instance.</code><code class="descname">Instances</code><span class="sig-paren">(</span><em>agent_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the instances associated with a client.</p>
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>instance_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a instance object of the specified instance name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>instance_name (str)  –  name of the instance</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Instance class for the given instance name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the instance name argument is not string</p>
+<p class="last">if no instance exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.has_instance">
+<code class="descname">has_instance</code><span class="sig-paren">(</span><em>instance_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.has_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.has_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a instance exists for the agent with the input instance name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>instance_name (str)  –  name of the instance</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the instance exists for the agent or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the instance name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="global_filter.html" title="previous chapter">Global Filter</a></li>
+      <li>Next: <a href="job.html" title="next chapter">Job</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/instance.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/instance.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

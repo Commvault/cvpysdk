@@ -1,0 +1,329 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Job &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Schedules" href="schedules.html" />
+    <link rel="prev" title="Instance" href="instance.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.job">
+<span id="job"></span><h1>Job<a class="headerlink" href="#module-cvpysdk.job" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing operations on a job.</p>
+<p>Job: Class for keeping track of a job and perform various operations on it.</p>
+<dl class="docutils">
+<dt>Job:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><dl class="first last docutils">
+<dt>job_id)            –  initialises the instance of Job class associated with the</dt>
+<dd>specified commcell of job with id: ‘job_id’</dd>
+</dl>
+</dd>
+<dt>__repr__()                  –  returns the string representation of the object of this class,</dt>
+<dd>with the job id it is associated with</dd>
+</dl>
+<p>_is_valid_job()             –  checks if the job with the given id is a valid job or not.</p>
+<p>_get_job_summary()          –  gets the summary of the job with the given job id</p>
+<p>_get_job_details()          –  gets the details of the job with the given job id</p>
+<p>_initialize_job_properties()–  initializes the properties of the job</p>
+<dl class="docutils">
+<dt>_wait_for_status()          –  waits for 2 minutes or till the job status is changed</dt>
+<dd>to given status, whichever is earlier</dd>
+</dl>
+<p>wait_for_completion()       –  waits for the job to finish, (job.is_finished == True)</p>
+<dl class="docutils">
+<dt>is_finished()               –  checks for the status of the job.</dt>
+<dd>Returns True if finished, else False</dd>
+</dl>
+<p>pause()                     –  suspend the job</p>
+<p>resume()                    –  resumes the job</p>
+<p class="last">kill()                      –  kills the job</p>
+</dd>
+<dt>job.status                      –  Gives the current status of the job.</dt>
+<dd>(Completed / Suspended / Waiting / … / etc.)</dd>
+</dl>
+<p>job.is_finished                 –  Tells whether the job is finished or not. (True / False)</p>
+<p>job.pending_reason              –  reason if job went into pending state</p>
+<p>job.delay_reason                –  reason why the job was delayed</p>
+<dl class="class">
+<dt id="cvpysdk.job.Job">
+<em class="property">class </em><code class="descclassname">cvpysdk.job.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>job_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.Job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Class for performing client operations for a specific client.</p>
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.agent_name">
+<code class="descname">agent_name</code><a class="headerlink" href="#cvpysdk.job.Job.agent_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the agent name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.backup_level">
+<code class="descname">backup_level</code><a class="headerlink" href="#cvpysdk.job.Job.backup_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the backup level as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.backupset_name">
+<code class="descname">backupset_name</code><a class="headerlink" href="#cvpysdk.job.Job.backupset_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the backupset name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.client_name">
+<code class="descname">client_name</code><a class="headerlink" href="#cvpysdk.job.Job.client_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the client name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.delay_reason">
+<code class="descname">delay_reason</code><a class="headerlink" href="#cvpysdk.job.Job.delay_reason" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the job delay reason as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.end_time">
+<code class="descname">end_time</code><a class="headerlink" href="#cvpysdk.job.Job.end_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the end time as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.instance_name">
+<code class="descname">instance_name</code><a class="headerlink" href="#cvpysdk.job.Job.instance_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the instance name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.is_finished">
+<code class="descname">is_finished</code><a class="headerlink" href="#cvpysdk.job.Job.is_finished" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether the job has finished or not.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>bool - boolean that represents whether the job has finished or not</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.job_id">
+<code class="descname">job_id</code><a class="headerlink" href="#cvpysdk.job.Job.job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the job id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.job_type">
+<code class="descname">job_type</code><a class="headerlink" href="#cvpysdk.job.Job.job_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the job type as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.job.Job.kill">
+<code class="descname">kill</code><span class="sig-paren">(</span><em>wait_for_job_to_kill=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#Job.kill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.Job.kill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kills the job.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>wait_for_job_to_kill    (bool)  –  wait till job status is changed to Killed</dt>
+<dd>default: False</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to kill job</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.job.Job.pause">
+<code class="descname">pause</code><span class="sig-paren">(</span><em>wait_for_job_to_pause=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#Job.pause"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.Job.pause" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suspends the job.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>wait_for_job_to_pause   (bool)  –  wait till job status is changed to Suspended</dt>
+<dd>default: False</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to suspend job</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.pending_reason">
+<code class="descname">pending_reason</code><a class="headerlink" href="#cvpysdk.job.Job.pending_reason" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the job pending reason as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.job.Job.resume">
+<code class="descname">resume</code><span class="sig-paren">(</span><em>wait_for_job_to_resume=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#Job.resume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.Job.resume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resumes the job.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>wait_for_job_to_resume  (bool)  –  wait till job status is changed to Running</dt>
+<dd>default: False</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to resume job</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.start_time">
+<code class="descname">start_time</code><a class="headerlink" href="#cvpysdk.job.Job.start_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the start time as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.status">
+<code class="descname">status</code><a class="headerlink" href="#cvpysdk.job.Job.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the job status as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.subclient_name">
+<code class="descname">subclient_name</code><a class="headerlink" href="#cvpysdk.job.Job.subclient_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the subclient name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.job.Job.wait_for_completion">
+<code class="descname">wait_for_completion</code><span class="sig-paren">(</span><em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#Job.wait_for_completion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.Job.wait_for_completion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
+Kills the job and exits, if the job has been in Pending / Waiting state for more than
+the timeout value.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>timeout     (int)   –  minutes after which the job should be killed and exited,</dt>
+<dd><blockquote class="first">
+<div>if the job has been in Pending / Waiting state</div></blockquote>
+<p class="last">default: 30</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>bool    -   boolean specifying whether the job had finished or not</dt>
+<dd><p class="first">True    -   if the job had finished successfully</p>
+<p class="last">False   -   if the job was killed</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="instance.html" title="previous chapter">Instance</a></li>
+      <li>Next: <a href="schedules.html" title="next chapter">Schedules</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/job.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/job.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

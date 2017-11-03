@@ -1,0 +1,296 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cvpysdk.subclients.casubclient &#8212; Developer SDK - Python 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.subclients.casubclient</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a Cloud Apps Subclient.</span>
+
+<span class="sd">CloudAppsSubclient is the only class defined in this file.</span>
+
+<span class="sd">CloudAppsSubclient: Derived class from Subclient Base class, representing a</span>
+<span class="sd">                        cloud apps subclient, and to perform operations on that subclient</span>
+
+<span class="sd">CloudAppsSubclient:</span>
+
+<span class="sd">    _get_subclient_properties()          --  gets the subclient  related properties of File System subclient.</span>
+<span class="sd">    </span>
+<span class="sd">    _get_subclient_properties_json()     --  gets all the subclient  related properties of File System subclient.</span>
+<span class="sd">    </span>
+<span class="sd">    content()                            --  update the content of the subclient</span>
+
+<span class="sd">    restore_out_of_place()      --  runs out-of-place restore for the subclient</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
+
+
+<div class="viewcode-block" id="CloudAppsSubclient"><a class="viewcode-back" href="../../../subclients.html#cvpysdk.subclients.casubclient.CloudAppsSubclient">[docs]</a><span class="k">class</span> <span class="nc">CloudAppsSubclient</span><span class="p">(</span><span class="n">Subclient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Subclient Base class, representing a CloudApps subclient,</span>
+<span class="sd">        and to perform operations on that subclient.&quot;&quot;&quot;</span>
+    
+    
+    
+    <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the subclient  related properties of File System subclient.           </span>
+<span class="sd">           </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CloudAppsSubclient</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>       
+        <span class="k">if</span> <span class="s1">&#39;content&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+    
+    <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get the all subclient related properties of this subclient.        </span>
+<span class="sd">           </span>
+<span class="sd">           Returns:</span>
+<span class="sd">                dict - all subclient properties put inside a dict</span>
+<span class="sd">           </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subclient_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;impersonateUser&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impersonateUser</span><span class="p">,</span>
+                    <span class="s2">&quot;proxyClient&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxyClient</span><span class="p">,</span>
+                    <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
+                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">,</span>
+                    <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
+                    <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">subclient_json</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the appropriate content from the Subclient relevant to the user.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list of content associated with the subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">:</span>
+            <span class="n">temp_account</span> <span class="o">=</span> <span class="n">account</span><span class="p">[</span><span class="s2">&quot;cloudconnectorContent&quot;</span><span class="p">][</span><span class="s2">&quot;includeAccounts&quot;</span><span class="p">]</span>
+
+            <span class="n">content_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;SMTPAddress&#39;</span><span class="p">:</span> <span class="n">temp_account</span><span class="p">[</span><span class="s2">&quot;contentName&quot;</span><span class="p">],</span>
+                <span class="s1">&#39;display_name&#39;</span><span class="p">:</span> <span class="n">temp_account</span><span class="p">[</span><span class="s2">&quot;contentValue&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content_dict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">content</span>
+    
+    <span class="nd">@content</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_content</span><span class="p">):</span> 
+        <span class="sd">&quot;&quot;&quot;Creates the list of content JSON to pass to the API to add/update content of a</span>
+<span class="sd">            Cloud Apps Subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_content (list)  --  list of the content to add to the subclient</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list of the appropriate JSON for an agent to send to the POST Subclient API</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">:</span>
+                <span class="n">temp_content_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;cloudconnectorContent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;includeAccounts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;contentValue&quot;</span><span class="p">:</span> <span class="n">account</span><span class="p">[</span><span class="s1">&#39;display_name&#39;</span><span class="p">],</span>
+                            <span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="mi">134</span><span class="p">,</span>
+                            <span class="s2">&quot;contentName&quot;</span><span class="p">:</span> <span class="n">account</span><span class="p">[</span><span class="s1">&#39;SMTPAddress&#39;</span><span class="p">]</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+
+                <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_content_dict</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_content&quot;</span><span class="p">,</span><span class="n">content</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudAppsSubclient.restore_out_of_place"><a class="viewcode-back" href="../../../subclients.html#cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">client</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">paths</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">restore_data_and_acl</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
+<span class="sd">            at the specified destionation location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client                (str/object) --  either the name of the client or</span>
+<span class="sd">                                                           the instance of the Client</span>
+
+<span class="sd">                destination_path      (str)        --  full path of the restore location on client</span>
+
+<span class="sd">                paths                 (list)       --  list of full paths of</span>
+<span class="sd">                                                           files/folders to restore</span>
+
+<span class="sd">                overwrite             (bool)       --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                restore_data_and_acl  (bool)       --  restore data and ACL files</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if client is not a string or Client instance</span>
+
+<span class="sd">                    if destination_path is not a string</span>
+
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">..client</span> <span class="k">import</span> <span class="n">Client</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">))</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">restore_data_and_acl</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">client</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+        <span class="n">paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+
+        <span class="n">destination_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">([</span><span class="n">destination_path</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">paths</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span>
+            <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
+            <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">restore_data_and_acl</span><span class="o">=</span><span class="n">restore_data_and_acl</span>
+        <span class="p">)</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s1">&#39;cloudAppsRestoreOptions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_ca_instance_type</span><span class="p">,</span>
+                <span class="s2">&quot;googleRestoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;strDestUserAccount&quot;</span><span class="p">:</span> <span class="n">destination_path</span><span class="p">,</span>
+                    <span class="s2">&quot;folderGuid&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;restoreToDifferentAccount&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;restoreToGoogle&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Commvault Systems Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -112,16 +112,34 @@ Alternatively, you can uninstall using the **pip** command::
 	pip uninstall cvpysdk
 
 
+Subclient Support
+-----------------
+
+Subclient operations are currently supported for the following Agents:
+
+#. File System
+
+#. Virtual Server
+
+#. Cloud Apps
+
+#. SQL Server
+
+#. NAS
+
+#. SAP HANA
+
+
 Contribution Guidelines
 -----------------------
 
-1. We welcome all the enhancements from everyone although we request the developer to follow some guidelines while interacting with the ``CVPySDK`` codebase.
+#. We welcome all the enhancements from everyone although we request the developer to follow some guidelines while interacting with the ``CVPySDK`` codebase.
 
-2. Before adding any enhancements/bug-fixes, we request you to open an Issue first.
+#. Before adding any enhancements/bug-fixes, we request you to open an Issue first.
 
-3. The SDK team will go over the Issue and notify if it is required or already been worked on.
+#. The SDK team will go over the Issue and notify if it is required or already been worked on.
 
-4. If the Issue is approved, the contributor can then make the changes to their fork and open a pull request.
+#. If the Issue is approved, the contributor can then make the changes to their fork and open a pull request.
 
 Pull Requests
 *************
