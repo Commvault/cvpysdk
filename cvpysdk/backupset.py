@@ -786,7 +786,8 @@ class Backupset(object):
         """
         operation_types = {
             'browse': 0,
-            'find': 1
+            'find': 1,
+            'all_versions': 2
         }
 
         options['operation'] = options['operation'].lower()
@@ -874,6 +875,71 @@ class Backupset(object):
 
         return request_json
 
+    def _process_browse_all_versions_response(self, result_set):
+        """Retrieves the items from browse response.
+
+        Args:
+            result_set  (dict)  --  browse response dict obtained from server
+
+        Returns:
+            dict - Dictionary of the specified file with list of all the file versions and
+                    additional metadata retrieved from browse
+
+        Raises:
+            SDKException:
+                if failed to browse/search for content
+
+                if response is empty
+
+                if response is not success
+        """
+        path = None
+        versions_list = []
+
+        for result in result_set:
+            name = result['displayName']
+            path = result['path']
+
+            if 'modificationTime' in result:
+                mod_time = time.localtime(result['modificationTime'])
+                mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
+            else:
+                mod_time = None
+
+            if 'file' in result['flags']:
+                if result['flags']['file'] is True:
+                    file_or_folder = 'File'
+                else:
+                    file_or_folder = 'Folder'
+            else:
+                file_or_folder = 'Folder'
+
+            if 'size' in result:
+                size = result['size']
+            else:
+                size = None
+
+            if 'version' in result:
+                version = result['version']
+            else:
+                version = None
+
+            paths_dict = {
+                'name': name,
+                'version': version,
+                'size': size,
+                'modified_time': mod_time,
+                'type': file_or_folder,
+                'advanced_data': result['advancedData']
+            }
+
+            versions_list.append(paths_dict)
+
+        all_versions_dict = {}
+        all_versions_dict[path] = versions_list
+
+        return all_versions_dict
+
     def _process_browse_response(self, flag, response, options):
         """Retrieves the items from browse response.
 
@@ -900,7 +966,10 @@ class Backupset(object):
 
         operation_types = {
             "browse": ('110', 'Failed to browse for subclient backup content\nError: "{0}"'),
-            "find": ('111', 'Failed to Search\nError: "{0}"')
+            "find": ('111', 'Failed to Search\nError: "{0}"'),
+            "all_versions": (
+                '112', 'Failed to browse all version for specified content\nError: "{0}"'
+            )
         }
 
         exception_code = operation_types[options['operation']][0]
@@ -919,6 +988,9 @@ class Backupset(object):
 
                     if 'dataResultSet' in browse_result:
                         result_set = browse_result['dataResultSet']
+
+                        if 'all_versions' in options['operation']:
+                            return self._process_browse_all_versions_response(result_set)
 
                         for result in result_set:
 

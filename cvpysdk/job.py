@@ -9,11 +9,35 @@
 
 """Main file for performing operations on a job.
 
+JobController:  Class for managing jobs on this commcell
+
 Job: Class for keeping track of a job and perform various operations on it.
+
+
+JobController:
+    __init__(commcell_object)   --  initializes the instance of JobController class associated
+                                        with the specified commcell
+
+    __str__()                   --  returns the string representation of the active jobs
+                                        on this commcell
+
+    __repr__()                  --  returns the string representation of the object of this class,
+                                        with the commcell it is associated with
+
+    _all_jobs_request_json()    --  returns the request json to get list of all jobs on commcell
+
+    all_jobs()                  --  returns all the jobs on this commcell
+
+    active_jobs()               --  returns the dict of active jobs and their details
+
+    finished_jobs()             --  retutns the dict of finished jobs and their details
+
+    get()                       --  returns the Job class object for the specified job id
+
 
 Job:
     __init__(commcell_object,
-             job_id)            --  initialises the instance of Job class associated with the
+             job_id)            --  initializes the instance of Job class associated with the
                                         specified commcell of job with id: 'job_id'
 
     __repr__()                  --  returns the string representation of the object of this class,
@@ -41,6 +65,7 @@ Job:
 
     kill()                      --  kills the job
 
+Usage:
 
 job.status                      --  Gives the current status of the job.
                                         (Completed / Suspended / Waiting / ... / etc.)
@@ -60,6 +85,232 @@ import time
 
 from .exception import SDKException
 
+
+class JobController(object):
+    """Class for controlling all the jobs associated with the commcell."""
+
+    def __init__(self, commcell_object):
+        self._commcell_object = commcell_object
+        self._ALl_JOBS = self._commcell_object._services['ALL_JOBS']
+
+    def __str__(self):
+        """Representation string consisting of all active jobs on this commcell.
+
+            Returns:
+                str - string of all the active jobs on this commcell
+        """
+        jobs_dict = self.active_jobs()
+        representation_string = '{:^5}\t{:^25}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
+            'Job ID', 'Operation', 'Status', 'Agent type', 'Job type',
+            'Progress', 'Pending Reason'
+        )
+
+        for job in jobs_dict:
+            sub_str = '{:^5}\t{:25}\t{:20}\t{:20}\t{:20}\t{:20}%\t{:^20}\n'.format(
+                job,
+                jobs_dict[job]['operation'],
+                jobs_dict[job]['status'],
+                jobs_dict[job]['app_type'],
+                jobs_dict[job]['job_type'],
+                jobs_dict[job]['percent_complete'],
+                jobs_dict[job]['pending_reason']
+            )
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the JobController class."""
+        return "JobController class instance for Commcell: '{0}'".format(
+            self._commcell_object._headers['Host']
+        )
+
+    def _all_jobs_request_json(self, category='ALL', limit=20, lookup_time=5):
+        """Returns the request json for the jobs request
+
+            Args:
+                category    (str)   --  category name for which the list of jobs
+                                            are to be retrieved
+                        default: ALL
+                    Accept: ALL/ ACTIVE/ FINISHED
+
+                limit       (int)   --  total number of jobs list that are to be returned
+                        default: 20
+
+                lookup_time (int)   --  list of jobs to be retrieved which are specified
+                                            minutes older
+                        default: 5 minutes
+
+            Returns:
+                dict    -   request json that is to be sent to server
+        """
+        job_list_category = {
+            'ALL': 0,
+            'ACTIVE': 1,
+            'FINISHED': 2
+        }
+
+        request_json = {
+            "scope": 1,
+            "category": job_list_category[category],
+            "pagingConfig": {
+                "sortDirection": 1,
+                "offset": 0,
+                "sortField": "jobId",
+                "limit": limit
+            },
+            "jobFilter": {
+                "completedJobLookupTime": lookup_time * 60,
+                "showAgedJobs": False
+            }
+        }
+
+        return request_json
+
+    def _get_jobs_list(self, request_json):
+        """Makes the GET request to server to get list of jobs
+
+            Args:
+                request_json    (dict)  --  request that is to be sent to server
+
+            Returns:
+                dict    -   dict containing details about all the retrieved jobs
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._ALl_JOBS, request_json
+        )
+
+        jobs_dict = {}
+
+        if flag:
+            if response.json():
+                if 'jobs' in response.json():
+                    all_jobs = response.json()['jobs']
+
+                    for job in all_jobs:
+                        if 'jobSummary' in job and job['jobSummary']['isVisible'] is True:
+
+                            job_summary = job['jobSummary']
+                            job_id = job_summary['jobId']
+
+                            status = job_summary['status']
+                            operation = job_summary['localizedOperationName']
+                            percent_complete = job_summary['percentComplete']
+
+                            app_type = ''
+                            job_type = ''
+                            pending_reason = ''
+
+                            if 'appTypeName' in job_summary:
+                                app_type = job_summary['appTypeName']
+
+                            if 'jobType' in job_summary:
+                                job_type = job_summary['jobType']
+
+                            if 'pendingReason' in job_summary:
+                                pending_reason = job_summary['pendingReason']
+
+                            jobs_dict[job_id] = {
+                                'operation': operation,
+                                'status': status,
+                                'app_type': app_type,
+                                'job_type': job_type,
+                                'percent_complete': percent_complete,
+                                'pending_reason': pending_reason
+                            }
+
+                return jobs_dict
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def all_jobs(self, limit=20, lookup_time=1440):
+        """Returns the dict containing all the jobs on this commcell
+            which are specified time older
+
+            Args:
+                limit       (int)   --  total number of jobs list that are to be returned
+                        default: 20
+
+                lookup_time (int)   --  list of jobs to be retrieved which are specified
+                                            minutes older
+                        default: 1440 minutes
+
+            Returns:
+                dict    -   request json that is to be sent to server
+        """
+        request_json = self._all_jobs_request_json(
+            category='ALL', limit=limit, lookup_time=lookup_time
+        )
+
+        return self._get_jobs_list(request_json)
+
+    def active_jobs(self, limit=20, lookup_time=5):
+        """Returns the dict containing all the active jobs on this commcell
+            which are specified time older
+
+            Args:
+                limit       (int)   --  total number of jobs list that are to be returned
+                        default: 20
+
+                lookup_time (int)   --  list of jobs to be retrieved which are specified
+                                            minutes older
+                        default: 5 minutes
+
+            Returns:
+                dict    -   request json that is to be sent to server
+        """
+        request_json = self._all_jobs_request_json(
+            category='ACTIVE', limit=limit, lookup_time=lookup_time
+        )
+
+        return self._get_jobs_list(request_json)
+
+    def finished_jobs(self, limit=20, lookup_time=1440):
+        """Returns the dict containing all the finished jobs on this commcell
+            which are specified time older
+
+            Args:
+                limit       (int)   --  total number of jobs list that are to be returned
+                        default: 20
+
+                lookup_time (int)   --  list of jobs to be retrieved which are specified
+                                            minutes older
+                        default: 1440 minutes
+
+            Returns:
+                dict    -   request json that is to be sent to server
+        """
+        request_json = self._all_jobs_request_json(
+            category='FINISHED', limit=limit, lookup_time=lookup_time
+        )
+
+        return self._get_jobs_list(request_json)
+
+    def get(self, job_id):
+        """Returns the job object for the soecified job id
+
+            Args:
+                job_id      (int)   --  id of the job for which the Job class object
+                                            is to be created
+
+            Returns:
+                object  -   Job class object for the specified job id
+
+            Raises:
+                SDKException:
+                    if no job with specified job id exists
+        """
+        return Job(self._commcell_object, job_id)
 
 class Job(object):
     """Class for performing client operations for a specific client."""

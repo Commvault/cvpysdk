@@ -129,6 +129,8 @@ Subclient operations are currently supported for the following Agents:
 
 #. SAP HANA
 
+#. ORACLE
+
 
 Contribution Guidelines
 -----------------------
