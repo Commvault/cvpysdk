@@ -17,42 +17,48 @@ OracleInstance: Derived class from Instance Base class, representing an
 
 OracleInstance:
 
-    __init__()              -- Constructor for the class
+    __init__()                  -- Constructor for the class
 
-    oracle_home()           -- Getter for $ORACLE_HOME of this instance
+    _get_browse_options         -- Method to get browse options for oracle instance
 
-    version()               -- Getter for oracle database version
+    _process_browse_response    -- Method to process browse response
 
-    is_catalog_enabled()    -- Getter to check if catalog is enabled for backups
+    oracle_home()               -- Getter for $ORACLE_HOME of this instance
 
-    catalog_user()          -- Getter for getting catalog user
+    version()                   -- Getter for oracle database version
 
-    catalog_db()            -- Getter for catalog database name
+    is_catalog_enabled()        -- Getter to check if catalog is enabled for backups
 
-    archive_log_dest()      -- Getter for archivelog destination
+    catalog_user()              -- Getter for getting catalog user
 
-    os_user()               -- Getter for OS user owning oracle software
+    catalog_db()                -- Getter for catalog database name
 
-    cmd_sp()                -- Getter for command line storage policy
+    archive_log_dest()          -- Getter for archivelog destination
 
-    log_sp()                -- Getter for log storage policy
+    os_user()                   -- Getter for OS user owning oracle software
 
-    is_autobackup_on()      -- Getter to check if autobackup is enabled
+    cmd_sp()                    -- Getter for command line storage policy
 
-    db_user()               -- Getter for SYS database user name
+    log_sp()                    -- Getter for log storage policy
 
-    tns_name()              -- Getter for TNS connect string
+    is_autobackup_on()          -- Getter to check if autobackup is enabled
 
-    dbid()                  -- Getter for getting DBID of database
+    db_user()                   -- Getter for SYS database user name
 
-    delete()                -- Method to delete the instance from the Commserve
+    tns_name()                  -- Getter for TNS connect string
+
+    dbid()                      -- Getter for getting DBID of database
+
+    restore()                   -- Method to restore the instance
 
 """
 from __future__ import unicode_literals
 
+import json
+
 from ..instance import Instance
-# from ..client import Client
 from ..exception import SDKException
+
 
 
 class OracleInstance(Instance):
@@ -71,7 +77,65 @@ class OracleInstance(Instance):
 
         """
         super(OracleInstance, self).__init__(agent_object, instance_name, instance_id)
-        self._instanceprop = {}  # variable to hold instance properties to be changed
+        self._instanceprop = {}  # instance variable to hold instance properties
+
+    def _get_browse_options(self):
+        """Method to return the database instance properties for browse and restore"""
+        return {
+            "path": "/",
+            "entity": {
+                "appName": self._properties['instance']['appName'],
+                "instanceId": int(self.instance_id),
+                "applicationId": int(self._properties['instance']['applicationId']),
+                "clientId": int(self._properties['instance']['clientId']),
+                "instanceName": self._properties['instance']['instanceName'],
+                "clientName": self._properties['instance']['clientName']
+            }
+        }
+
+    def _process_browse_response(self, request_json):
+        """Runs the DBBrowse API with the request JSON provided for Browse,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                list - list containing tablespaces for the instance
+
+            Raises:
+                SDKException:
+                    if browse job failed
+
+                    if browse is empty
+
+                    if browse is not success
+        """
+        if 'tablespaces' in self._instanceprop:
+            return self._instanceprop['tablespaces']
+
+        browse_service = self._commcell_object._services['ORACLE_INSTANCE_BROWSE']\
+                         % self.instance_id
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', browse_service, request_json
+        )
+
+        if flag:
+            response_data = json.loads(response.text)
+            if response_data:
+                if "oracleContent" in response_data:
+                    self._instanceprop['tablespaces'] = response_data["oracleContent"]
+                    return self._instanceprop['tablespaces']
+                elif "errorCode" in response_data:
+                    error_message = response_data['errorMessage']
+                    o_str = 'Browse job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Instance', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def oracle_home(self):
@@ -195,7 +259,7 @@ class OracleInstance(Instance):
 
         """
         return self._properties['oracleInstance']['oracleStorageDevice']\
-        ['logBackupStoragePolicy']['storagePolicyName']
+            ['logBackupStoragePolicy']['storagePolicyName']
 
     @property
     def is_autobackup_on(self):
@@ -211,6 +275,7 @@ class OracleInstance(Instance):
     @property
     def db_user(self):
         """
+        Getter to get the database user used to log into the database
 
         Returns: Oracle database user for the instance
 
@@ -220,6 +285,7 @@ class OracleInstance(Instance):
     @property
     def tns_name(self):
         """
+        Getter to get the TNS Names of the database
 
         Returns:
             string  -- TNS name of the instance configured
@@ -238,8 +304,98 @@ class OracleInstance(Instance):
     @property
     def dbid(self):
         """
+        Getter to get the DBID of the database instance
 
         Returns: DBID of the oracle database
 
         """
         return self._properties['oracleInstance']['DBID']
+
+    @property
+    def tablespaces(self):
+        """
+        Getter for listing out all tablespaces for the instance
+
+        Returns:
+            list -- list containing tablespace names for the database
+
+        """
+        return [ts['tableSpace'] for ts in self.browse()]
+
+    def browse(self, *args, **kwargs):
+        """Overridden method to browse oracle database tablespaces"""
+        if len(args) > 0 and isinstance(args[0], dict):
+            options = args[0]
+        elif len(kwargs) > 0:
+            options = kwargs
+        else:
+            options = self._get_browse_options()
+
+        return self._process_browse_response(options)
+
+    def backup(self, subclient_name=r"default"):
+        """Uses the default subclient to backup the database
+
+        Args:
+            subclient_name (str) -- name of subclient to use
+                default: default
+        """
+        return self.subclients.get(subclient_name).backup(r'full')
+
+    def restore(self,
+                subclient_name=r'default',
+                destination_client=None,
+                oracle_options=None):
+        """
+        Method to restore the entire database using latest backup
+
+        Args:
+            destination_client (str) -- destination client name
+            subclient_name (str) -- name of subclient to use to pull restore JSON
+                default -- default sto default subclient
+            oracle_options (dict): dictionary containing other oracle options
+                default -- By default it restores the controlfile and datafiles
+                                from latest backup
+                Example: {
+                            "resetLogs": 1,
+                            "switchDatabaseMode": True,
+                            "noCatalog": True,
+                            "restoreControlFile": True,
+                            "recover": True,
+                            "recoverFrom": 3,
+                            "restoreData": True,
+                            "restoreFrom": 3
+                        }
+        Returns:
+            object -- Job containing restore details
+        """
+        if oracle_options is None:
+            oracle_options = {
+                "resetLogs": 1,
+                "switchDatabaseMode": True,
+                "noCatalog": True,
+                "restoreControlFile": True,
+                "recover": True,
+                "recoverFrom": 3,
+                "restoreData": True,
+                "restoreFrom": 3
+            }
+
+        if not isinstance(oracle_options, dict):
+            raise TypeError('Expecting a dict for oracle_options')
+
+        if not isinstance(destination_id, int):
+            raise TypeError('Expecting an int for destination_id')
+
+        try:
+            if destination_client is None:
+                destination_client = self.client_name
+        except SDKException:
+            raise
+        else:
+            subclient = self.subclients.get(subclient_name)
+            options = subclient._get_oracle_restore_json(dest_client=destination_client,
+                                                         instance_name=self.instance_name,
+                                                         tablespaces=self.tablespaces,
+                                                         oracle_options=oracle_options)
+            return subclient._process_restore_response(options)
