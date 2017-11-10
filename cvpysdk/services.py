@@ -128,7 +128,9 @@ SERVICES_DICT_TEMPLATE = {
 
     'PLANS': '{0}V2/Plan',
     'PLAN': '{0}V2/Plan/%s',
-    'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True'
+    'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
+    
+    'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s'
 }
 
 
