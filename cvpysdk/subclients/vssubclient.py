@@ -12,105 +12,156 @@
 VirualServerSubclient is the only class defined in this file.
 
 VirtualServerSubclient: Derived class from Subclient Base class, representing a
-                            virtual server subclient, and to perform operations on that subclient
+                            virtual server subclient, and to perform operations
+                            on that subclient
 
 VirtualServerSubclient:
-    __get_subclient_properties()          --  gets the subclient  related properties of
-                                                                            VSA subclient.
+    __get_subclient_properties()      --  gets the subclient  related
+                                          properties of VSA subclient.
 
-    _get_subclient_properties_json()     --  gets all the subclient  related properties of
-                                                                            VSA subclient.
+    _get_subclient_properties_json()  --  gets all the subclient  related
+                                          properties of VSA subclient.
 
-    _get_vm_ids_and_names_dict()            --  creates and returns 2 dictionaries, along with the
-                                                    vm path
+    _get_vm_ids_and_names_dict()      --  creates and returns 2 dictionaries,
+                                          along with the vm path
 
-    _parse_vm_path()                        --  parses the path provided by user,
-                                                    and replaces the VM Display Name with the VM ID
+    _parse_vm_path()                  --  parses the path provided by user,
+                                          and replaces the VM Display Name with
+                                          the VM ID
 
-    _json_restore_virtualServerRstOption    --  setter for Virtualserver property in restore
+    _json_restore_virtualServerRstOption    -- setter for Virtualserver
+                                               property in restore
 
-    _json_restore_diskLevelVMRestoreOption  -- setter for diskLevel restore property in restore
+    _json_restore_diskLevelVMRestoreOption  -- setter for diskLevel restore
+                                               property in restore
 
-    _json_restore_advancedRestoreOptions    -- setter for advanced restore property in restore
+    _json_restore_advancedRestoreOptions    -- setter for advanced restore
+                                               property in restore
 
-    _json_restore_volumeRstOption           -- setter for Volume restore property in restore
+    _json_restore_volumeRstOption           -- setter for Volume restore
+                                               property in restore
 
-    _process_vsa_browse_response()          --  processes the browse response received from server,
-                                                    and replaces the vm id with the vm name
+    _json_vcenter_instance                  -- setter for vcenter instance
+                                               json in restore
 
-    _process_restore_request()              --  processes the Restore Request and replaces the VM
-                                                    display name with their ID before passing
-                                                        to the API
+    _json_nics_advancedRestoreOptions       -- Setter for nics list for
+                                               advanced restore option json
 
-    _get_disk_Extension()                   --  Gets the Extension of disk provided
+    _process_vsa_browse_response()          -- processes the browse response
+                                               received from server,and
+                                               replaces the vm id with the vm
+                                               name
 
-    _get_conversion_disk_Type()             -- For source Disk gets the Disk that can be converted
-                                                    to and set its destination Vendor
+    _process_restore_request()              -- processes the Restore Request
+                                               and replaces the VM
+                                               display name with their ID
+                                               before passing to the API
 
-    _prepare_filelevel_restore_json()       -- internal Method can be used by subclasses for
-                                                    file level restore Json
+    _get_disk_Extension()                   -- Gets the Extension of disk
+                                               provided
 
-    _prepare_disk_restore_json              -- internal Method can be used by subclasses for
-                                                    disk level restore Json
+    _get_conversion_disk_Type()             -- For source Disk gets the Disk
+                                               that can be converted to and
+                                               set its destination Vendor
 
-    _check_folder_in_browse                 -- Internal Method to check folder is in
-                                                    browse from subclient
+    _prepare_filelevel_restore_json()       -- internal Method can be used by
+                                               subclasses for file level
+                                               restore Json
 
-    browse()                                --  gets the content of the backup for this subclient
-                                                    at the vm path specified
+    _prepare_disk_restore_json              -- internal Method can be used by
+                                               subclasses for disk level
+                                               restore Json
 
-    disk_level_browse()                     --  browses the Disks of a Virtual Machine
+    _check_folder_in_browse                 -- Internal Method to check folder
+                                               is in browse from subclient
 
-    guest_files_browse()                    --  browses the Files and Folders
-                                                    inside a Virtual Machine
+    browse()                                -- gets the content of the backup
+                                               for this subclient at the vm
+                                               path specified
+
+    parse_nics_xml()                        -- gets the list of nics for a VM
+
+    get_nics_from_browse()                  -- Browses the vm to get the nics
+                                               info xml, gets the nics info
+                                               using the parse_nics_xml method
+                                               and prepares the dict for nics
+                                               json
+
+    disk_level_browse()                     -- browses the Disks of a Virtual
+                                               Machine
+
+    guest_files_browse()                    -- browses the Files and Folders
+                                               inside a Virtual Machine
 
 
-    vm_files_browse()                       --  browses the Files and Folders
-                                                    of a Virtual Machine
+    vm_files_browse()                       -- browses the Files and Folders
+                                               of a Virtual Machine
 
-    vm_files_browse_in_time()               --  browses the Files and Folders of a Virtual Machine
-                                            in the time range specified
+    vm_files_browse_in_time()               -- browses the Files and Folders
+                                               of a Virtual Machine in the time
+                                               range specified
 
-    restore_out_of_place()                  --  restores the VM Guest Files specified in
-                                                    the paths list to the client, at the
-                                                        specified destionation location
+    restore_out_of_place()                  -- restores the VM Guest Files
+                                               specified in the paths list to
+                                               the client, at the
+                                               specified destionation location
 
-    full_vm_restore_in_place()              --  restores the VM specified by the
-                                                    user to the same location
+    full_vm_restore_in_place()              -- restores the VM specified by the
+                                               user to the same location
 
 """
 
 import os
+import xml.etree.ElementTree as ET
+
+from past.builtins import basestring
 
 from ..exception import SDKException
 from ..subclient import Subclient
 from ..client import Client
 from .. import constants
-from past.builtins import basestring
+from ..constants import VSAObjects
 
 
 class VirtualServerSubclient(Subclient):
-    """Derived class from Subclient Base class, representing a virtual server subclient,
-        and to perform operations on that subclient."""
+    """Derived class from Subclient Base class, representing a virtual server
+       subclient, and to perform operations on that subclient."""
 
-    def __new__(self, backupset_object, subclient_name, subclient_id=None):
+    def __new__(cls, backupset_object, subclient_name, subclient_id=None):
         """Decides which instance object needs to be created"""
-
         hv_type = constants.HypervisorType
-        if backupset_object._instance_object.instance_name == hv_type.MS_VIRTUAL_SERVER.value.lower():
+        instance_name = backupset_object._instance_object.instance_name
+
+        if instance_name == hv_type.MS_VIRTUAL_SERVER.value.lower():
             from .virtualserver.hypervsubclient import HyperVVirtualServerSubclient
             return object.__new__(HyperVVirtualServerSubclient)
+
+        elif instance_name == hv_type.VIRTUAL_CENTER.value.lower():
+            from .virtualserver.vmwaresubclient import VMWareVirtualServerSubclient
+            return object.__new__(VMWareVirtualServerSubclient)
+
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Subclient for Instance: "{0}" is not yet supported'.format(instance_name)
+            )
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialize the Instance object for the given Virtual Server instance.
 
             Args:
-                class_object (backupset_object,subclient_name,subclient_id)  --  instance of the
-                                                                                    backupset class,
-                                                                                    subclient name,
-                                                                                    subclient id
+                backupset_object    (object)    --  instance of the backupset class
+
+                subclient_name      (str)       --  subclient name
+
+                subclient_id        (int)       --  subclient id
 
         """
+        super(VirtualServerSubclient, self).__init__(
+            backupset_object, subclient_name, subclient_id
+        )
+
         self.content_types = {
             '1': 'Host',
             '2': 'Resource Pool',
@@ -119,13 +170,12 @@ class VirtualServerSubclient(Subclient):
             '16': 'All unprotected VMs',
             '17': 'Root'
         }
+
         self.filter_types = {
             '1': 'Datastore',
             '2': 'Virtual Disk Name/Pattern',
             '3': 'Virtual Device Node'
         }
-        super(VirtualServerSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
         self.diskExtension = [".vhd", ".avhd", ".avhdx", ".vhdx", ".vmdk"]
         self._vm_names_browse = []
         self._vm_ids_browse = {}
@@ -137,6 +187,7 @@ class VirtualServerSubclient(Subclient):
 
             Returns:
                 list - list of content associated with the subclient
+
         """
         content = []
         subclient_content = self._vmContent
@@ -145,10 +196,10 @@ class VirtualServerSubclient(Subclient):
             children = subclient_content['children']
 
             for child in children:
-                path = str(child['path']) if 'path' in child else None
-                display_name = str(child['displayName'])
+                path = child['path'] if 'path' in child else None
+                display_name = child['displayName']
                 content_type = self.content_types[str(child['type'])]
-                vm_id = str(child['name'])
+                vm_id = child['name']
 
                 temp_dict = {
                     'equal_value': child['equalsOrNotEquals'],
@@ -172,17 +223,17 @@ class VirtualServerSubclient(Subclient):
         """
         vm_filter = []
 
-        if self._vmFilter is not None:
+        if not self._vmFilter:
             subclient_filter = self._vmFilter
 
             if 'children' in subclient_filter:
                 children = subclient_filter['children']
 
                 for child in children:
-                    path = str(child['path']) if 'path' in child else None
-                    display_name = str(child['displayName'])
+                    path = child['path'] if 'path' in child else None
+                    display_name = child['displayName']
                     content_type = self.content_types[str(child['type'])]
-                    vm_id = str(child['name'])
+                    vm_id = child['name']
 
                     temp_dict = {
                         'id': vm_id,
@@ -205,6 +256,7 @@ class VirtualServerSubclient(Subclient):
 
             Returns:
                 list - list of Diskfilter associated with the subclient
+
         """
         vm_diskfilter = []
         if self._vmDiskFilter is not None:
@@ -215,8 +267,8 @@ class VirtualServerSubclient(Subclient):
 
                 for child in filters:
                     filter_type = self.filter_types[str(child['filterType'])]
-                    vm_id = str(child['vmGuid']) if 'vmGuid' in child else None
-                    filter_name = str(child['filter'])
+                    vm_id = child['vmGuid'] if 'vmGuid' in child else None
+                    filter_name = child['filter']
 
                     temp_dict = {
                         'filter': filter_name,
@@ -233,31 +285,91 @@ class VirtualServerSubclient(Subclient):
 
     @content.setter
     def content(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to update the content of a
-            Virtual Server Subclient. i.e. it works in overwrite mode
+        """Creates the list of content JSON to pass to the API to add/update
+           content of a Virtual Server Subclient.
 
             Args:
-                subclient_content (list)  --  list of the content to add to the subclient
+                subclient_content (list)  --  list of the content to add to the
+                subclient list should contain name and type
+                (like VSAObjects.VMName, VSAObjects.DATASTORE )
+                example:[
+                            {
+                            'type' : VSAObjects.VMNotes,
+                            'display_name' : 'removed',
+                            }
+                        ]
+
+                for Advance user:
+                        where we need to have multiple constraints for a single
+                        rule.
+                        list should contain minimum 2 parameters (name, type,
+                        true/False for equalsOrNotEquals) for a single
+                        constraint
+                        for power on/off, we need to specify one more
+                        parameter i.e., true -on, false -off(as state variable)
+                        example:
+                        subclient_content = [
+                            [
+                                {
+                                'type' : VSAObjects.VMName,
+                                'display_name' : 'VM*'
+                                }
+                            ],
+                            [
+                                {
+                                  'type' : VSAObjects.VMNotes,
+                                  'display_name' : 'removed',
+                                },
+                                {
+                                  'type' : VSAObjects.VMPowerState,
+                                  'state': 'false',
+                                }
+                            ]
+                        ]
+
+
 
             Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+                list - list of the appropriate JSON for an agent to send to the
+                       POST Subclient API
         """
         content = []
-
         try:
-            for temp_dict in subclient_content:
-                content_type = [types for types, name in self.content_types.items()
-                                if name == temp_dict['type']]
-
-                virtual_server_dict = {
-                    'allOrAnyChildren': True,
-                    'equalsOrNotEquals': True,
-                    'name': temp_dict['id'],
-                    'displayName': temp_dict['display_name'],
-                    'path': temp_dict['path'],
-                    'type': content_type[0]
-                }
-
+            for item in subclient_content:
+                virtual_server_dict = {}
+                virtual_server_dict['allOrAnyChildren'] = True
+                child = []
+                for content_dict in item:
+                    temp = {
+                        'allOrAnyChildren': content_dict.get('allOrAnyChildren', True),
+                        'equalsOrNotEquals': content_dict.get('equalsOrNotEquals', True),
+                        'name': '',
+                        'displayName': content_dict['display_name'],
+                        'path': '',
+                        'type': content_dict['type'].value
+                    }
+                    if content_dict['type'] == VSAObjects.VMNotes:
+                        temp['value'] = content_dict['display_name']
+                        temp['displayName'] = content_dict['display_name']
+                        temp['name'] = "Notes"
+                    if (content_dict['type'] ==
+                            VSAObjects.VMPowerState and
+                            content_dict['state'] == 'true'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = 1
+                        temp['displayName'] = "Powered On"
+                    if (content_dict['type'] ==
+                            VSAObjects.VMPowerState and
+                            content_dict['state'] == 'false'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = 0
+                        temp['displayName'] = "Powered Off"
+                    child.append(temp)
+                if len(item) > 1:
+                    virtual_server_dict['path'] = ''
+                    virtual_server_dict['children'] = child
+                else:
+                    virtual_server_dict.update(temp)
                 content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
@@ -265,23 +377,28 @@ class VirtualServerSubclient(Subclient):
         vs_subclient_content = {
             "children": content
         }
+
         self._set_subclient_properties("_vmContent", vs_subclient_content)
 
     @vm_filter.setter
     def vm_filter(self, subclient_filter):
-        """Creates the list of Filter JSON to pass to the API to update the VM_filter of a
-            Virtual Server Subclient. i.e. it works in overwrite mode
+        """Creates the list of Filter JSON to pass to the API to update the
+           VM_filter of a Virtual Server Subclient. i.e. it works in overwrite
+           mode
 
             Args:
-                subclient_filter (list)  --  list of the filter to add to the subclient
+                subclient_filter (list)  --  list of the filter to add to the
+                                             subclient
 
             Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+                list - list of the appropriate JSON for an agent to send to the
+                       POST Subclient API
         """
         vm_filter = []
 
         try:
             for temp_dict in subclient_filter:
+                content_type_id = ""
                 for type_id, type_name in self.content_types.items():
                     if type_name == temp_dict['type']:
                         content_type_id = type_id
@@ -309,14 +426,17 @@ class VirtualServerSubclient(Subclient):
 
     @vm_diskfilter.setter
     def vm_diskfilter(self, subclient_diskfilter):
-        """Creates the list of Disk Filter JSON to pass to the API to update the Disk_filter of a
-            Virtual Server Subclient. i.e. it works in overwrite mode
+        """Creates the list of Disk Filter JSON to pass to the API to update
+           the Disk_filter of a Virtual Server Subclient. i.e. it works in
+           overwrite mode
 
             Args:
-                subclient_diskfilter (list)  --  list of the Disk filter to add to the subclient
+                subclient_diskfilter (list)  --  list of the Disk filter to add
+                                                 to the subclient
 
             Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+                list - list of the appropriate JSON for an agent to send to
+                       the POST Subclient API
         """
         vm_diskfilter = []
 
@@ -368,7 +488,8 @@ class VirtualServerSubclient(Subclient):
 
     def _get_subclient_content_(self):
         """
-        Returns the subclient content from property. Base class Abstract method implementation
+        Returns the subclient content from property. Base class Abstract method
+        implementation
 
         return:
             VM content  (dict)  -- Dictionary of VM Content with all details
@@ -393,7 +514,7 @@ class VirtualServerSubclient(Subclient):
                     "vmFilter": self._vmFilter,
                     "vmBackupInfo": self._vmBackupInfo,
                     "vsaSubclientProp": self._vsaSubclientProp,
-                    #"content": self._content,
+                    # "content": self._content,
                     "commonProperties": self._commonProperties,
                     "vmContentOperationType": 1,
                     "vmDiskFilterOperationType": 1,
@@ -407,7 +528,7 @@ class VirtualServerSubclient(Subclient):
         Set the default client values for VSA and create object for client
 
         Args:
-            Client  (str)   -- client name if given
+            Client  (basestring)   -- client name if given
 
         Raise Exception:
             if the client is not part of CS
@@ -419,16 +540,29 @@ class VirtualServerSubclient(Subclient):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, str):
+        elif isinstance(client, basestring):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException('Subclient', '105')
 
         return client
 
-    def _json_restore_virtualServerRstOption(self, value):
-        """setter for  the Virtual server restore  option in restore json"""
+    def _json_vcenter_instance(self, value):
+        """ Setter for vcenter_instance JSON """
 
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._vcenter_instance_json = {
+            "clientName": value.get("client_name", ""),
+            "instanceName": value.get("instanceName", ""),
+            "appName": value.get("appName", "")
+        }
+
+    def _json_restore_virtualServerRstOption(self, value):
+        """
+            setter for  the Virtual server restore  option in restore json
+        """
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
@@ -436,9 +570,35 @@ class VirtualServerSubclient(Subclient):
             "isDiskBrowse": value.get("disk_browse", True),
             "isFileBrowse": value.get("file_browse", False),
             "isVolumeBrowse": False,
+            "isVirtualLab": value.get("virtual_lab", False),
+            "esxServer": value.get("esx_server", ""),
+            "isAttachToNewVM": value.get("attach_to_new_vm", False),
             "viewType": "DEFAULT",
             "isBlockLevelReplication": False
         }
+
+    def _json_nics_advancedRestoreOptions(self, vm_to_restore):
+        """
+            Setter for nics list for advanced restore option json
+        """
+        nics_dict_from_browse = self.get_nics_from_browse()
+
+        nics_list = []
+
+        vm_nics_list = nics_dict_from_browse[vm_to_restore]
+
+        for network_card_dict in vm_nics_list:
+            nics = {
+                "subnetId": "",
+                "sourceNetwork": network_card_dict['name'],
+                "sourceNetworkId": "",
+                "networkName": "",
+                "destinationNetwork": network_card_dict['name']
+            }
+
+            nics_list.append(nics)
+
+        return nics_list
 
     def _json_restore_diskLevelVMRestoreOption(self, value):
         """setter for  the disk Level VM Restore Option    in restore json"""
@@ -470,6 +630,7 @@ class VirtualServerSubclient(Subclient):
             "Datastore": value.get("datastore", ""),
             "DestinationPath": value.get("destination_path", ""),
             "disks": value.get("disks", []),
+            "nics": value.get("nics", []),
             "guid": value.get("guid", ""),
             "newName": value.get("new_name", ""),
             "esxHost": value.get("esx_host", ""),
@@ -502,9 +663,11 @@ class VirtualServerSubclient(Subclient):
         """Parses through the subclient content and creates 2 dictionaries.
 
             Returns:
-                dict    -   dictionary consisting of VM ID as Key and VM Display Name as value
+                dict    -   dictionary consisting of VM ID as Key and VM
+                            Display Name as value
 
-                dict    -   dictionary consisting of VM Display Name as Key and VM ID as value
+                dict    -   dictionary consisting of VM Display Name as Key and
+                            VM ID as value
         """
         vm_ids = {}
         vm_names = {}
@@ -524,7 +687,7 @@ class VirtualServerSubclient(Subclient):
         """
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict()
-        if self._vm_names_browse == []:
+        if not self._vm_names_browse:
             paths, paths_dict = self.browse()
 
             for _each_path in paths_dict:
@@ -535,7 +698,8 @@ class VirtualServerSubclient(Subclient):
         return self._vm_names_browse, self._vm_ids_browse
 
     def _parse_vm_path(self, vm_names, vm_path):
-        """Parses the path provided by user, and replaces the VM Display Name with the VM ID.
+        """Parses the path provided by user, and replaces the VM Display Name
+           with the VM ID.
 
             Returns:
                 str     -   string of path to run browse for
@@ -554,18 +718,22 @@ class VirtualServerSubclient(Subclient):
         return vm_path
 
     def _process_vsa_browse_response(self, vm_ids, browse_content):
-        """Processes the Browse response and replaces the VM ID with their display name before
-            returning to user.
+        """Processes the Browse response and replaces the VM ID with their
+        display name before returning to user.
 
             Args:
-                vm_ids          (dict)      --  dictionary with VM ID as Key and VM Name as value
+                vm_ids          (dict)      --  dictionary with VM ID as Key
+                                                and VM Name as value
 
-                browse_content  (tuple)     --  browse response received from server
+                browse_content  (tuple)     --  browse response received from
+                                                server
 
             Returns:
-                list - list of all folders or files with their full paths inside the input path
+                list - list of all folders or files with their full
+                       paths inside the input path
 
-                dict - path along with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder,
+                       size, modification time
         """
         for index, path in enumerate(browse_content[0]):
             if vm_ids:
@@ -584,16 +752,19 @@ class VirtualServerSubclient(Subclient):
         return browse_content[0], temp_dict
 
     def _process_restore_request(self, vm_names, restore_content):
-        """Processes the Restore Request and replaces the VM display name with their ID before
-            passing to the API.
+        """Processes the Restore Request and replaces the VM display name with
+           their ID before passing to the API.
 
             Args:
-                vm_names            (dict)      --  dictionary with VM Name as Key, VM ID as value
+                vm_names            (dict)      --  dictionary with VM Name as
+                                                    Key, VM ID as value
 
-                restore_content     (tuple)    --  content to restore specified by user
+                restore_content     (tuple)    --  content to restore specified
+                                                   by user
 
             Returns:
-                list - list of all folders or files with their full paths inside the input path
+                list - list of all folders or files with their full paths
+                       inside the input path
         """
         for index, path in enumerate(restore_content):
             if vm_names:
@@ -607,27 +778,34 @@ class VirtualServerSubclient(Subclient):
                show_deleted_files=True,
                vm_disk_browse=False,
                vm_files_browse=False):
-        """Gets the content of the backup for this subclient at the path specified.
+        """Gets the content of the backup for this subclient at the path
+           specified.
 
             Args:
                 vm_path             (str)   --  vm path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                                                default: '\\';
+                                                returns the root of the Backup
+                                                content
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                show_deleted_files  (bool)  --  include deleted files in the
+                                                content or not default: True
 
                 vm_disk_browse      (bool)  --  browse virtual machine files
-                                                    e.g.; .vmdk files, etc.
-                    only applicable when browsing content inside a guest virtual machine
-                    default: False
+                                                e.g.; .vmdk files, etc.
+                                                only applicable when browsing
+                                                content inside a guest virtual
+                                                machine
+                                                default: False
 
-                vm_file_browse      (bool)  --  browse files and folders
-                    default: True
+                vm_files_browse      (bool)  -- browse files and folders
+                                                default: True
 
             Returns:
-                list - list of all folders or files with their full paths inside the input path
+                list - list of all folders or files with their full paths
+                       inside the input path
 
-                dict - path along with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder,
+                       size, modification time
 
             Raises:
                 SDKException:
@@ -647,6 +825,80 @@ class VirtualServerSubclient(Subclient):
 
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
+    def parse_nics_xml(self, input_xml):
+        """
+            Gets the content of the backup for this subclient at the path
+            specified.
+
+            Args:
+                input_xml : --   nics info xml per vm to parse the nics name
+                                 and label
+
+            Returns:
+                nic_list:   --    list of all Nics for a VM
+
+            Raise:
+                SDKException:
+                    if input parameter is not proper
+
+
+        """
+        if not isinstance(input_xml, basestring):
+            raise SDKException("Subclient", "101")
+
+        root = ET.fromstring(input_xml)
+
+        nic_list = []
+
+        for nic in root.findall('nic'):
+            name = nic.get('name')
+            label = nic.get('label')
+
+            nic_info = {
+                'name': name,
+                'label': label
+            }
+            nic_list.append(nic_info)
+
+        return nic_list
+
+    def get_nics_from_browse(self):
+        """
+            Browses the vm to get the nics info xml, gets the nics info using
+            the parse_nics_xml method and prepares the dict for nics json
+
+
+            Returns:
+                dict:   --   dict with key as vm_name and the value as the
+                             nics info for that vm
+
+        """
+
+        path, path_dict = self.browse(vm_disk_browse=True)
+
+        nics_dict = {}
+        nics = ""
+        for vmpath in path:
+            result = path_dict[vmpath]
+            name = ""
+            if 'name' in result:
+                name = result['name']
+            if 'advanced_data' in result:
+                advanced_data = result['advanced_data']
+
+                if 'browseMetaData' in advanced_data:
+                    browse_meta_data = advanced_data['browseMetaData']
+
+                    if 'virtualServerMetaData' in browse_meta_data:
+                        virtual_server_metadata = browse_meta_data['virtualServerMetaData']
+
+                        if 'nics' in virtual_server_metadata:
+                            nics = virtual_server_metadata['nics']
+
+            nics_dict[name] = self.parse_nics_xml(nics)
+
+        return nics_dict
+
     def browse_in_time(
             self,
             vm_path='\\',
@@ -657,51 +909,61 @@ class VirtualServerSubclient(Subclient):
             to_date=None,
             vm_files_browse=False):
         """Gets the content of the backup for this subclient
-            at the path specified in the time range specified.
+                at the path specified in the time range specified.
 
-            Args:
-                vm_path             (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                Args:
+                    vm_path             (str)   --  folder path to get the
+                                                    contents of
+                                                    default: '\\'
+                                                    returns the root of the
+                                                    Backup content
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                    show_deleted_files  (bool)  --  include deleted files in
+                                                    the content or not
+                                                    default: True
 
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
+                    restore_index       (bool)  --  restore index if it is not
+                                                    cached  default: True
 
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
+                    vm_disk_browse      (bool)  --  browse the VM disks or not
+                                                    default: False
 
-                        gets contents from 01/01/1970 if not specified
-                    default: None
+                    from_date           (str)   --  date to get the contents
+                                                    after
+                                                    format: dd/MM/YYYY
+                                                    gets contents from
+                                                    01/01/1970 if not specified
+                                                    default: None
 
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
+                    to_date             (str)  --   date to get the contents
+                                                    before
+                                                    format: dd/MM/YYYY
+                                                    gets contents till current
+                                                    day if not specified
+                                                    default: None
 
-                        gets contents till current day if not specified
-                    default: None
+                Returns:
+                    list - list of all folders or files with their full paths
+                           inside the input path
 
-            Returns:
-                list - list of all folders or files with their full paths inside the input path
+                    dict - path along with the details like name, file/folder,
+                           size, modification time
 
-                dict - path along with the details like name, file/folder, size, modification time
+                Raises:
+                    SDKException:
+                        if from date value is incorrect
 
-            Raises:
-                SDKException:
-                    if from date value is incorrect
+                        if to date value is incorrect
 
-                    if to date value is incorrect
+                        if to date is less than from date
 
-                    if to date is less than from date
+                        if failed to browse content
 
-                    if failed to browse content
+                        if response is empty
 
-                    if response is empty
-
-                    if response is not success
-        """
+                        if response is not success
+            """
         vm_ids, vm_names = self._get_vm_ids_and_names_dict()
-
         vm_path = self._parse_vm_path(vm_names, vm_path)
 
         browse_content = super(VirtualServerSubclient, self).browse(
@@ -721,26 +983,28 @@ class VirtualServerSubclient(Subclient):
                 vm_path             (str)   --  vm path to get the contents of
                     default: '\\'; returns the root of the Backup content
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                show_deleted_files  (bool)  --  include deleted files in the
+                                                content or not default: True
 
 
                 from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
-
-                        gets contents from 01/01/1970 if not specified
-                    default: None
+                                                format: dd/MM/YYYY
+                                                gets contents from 01/01/1970
+                                                if not specified
+                                                default: None
 
                 to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-
-                        gets contents till current day if not specified
-                    default: None
+                                               format: dd/MM/YYYY
+                                               gets contents till current day
+                                               if not specified
+                                               default: None
 
             Returns:
-                list - list of all folders or files with their full paths inside the input path
+                list - list of all folders or files with their full paths
+                       inside the input path
 
-                dict - path along with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder,
+                       size, modification time
 
             Raises:
                 SDKException:
@@ -778,34 +1042,42 @@ class VirtualServerSubclient(Subclient):
             restore_index=True,
             from_date=None,
             to_date=None):
-        """Browses the Files and Folders inside a Virtual Machine in the time range specified.
+        """Browses the Files and Folders inside a Virtual Machine in the time
+           range specified.
 
             Args:
-                vm_path             (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                vm_path             (str)   --  folder path to get the contents
+                                                of
+                                                default: '\\';
+                                                returns the root of the Backup
+                                                content
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                show_deleted_files  (bool)  --  include deleted files in the
+                                                content or not default: True
 
                 restore_index       (bool)  --  restore index if it is not cached
-                    default: True
+                                                default: True
 
                 from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
+                                                format: dd/MM/YYYY
 
-                        gets contents from 01/01/1970 if not specified
-                    default: None
+                                                gets contents from 01/01/1970
+                                                if not specified
+                                                default: None
 
                 to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
+                                               format: dd/MM/YYYY
 
-                        gets contents till current day if not specified
-                    default: None
+                                               gets contents till current day
+                                               if not specified
+                                               default: None
 
             Returns:
-                list - list of all folders or files with their full paths inside the input path
+                list - list of all folders or files with their full paths
+                       inside the input path
 
-                dict - path along with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder,
+                       size, modification time
 
             Raises:
                 SDKException:
@@ -832,12 +1104,13 @@ class VirtualServerSubclient(Subclient):
             from_date,
             to_date):
         """
-        Check if the particular folder is present in browse of the subclient in particular VM
+        Check if the particular folder is present in browse of the subclient
+        in particular VM
 
         args:
-            _vm_id      (str)      -- VM id from which folder has to be restored
+            _vm_id      (str)     -- VM id from which folder has to be restored
 
-            folder_path     (str)   -- folder path whioch has to be restored
+            folder_path (str)     -- folder path whioch has to be restored
 
         exception:
             raise exception
@@ -857,13 +1130,13 @@ class VirtualServerSubclient(Subclient):
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split("\\")[-1]
             if _browse_folder_name == _restore_folder_name:
-                source_item = _path
+                source_item = _source_path + "\\" + _restore_folder_name
                 break
 
         if source_item is None:
-            raise SDKException('SubClient', '113')
+            raise SDKException('Subclient', '113')
 
-        return _source_path
+        return source_item
 
     def guest_file_restore(self,
                            vm_name=None,
@@ -872,35 +1145,35 @@ class VirtualServerSubclient(Subclient):
                            destination_path=None,
                            copy_preceedence=0,
                            preserve_level=1,
-                           restore_ACL=True,
                            unconditional_overwrite=False,
+                           restore_ACL=True,
                            from_date=None,
                            to_date=None,
                            show_deleted_files=True):
         """perform Guest file restore of the provided path
 
         Args:
-            vm_name             (str)   --  VM from which files needs to be restored
+            vm_name             (basestring)   --  VM from which files needs to be
+                                            restored
 
-            folder_to_restore    (str)   --  folder path to restore
+            folder_to_restore    (basestring)  -- folder path to restore
 
-            show_deleted_files  (bool)  --  include deleted files in the content or not
-                default: True
+            show_deleted_files  (bool)  --  include deleted files in the
+                                            content or not
+                                            default: True
 
 
-            destination_path    (str)   -- path to restore
+            destination_path    (basestring)   --  path to restore
 
-            from_date           (str)   --  date to get the contents after
-                    format: dd/MM/YYYY
+            from_date           (basestring)   --  date to get the contents after
+                                            format: dd/MM/YYYY
+                                            gets contents from 01/01/1970 if
+                                            not specified default: None
 
-                    gets contents from 01/01/1970 if not specified
-                default: None
-
-            to_date             (str)  --  date to get the contents before
-                    format: dd/MM/YYYY
-
-                    gets contents till current day if not specified
-                default: None
+            to_date             (basestring)   --  date to get the contents before
+                                            format: dd/MM/YYYY
+                                            gets contents till current day
+                                            if not specified default: None
 
          Raises:
                 SDKException:
@@ -921,21 +1194,21 @@ class VirtualServerSubclient(Subclient):
         _file_restore_option = {}
 
         # check if inputs are correct
-        if not(isinstance(destination_path, str) and
-               (isinstance(vm_name, str)) and
-                (isinstance(folder_to_restore, str))):
+        if not(isinstance(destination_path, basestring) and
+               (isinstance(vm_name, basestring)) and
+               (isinstance(folder_to_restore, basestring))):
             raise SDKException('Subclient', '105')
 
-        if not(vm_name in _vm_names):
+        if vm_name not in _vm_names:
             raise SDKException('Subclient', '111')
 
         # check if client name is correct
-        if(destination_client is None):
+        if destination_client is None:
             destination_client = self._backupset_object._instance_object.co_ordinator
 
         if isinstance(destination_client, Client):
             client = destination_client
-        elif isinstance(destination_client, str):
+        elif isinstance(destination_client, basestring):
             client = Client(self._commcell_object, destination_client)
         else:
             raise SDKException('Subclient', '105')
@@ -981,15 +1254,20 @@ class VirtualServerSubclient(Subclient):
 
             Args:
                 vm_path             (str)   --  vm path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                                                default: '\\';
+                                                returns the root of the Backup
+                                                content
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                show_deleted_files  (bool)  --  include deleted files in the
+                                                content or not
+                                                default: True
 
             Returns:
-                list - list of all folders or files with their full paths inside the input path
+                list - list of all folders or files with their full paths
+                       inside the input path
 
-                dict - path along with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder,
+                       size, modification time
 
             Raises:
                 SDKException:
@@ -1008,34 +1286,41 @@ class VirtualServerSubclient(Subclient):
             restore_index=True,
             from_date=None,
             to_date=None):
-        """Browses the Files and Folders of a Virtual Machine in the time range specified.
+        """Browses the Files and Folders of a Virtual Machine in the time range
+           specified.
 
             Args:
-                vm_path             (str)   --  folder path to get the contents of
-                    default: '\\'; returns the root of the Backup content
+                vm_path             (basestring)   --  folder path to get the contents
+                                                default: '\\';
+                                                returns the root of the Backup
+                                                content
 
-                show_deleted_files  (bool)  --  include deleted files in the content or not
-                    default: True
+                show_deleted_files  (bool)  --  include deleted files in the
+                                                content or not
+                                                default: True
 
-                restore_index       (bool)  --  restore index if it is not cached
-                    default: True
+                restore_index       (bool)  --  restore index if it is not
+                                                cached
+                                                default: True
 
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
+                from_date           (basestring)   --  date to get the contents after
+                                                format: dd/MM/YYYY
+                                                gets contents from 01/01/1970
+                                                if not specified
+                                                default: None
 
-                        gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-
-                        gets contents till current day if not specified
-                    default: None
+                to_date             (basestring)  --   date to get the contents before
+                                                format: dd/MM/YYYY
+                                                gets contents till current day
+                                                if not specified
+                                                default: None
 
             Returns:
-                list - list of all folders or files with their full paths inside the input path
+                list - list of all folders or files with their full paths
+                       inside the input path
 
-                dict - path along with the details like name, file/folder, size, modification time
+                dict - path along with the details like name, file/folder,
+                       size, modification time
 
             Raises:
                 SDKException:
@@ -1055,7 +1340,7 @@ class VirtualServerSubclient(Subclient):
             vm_path, show_deleted_files, restore_index, True, from_date, to_date
         )
 
-    def _get_disk_Extension(self, disk_list):
+    def _get_disk_extension(self, disk_list):
         """
         get the Extension of all disk in the list
 
@@ -1073,7 +1358,7 @@ class VirtualServerSubclient(Subclient):
 
         _extn_list = list(set(_extn_list))
 
-        if(len(_extn_list) > 1):
+        if len(_extn_list) > 1:
             return _extn_list
         else:
             return _extn_list[0]
@@ -1083,28 +1368,32 @@ class VirtualServerSubclient(Subclient):
         return volume restore type and destiantion disk Type
 
         Args:
-            src_disk_extn   (str)   --  source disk extension of the disk
-            dest_disk_extn  (str)   --  Extension to which disk is converted
+            src_disk_extn   (basestring)   --  source disk extension of the disk
+            dest_disk_extn  (basestring)   --  Extension to which disk is converted
 
         return
-            _vol_restore_type   (str)   -- value of Volume restore type parameter of the XML
-            _dest_disk_type     (str)   -- value of destination Disk Type parameter of the XML
+            _vol_restore_type   (basestring)   -- value of Volume restore type
+                                           parameter of the XML
+            _dest_disk_type     (basestring)   -- value of destination Disk Type
+                                           parameter of the XML
         """
 
         disk_conversion = {
-            "vhdx": {"vhd": ("VIRTUAL_HARD_DISKS", "VHD_DYNAMIC"),
-                     "vmdk": ("VMDK_FILES", "VMDK_VCB4")
-                     },
-            "vmdk": {"vhd": ("VIRTUAL_HARD_DISKS", "VHD_DYNAMIC"),
-                     "vhdx": ("VIRTUAL_HARD_DISKS", "VHDX_DYNAMIC")
-                     }
+            "vhdx": {
+                "vhd": ("VIRTUAL_HARD_DISKS", "VHD_DYNAMIC"),
+                "vmdk": ("VMDK_FILES", "VMDK_VCB4")
+            },
+            "vmdk": {
+                "vhd": ("VIRTUAL_HARD_DISKS", "VHD_DYNAMIC"),
+                "vhdx": ("VIRTUAL_HARD_DISKS", "VHDX_DYNAMIC")
+            }
         }
         _src_disk_extn = _src_disk_extn.lower().strip(".")
         _dest_disk_extn = _dest_disk_extn.lower().strip(".")
 
         return disk_conversion[_src_disk_extn][_dest_disk_extn]
 
-    def _set_vm_to_restore(self, vm_to_restore=None, restore_option={}):
+    def _set_vm_to_restore(self, vm_to_restore=None, restore_option=None):
         """
         check whether the VMs provided for restore is backued up else assume
                             Vm_to_restore with default
@@ -1118,17 +1407,19 @@ class VirtualServerSubclient(Subclient):
             vm_to_restore   (list)      -- Final list of Vm need to be restored
 
         """
+        if restore_option is None:
+            restore_option = {}
 
         if not self._vm_names_browse:
             self._get_vm_ids_and_names_dict_from_browse()
 
         # set vms to restore
-        _temp_res_list = []
-        if vm_to_restore is None:
-            vm_to_restore = restore_option.get("vm_to_restore", self._vm_ids_browse.keys())
+        if not vm_to_restore:
+            vm_to_restore = restore_option.get("vm_to_restore", self._vm_ids_browse)
             _temp_res_list = vm_to_restore
 
         else:
+            _temp_res_list = []
             _temp_res_list.append(vm_to_restore)
 
         vm_to_restore = list(set(self._vm_names_browse) & set(_temp_res_list))
@@ -1144,10 +1435,10 @@ class VirtualServerSubclient(Subclient):
 
         Args:
             restore_option  (dict)  -- restore option dictionary where advanced
-                                            properties to be appended
+                                       properties to be appended
 
-            **kwargs                --  Keyword arguments with key as property name
-                                            and its value
+            **kwargs                --  Keyword arguments with key as property
+                                        name and its value
         """
         restore_option.update(kwargs)
         restore_option["destination_vendor"] = \
@@ -1159,10 +1450,10 @@ class VirtualServerSubclient(Subclient):
 
         Args:
             restore_option  (dict)  -- restore option dictionary where advanced
-                                            properties to be appended
+                                       properties to be appended
 
-            **kwargs                --  Keyword arguments with key as property name
-                                            and its value
+            **kwargs                --  Keyword arguments with key as property
+                                        name and its value
         """
         restore_option.update(kwargs)
 
@@ -1170,6 +1461,10 @@ class VirtualServerSubclient(Subclient):
         """
         prepares the  file level restore json from getters
         """
+
+        """
+                prepares the  file level restore json from getters
+                """
 
         self._restore_destination_json(_file_restore_option)
         self._restore_fileoption_json(_file_restore_option)
@@ -1184,22 +1479,21 @@ class VirtualServerSubclient(Subclient):
             "taskInfo": {
                 "associations": [self._subClientEntity],
                 "task": self._json_task,
-                "subTasks": [
-                    {
-                        "subTask": self._json_restore_subtask,
-                        "options": {
-                            "restoreOptions": {
-                                "impersonation": self._impersonation_json_,
-                                "virtualServerRstOption": self._virtualserver_option_restore_json,
-                                "volumeRstOption": self._volume_restore_json,
-                                "browseOption": self._browse_restore_json,
-                                "commonOptions": self._commonoption_restore_json,
-                                "destination": self._destination_restore_json,
-                                "fileOption": self._fileoption_restore_json,
-                                "sharePointRstOption": self._restore_sharepoint_json()
-                            }
+                "subTasks": [{
+                    "subTask": self._json_restore_subtask,
+                    "options": {
+                        "restoreOptions": {
+                            "impersonation": self._impersonation_json_,
+                            "virtualServerRstOption": self._virtualserver_option_restore_json,
+                            "volumeRstOption": self._volume_restore_json,
+                            "browseOption": self._browse_restore_json,
+                            "commonOptions": self._commonoption_restore_json,
+                            "destination": self._destination_restore_json,
+                            "fileOption": self._fileoption_restore_json,
+                            "sharePointRstOption": self._restore_sharepoint_json
                         }
-                    }]
+                    }
+                }]
             }
         }
         return request_json
@@ -1212,24 +1506,33 @@ class VirtualServerSubclient(Subclient):
             _disk_restore_option - dictionary with all disk restore options
 
             value:
-                preserve_level              -  set the preserve level in restore
+                preserve_level              - set the preserve level in restore
                 unconditional_overwrite     - unconditionally overwrite the disk
-                                                    in the restore path
+                                              in the restore path
 
-                destination_path            - path where the disk needs to be restored
-                client_name                 - client where the disk needs to be restored
+                destination_path            - path where the disk needs to be
+                                              restored
+                client_name                 - client where the disk needs to be
+                                              restored
 
                 destination_vendor          - vendor id of the Hypervisor
-                destination_disktype        - type of disk needs to be restored like VHDX,VHD,VMDK
-                source_item                 - GUID of VM from which disk needs to be restored
-                                                eg:\\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
+                destination_disktype        - type of disk needs to be restored
+                                              like VHDX,VHD,VMDK
+                source_item                 - GUID of VM from which disk needs
+                                              to be restored
+                                              eg:
+                                              \\5F9FA60C-0A89-4BD9-9D02-C5ACB42
+                                              745EA
 
-                copy_precedence_applicable  - True if needs copy_preceedence to be honored else False
+                copy_precedence_applicable  - True if needs copy_preceedence to
+                                              be honored else False
+
                 copy_preceedence            - the copy id from which browse and
-                                                                restore needs to be performed
+                                              restore needs to be performed
 
         returns:
-            request_json        -complete json for performing disk Restore options
+            request_json      -   complete json for performing disk Restore
+                                  options
 
         """
 
@@ -1253,22 +1556,21 @@ class VirtualServerSubclient(Subclient):
             "taskInfo": {
                 "associations": [self._subClientEntity],
                 "task": self._json_task,
-                "subTasks": [
-                    {
-                        "subTask": self._json_restore_subtask,
-                        "options": {
-                            "restoreOptions": {
-                                "impersonation": self._impersonation_json_,
-                                "virtualServerRstOption": self._virtualserver_option_restore_json,
-                                "volumeRstOption": self._volume_restore_json,
-                                "browseOption": self._browse_restore_json,
-                                "commonOptions": self._commonoption_restore_json,
-                                "destination": self._destination_restore_json,
-                                "fileOption": self._fileoption_restore_json,
-                                "sharePointRstOption": self._restore_sharepoint_json()
-                            }
+                "subTasks": [{
+                    "subTask": self._json_restore_subtask,
+                    "options": {
+                        "restoreOptions": {
+                            "impersonation": self._impersonation_json_,
+                            "virtualServerRstOption": self._virtualserver_option_restore_json,
+                            "volumeRstOption": self._volume_restore_json,
+                            "browseOption": self._browse_restore_json,
+                            "commonOptions": self._commonoption_restore_json,
+                            "destination": self._destination_restore_json,
+                            "fileOption": self._fileoption_restore_json,
+                            "sharePointRstOption": self._restore_sharepoint_json
                         }
-                    }]
+                    }
+                }]
             }
         }
         return request_json
@@ -1278,28 +1580,42 @@ class VirtualServerSubclient(Subclient):
         Prepare Full VM restore Json with all getters
 
         Args:
-        restore_option - dictionary with all VM restore options
+            restore_option - dictionary with all VM restore options
 
         value:
-            preserve_level              -  set the preserve level in restore
-            unconditional_overwrite     - unconditionally overwrite the disk
-                                                in the restore path
+            preserve_level              - set the preserve level in restore
 
-            destination_path            - path where the disk needs to be restored
-            client_name                 - client where the disk needs to be restored
+            unconditional_overwrite     - unconditionally overwrite the disk
+                                          in the restore path
+
+            destination_path            - path where the disk needs to be
+                                          restored
+
+            client_name                 - client where the disk needs to be
+                                          restored
 
             destination_vendor          - vendor id of the Hypervisor
-            destination_disktype        - type of disk needs to be restored like VHDX,VHD,VMDK
-            source_item                 - GUID of VM from which disk needs to be restored
-                                            eg:\\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
 
-            copy_precedence_applicable  - True if needs copy_preceedence to be honoured else False
+            destination_disktype        - type of disk needs to be restored
+                                          like VHDX,VHD,VMDK
+
+            source_item                 - GUID of VM from which disk needs to
+                                          be restored
+                                          eg:
+                                          \\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
+
+            copy_precedence_applicable  - True if needs copy_preceedence to
+                                          be honoured else False
+
             copy_preceedence            - the copy id from which browse and
-                                                            restore needs to be performed
+                                          restore needs to be performed
 
             power_on                    - power on the VM after restore
+
             add_to_failover             - Register the VM to Failover Cluster
-            datastore                   - Datastore where the VM needs to be restored
+
+            datastore                   - Datastore where the VM needs to be
+                                          restored
 
             disks   (list of dict)      - list with dict for each disk in VM
                                             eg: [{
@@ -1313,11 +1629,13 @@ class VirtualServerSubclient(Subclient):
                                             ]
             guid                        - GUID of the VM needs to be restored
             new_name                    - New name for the VM to be restored
-            esx_host                    - esx_host or client name where it need to be restored
+            esx_host                    - esx_host or client name where it need
+                                          to be restored
             name                        - name of the VM to be restored
 
         returns:
-            request_json        -complete json for perfomring Full VM Restore options
+              request_json        -complete json for perfomring Full VM Restore
+                                   options
 
         """
 
@@ -1328,38 +1646,42 @@ class VirtualServerSubclient(Subclient):
         self._restore_commonOptions_json(restore_option)
         self._impersonation_json(restore_option)
         self._json_restore_volumeRstOption(restore_option)
-        self._restore_commonOptions_json(restore_option)
         self._restore_browse_option_json(restore_option)
         self._restore_destination_json(restore_option)
         self._json_restore_diskLevelVMRestoreOption(restore_option)
         self._json_restore_virtualServerRstOption(restore_option)
         self._restore_fileoption_json(restore_option)
+        self._json_vcenter_instance(restore_option)
 
         _virt_restore_json = self._virtualserver_option_restore_json
+        _virt_restore_json["vCenterInstance"] = self._vcenter_instance_json
         _virt_restore_json["diskLevelVMRestoreOption"] = self._json_disklevel_option_restore
         _virt_restore_json["diskLevelVMRestoreOption"][
             "advancedRestoreOptions"] = self._advanced_restore_option_list
+        # commenting below portion to clarify if we need it
+        #datastore_dict = {"dataStore": self._datastore_json}
+        #_virt_restore_json["diskLevelVMRestoreOption"][
+        #    "advancedRestoreOptions"].append(datastore_dict)
 
         request_json = {
             "taskInfo": {
                 "associations": [self._subClientEntity],
                 "task": self._json_task,
-                "subTasks": [
-                    {
-                        "subTask": self._json_restore_subtask,
-                        "options": {
-                            "restoreOptions": {
-                                "impersonation": self._impersonation_json_,
-                                "virtualServerRstOption": self._virtualserver_option_restore_json,
-                                "volumeRstOption": self._volume_restore_json,
-                                "browseOption": self._browse_restore_json,
-                                "commonOptions": self._commonoption_restore_json,
-                                "destination": self._destination_restore_json,
-                                "fileOption": self._fileoption_restore_json,
-                                "sharePointRstOption": self._restore_sharepoint_json()
-                            }
+                "subTasks": [{
+                    "subTask": self._json_restore_subtask,
+                    "options": {
+                        "restoreOptions": {
+                            "impersonation": self._impersonation_json_,
+                            "virtualServerRstOption": self._virtualserver_option_restore_json,
+                            "volumeRstOption": self._volume_restore_json,
+                            "browseOption": self._browse_restore_json,
+                            "commonOptions": self._commonoption_restore_json,
+                            "destination": self._destination_restore_json,
+                            "fileOption": self._fileoption_restore_json,
+                            "sharePointRstOption": self._restore_sharepoint_json
                         }
-                    }]
+                    }
+                }]
             }
         }
         return request_json
