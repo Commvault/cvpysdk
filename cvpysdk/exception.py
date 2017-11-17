@@ -72,7 +72,10 @@ EXCEPTION_DICT = {
         '109': 'Time Value entered is not of correct format',
         '110': 'No data found at the path specified',
         '111': 'No File/Folder matched the input value',
-        '112': 'Method Not Implemented'
+        '112': 'Method Not Implemented',
+        '113': 'Type of instance should either be the Instance class instance or string',
+        '114': 'Type of backupset should either be the Backupset class instance or string'
+        
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -123,6 +126,10 @@ EXCEPTION_DICT = {
     'Plan': {
         '101': 'Data type of the input(s) is not valid',
         '102':''
+    },
+    'Salesforce': {
+        '101': 'Neither Sync Database enabled nor user provided database details for restore',
+        '102': ''
     }
 }
 

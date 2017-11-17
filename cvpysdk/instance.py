@@ -32,6 +32,7 @@ Instances:
     get(instance_name)              --  returns the Instance class object
                                             of the input backup set name
 
+    add_sybase_instance(sybase_options) -- To add sybase server instance
 
 Instance:
     __init__(agent_object,
@@ -79,7 +80,7 @@ Instance:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-
+from base64 import b64encode
 from past.builtins import basestring
 
 from .job import Job
@@ -114,6 +115,7 @@ class Instances(object):
         from .instances.sqlinstance import SQLServerInstance
         from .instances.hanainstance import SAPHANAInstance
         from .instances.oracleinstance import OracleInstance
+        from .instances.sybaseinstance import SybaseInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -122,7 +124,8 @@ class Instances(object):
             'cloud apps': CloudAppsInstance,
             'sql server': SQLServerInstance,
             'sap hana': SAPHANAInstance,
-            'oracle': OracleInstance
+            'oracle': OracleInstance,
+            'sybase': SybaseInstance
         }
 
     def __str__(self):
@@ -250,6 +253,122 @@ class Instances(object):
             raise SDKException(
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
             )
+
+
+    def add_sybase_instance(self, sybase_options):
+        """
+            Method to Add new Sybase Instance to given Client
+            Args:
+                Dictionary of sybase instance creation options:
+                    Example:
+                       sybase_options = {
+                            'instance_name': 'SAISYB',
+                            'sybase_ocs': 'OCS-16_0',
+                            'sybase_ase': 'ASE-16_0',
+                            'backup_server': 'SAISYB_BS',
+                            'sybase_home':'C:\\SAP',
+                            'config_file':'C:\\SAP\\SAISYB.cfg',
+                            'enable_auto_discovery':True,
+                            'shared_memory_directory':'C:\SAP\ASE-16_0',
+                            'storage_policy':'sai-sp',
+                            'sa_username':'sa',
+                            'sa_password':'commvault!12',
+                            'localadmin_username':'saisyb\\administrator',
+                            'localadmin_password':'commvault!12'
+                        }
+            Raises:
+                SDKException:
+                    if None value in sybase options
+
+                    if Sybase instance with same name already exists 
+
+                    if given storage policy does not exists in commcell
+
+        """
+
+        if None in sybase_options.values():
+            raise SDKException(
+                'Instance', '102', "One of the sybase parameter is None so cannot proceed with instance creation")
+
+        if self.has_instance(sybase_options["instance_name"]):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    sybase_options["instance_name"])
+            )
+
+        if sybase_options["storage_policy"] not in self._commcell_object.storage_policies._policies:
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    sybase_options["storage_policy"])
+            )
+
+        # encodes the plain text password using base64 encoding
+        sa_password = b64encode(
+            sybase_options["sa_password"].encode()).decode()
+        localadmin_password = b64encode(
+            sybase_options["localadmin_password"].encode()).decode()
+
+        enableAutoDiscovery = (sybase_options["enable_auto_discovery"])
+
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "appName": "Sybase",
+                    "instanceName": sybase_options["instance_name"],
+                    "_type_": 5,
+                    "applicationId": 5
+                },
+                "sybaseInstance": {
+                    "sybaseOCS": sybase_options["sybase_ocs"],
+                    "backupServer": sybase_options["backup_server"],
+                    "sybaseHome": sybase_options["sybase_home"],
+                    "sybaseASE": sybase_options["sybase_ase"],
+                    "configFile": sybase_options["config_file"],
+                    "enableAutoDiscovery": enableAutoDiscovery,
+                    "sharedMemoryDirectory": sybase_options["shared_memory_directory"],
+                    "defaultDatabaseStoragePolicy": {
+                        "storagePolicyName": sybase_options["storage_policy"]
+                    },
+                    "saUser": {"password": sa_password, "userName": sybase_options["sa_username"]},
+                    "localAdministrator": {"password": localadmin_password, "userName": sybase_options["localadmin_username"]}
+                }
+            }
+        }
+
+        ADD_INSTANCE = self._commcell_object._services['ADD_SYBASE_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', ADD_INSTANCE, request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    instance_name = response.json(
+                    )['response']['entity']['instanceName']
+                    instance_id = response.json(
+                    )['response']['entity']['instanceId']
+                    agent_name = self._agent_object.agent_name
+                    return self._instances_dict[agent_name](self._agent_object, instance_name, instance_id)
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
 
 
 class Instance(object):

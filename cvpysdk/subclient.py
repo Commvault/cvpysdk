@@ -179,6 +179,7 @@ class Subclients(object):
         from .subclients.hanasubclient import SAPHANASubclient
         from .subclients.oraclesubclient import OracleSubclient
         from .subclients.lndbsubclient import LNDbSubclient
+        from .subclients.sybasesubclient import SybaseSubclient
 
         globals()['FileSystemSubclient'] = FileSystemSubclient
         globals()['VirtualServerSubclient'] = VirtualServerSubclient
@@ -188,6 +189,7 @@ class Subclients(object):
         globals()['SAPHANASubclient'] = SAPHANASubclient
         globals()['OracleSubclient'] = OracleSubclient
         globals()['LNDbSubclient'] = LNDbSubclient
+        globals()['SybaseSubclient'] = SybaseSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -199,7 +201,8 @@ class Subclients(object):
             'nas': NASSubclient,
             'sap hana': SAPHANASubclient,
             'oracle': OracleSubclient,
-            'notes database': LNDbSubclient
+            'notes database': LNDbSubclient,
+            'sybase': SybaseSubclient
         }
 
     def __str__(self):
@@ -855,7 +858,10 @@ class Subclient(object):
             "timeZone": {
                 "TimeZoneName": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi"
             },
-            "timeRange": {}
+            "timeRange": {
+                "fromTime": self._backupset_object._get_epoch_time(Value.get("from_time", 0)),
+                "toTime": self._backupset_object._get_epoch_time(Value.get("to_time", 0))
+            }
         }
 
     def _restore_commonOptions_json(self, Value):
