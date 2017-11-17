@@ -52,10 +52,12 @@ class CloudAppsInstance(Instance):
 
     def __new__(cls, agent_object, instance_name, instance_id):
         from .cloudapps.google_instance import GoogleInstance
+        from .cloudapps.salesforce_instance import SalesforceInstance
 
         instance_type = {
             1: GoogleInstance,
-            2: GoogleInstance
+            2: GoogleInstance,
+            3: SalesforceInstance
         }
 
         commcell_object = agent_object._commcell_object
