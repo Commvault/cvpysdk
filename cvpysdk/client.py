@@ -108,6 +108,7 @@ from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
 
+
 class Clients(object):
     """Class for representing all the clients associated with the commcell."""
 
@@ -1500,7 +1501,7 @@ class Client(object):
             'ParentFolderPath': b64encode(destination_folder.encode('utf-8'))
         }
 
-        file_stream = open(source_file_path, 'r')
+        file_stream = open(source_file_path, 'rb')
 
         if file_size <= chunk_size:
             upload_url = self._commcell_object._services['UPLOAD_FULL_FILE'] % (self.client_id)

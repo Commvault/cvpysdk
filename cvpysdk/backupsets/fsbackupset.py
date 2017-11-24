@@ -205,9 +205,7 @@ class FSBackupset(Backupset):
                 Refer self._default_browse_options for all the supported options
 
         Returns:
-            list - List of only the file, folder paths from the browse response
-
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
+            dict - Dictionary of all the versions with additional metadata retrieved from browse
         """
         if len(args) > 0 and isinstance(args[0], dict):
             options = args[0]

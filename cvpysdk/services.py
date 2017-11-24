@@ -103,6 +103,7 @@ SERVICES_DICT_TEMPLATE = {
     'SOFTWARESTORE_GETPKGID': '{0}SoftwareStoreItem',
 
     'CREATE_TASK': '{0}CreateTask',
+    'ADD_SYBASE_INSTANCE': '{0}Instance',
 
     'GET_ANALYTICS_ENGINES': '{0}dcube/getAnalyticsEngine',
     'GET_ALL_DATASOURCES': '{0}dcube/GetDataSources?summary=1',
@@ -122,14 +123,14 @@ SERVICES_DICT_TEMPLATE = {
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8',
-    
+
     'UPLOAD_FULL_FILE': '{0}Client/%s/file/action/upload?uploadType=fullFile',
     'UPLOAD_CHUNKED_FILE': '{0}Client/%s/file/action/upload?uploadType=chunkedFile',
 
     'PLANS': '{0}V2/Plan',
     'PLAN': '{0}V2/Plan/%s',
     'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
-    
+
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s'
 }
 

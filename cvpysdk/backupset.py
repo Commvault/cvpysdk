@@ -127,11 +127,13 @@ class Backupsets(object):
         from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset
+        from .backupsets.cabackupset import CloudAppsBackupset
 
         self._backupsets_dict = {
             'file system': FSBackupset,
             'nas': NASBackupset,
-            'sap hana': HANABackupset
+            'sap hana': HANABackupset,
+            'cloud apps': CloudAppsBackupset
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
@@ -798,7 +800,8 @@ class Backupset(object):
         # add the browse mode value here, if it is different for an agent
         # if agent is not added in the dict, default value 2 will be used
         browse_mode = {
-            'virtual server': 4
+            'virtual server': 4,
+            'cloud apps': 3
         }
 
         mode = 2
