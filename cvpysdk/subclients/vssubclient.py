@@ -1019,7 +1019,6 @@ class VirtualServerSubclient(Subclient):
         )
 
         paths_list = []
-
         for path in browse_content[0]:
             if any(path.lower().endswith(Ext) for Ext in self.diskExtension):
                 paths_list.append(path)
@@ -1110,7 +1109,7 @@ class VirtualServerSubclient(Subclient):
         args:
             _vm_id      (str)     -- VM id from which folder has to be restored
 
-            folder_path (str)     -- folder path whioch has to be restored
+            folder_path (str)     -- folder path which has to be restored
 
         exception:
             raise exception
@@ -1365,7 +1364,7 @@ class VirtualServerSubclient(Subclient):
 
     def _get_conversion_disk_Type(self, _src_disk_extn, _dest_disk_extn):
         """
-        return volume restore type and destiantion disk Type
+        return volume restore type and destination disk Type
 
         Args:
             src_disk_extn   (basestring)   --  source disk extension of the disk
@@ -1489,8 +1488,7 @@ class VirtualServerSubclient(Subclient):
                             "browseOption": self._browse_restore_json,
                             "commonOptions": self._commonoption_restore_json,
                             "destination": self._destination_restore_json,
-                            "fileOption": self._fileoption_restore_json,
-                            "sharePointRstOption": self._restore_sharepoint_json
+                            "fileOption": self._fileoption_restore_json
                         }
                     }
                 }]
@@ -1566,8 +1564,7 @@ class VirtualServerSubclient(Subclient):
                             "browseOption": self._browse_restore_json,
                             "commonOptions": self._commonoption_restore_json,
                             "destination": self._destination_restore_json,
-                            "fileOption": self._fileoption_restore_json,
-                            "sharePointRstOption": self._restore_sharepoint_json
+                            "fileOption": self._fileoption_restore_json
                         }
                     }
                 }]
@@ -1658,10 +1655,6 @@ class VirtualServerSubclient(Subclient):
         _virt_restore_json["diskLevelVMRestoreOption"] = self._json_disklevel_option_restore
         _virt_restore_json["diskLevelVMRestoreOption"][
             "advancedRestoreOptions"] = self._advanced_restore_option_list
-        # commenting below portion to clarify if we need it
-        #datastore_dict = {"dataStore": self._datastore_json}
-        #_virt_restore_json["diskLevelVMRestoreOption"][
-        #    "advancedRestoreOptions"].append(datastore_dict)
 
         request_json = {
             "taskInfo": {
@@ -1677,8 +1670,7 @@ class VirtualServerSubclient(Subclient):
                             "browseOption": self._browse_restore_json,
                             "commonOptions": self._commonoption_restore_json,
                             "destination": self._destination_restore_json,
-                            "fileOption": self._fileoption_restore_json,
-                            "sharePointRstOption": self._restore_sharepoint_json
+                            "fileOption": self._fileoption_restore_json
                         }
                     }
                 }]
