@@ -131,6 +131,8 @@ Subclient operations are currently supported for the following Agents:
 
 #. ORACLE
 
+#. Sybase
+
 
 Contribution Guidelines
 -----------------------
