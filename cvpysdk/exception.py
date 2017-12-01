@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -28,7 +27,8 @@ EXCEPTION_DICT = {
     'Commcell': {
         '101': 'Commcell is not reachable. Please check the commcell name and services again',
         '102': 'Authtoken not received. Please try again.',
-        '103': 'Failed to get CommServ name'
+        '103': 'Failed to get CommServ name',
+        '104': 'Failed to send an email to specified user'
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
@@ -136,6 +136,10 @@ EXCEPTION_DICT = {
     },
     'InternetOptions': {
         '101': 'Invalid input(s) specified'
+    },
+    'Virtual Machine': {
+        '101': 'Data type of the input(s) is not valid',
+        '102':''
     }
 }
 

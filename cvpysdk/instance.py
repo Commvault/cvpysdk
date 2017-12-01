@@ -116,6 +116,7 @@ class Instances(object):
         from .instances.hanainstance import SAPHANAInstance
         from .instances.oracleinstance import OracleInstance
         from .instances.sybaseinstance import SybaseInstance
+        from .instances.saporacleinstance import SAPOracleInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -125,7 +126,8 @@ class Instances(object):
             'sql server': SQLServerInstance,
             'sap hana': SAPHANAInstance,
             'oracle': OracleInstance,
-            'sybase': SybaseInstance
+            'sybase': SybaseInstance,
+            'sap for oracle': SAPOracleInstance
         }
 
     def __str__(self):
