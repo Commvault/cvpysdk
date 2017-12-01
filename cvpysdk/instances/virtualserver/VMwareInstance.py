@@ -49,11 +49,11 @@ class VMwareInstance(VirtualServerInstance):
                 instance_id     (int)       --  instance id
 
         """
-        super(VMwareInstance, self).__init__(agent_object, instance_name, instance_id)
         self._vendor_id = 1
         self._vmwarvendor = None
         self._server_name = []
         self._server_host_name = []
+        super(VMwareInstance, self).__init__(agent_object, instance_name, instance_id)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.

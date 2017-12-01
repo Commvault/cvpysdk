@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright ©2017 Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -187,7 +187,7 @@ class Commcell(object):
                 str - string about the details of the Commcell class instance
         """
         representation_string = 'Commcell class instance of Commcell: "{0}", for User: "{1}"'
-        return representation_string.format(self._headers['Host'], self._user)
+        return representation_string.format(self.webconsole_hostname, self._user)
 
     def __enter__(self):
         """Returns the current instance.
@@ -275,6 +275,11 @@ class Commcell(object):
     def commserv_name(self):
         """Returns the value of the CommServ name attribute."""
         return self._commserv_name
+
+    @property
+    def webconsole_hostname(self):
+        """Returns the value of the host name of the webconsole used to connect to the Commcell."""
+        return self._headers['Host']
 
     @property
     def device_id(self):

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -131,7 +131,12 @@ SERVICES_DICT_TEMPLATE = {
     'PLAN': '{0}V2/Plan/%s',
     'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
 
-    'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s'
+    'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
+
+    'METRICS': '{0}CommServ/MetricsReporting',
+    'GET_METRICS': '{0}CommServ/MetricsReporting?isPrivateCloud=%s',
+
+    'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy'
 }
 
 

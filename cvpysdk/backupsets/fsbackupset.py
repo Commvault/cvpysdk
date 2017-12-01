@@ -180,7 +180,7 @@ class FSBackupset(Backupset):
         )
 
     def find_all_versions(self, *args, **kwargs):
-        """Searches the content of a Subclient.
+        """Searches the content of a Subclient, and returns all versions available for the content.
 
             Args:
                 Dictionary of browse options:
@@ -205,7 +205,9 @@ class FSBackupset(Backupset):
                 Refer self._default_browse_options for all the supported options
 
         Returns:
-            dict - Dictionary of all the versions with additional metadata retrieved from browse
+            dict    -   dictionary of the specified file with list of all the file versions and
+                            additional metadata retrieved from browse
+
         """
         if len(args) > 0 and isinstance(args[0], dict):
             options = args[0]

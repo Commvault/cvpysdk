@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -42,7 +42,8 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Time Value should be greater than current time',
         '104': 'Time Value entered is not of correct format',
-        '105': 'Script is not a valid file'
+        '105': 'Script is not a valid file',
+        '106': 'Failed to get the instance'
     },
     'Agent': {
         '101': 'Data type of the input(s) is not valid',
@@ -75,7 +76,6 @@ EXCEPTION_DICT = {
         '112': 'Method Not Implemented',
         '113': 'Type of instance should either be the Instance class instance or string',
         '114': 'Type of backupset should either be the Backupset class instance or string'
-        
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -125,11 +125,17 @@ EXCEPTION_DICT = {
     },
     'Plan': {
         '101': 'Data type of the input(s) is not valid',
-        '102':''
+        '102': ''
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
         '102': ''
+    },
+    'Metrics': {
+        '101': 'Invalid input(s) specified'
+    },
+    'InternetOptions': {
+        '101': 'Invalid input(s) specified'
     }
 }
 

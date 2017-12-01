@@ -280,7 +280,7 @@ class Instances(object):
                 SDKException:
                     if None value in sybase options
 
-                    if Sybase instance with same name already exists 
+                    if Sybase instance with same name already exists
 
                     if given storage policy does not exists in commcell
 
@@ -288,7 +288,9 @@ class Instances(object):
 
         if None in sybase_options.values():
             raise SDKException(
-                'Instance', '102', "One of the sybase parameter is None so cannot proceed with instance creation")
+                'Instance',
+                '102',
+                "One of the sybase parameter is None so cannot proceed with instance creation")
 
         if self.has_instance(sybase_options["instance_name"]):
             raise SDKException(
@@ -333,7 +335,10 @@ class Instances(object):
                         "storagePolicyName": sybase_options["storage_policy"]
                     },
                     "saUser": {"password": sa_password, "userName": sybase_options["sa_username"]},
-                    "localAdministrator": {"password": localadmin_password, "userName": sybase_options["localadmin_username"]}
+                    "localAdministrator": {
+                        "password": localadmin_password,
+                        "userName": sybase_options["localadmin_username"]
+                    }
                 }
             }
         }
@@ -360,7 +365,9 @@ class Instances(object):
                     instance_id = response.json(
                     )['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](self._agent_object, instance_name, instance_id)
+                    return self._instances_dict[agent_name](
+                        self._agent_object, instance_name, instance_id
+                    )
 
             else:
                 raise SDKException('Response', '102')
@@ -776,8 +783,13 @@ class Instance(object):
             if not isinstance(versions, list):
                 raise SDKException('Instance', '101')
 
+            if 'win' in self._agent_object._client_object.os_info.lower():
+                version_string = "|\\|#15!vErSiOnS|#15!\\{0}"
+            else:
+                version_string = "|/|#15!vErSiOnS|#15!/{0}"
+
             for version in versions:
-                version = "|\\|#15!vErSiOnS|#15!\\{0}".format(version)
+                version = version_string.format(version)
                 request_json['taskInfo']['subTasks'][0]['options'][
                     'restoreOptions']['fileOption']['sourceItem'].append(version)
 

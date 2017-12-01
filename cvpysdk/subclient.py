@@ -1,7 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -74,8 +74,6 @@ Subclient:
     _restore_fileoption_json()  -- setter for file option property in restore
 
     _restore_destination_json() -- setter for destination property in restore
-
-    _restore_sharepoint_json()  -- setter for the sharepoint property in restore
 
     description()               --  update the description of the subclient
 
@@ -375,7 +373,7 @@ class Subclients(object):
                     sorted(self._instance_object.backupsets._backupsets)[0]
                 )
 
-        if storage_policy not in self._commcell_object.storage_policies._policies:
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
                 'Subclient',
                 '102',
@@ -853,7 +851,9 @@ class Subclient(object):
             },
             "backupset": {
                 "clientName": Value.get("client_name", ""),
-                "appName": self._backupset_object._agent_object.agent_name
+                "appName": self._backupset_object._agent_object.agent_name,
+                "instanceName": Value.get("instanceName", ""),
+                "backupsetName": self._backupset_object.backupset_name
             },
             "timeZone": {
                 "TimeZoneName": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi"
@@ -896,7 +896,7 @@ class Subclient(object):
             "inPlace": True,
             "destPath": [Value.get("destination_path", "")],
             "destClient": {
-                "clientName": Value.get("client_name", "")
+                "clientName": Value.get("destination_client_name", "")
             }
         }
 
@@ -906,14 +906,6 @@ class Subclient(object):
             "sourceItem": Value.get("source_item", []),
             "browseFilters": Value.get("browse_filters", [])
         }
-
-    def _restore_sharepoint_json(self):
-        """getter for Sharepoint restore option in JSON. it is read only attribute"""
-        _sharepoint_restore_json = {
-            "is90OrUpgradedClient": False
-        }
-
-        return _sharepoint_restore_json
 
     @property
     def _json_task(self):
@@ -1072,7 +1064,7 @@ class Subclient(object):
                     if storage policy name is not in string format
         """
         if isinstance(value, basestring):
-            if value not in self._commcell_object.storage_policies._policies:
+            if not self._commcell_object.storage_policies.has_policy(value):
                 raise SDKException(
                     'Subclient',
                     '102',
@@ -1081,7 +1073,8 @@ class Subclient(object):
 
         self._set_subclient_properties(
             "_commonProperties['storageDevice']['dataBackupStoragePolicy']['storagePolicyName']",
-            value)
+            value
+        )
 
     def enable_backup(self):
         """Enables Backup for the subclient.

@@ -58,6 +58,8 @@ Client:
 
     _get_client_properties()     --  get the properties of this client
 
+    _get_instance_of_client()    --  get the instance associated with the client
+
     _make_request()              --  makes the upload request to the server
 
     enable_backup()              --  enables the backup for the client
@@ -91,6 +93,8 @@ Client:
     upload_file()                --  uploads the specified file on controller to the client machine
 
     upload_folder()              --  uploads the specified folder on controller to client machine
+
+    restart_services()           --  executes the command on the client to restart the services
 
 """
 
@@ -493,7 +497,13 @@ class Client(object):
             self._client_id = self._get_client_id()
 
         self._CLIENT = self._commcell_object._services['CLIENT'] % (self.client_id)
+
         self._get_client_properties()
+
+        # HACK: use the method _get_instance_of_client till the time the value of instance
+        # is not returned in the API response
+        # use the value in the API response once it is present
+        self._instance = self._get_instance_of_client()
 
         self.agents = Agents(self)
         self.schedules = Schedules(self)
@@ -590,7 +600,7 @@ class Client(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _request_json_(self, option, enable=True, enable_time=None):
+    def _request_json(self, option, enable=True, enable_time=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -754,6 +764,38 @@ class Client(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _get_instance_of_client(self):
+        """Gets the instance associated with this client."""
+        if 'windows' in self.os_info.lower():
+            command = 'powershell.exe Get-Content "{0}"'.format(
+                os.path.join(self.install_directory, 'Base', 'QinetixVM').replace(" ", "' '")
+            )
+
+            exit_code, output, __ = self.execute_command(command)
+
+            if exit_code == 0:
+                return output.strip()
+            else:
+                raise SDKException('Client', '106', 'Error: {0}'.format(output))
+
+        elif 'unix' in self.os_info.lower():
+            command = 'cat {0}'.format(os.path.join(self.install_directory + '/', 'galaxy_vm'))
+
+            __, output, error = self.execute_command(command)
+
+            if error:
+                raise SDKException('Client', '106', 'Error: {0}'.format(error))
+            else:
+                temp = re.findall('GALAXY_INST="(.+?)";', output)
+
+                if temp:
+                    return temp[0]
+                else:
+                    raise SDKException('Client', '106')
+
+        else:
+            raise SDKException('Client', '102', 'Operation not supported for this Client')
+
     @property
     def client_id(self):
         """Treats the client id as a read-only attribute."""
@@ -835,7 +877,7 @@ class Client(object):
 
                     if response is not success
         """
-        request_json = self._request_json_('Backup')
+        request_json = self._request_json('Backup')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -886,7 +928,7 @@ class Client(object):
         except ValueError:
             raise SDKException('Client', '104')
 
-        request_json = self._request_json_('Backup', False, enable_time)
+        request_json = self._request_json('Backup', False, enable_time)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -922,7 +964,7 @@ class Client(object):
 
                     if response is not success
         """
-        request_json = self._request_json_('Backup', False)
+        request_json = self._request_json('Backup', False)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -958,7 +1000,7 @@ class Client(object):
 
                     if response is not success
         """
-        request_json = self._request_json_('Restore')
+        request_json = self._request_json('Restore')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -1009,7 +1051,7 @@ class Client(object):
         except ValueError:
             raise SDKException('Client', '104')
 
-        request_json = self._request_json_('Restore', False, enable_time)
+        request_json = self._request_json('Restore', False, enable_time)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -1045,7 +1087,7 @@ class Client(object):
 
                     if response is not success
         """
-        request_json = self._request_json_('Restore', False)
+        request_json = self._request_json('Restore', False)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -1081,7 +1123,7 @@ class Client(object):
 
                     if response is not success
         """
-        request_json = self._request_json_('Data Aging')
+        request_json = self._request_json('Data Aging')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -1132,7 +1174,7 @@ class Client(object):
         except ValueError:
             raise SDKException('Client', '104')
 
-        request_json = self._request_json_('Data Aging', False, enable_time)
+        request_json = self._request_json('Data Aging', False, enable_time)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -1168,7 +1210,7 @@ class Client(object):
 
                     if response is not success
         """
-        request_json = self._request_json_('Data Aging', False)
+        request_json = self._request_json('Data Aging', False)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -1460,9 +1502,7 @@ class Client(object):
 
         if flag:
             if response.json():
-                if int(response.json()['isClientReady']) == 0:
-                    return False
-                return True
+                return 'isClientReady' in response.json() and response.json()['isClientReady'] == 1
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1566,3 +1606,28 @@ class Client(object):
                 self.upload_file(item, destination_dir)
             else:
                 self.upload_folder(item, destination_dir)
+
+    def restart_services(self):
+        """Executes the command on the client machine to restart all services."""
+        if 'windows' in self.os_info.lower():
+            command = '"{0}" -consoleMode -restartsvcgrp ALL'.format(
+                os.path.join(self.install_directory, 'Base', 'GxAdmin.exe')
+            )
+
+            __, output, __ = self.execute_command(command)
+
+            if output:
+                raise SDKException(
+                    'Client', '102', 'Failed to restart services.\nError: {0}'.format(output)
+                )
+        elif 'unix' in self.os_info.lower():
+            command = 'commvault -instance {0} restart'.format(self._instance)
+
+            __, __, error = self.execute_command(command)
+
+            if error:
+                raise SDKException(
+                    'Client', '102', 'Failed to restart services.\nError: {0}'.format(error)
+                )
+        else:
+            raise SDKException('Client', '102', 'Operation not supported for this Client')
