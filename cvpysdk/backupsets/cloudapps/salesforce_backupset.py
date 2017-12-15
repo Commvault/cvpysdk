@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -136,6 +135,7 @@ class SalesforceBackupset(CloudAppsBackupset):
 
             Returns:
                 dict - A JSON object for the browse response
+
         """
         request_json = super(SalesforceBackupset, self)._prepare_browse_json(options)
         salesforce_browse_view = {
