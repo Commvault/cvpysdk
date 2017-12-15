@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -24,13 +23,17 @@ Datacube:
     _get_analytics_engines()    --  returns the list of all Content Indexing (CI) Servers
 
     datasources()               --  returns an instance of the Datasources class
-    
+
     get_jdbc_drivers()          --  gets the list all jdbc_drivers associated with the datacube.
+
+    refresh()                   --  refresh the datasources associated with the Datacube Engine
 
 """
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
+from past.builtins import basestring
 
 from .datasource import Datasources
 
@@ -55,6 +58,7 @@ class Datacube(object):
 
             Returns:
                 object  -   instance of the Datacube class
+
         """
         self._commcell_object = commcell_object
 
@@ -68,6 +72,7 @@ class Datacube(object):
 
             Returns:
                 str     -   string consisting of the details of the instance of this class
+
         """
         o_str = "Datacube class instance for CommServ '{0}'".format(
             self._commcell_object.commserv_name
@@ -101,6 +106,7 @@ class Datacube(object):
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._ANALYTICS_ENGINES
@@ -135,7 +141,7 @@ class Datacube(object):
     def get_jdbc_drivers(self, analytics_engine):
         """Gets the list all jdbc_drivers associated with the datacube.
 
-            Args:            
+            Args:
                 analytics_engine (str) -- client name of analytics_engine
 
             Returns:
@@ -146,19 +152,21 @@ class Datacube(object):
                     if response is empty
 
                     if response is not success
-        """
 
+        """
         if not isinstance(analytics_engine, basestring):
             raise SDKException('Datacube', '101')
 
-        engine_index = (self.analytics_engines.index(engine)
-                        for engine in self.analytics_engines
-                        if engine["clientName"] == analytics_engine
-                       ).next()
+        engine_index = (
+            self.analytics_engines.index(engine)
+            for engine in self.analytics_engines
+            if engine["clientName"] == analytics_engine
+        ).next()
 
         self._GET_JDBC_DRIVERS = self._commcell_object._services['GET_JDBC_DRIVERS'] % (
             self.analytics_engines[engine_index]["cloudID"]
         )
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._GET_JDBC_DRIVERS
         )
@@ -170,3 +178,7 @@ class Datacube(object):
                 raise SDKException('Datacube', '103')
         else:
             self._response_not_success(response)
+
+    def refresh(self):
+        """Refresh the datasources associated to the Datacube Engine."""
+        self._datasources = None

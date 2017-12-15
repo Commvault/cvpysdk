@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -17,24 +16,29 @@ Handler: Class for a single Handler of the datasource
 
 
 Handlers:
-    __init__(commcell_object) --  initialize object of Handlers class associated with the commcell
 
-    __str__()                 --  returns all the handlers associated with the commcell
+    __init__(commcell_object)   --  initialize object of Handlers class associated with commcell
 
-    __repr__()                --  returns the string to represent the instance of the Handlers class
+    __str__()                   --  returns all the handlers associated with the commcell
 
-    _get_handlers()            --  gets all the handlers associated with the commcell
+    __repr__()                  --  returns the string representing instance of the Handlers class
 
-    has_handler(handler_name)  --  checks if a handler exists with the given name or not
-    
-    get(handler_name)          --  gets the properties of the given handler.
+    _get_handlers()             --  gets all the handlers associated with the commcell
+
+    has_handler(handler_name)   --  checks if a handler exists with the given name or not
+
+    get(handler_name)           --  gets the properties of the given handler
+
+    add()                       --  adds a new handler to the datasource
+
+    refresh()                   --  refresh the handlers associated with the datasource
 
 """
+
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from past.builtins import basestring
-from future.standard_library import install_aliases
 
 from ..exception import SDKException
 
@@ -50,20 +54,23 @@ class Handlers(object):
 
             Returns:
                 object - instance of the Handlers class
+
         """
         self._datasource_object = datasource_object
-        self._CREATE_HANDLER = self._datasource_object._commcell_object._services[
-            'CREATE_HANDLER']
+        self._CREATE_HANDLER = self._datasource_object._commcell_object._services['CREATE_HANDLER']
         self._GET_HANDLERS = self._datasource_object._commcell_object._services['GET_HANDLERS'] % (
             self._datasource_object.datasource_id
         )
-        self._handlers = self._get_handlers()
+
+        self._handlers = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all handlers of the datasource.
 
             Returns:
                 str - string of all the handlers associated with the datasource
+
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Handler')
 
@@ -94,6 +101,7 @@ class Handlers(object):
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._datasource_object._commcell_object._cvpysdk_object.make_request(
             'GET', self._GET_HANDLERS)
@@ -126,6 +134,7 @@ class Handlers(object):
             Raises:
                 SDKException:
                     if type of the handler name argument is not string
+
         """
         if not isinstance(handler_name, basestring):
             raise SDKException('Datacube', '101')
@@ -162,31 +171,48 @@ class Handlers(object):
                     if response is not success
 
                     if no handler exists with the given name
+
         """
         pass  # place holder when delete handler REST API is implemented.
 
-    def add(self, handler_name, search_query, filter_query=None, facet_field=None, facet_query=None, rows=10, response_type="json", sort_column=[]):
-        """Deletes the handler from the commcell.
+    def add(self,
+            handler_name,
+            search_query,
+            filter_query=None,
+            facet_field=None,
+            facet_query=None,
+            rows=10,
+            response_type="json",
+            sort_column=[]):
+        """Adds a new handler to the commcell.
 
             Args:
-                handler_name (str)  --  name of the handler to add to the datastore
+                handler_name    (str)   --  name of the handler to add to the datastore
 
-                search_query (list)  --  list of keywords on which the search is performed.
+                search_query    (list)  --  list of keywords on which the search is performed.
 
-                filter_query (list)  --  list of conditional queries which needs to be performed when
-                                         the data is retrieved.
+                filter_query    (list)  --  list of conditional queries which needs to be performed
+                                                when the data is retrieved
 
-                facet_field (list)   --  list of fields to be faceted.
+                facet_field     (list)  --  list of fields to be faceted.
 
-                facet_query (list)   --  list of conditional queries for which the facet count should
-                                         should be retrieved.
+                facet_query     (list)  --  list of conditional queries for which the facet count
+                                                should be retrieved
 
-                rows (int)           --  list of keywords on which the search is performed.
+                rows            (int)   --  list of keywords on which the search is performed.
 
-                response_type (str)  --  Specifies the format in which search results are retrieved.defaulted to json.
-                                         supported types are json/cvs/xml   
+                response_type   (str)   --  format in which search results are retrieved.
+                    default: json
 
-                sort_column (list)   --  list of column name to be sorted.
+                    Supported Types:
+                        json
+
+                        csv
+
+                        xml
+
+
+                sort_column     (list)  --  list of column name to be sorted
 
 
             Raises:
@@ -200,6 +226,7 @@ class Handlers(object):
                     if response is not success
 
                     if no handler exists with the given name
+
         """
         request_json = {
             "dataSourceId": self._datasource_object.datasource_id,
@@ -217,31 +244,26 @@ class Handlers(object):
                     "rows": [rows],
                     "wt": [response_type]
                 },
-                "appendParams": {
-                },
-                "rawDefaultParams": [
-                ],
-                "rawAppendParams": [
-                ],
-                "rawInvariantParams": [
-                ],
+                "appendParams": {},
+                "rawDefaultParams": [],
+                "rawAppendParams": [],
+                "rawInvariantParams": [],
                 "alwaysDecode": "true"
             }
         }
-        import json
-        request_json = json.dumps(request_json)
+
         flag, response = self._datasource_object._commcell_object._cvpysdk_object.make_request(
             'POST', self._CREATE_HANDLER, request_json
         )
         if flag:
             if response.json() and 'error' in response.json():
                 error_code = response.json()['error']['errorCode']
+
                 if error_code == 0:
                     return
                 else:
                     error_message = response.json()['error']['errLogMessage']
-                    o_str = 'Failed to create handler\nError: "{0}"'.format(
-                        error_message)
+                    o_str = 'Failed to create handler\nError: "{0}"'.format(error_message)
                     raise SDKException('Response', '102', o_str)
             else:
                 raise SDKException('Response', '102')
@@ -250,4 +272,8 @@ class Handlers(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-        self._get_handlers()  # reload new list.
+        self.refresh()  # reload new list.
+
+    def refresh(self):
+        """Refresh the handlers associated with the Datasource."""
+        self._handlers = self._get_handlers()

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -39,6 +38,9 @@ Datasources:
 
     delete(datasource_name)             --  deletes the give datasource to the datacube
 
+    refresh()                           --  refresh the datasources associated with the datacube
+
+
 Datasource:
 
     __init__(
@@ -65,16 +67,19 @@ Datasource:
 
     delete_content()                    --  deletes the contents of the data source.
 
+    refresh()                           --  refresh the properties of the datasource
+
 """
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
 from past.builtins import basestring
 
+from .handler import Handlers
 from .sedstype import SEDS_TYPE_DICT
 
 from ..exception import SDKException
-from .handler import Handlers
 
 
 class Datasources(object):
@@ -88,6 +93,7 @@ class Datasources(object):
 
             Returns:
                 object  -   instance of the Datasources class
+
         """
         self._datacube_object = datacube_object
 
@@ -97,13 +103,15 @@ class Datasources(object):
         self._CREATE_DATASOURCE = self._datacube_object._commcell_object._services[
             'CREATE_DATASOURCE']
 
-        self._datasources = self._get_all_datasources()
+        self._datasources = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all datasources in datacube.
 
             Returns:
                 str - string of all the datasources associated with the datacube
+
         """
         representation_string = '{:^5}\t{:30}\n\n'.format(
             'ID', 'Data Source Name')
@@ -154,6 +162,7 @@ class Datasources(object):
                         'data_source_3_name': {}
                         ...
                     }
+
         """
         _datasources = {}
 
@@ -200,6 +209,7 @@ class Datasources(object):
                         'data_source_3_name': {}
                         ...
                     }
+
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
             'GET', self._ALL_DATASOURCES
@@ -226,6 +236,7 @@ class Datasources(object):
             Raises:
                 SDKException:
                     if type of the datasource name argument is not string
+
         """
         if not isinstance(datasource_name, basestring):
             raise SDKException('Datacube', '101')
@@ -246,6 +257,7 @@ class Datasources(object):
                     if type of the datasource name argument is not string
 
                     if no datasource exists with the given name
+
         """
         if not isinstance(datasource_name, basestring):
             raise SDKException('Datacube', '101')
@@ -300,6 +312,7 @@ class Datasources(object):
                     if response is empty
 
                     if response is not success
+
         """
 
         if not isinstance(datasource_name, basestring):
@@ -311,10 +324,11 @@ class Datasources(object):
         if not isinstance(datasource_type, basestring):
             raise SDKException('Datacube', '101')
 
-        engine_index = (self._datacube_object.analytics_engines.index(engine)
-                        for engine in self._datacube_object.analytics_engines
-                        if engine["clientName"] == analytics_engine
-                       ).next()
+        engine_index = (
+            self._datacube_object.analytics_engines.index(engine)
+            for engine in self._datacube_object.analytics_engines
+            if engine["clientName"] == analytics_engine
+        ).next()
 
         request_json = {
             "collectionReq": {
@@ -353,7 +367,7 @@ class Datasources(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-        self._datasources = self._get_all_datasources()  # reload new list.
+        self.refresh()  # reload new list.
 
     def delete(self, datasource_name):
         """Deletes specified datasource from data cube .
@@ -366,6 +380,7 @@ class Datasources(object):
                     if type of the datasource name argument is not string
 
                     if no datasource exists with the given name
+
         """
 
         if not isinstance(datasource_name, basestring):
@@ -384,11 +399,17 @@ class Datasources(object):
             'POST', self._DELETE_DATASOURCE, {}
         )
         if flag:
-            return  # on success empty {} json is returned.
+            # on success empty {} json is returned
+            self.refresh()
         else:
             response_string = self._datacube_object._commcell_object._update_response_(
-                response.text)
+                response.text
+            )
             raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """Refresh the datasources associated with the Datacube."""
+        self._datasources = self._get_all_datasources()
 
 
 class Datasource(object):
@@ -421,8 +442,7 @@ class Datasource(object):
             self._datasource_id
         )
         self._CRAWL_HISTORY = self._datacube_object._commcell_object._services['GET_CRAWL_HISTORY'] % (
-            self._datasource_id
-        )
+            self._datasource_id)
 
         self._GET_DATASOURCE_SCHEMA = self._datacube_object._commcell_object._services[
             'GET_DATASOURCE_SCHEMA'] % (self.datasource_id)
@@ -436,8 +456,8 @@ class Datasource(object):
         self._UPDATE_DATASOURCE_SCHEMA = self._datacube_object._commcell_object._services[
             'UPDATE_DATASOURCE_SCHEMA']
 
-        self._properties = self._get_datasource_properties()
-        self.handlers = Handlers(self)
+        self.handlers = None
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -452,6 +472,7 @@ class Datasource(object):
 
             Returns:
                 str     -   id associated with this datasource
+
         """
         datasources = Datasources(self._datacube_object)
         return datasources.get(self.datasource_name).datasource_id
@@ -467,6 +488,7 @@ class Datasource(object):
                     if response is empty
 
                     if response is not success
+
         """
         # TODO: Populate self.properties in this method
         pass
@@ -499,9 +521,12 @@ class Datasource(object):
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'GET', self._CRAWL_HISTORY)
+            'GET', self._CRAWL_HISTORY
+        )
+
         if flag:
             if response.json():
                 return response.json()["status"]
@@ -509,7 +534,8 @@ class Datasource(object):
                 raise SDKException('Response', '102')
         else:
             response_string = self._datacube_object._commcell_object._update_response_(
-                response.text)
+                response.text
+            )
             raise SDKException('Response', '101', response_string)
 
     @property
@@ -539,9 +565,12 @@ class Datasource(object):
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'GET', self._GET_DATASOURCE_SCHEMA)
+            'GET', self._GET_DATASOURCE_SCHEMA
+        )
+
         if flag:
             if response.json():
                 return response.json()["collections"][0]["schema"]
@@ -549,7 +578,8 @@ class Datasource(object):
                 raise SDKException('Response', '102')
         else:
             response_string = self._datacube_object._commcell_object._update_response_(
-                response.text)
+                response.text
+            )
             raise SDKException('Response', '101', response_string)
 
     def update_datasource_schema(self, schema):
@@ -565,7 +595,7 @@ class Datasource(object):
                                     "searchDefault": "",
                                     "multiValued": ""
                                 }]
-                Valid values for type are as follows: 
+                Valid values for type are as follows:
                     [string, int, float, long, double, date, longstring]
                 indexed, autocomplete, searchDefault, multiValued takes 0/1
 
@@ -576,6 +606,7 @@ class Datasource(object):
                     if type of the schema argument is not list
 
                     if response is not success
+
         """
         if not isinstance(schema, list):
             raise SDKException('Datacube', '101')
@@ -590,8 +621,11 @@ class Datasource(object):
                 "schemaFields": schema
             }
         }
+
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'POST', self._UPDATE_DATASOURCE_SCHEMA, request_json)
+            'POST', self._UPDATE_DATASOURCE_SCHEMA, request_json
+        )
+
         if flag:
             if response.json() and 'errorCode' in response.json():
                 error_code = response.json()['errorCode']
@@ -599,8 +633,7 @@ class Datasource(object):
                     return
                 else:
                     error_message = response.json()['errLogMessage']
-                    o_str = 'Failed to update schema\nError: "{0}"'.format(
-                        error_message)
+                    o_str = 'Failed to update schema\nError: "{0}"'.format(error_message)
                     raise SDKException('Response', '102', o_str)
             else:
                 raise SDKException('Response', '102')
@@ -620,25 +653,27 @@ class Datasource(object):
                     if response is empty
 
                     if response is not success
-        """
 
+        """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'POST', self._DATACUBE_IMPORT_DATA, data)
+            'POST', self._DATACUBE_IMPORT_DATA, data
+        )
         if flag:
             if response.json() and 'errorCode' in response.json():
                 error_code = response.json()['errorCode']
+
                 if error_code == 0:
                     return
                 else:
                     error_message = response.json()['errLogMessage']
-                    o_str = 'Failed to import data\nError: "{0}"'.format(
-                        error_message)
+                    o_str = 'Failed to import data\nError: "{0}"'.format(error_message)
                     raise SDKException('Response', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._commcell_object._update_response_(
-                response.text)
+                response.text
+            )
             raise SDKException('Response', '101', response_string)
 
     def delete_content(self):
@@ -651,13 +686,21 @@ class Datasource(object):
                     if response is empty
 
                     if response is not success
-        """
 
+        """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'POST', self._DELETE_DATASOURCE_CONTENTS)
+            'POST', self._DELETE_DATASOURCE_CONTENTS
+        )
+
         if flag:
             return
         else:
             response_string = self._commcell_object._commcell_object._update_response_(
-                response.text)
+                response.text
+            )
             raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """Refresh the properties of the Datasource."""
+        self._properties = self._get_datasource_properties()
+        self.handlers = Handlers(self)
