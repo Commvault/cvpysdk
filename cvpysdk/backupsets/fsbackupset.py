@@ -1,7 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -209,7 +209,7 @@ class FSBackupset(Backupset):
                             additional metadata retrieved from browse
 
         """
-        if len(args) > 0 and isinstance(args[0], dict):
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
