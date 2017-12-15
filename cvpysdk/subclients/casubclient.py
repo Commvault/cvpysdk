@@ -31,8 +31,11 @@ class CloudAppsSubclient(Subclient):
 
     def __new__(cls, backupset_object, subclient_name, subclient_id=None):
         from .cloudapps.salesforce_subclient import SalesforceSubclient
+        from .cloudapps.google_subclient import GoogleSubclient
 
         instance_types = {
+            1: GoogleSubclient,
+            2: GoogleSubclient,
             3: SalesforceSubclient
         }
 
