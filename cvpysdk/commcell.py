@@ -38,10 +38,14 @@ Commcell:
 
     _get_commserv_name()         --  returns the commserv name
 
+    _qoperation_execute()        --  runs the qoperation execute rest api on specified input xml
+
     logout()                     --  logs out the user associated with the current instance
 
     request()                    --  runs an input HTTP request on the API specified,
                                         and returns its response
+
+    send_mail()                  --  sends an email to the specified user
 
 """
 
@@ -50,7 +54,6 @@ from __future__ import unicode_literals
 
 import getpass
 import socket
-import functools
 
 from base64 import b64encode
 
@@ -271,6 +274,34 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _qoperation_execute(self, request_xml):
+        """Makes a qoperation execute rest api call
+
+            Args:
+                request_xml     (str)   --  request xml that is to be passed
+
+            Returns:
+                (dict)  -   json response received from the server
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def commserv_name(self):
         """Returns the value of the CommServ name attribute."""
@@ -466,7 +497,7 @@ class Commcell(object):
         output = self._cvpysdk_object._logout()
         self._remove_attribs_()
         return output
-    
+
     def request(self, request_type, request_url, request_body=None):
         """Runs the request of the type specified on the request URL, with the body passed
             in the arguments.
@@ -491,3 +522,37 @@ class Commcell(object):
         )
 
         return response
+
+    def send_mail(self, to_address, subject, body=''):
+        """Sends a mail to the specified email address from the email asscoiated to this user
+
+            Args:
+                to_address      (str)   --  to address to whom the mail is to be sent
+
+                subject         (str)   --  subject of the email that is to be sent to the user
+
+                body            (str)   --  email body that is to be sent to the user
+
+            Raises:
+                SDKException:
+                    if failed to send an email to specified user
+
+                    if response is empty
+
+                    if response is not success
+        """
+        # encode the body if that contains special characters
+        import html
+        body = html.escape(body)
+
+        send_email_request = """
+        <App_SendEmailReq>
+            <toEmail>{0}</toEmail>
+            <subject>{1}</subject>
+            <body>{2}</body>
+        </App_SendEmailReq>""".format(to_address, subject, body)
+
+        response_json = self._qoperation_execute(send_email_request)
+
+        if 'errorCode' in response_json and response_json['errorCode'] != 0:
+            raise SDKException('Commcell', '104')

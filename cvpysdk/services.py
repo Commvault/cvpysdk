@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -31,6 +30,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
+    'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s',
 
     'GET_ALL_BACKUPSETS': '{0}Backupset?clientId=%s',
     'BACKUPSET': '{0}Backupset/%s',
@@ -136,7 +136,12 @@ SERVICES_DICT_TEMPLATE = {
     'METRICS': '{0}CommServ/MetricsReporting',
     'GET_METRICS': '{0}CommServ/MetricsReporting?isPrivateCloud=%s',
 
-    'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy'
+    'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
+
+    'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
+    'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
+
+    'GET_DATASTORE_BROWSE': '{0}VSBrowse/%s/%s?requestType=%s'
 }
 
 

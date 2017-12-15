@@ -53,6 +53,10 @@ Agent:
 
     disble_restore()            --   disbles the restore for the agent
 
+    is_backup_enabled()         --   Treats the is backup enabled as a read-only attribute.
+    
+    is_restore_enabled()         --   Treats the is restore enabled as a read-only attribute.
+
 """
 
 from __future__ import absolute_import
@@ -132,6 +136,7 @@ class Agents(object):
 
         if flag:
             if response.json() and 'agentProperties' in response.json():
+
                 agent_dict = {}
 
                 for dictionary in response.json()['agentProperties']:
@@ -220,6 +225,8 @@ class Agent(object):
             # Get the agent id if agent id is not provided
             self._agent_id = self._get_agent_id()
 
+        self.GET_AGENT = self._commcell_object._services['GET_AGENT'] % (
+            self._client_object.client_id, agent_id)
         self.instances = Instances(self)
         self.backupsets = Backupsets(self)
         self.schedules = Schedules(self)
@@ -300,6 +307,29 @@ class Agent(object):
             return request_json2
         else:
             return request_json1
+
+    def _get_agent_properties(self):
+        """Gets the agent properties of this agent.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self.GET_AGENT)
+
+        if flag:
+            if response.json() and 'agentProperties' in response.json():
+                self._agentProperties = response.json()['agentProperties'][0]
+                self._activityControlOptions = self._agentProperties['idaActivityControl']\
+                ['activityControlOptions']
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def agent_id(self):
@@ -511,6 +541,7 @@ class Agent(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     def disable_restore(self):
         """Disables Restore for this Agent.
 
@@ -544,3 +575,17 @@ class Agent(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_backup_enabled(self):
+        """Treats the is backup enabled as a read-only attribute."""
+        for activitytype in self._activityControlOptions:
+            if activitytype['activityType'] == 1:
+                return activitytype['enableActivityType']
+            
+    @property
+    def is_restore_enabled(self):
+        """Treats the is restore enabled as a read-only attribute."""
+        for activitytype in self._activityControlOptions:
+            if activitytype['activityType'] == 2:
+                return activitytype['enableActivityType']
