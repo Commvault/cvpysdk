@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -147,7 +146,7 @@ class SAPHANAInstance(Instance):
                 "associations": [{
                     "clientName": self._agent_object._client_object.client_name,
                     "appName": self._agent_object.agent_name,
-                    "instanceName": self.instance_name,
+                    "instanceName": self.instance_name.upper(),
                     "backupsetName": backupset_name,
                     "suclientName": ""
                 }],
@@ -168,7 +167,7 @@ class SAPHANAInstance(Instance):
                                 "cloneEnv": clone_env,
                                 "checkAccess": check_access,
                                 "backupPrefix": backup_prefix,
-                                "destDbName": destination_instance,
+                                "destDbName": destination_instance.upper(),
                                 "destPseudoClientName": str(destination_client),
                                 "ignoreDeltaBackups": ignore_delta_backups,
                                 "destClientName": destination_hana_client,
@@ -225,6 +224,7 @@ class SAPHANAInstance(Instance):
                     if response is empty
 
                     if response is not success
+
         """
         webservice = self._commcell_object._services['RESTORE_OPTIONS'] % (
             self._agent_object.agent_id
@@ -308,6 +308,7 @@ class SAPHANAInstance(Instance):
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['RESTORE'], request_json
@@ -339,6 +340,7 @@ class SAPHANAInstance(Instance):
                 subclient_name  (str)   --  name of the subclient to trigger the backup for
 
                 return_list     (list)  --  list to append the job object to
+
         """
         try:
             job = self.subclients.get(subclient_name).backup('Full')
@@ -351,8 +353,9 @@ class SAPHANAInstance(Instance):
         """Run full backup job for all subclients in this instance.
 
             Returns:
-                list - list containing the job objects for the full backup jobs started for
-                           the subclients in the backupset
+                list    -   list containing the job objects for the full backup jobs started for
+                                the subclients in the backupset
+
         """
         return_list = []
         thread_list = []
@@ -437,6 +440,7 @@ class SAPHANAInstance(Instance):
                     if response is empty
 
                     if response is not success
+
         """
         if not isinstance(instance, (basestring, Instance)):
             raise SDKException('Instance', '101')
