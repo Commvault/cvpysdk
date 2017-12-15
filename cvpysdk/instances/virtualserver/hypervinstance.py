@@ -104,3 +104,5 @@ class HyperVInstance(VirtualServerInstance):
     def server_host_name(self):
         """getter for the domain name in the vmware vendor json"""
         return self._server_name
+
+
