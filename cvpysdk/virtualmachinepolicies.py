@@ -83,6 +83,8 @@ VirtualMachinePolicies:
                                                     value in the add policy json
                                                     (only for Live Mount policy)
 
+    refresh()                               --  refresh the virtual machine policies
+
 
 VirtualMachinePolicy:
     __init__(commcell_object,
@@ -154,17 +156,15 @@ class VirtualMachinePolicies(object):
         self._VCLIENTS_URL = self._commcell_object._services['GET_VIRTUAL_CLIENTS']
         self._QOPERATION_URL = self._commcell_object._services['EXECUTE_QCOMMAND']
 
-        self._vm_policies = self._get_vm_policies()
+        self._vm_policies = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all virtual machine policies of the commcell.
             Returns:
                 str - string of all the virtual machine policies associated with the commcell
         """
-
-        representation_string = '''{:^5}\t{:^28}
-
-'''.format('S. No.', 'Virtual Machine Policy')
+        representation_string = "{:^5}\t{:^28}".format('S. No.', 'Virtual Machine Policy')
 
         for (index, vm_policy) in enumerate(self._vm_policies):
             sub_str = '{:^5}\t{:20}\n'.format(index + 1, vm_policy)
@@ -352,12 +352,13 @@ class VirtualMachinePolicies(object):
         _vm_policy_types = {'Live Mount': 4,
                             'Clone From Template': 0,
                             'Restore From Backup': 13}
-        self._vm_policies = self._get_vm_policies()
-        if (not isinstance(vm_policy_name, basestring)
-                or not isinstance(vcenter_name, basestring)
-                or not isinstance(vclient_name, (basestring, type(None)))
-                or not isinstance(vm_policy_options, (dict, type(None)))
-           ):
+        self.refresh()
+        if (
+            not isinstance(vm_policy_name, basestring)
+            or not isinstance(vcenter_name, basestring)
+            or not isinstance(vclient_name, (basestring, type(None)))
+            or not isinstance(vm_policy_options, (dict, type(None)))
+        ):
             raise SDKException('Virtual Machine', '101')
         elif vm_policy_type not in _vm_policy_types:
             err_msg = '{0} is not a valid virtual machine policy type.'.format(
@@ -398,7 +399,7 @@ class VirtualMachinePolicies(object):
                         raise SDKException('Virtual Machine', '102', o_str)
                     else:
                         # return object of corresponding Virtual Machine Policy here
-                        self._vm_policies = self._get_vm_policies()
+                        self.refresh()
                         if _vm_policy_json['policy']['enabled'] is True:
                             return VirtualMachinePolicy(
                                 self._commcell_object,
@@ -453,7 +454,7 @@ class VirtualMachinePolicies(object):
                                 'Virtual Machine', '102', output_string.format(error_message))
                 except ValueError:
                     if response.text:
-                        self._vm_policies = self._get_vm_policies()
+                        self.refresh()
                         return response.text.strip()
                     else:
                         raise SDKException('Response', '102')
@@ -881,6 +882,10 @@ class VirtualMachinePolicies(object):
 
         return _entity
 
+    def refresh(self):
+        """Refresh the Virtual Machine policies."""
+        self._vm_policies = self._get_vm_policies()
+
 
 class VirtualMachinePolicy(object):
     """Class for representing a single Virtual Machine Policy. Contains method definitions for
@@ -923,8 +928,7 @@ class VirtualMachinePolicy(object):
         return ("VirtualMachinePolicy class instance for Virtual Machine Policy: '{0}' for "
                 "Commcell: '{1}'".format(
                     self.vm_policy_name, self._commcell_object._headers['Host']
-                    )
-               )
+                ))
 
     def _get_vm_policy_id(self):
         """Gets the virtual machine policy id associated with the virtual machine policy"""

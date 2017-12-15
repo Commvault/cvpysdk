@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -11,9 +10,9 @@
 
 Clients and Client are 2 classes defined in this file.
 
-Clients: Class for representing all the clients associated with the commcell
+Clients:    Class for representing all the clients associated with the commcell
 
-Client: Class for a single client of the commcell
+Client:     Class for a single client of the commcell
 
 
 Clients:
@@ -44,6 +43,8 @@ Clients:
 
     delete(client_name)             --  deletes the client specified by the client name from the
                                             commcell
+
+    refresh()                       --  refresh the clients associated with the commcell
 
 
 Client:
@@ -96,6 +97,10 @@ Client:
 
     restart_services()           --  executes the command on the client to restart the services
 
+    add_user_association()       --  adds the user associations on this client
+
+    refresh()                    --  refresh the properties of the client
+
 """
 
 from __future__ import absolute_import
@@ -111,6 +116,7 @@ from past.builtins import basestring
 from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
+from .security.user import Users
 
 
 class Clients(object):
@@ -128,7 +134,9 @@ class Clients(object):
         self._commcell_object = commcell_object
         self._CLIENTS = self._commcell_object._services['GET_ALL_CLIENTS']
         self._ADD_CLIENT = self._commcell_object._services['GET_ALL_CLIENTS']
-        self._clients = self._get_clients()
+
+        self._clients = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all clients of the commcell.
@@ -354,7 +362,7 @@ class Clients(object):
 
                         # initialize the clients again
                         # so the client object has all the clients
-                        self._clients = self._get_clients()
+                        self.refresh()
                         return Client(self._commcell_object, client_name, client_id)
                 elif 'errorMessage' in response.json():
                     error_string = response.json()['errorMessage']
@@ -440,7 +448,7 @@ class Clients(object):
                             if response.json()['response'][0]['errorCode'] == 0:
                                 # initialize the clients again
                                 # so the client object has all the clients
-                                self._clients = self._get_clients()
+                                self.refresh()
                         else:
                             if 'errorCode' in response.json():
                                 error_code = response.json()['errorCode']
@@ -470,6 +478,10 @@ class Clients(object):
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
                 )
 
+    def refresh(self):
+        """Refresh the clients associated with the Commcell."""
+        self._clients = self._get_clients()
+
 
 class Client(object):
     """Class for performing client operations for a specific client."""
@@ -498,15 +510,14 @@ class Client(object):
 
         self._CLIENT = self._commcell_object._services['CLIENT'] % (self.client_id)
 
-        self._get_client_properties()
+        self._instance = None
+        self.agents = None
+        self.schedules = None
+        self._users = None
 
-        # HACK: use the method _get_instance_of_client till the time the value of instance
-        # is not returned in the API response
-        # use the value in the API response once it is present
-        self._instance = self._get_instance_of_client()
+        self._association_object = None
 
-        self.agents = Agents(self)
-        self.schedules = Schedules(self)
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -797,6 +808,20 @@ class Client(object):
             raise SDKException('Client', '102', 'Operation not supported for this Client')
 
     @property
+    def _security_association(self):
+        """Returns the security association object"""
+        if self._association_object is None:
+            from .security.security_association import SecurityAssociation
+            self._association_object = SecurityAssociation(self._commcell_object, self)
+
+        return self._association_object
+
+    @property
+    def available_security_roles(self):
+        """Returns the list of available security roles"""
+        return self._security_association.__str__()
+
+    @property
     def client_id(self):
         """Treats the client id as a read-only attribute."""
         return self._client_id
@@ -865,6 +890,21 @@ class Client(object):
     def service_pack(self):
         """Treats the service pack as a read-only attribute."""
         return self._service_pack
+
+    @property
+    def instance(self):
+        """Returns the value of the instance the client is installed on."""
+        if self._instance is None:
+            try:
+                # HACK: use the method _get_instance_of_client till the time the value of instance
+                # is not returned in the API response
+                # use the value in the API response once it is present
+                self._instance = self._get_instance_of_client()
+            except SDKException:
+                # pass silently if failed to get the value of instance
+                pass
+
+        return self._instance
 
     def enable_backup(self):
         """Enable Backup for this Client.
@@ -1525,8 +1565,9 @@ class Client(object):
                     if response is empty
 
                     if response is not success
+
         """
-        chunk_size = 1024
+        chunk_size = 1024 ** 2 * 2
         request_id = None
         chunk_offset = None
 
@@ -1621,13 +1662,49 @@ class Client(object):
                     'Client', '102', 'Failed to restart services.\nError: {0}'.format(output)
                 )
         elif 'unix' in self.os_info.lower():
-            command = 'commvault -instance {0} restart'.format(self._instance)
+            if self.instance:
+                command = 'commvault -instance {0} restart'.format(self.instance)
 
-            __, __, error = self.execute_command(command)
+                __, __, error = self.execute_command(command)
 
-            if error:
-                raise SDKException(
-                    'Client', '102', 'Failed to restart services.\nError: {0}'.format(error)
-                )
+                if error:
+                    raise SDKException(
+                        'Client', '102', 'Failed to restart services.\nError: {0}'.format(error)
+                    )
+            else:
+                raise SDKException('Client', '102', 'Operation not supported for this Client')
         else:
             raise SDKException('Client', '102', 'Operation not supported for this Client')
+
+    def add_user_associations(self, associations_list):
+        """Adds the users to the owners list of this client
+
+        Args:
+            associations_list   (list)  --  list of owners to be associated with this client
+                Example:
+                    associations_list = [
+                        {
+                            'user_name': user1,
+                            'role_name': role1
+                        },
+                        {
+                            'user_name': user2,
+                            'role_name': role2
+                        }
+                    ]
+
+            Note: You can get available roles list using self.available_security_roles
+
+        """
+        if not isinstance(associations_list, list):
+            raise SDKException('Client', '101')
+
+        self._security_association._add_security_association(associations_list, user=True)
+
+    def refresh(self):
+        """Refreshs the properties of the Client."""
+        self._get_client_properties()
+
+        self.agents = Agents(self)
+        self.schedules = Schedules(self)
+        self._users = Users(self._commcell_object)

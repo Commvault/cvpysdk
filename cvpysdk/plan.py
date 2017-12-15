@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -31,6 +30,8 @@ Plans:
 
     delete(plan_name)          --  deletes the plan from the commcell
 
+    refresh()                  --  refresh the plans associated with the commcell
+
 
 Plan:
     __init__(commcell_object,
@@ -47,7 +48,12 @@ Plan:
 
     plan_id                    --  returns the ID of the plan
 
+    refresh()                  --  refresh the properties of the plan
+
+    associate_user()           --  associates users to the plan
+
 """
+
 from __future__ import unicode_literals
 
 from past.builtins import basestring
@@ -69,8 +75,14 @@ class Plans(object):
         """
 
         self._commcell_object = commcell_object
-        self._PLANS = self._commcell_object._services['PLANS']
-        self._plans = self._get_plans()
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
+        self._PLANS = self._services['PLANS']
+        self._plans = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all plans of the Commcell.
@@ -89,7 +101,7 @@ class Plans(object):
     def __repr__(self):
         """Representation string for the instance of the Plans class."""
         return "Plans class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.webconsole_hostname
         )
 
     def _get_plans(self):
@@ -108,9 +120,7 @@ class Plans(object):
 
                         if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._PLANS
-        )
+        flag, response = self._cvpysdk_object.make_request('GET', self._PLANS)
 
         if flag:
             if response.json() and 'plans' in response.json():
@@ -125,8 +135,7 @@ class Plans(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def has_plan(self, plan_name):
@@ -204,12 +213,9 @@ class Plans(object):
             if self.has_plan(plan_name):
                 plan_id = self._plans[plan_name]
 
-                delete_plan = self._commcell_object._services['DELETE_PLAN'] % (
-                    plan_id)
+                delete_plan = self._services['DELETE_PLAN'] % (plan_id)
 
-                flag, response = self._commcell_object._cvpysdk_object.make_request(
-                    'DELETE', delete_plan
-                )
+                flag, response = self._cvpysdk_object.make_request('DELETE', delete_plan)
 
                 error_code = -1
 
@@ -225,10 +231,9 @@ class Plans(object):
                     else:
                         # initialize the plan again
                         # so the plan object has all the plan
-                        self._plans = self._get_plans()
+                        self.refresh()
                 else:
-                    response_string = self._commcell_object._update_response_(
-                        response.text)
+                    response_string = self._update_response_(response.text)
                     raise SDKException('Response', '101', response_string)
             else:
                 raise SDKException(
@@ -236,6 +241,10 @@ class Plans(object):
                     '102',
                     'No plan exists with name: {0}'.format(plan_name)
                 )
+
+    def refresh(self):
+        """Refresh the plans associated with the Commcell."""
+        self._plans = self._get_plans()
 
 
 class Plan(object):
@@ -254,8 +263,14 @@ class Plan(object):
 
             Returns:
                 object - instance of the Plan class
+
         """
         self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
         self._plan_name = plan_name.lower()
 
         if plan_id:
@@ -263,22 +278,24 @@ class Plan(object):
         else:
             self._plan_id = self._get_plan_id()
 
-        self._PLAN = self._commcell_object._services['PLAN'] % (self.plan_id)
+        self._PLAN = self._services['PLAN'] % (self.plan_id)
+        self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
 
+        self._properties = None
         self._sla_in_minutes = None
         self._plan_type = None
         self._subtype = None
         self._permissions = []
-        #self._security_associations = {}
+        # self._security_associations = {}
 
-        self._get_plan_properties()
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
         representation_string = 'Plan class instance for plan: "{0}", of Commcell: "{1}"'
 
         return representation_string.format(
-            self._plan_name, self._commcell_object._headers['Host']
+            self._plan_name, self._commcell_object.webconsole_hostname
         )
 
     def _get_plan_id(self):
@@ -302,9 +319,7 @@ class Plan(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._PLAN
-        )
+        flag, response = self._cvpysdk_object.make_request('GET', self._PLAN)
 
         if flag:
             if response.json() and 'plan' in response.json():
@@ -318,11 +333,12 @@ class Plan(object):
 
                 if 'subtype' in plan_properties['summary']:
                     self._subtype = plan_properties['summary']['subtype']
+
+                return plan_properties
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     @property
@@ -349,3 +365,51 @@ class Plan(object):
     def subtype(self):
         """Treats the plan subtype as a read-only attribute."""
         return self._subtype
+
+    def refresh(self):
+        """Refresh the properties of the Plan."""
+        self._properties = self._get_plan_properties()
+
+    def associate_user(self, userlist):
+        """associates the users to the plan.
+            # TODO: Need to handle user groups.
+
+           Arguments:
+                userlist(list) - list of users to be associated to the plans.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+
+        request_json = {
+            "userOperationType": 2,
+            "users": [
+                {
+                    "sendInvite": True,
+                    "user": {
+                        "userName": user
+                    }
+                } for user in userlist
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._ADD_USERS_TO_PLAN, request_json
+        )
+
+        if flag:
+            if response.json() and 'errors' in response.json():
+                for error in  response.json()["errors"]:
+                    if error["status"]["errorCode"] == 0:
+                        pass
+                    else:
+                        o_str = 'Failed to add users with error code: "{0}"'
+                        raise SDKException('Plan', '102', o_str.format(error_code))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

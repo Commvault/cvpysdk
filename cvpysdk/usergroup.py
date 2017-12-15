@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -34,6 +33,8 @@ UserGroups:
 
     delete(user_group_name)    --  deletes the user group from the commcell
 
+    refresh()                  --  refresh the user groups associated with the commcell
+
 
 UserGroup:
     __init__(commcell_object,
@@ -45,6 +46,8 @@ UserGroup:
     _get_usergroup_id()          -- method to get the usergroup id, if not specified in __init__
 
     _get_usergroup_properties()  -- get the properties of this usergroup
+
+    refresh()                    -- refresh the properties of the user group
 
 """
 
@@ -67,10 +70,13 @@ class UserGroups(object):
 
             Returns:
                 object - instance of the UserGroups class
+
         """
         self._commcell_object = commcell_object
         self._USERGROUPS = self._commcell_object._services['USERGROUPS']
-        self._user_groups = self._get_user_groups()
+
+        self._user_groups = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all usergroups of the Commcell.
@@ -229,7 +235,7 @@ class UserGroups(object):
                             if error_code == '0':
                                 # initialize the usergroup again
                                 # so the usergroups object has all the usergroups
-                                self._user_groups = self._get_user_groups()
+                                self.refresh()
                             else:
                                 o_str = ('Failed to delete usergroup with error code: "{0}"'
                                          '\nPlease check the documentation for '
@@ -248,6 +254,10 @@ class UserGroups(object):
                     '102',
                     'No usergroup exists with name: {0}'.format(user_group_name)
                 )
+
+    def refresh(self):
+        """Refresh the user groups associated with the Commcell."""
+        self._user_groups = self._get_user_groups()
 
 
 class UserGroup(object):
@@ -282,7 +292,7 @@ class UserGroup(object):
         self._users = []
         self._security_associations = {}
 
-        self._get_usergroup_properties()
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -405,3 +415,7 @@ class UserGroup(object):
     def associations(self):
         """Treats the usergroup security associations as a read-only attribute."""
         return self._security_associations
+
+    def refresh(self):
+        """Refresh the properties of the UserGroup."""
+        self._get_usergroup_properties()

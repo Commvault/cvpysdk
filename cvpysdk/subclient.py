@@ -33,6 +33,8 @@ Subclients:
 
     delete(subclient_name)      --  deletes the subclient (subclient name) from the backupset
 
+    refresh()                   --  refresh the subclients associated with the Backupset / Instance
+
 
 Subclient:
     __init__(backupset_object,
@@ -101,6 +103,8 @@ Subclient:
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
                                         to the input client, at the specified destionation location
 
+    refresh()                   --  refresh the properties of the subclient
+
 """
 
 from __future__ import absolute_import
@@ -167,7 +171,7 @@ class Subclients(object):
 
         self._ADD_SUBCLIENT = self._commcell_object._services['ADD_SUBCLIENT']
 
-        self._subclients = self._get_subclients()
+        self.refresh()
 
         from .subclients.fssubclient import FileSystemSubclient
         from .subclients.vssubclient import VirtualServerSubclient
@@ -425,7 +429,7 @@ class Subclients(object):
 
                     # initialize the subclients again
                     # so the subclient object has all the subclients
-                    self._subclients = self._get_subclients()
+                    self.refresh()
 
                     agent_name = self._backupset_object._agent_object.agent_name
 
@@ -523,7 +527,7 @@ class Subclients(object):
                             if error_code == '0':
                                 # initialize the subclients again
                                 # so the subclient object has all the subclients
-                                self._subclients = self._get_subclients()
+                                self.refresh()
                             else:
                                 o_str = ('Failed to delete subclient with Error Code: "{0}"\n'
                                          'Please check the documentation for '
@@ -538,6 +542,10 @@ class Subclients(object):
             raise SDKException(
                 'Subclient', '102', 'No subclient exists with name: {0}'.format(subclient_name)
             )
+
+    def refresh(self):
+        """Refresh the subclients associated with the Backupset / Instance."""
+        self._subclients = self._get_subclients()
 
 
 class Subclient(object):
@@ -576,9 +584,9 @@ class Subclient(object):
 
         self._subclient_properties = {}
         self._content = []
-        self._get_subclient_properties()
 
-        self.schedules = Schedules(self)
+        self.schedules = None
+        self.refresh()
 
     def __getattr__(self, attribute):
         """Returns the persistent attributes"""
@@ -1492,3 +1500,8 @@ class Subclient(object):
             to_time=to_time,
             fs_options=fs_options
         )
+
+    def refresh(self):
+        """Refresh the properties of the Subclient."""
+        self._get_subclient_properties()
+        self.schedules = Schedules(self)

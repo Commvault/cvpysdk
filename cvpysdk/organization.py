@@ -1,0 +1,803 @@
+# -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+# See LICENSE.txt in the project root for
+# license information.
+# --------------------------------------------------------------------------
+
+"""File for doing operations on an organization.
+
+This module has classes defined for doing operations for organizations:
+
+    1. Add a new organization
+
+    2. Delete an organization
+
+    3. Enabling Auth Code
+
+    4. Disabling Auth Code
+
+    5. Get Auth Code
+
+    6. Get the list of plans associated with the organization
+
+    7. Update the plans associated with the organization
+
+    8. Update the default plan of the organization
+
+
+Organizations:
+
+    __init__(commcell_object)   --  initializes object of the Organizations class associated
+    with the commcell
+
+    __str__()                   --  returns all the organizations associated with the commcell
+
+    __repr__()                  --  returns the string representation of an instance of this class
+
+    _get_organizations()        --  returns all organizations added to the commcell
+
+    has_organization()          --  checks whether the organization with given name exists or not
+
+    add()                       --  adds a new organization to the commcell
+
+    get()                       --  returns Organization class object for the specified input name
+
+    delete()                    --  deletes an organization from the commcell
+
+    refresh()                   --  refresh the list of organizations associated with the commcell
+
+
+Organization:
+
+    __init__()                  --  initializes instance of the Organization class for doing
+    operations on the selected Organization
+
+    __repr__()                  --  returns the string representation of an instance of this class
+
+    _get_organization_id()      --  gets the ID of the Organization
+
+    _get_properties()           --  get the properties of the organization
+
+    _update_properties()        --  update the properties of the organization
+
+    _update_properties_json()   --  update the values of organizationProperties tag
+    in the properties JSON
+
+    refresh()                   --  refresh the properties of the organization
+
+    enable_auth_code()          --  enable Auth Code generation for the organization
+
+    disable_auth_code()         --  disable Auth Code generation for the organization
+
+
+Attributes:
+
+    Following attributes are available for an instance of the Organization class:
+
+        **organization_id**         --  returns the id of the organization
+
+        **organization_name**       --  returns the name of the organization
+
+        **description**             --  returns the description for the organization
+
+        **email_domain_names**      --  returns the list of email domain names associated with the
+        organization
+
+        **domain_name**             --  returns the primary domain associated with the organization
+
+        **auth_code**               --  returns the Auth Code for the Organization, if enabled
+
+        **is_auth_code_enabled**    --  returns boolean specifying whether Auth Code is enabled
+        for the organization or not
+
+        **machine_count**           --  returns the count of machines associated with the
+        organization
+
+        **user_count**              --  returns the count of users associated with the organization
+
+        **contacts**                --  returns the list of primary contacts for the organization
+
+        **default_plan**            --  returns the default plan associated with the organization
+
+        **default_plan = 'plan'**   --  update the default plan of the organization
+
+        **plans**                   --  returns the list of plans associated with the organization
+
+        **plans = ['plan1',
+        'plan2']**                  --  update the list of plans associated with the organization
+
+
+# TODO: check with API team to get the list of default plans, only from which the user can select
+
+
+"""
+
+import re
+
+from past.builtins import basestring
+
+from .exception import SDKException
+
+
+class Organizations:
+    """Class for doing operations on Organizations like add / delete an organization, etc."""
+
+    def __init__(self, commcell_object):
+        """Initializes an instance of the Organizations class to perform operations on a company.
+
+            Args:
+                commcell_object     (object)    --  instance of the Commcell class
+
+            Returns:
+                object  -   instance of the Organizations class
+
+        """
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
+        self._organizations_api = self._services['ORGANIZATIONS']
+        self._organizations = None
+
+        self.refresh()
+
+    def __str__(self):
+        """Representation string consisting of all organizations present in the Commcell.
+
+            Returns:
+                str     -   string of all the organizations associated with the commcell
+
+        """
+        representation_string = '{:^5}\t{:^40}\n\n'.format('S. No.', 'Organization')
+
+        for index, organization in enumerate(self._organizations):
+            sub_str = '{:^5}\t{:40}\n'.format(index + 1, organization)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        """Returns the string representation of an instance of this class."""
+        return "Organizations class instance for Commcell: '{0}'".format(
+            self._commcell_object.webconsole_hostname
+        )
+
+    def _get_organizations(self):
+        """Gets all the organizations associated with the Commcell environment.
+
+            Returns:
+                dict    -   consists of all organizations added to the commcell
+
+                    {
+                        "organization1_name": organization1_id,
+
+                        "organization2_name": organization2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._organizations_api)
+
+        if flag:
+            if response.json() and 'providers' in response.json():
+                organizations = {}
+
+                for provider in response.json()['providers']:
+                    name = provider['connectName'].lower()
+                    organization_id = provider['shortName']['id']
+
+                    organizations[name] = organization_id
+
+                return organizations
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def has_organization(self, name):
+        """Checks if an organization exists in the Commcell with the input organization name.
+
+            Args:
+                name    (str)   --  name of the organization
+
+            Returns:
+                bool    -   boolean output whether the organization exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the organization name argument is not string
+
+        """
+        if not isinstance(name, basestring):
+            raise SDKException('Organization', '101')
+
+        return self._organizations and name.lower() in self._organizations
+
+    def add(self,
+            name,
+            email,
+            contact_name,
+            company_alias,
+            email_domain=None,
+            primary_domain=None,
+            default_plans=None):
+        """Adds a new organization with the given name to the Commcell.
+
+            Args:
+                name            (str)   --  name of the organization to create
+
+                email           (str)   --  email of the primary contact
+
+                contact_name    (str)   --  name of the primary contact
+
+                company_alias   (str)   --  alias of the company
+
+                email_domain    (str)   --  email domain supported for the organization
+
+                    if no value is given, domain of the user creating the organization will be used
+
+                    default: None
+
+                primary_domain  (str)   --  custom primary domain for organization
+
+                    default: None
+
+                default_plans   (list)  --  list of default plans to be associated with the
+                organization
+
+                    default: None
+
+
+            Returns:
+                object  -   instance of the Organization class, for the newly created organization
+
+            Raises:
+                SDKException:
+                    if organization with the given name already exists
+
+                    if inputs are not valid
+
+                    if failed to create the organization
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if self.has_organization(name):
+            raise SDKException('Organization', '106')
+
+        if not (isinstance(name, basestring) and
+                isinstance(email, basestring) and
+                isinstance(contact_name, basestring) and
+                isinstance(company_alias, basestring)):
+            raise SDKException('Organization', '101')
+
+        if not re.match(r'[\w]+@[\w]+\.[\w]+', email):
+            raise SDKException('Organization', '105')
+
+        if email_domain is None:
+            email_domain = [email.split('@')[1]]
+
+        if primary_domain is None:
+            primary_domain = ''
+
+        plans_list = []
+
+        if default_plans:
+            if not isinstance(default_plans, list):
+                raise SDKException('Organization', '101')
+            else:
+                for plan in default_plans:
+                    if not self._commcell_object.plans.has_plan(plan):
+                        raise SDKException(
+                            'Organization',
+                            '102',
+                            'Plan: "{0}" does not exist on Commcell'.format(plan)
+                        )
+                    else:
+                        temp_plan = self._commcell_object.plans.get(plan)
+                        temp = {
+                            'plan': {
+                                'planId': int(temp_plan.plan_id)
+                            }
+                        }
+                        plans_list.append(temp)
+
+                        del temp
+                        del temp_plan
+
+        request_json = {
+            'organizationInfo': {
+                'organization': {
+                    'connectName': name,
+                    'emailDomainNames': email_domain,
+                    'shortName': {
+                        'domainName': company_alias
+                    }
+                },
+                'organizationProperties': {
+                    'primaryDomain': primary_domain,
+                    'primaryContacts': [
+                        {
+                            'fullName': contact_name,
+                            'email': email
+                        }
+                    ],
+                    'defaultPlans': plans_list
+                }
+            }
+        }
+
+        __, response = self._cvpysdk_object.make_request(
+            'POST', self._organizations_api, request_json
+        )
+
+        self.refresh()
+
+        if response.json():
+            if 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code == 0:
+                    return self.get(name)
+                else:
+                    raise SDKException(
+                        'Organization', '107', 'Response: {0}'.format(response.json())
+                    )
+
+            elif 'errorMessage' in response.json():
+                raise SDKException(
+                    'Organization', '107', 'Error: "{0}"'.format(response.json()['errorMessage'])
+                )
+
+            else:
+                raise SDKException('Organization', '107', 'Response: {0}'.format(response.json()))
+        else:
+            raise SDKException('Response', '102')
+
+    def get(self, name):
+        """Returns an instance of the Organization class for the given organization name.
+
+            Args:
+                name    (str)   --  name of the organization to get the instance of
+
+            Returns:
+                object  -   instance of the Organization class for the given organization name
+
+            Raises:
+                SDKException:
+                    if type of the organization name argument is not string
+
+                    if no organization exists with the given name
+
+        """
+        if not isinstance(name, basestring):
+            raise SDKException('Organization', '101')
+
+        name = name.lower()
+
+        if self.has_organization(name):
+            return Organization(self._commcell_object, name, self._organizations[name])
+        else:
+            raise SDKException('Organization', '103')
+
+    def delete(self, name):
+        """Deletes the organization with the given name from the Commcell.
+
+            Args:
+                name            (str)   --  name of the organization to delete
+
+            Returns:
+                None    -   if the organization was removed successfully
+
+            Raises:
+                SDKException:
+                    if organization with the given name does not exists
+
+                    if failed to delete the organization
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if not self.has_organization(name):
+            raise SDKException('Organization', '103')
+
+        organization_id = self._organizations[name.lower()]
+
+        flag, response = self._cvpysdk_object.make_request(
+            'DELETE', self._services['ORGANIZATION'] % organization_id
+        )
+
+        self.refresh()
+
+        if flag:
+            if response.json():
+                error_message = response.json()['errorMessage']
+                error_code = response.json()['errorCode']
+
+                if error_code != 0:
+                    raise SDKException('Organization', '104', 'Error: "{0}"'.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """Refresh the list of organizations associated to the Commcell."""
+        self._organizations = self._get_organizations()
+
+
+class Organization:
+    """Class for performing operations on an Organization."""
+
+    def __init__(self, commcell_object, organization_name, organization_id=None):
+        """Initialise the Client class instance.
+
+            Args:
+                commcell_object     (object)    --  instance of the Commcell class
+
+                organization_name   (str)       --  name of the organization
+
+                organization_id     (str)       --  id of the organization
+                    default: None
+
+            Returns:
+                object  -   instance of the Organization class
+
+        """
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
+        self._organization_name = organization_name.lower()
+
+        if organization_id:
+            self._organization_id = str(organization_id)
+        else:
+            self._organization_id = self._get_organization_id()
+
+        self._properties = {}
+
+        self._description = None
+        self._email_domain_names = None
+        self._domain_name = None
+        self._auth_code = None
+        self._is_auth_code_enabled = False
+        self._machine_count = None
+        self._user_count = None
+        self._default_plan = None
+        self._contacts = {}
+        self._plans = {}
+
+        self.refresh()
+
+    def __repr__(self):
+        """Returns the string representation of an instance of this class."""
+        return 'Organization class instance for Organization: "{0}"'.format(self.organization_name)
+
+    def _get_organization_id(self):
+        """Gets the id associated with this organization.
+
+            Returns:
+                str     -   id associated with this organization
+
+        """
+        organizations = Organizations(self._commcell_object)
+        return organizations.get(self.organization_name).organization_id
+
+    def _get_properties(self):
+        """Gets the properties of this Organization.
+
+            Returns:
+                dict    -   dictionary consisting of the properties of this organization
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['ORGANIZATION'] % self.organization_id
+        )
+
+        if flag:
+            if response.json() and 'organizationInfo' in response.json():
+                organization_info = response.json()['organizationInfo']
+
+                organization = organization_info['organization']
+                organization_properties = organization_info['organizationProperties']
+
+                self._description = organization['description']
+                self._email_domain_names = organization['emailDomainNames']
+                self._domain_name = organization['shortName']['domainName']
+
+                self._auth_code = organization_properties['authCode']
+                self._is_auth_code_enabled = organization_properties['enableAuthCodeGen']
+
+                self._machine_count = organization_properties['totalMachineCount']
+                self._user_count = organization_properties['userCount']
+
+                for contact in organization_properties['primaryContacts']:
+                    self._contacts[contact['user']['userName']] = {
+                        'id': contact['user']['userId'],
+                        'name': contact['fullName']
+                    }
+
+                for plan in organization_properties.get('defaultPlans', []):
+                    self._default_plan = plan['plan']['planName']
+
+                for plan in organization_info.get('planDetails', []):
+                    self._plans[plan['plan']['planName']] = plan['plan']['planId']
+
+                return organization_info
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _update_properties(self):
+        """Executes the request on the server to update the properties of the organization.
+
+            Args:
+                None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to update the properties of the organization
+
+                    if response is empty
+
+        """
+
+        request_json = {
+            'organizationInfo': {
+                'organization': self._properties.get('organization'),
+                'organizationProperties': self._properties.get('organizationProperties')
+            }
+        }
+
+        if self._properties.get('planDetails'):
+            request_json['organizationInfo']['planDetails'] = self._properties.get('planDetails')
+
+        __, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['UPDATE_ORGANIZATION'] % self.organization_id, request_json
+        )
+
+        self.refresh()
+
+        if response.json():
+            if 'error' in response.json():
+                error_code = response.json()['error']['errorCode']
+                error_message = response.json()['error']['errorMessage']
+            else:
+                error_code = response.json()['errorCode']
+                error_message = response.json()['errorMessage']
+
+            if error_code != 0:
+                raise SDKException(
+                    'Organization', '110', 'Error: {0}'.format(error_message)
+                )
+        else:
+            raise SDKException('Response', '102')
+
+    def _update_properties_json(self, properties_dict):
+        """Update the values of the **organizationProperties** tag in the properties JSON.
+
+            Args:
+                properties_dict     (dict)  --  dict consisting of the key in properties JSON
+                to be updated, and the data to be substituted as it's value
+
+            Returns:
+                None
+
+        """
+        for key in properties_dict:
+            self._properties['organizationProperties'][key] = properties_dict[key]
+
+    @property
+    def organization_id(self):
+        """Returns the value of the id for this Organization."""
+        return self._organization_id
+
+    @property
+    def organization_name(self):
+        """Returns the value of the name for this Organization."""
+        return self._organization_name
+
+    @property
+    def description(self):
+        """Returns the description for this Organization."""
+        return self._description
+
+    @property
+    def email_domain_names(self):
+        """Returns the value of the email domain names for this Organization."""
+        return self._email_domain_names
+
+    @property
+    def domain_name(self):
+        """Returns the value of the domain name for this Organization."""
+        return self._domain_name
+
+    @property
+    def auth_code(self):
+        """Returns the value of the Auth Code for this Organization."""
+        return self._auth_code
+
+    @property
+    def is_auth_code_enabled(self):
+        """Returns boolean whether Auth Code generation is enabled for this Organization or not."""
+        return self._is_auth_code_enabled
+
+    @property
+    def machine_count(self):
+        """Returns the count of machines added to this Organization."""
+        return self._machine_count
+
+    @property
+    def user_count(self):
+        """Returns the count of Users added to this Organization."""
+        return self._user_count
+
+    @property
+    def contacts(self):
+        """Returns the Primary Contacts for this Organization."""
+        return list(self._contacts.keys())
+
+    @property
+    def default_plan(self):
+        """Returns the Default Plans associated to this Organization."""
+        return self._default_plan
+
+    @default_plan.setter
+    def default_plan(self, value):
+        """Update the default plan associated with the Organization."""
+        if not isinstance(value, basestring):
+            raise SDKException('Organization', '101')
+
+        if not self._commcell_object.plans.has_plan(value):
+            raise SDKException(
+                'Organization', '102', 'Plan: "{0}" does not exist on Commcell'.format(value)
+            )
+
+        temp_plan = self._commcell_object.plans.get(value)
+        temp = [{
+            'plan': {
+                'planId': int(temp_plan.plan_id),
+                'planName': temp_plan.plan_name
+            },
+            'subtype': temp_plan.subtype
+        }]
+
+        self._update_properties_json({'defaultPlans': temp})
+        self._update_properties()
+
+    @property
+    def plans(self):
+        """Returns the Plans associated to this Organization."""
+        return list(self._plans.keys())
+
+    @plans.setter
+    def plans(self, value):
+        """Update the list of plans associated with the Organization."""
+        if not isinstance(value, list):
+            raise SDKException('Organization', '101')
+
+        plans_list = []
+
+        for plan in value:
+            if not self._commcell_object.plans.has_plan(plan):
+                raise SDKException(
+                    'Organization', '102', 'Plan: "{0}" does not exist on Commcell'.format(plan)
+                )
+            else:
+                temp_plan = self._commcell_object.plans.get(plan)
+                temp = {
+                    'plan': {
+                        'planId': int(temp_plan.plan_id)
+                    }
+                }
+                plans_list.append(temp)
+
+                del temp
+                del temp_plan
+
+        self._properties['planDetails'] = plans_list
+        self._update_properties()
+
+    def refresh(self):
+        """Refresh the properties of the Organization."""
+        self._default_plan = None
+        self._contacts = {}
+        self._plans = {}
+        self._properties = self._get_properties()
+
+    def enable_auth_code(self):
+        """Executes the request on the server to enable Auth Code Generation for the Organization.
+
+            Refresh the Auth Code if Auth Code generation is already enabled for the Organization.
+
+            Args:
+                None
+
+            Returns:
+                str     -   auth code generated from the server
+
+            Raises:
+                SDKException:
+                    if failed to enable auth code generation
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GENERATE_AUTH_CODE'] % self.organization_id
+        )
+
+        self.refresh()
+
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Organization', '108', 'Error: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return self.auth_code
+
+    def disable_auth_code(self):
+        """Executes the request on the server to disable Auth Code Generation for the Organization.
+
+            Args:
+                None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to disable auth code generation
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        try:
+            self._update_properties_json({'enableAuthCodeGen': False})
+            self._update_properties()
+        except KeyError:
+            raise SDKException('Organization', '109')

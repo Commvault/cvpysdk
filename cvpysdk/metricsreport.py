@@ -59,6 +59,9 @@ Metrics:
 
     upload_now()                 -- Performs Upload Now operation of metrics
 
+    refresh()                    -- refresh the properties and config of the Metrics Server
+
+
 PrivateMetrics:
     __init__(Commcell_object)   --  initialise with object of CommCell
 
@@ -67,7 +70,8 @@ PrivateMetrics:
     enable_chargeback(daily, weekly, monthly)
                                 --  deletes the subclient (subclient name) from the backupset
 
-PublicMetrics:
+
+CloudMetrics:
     __init__(Commcell_object)   --  initialise with object of CommCell
 
     enable_chargeback()         --  deletes the subclient (subclient name) from the backupset
@@ -102,7 +106,7 @@ class _Metrics(object):
         self._GET_METRICS = self._commcell_object._services['GET_METRICS'] % self._isprivate
         self._enable_service = True
         self._disable_service = False
-        self._get_metrics_config()
+        self.refresh()
 
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
@@ -324,6 +328,10 @@ class _Metrics(object):
             raise SDKException('Response', '101', response.text)
         # reset upload now flag
         self._metrics_config['config']['uploadNow'] = 0
+
+    def refresh(self):
+        """Refresh the properties and config of the Metrics Server."""
+        self._get_metrics_config()
 
 
 class PrivateMetrics(_Metrics):

@@ -91,6 +91,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
     'EXECUTE_WORKFLOW': '{0}wapi/%s',
+    'GET_WORKFLOW': '{0}Workflow/%s',
 
     'INSTANCE_BROWSE': '{0}Client/%s/%s/Instance/%s/Browse',
 
@@ -122,7 +123,7 @@ SERVICES_DICT_TEMPLATE = {
     'DATACUBE_IMPORT_DATA': '{0}dcube/post/%s/%s',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
-    'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8',
+    'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
 
     'UPLOAD_FULL_FILE': '{0}Client/%s/file/action/upload?uploadType=fullFile',
     'UPLOAD_CHUNKED_FILE': '{0}Client/%s/file/action/upload?uploadType=chunkedFile',
@@ -130,6 +131,10 @@ SERVICES_DICT_TEMPLATE = {
     'PLANS': '{0}V2/Plan',
     'PLAN': '{0}V2/Plan/%s',
     'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
+    'ADD_USERS_TO_PLAN': '{0}V2/Plan/%s/Users',
+
+    'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
+    'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
 
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
@@ -141,7 +146,27 @@ SERVICES_DICT_TEMPLATE = {
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
 
-    'GET_DATASTORE_BROWSE': '{0}VSBrowse/%s/%s?requestType=%s'
+    'USERS': '{0}User',
+    'USER': '{0}User/%s',
+
+    'GET_SECURITY_ROLES': '{0}Security/Roles',
+    'SECURITY_ASSOCIATION': '{0}Security',
+
+    'GET_DATASTORE_BROWSE': '{0}VSBrowse/%s/%s?requestType=%s',
+
+    'GET_DC_DATA': '{0}getDownloadCenterLookupData',
+    'DC_ENTITY': '{0}saveDownloadCenterLookupEntities',
+    'DC_SUB_CATEGORY': '{0}saveDownloadCenterSubCategory',
+    'SEARCH_PACKAGES': '{0}searchPackages?release=11',
+    'DOWNLOAD_PACKAGE': '{0}DownloadFile',
+    'DOWNLOAD_VIA_STREAM': '{0}Stream/getDownloadCenterFileStream',
+    'UPLOAD_PACKAGE': '{0}saveDownloadCenterPackage',
+    'DELETE_PACKAGE': '{0}deleteDownloadCenterPackage?packageId=%s',
+
+    'ORGANIZATIONS': '{0}Organization',
+    'ORGANIZATION': '{0}Organization/%s',
+    'UPDATE_ORGANIZATION': '{0}Organization?organizationId=%s',
+    'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
 }
 
 

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -32,7 +31,12 @@ Instances:
     get(instance_name)              --  returns the Instance class object
                                             of the input backup set name
 
-    add_sybase_instance(sybase_options) -- To add sybase server instance
+    add_sybase_instance(
+        sybase_options
+    )                               --  To add sybase server instance
+
+    refresh()                       --  refresh the instances associated with the agent
+
 
 Instance:
     __init__(agent_object,
@@ -76,10 +80,13 @@ Instance:
 
     find()                          --  find content in the instance
 
+    refresh()                       --  refresh the properties of the instance
+
 """
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
 from base64 import b64encode
 from past.builtins import basestring
 
@@ -108,7 +115,8 @@ class Instances(object):
             self._agent_object._client_object.client_id
         )
 
-        self._instances = self._get_instances()
+        self._instances = None
+        self.refresh()
 
         from .instances.vsinstance import VirtualServerInstance
         from .instances.cainstance import CloudAppsInstance
@@ -256,7 +264,6 @@ class Instances(object):
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
             )
 
-
     def add_sybase_instance(self, sybase_options):
         """
             Method to Add new Sybase Instance to given Client
@@ -300,7 +307,7 @@ class Instances(object):
                     sybase_options["instance_name"])
             )
 
-        if sybase_options["storage_policy"] not in self._commcell_object.storage_policies._policies:
+        if not self._commcell_object.storage_policies.has_policy(sybase_options["storage_policy"]):
             raise SDKException(
                 'Instance',
                 '102',
@@ -309,10 +316,8 @@ class Instances(object):
             )
 
         # encodes the plain text password using base64 encoding
-        sa_password = b64encode(
-            sybase_options["sa_password"].encode()).decode()
-        localadmin_password = b64encode(
-            sybase_options["localadmin_password"].encode()).decode()
+        sa_password = b64encode(sybase_options["sa_password"].encode()).decode()
+        localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
 
         enableAutoDiscovery = (sybase_options["enable_auto_discovery"])
 
@@ -378,6 +383,9 @@ class Instances(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
+    def refresh(self):
+        """Refresh the instances associated with the Agent of the selected Client."""
+        self._instances = self._get_instances()
 
 
 class Instance(object):
@@ -397,8 +405,6 @@ class Instance(object):
             Returns:
                 object - instance of the Instance class
         """
-        from .backupset import Backupsets
-
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
@@ -415,10 +421,9 @@ class Instance(object):
         self._properties = None
         self._restore_association = None
 
-        self._get_instance_properties()
-
-        self.backupsets = Backupsets(self)
-        self.subclients = Subclients(self)
+        self.backupsets = None
+        self.subclients = None
+        self.refresh()
 
     def _get_instance_id(self):
         """Gets the instance id associated with this backupset.
@@ -475,8 +480,8 @@ class Instance(object):
 
         """
         backup = None
-        exec("backup = self.%s" % (attr_name))          #Take backup of old value
-        exec("self.%s = %s" % (attr_name, 'value'))       #set new value
+        exec("backup = self.%s" % (attr_name))          # Take backup of old value
+        exec("self.%s = %s" % (attr_name, 'value'))     # set new value
 
         request_json = self._get_instance_properties_json()
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -488,7 +493,9 @@ class Instance(object):
             return
         else:
             o_str = 'Failed to update properties of subclient\nError: "{0}"'
-            exec("self.%s = %s" % (attr_name, backup)) # Restore original value from backup on failure
+
+            # Restore original value from backup on failure
+            exec("self.%s = %s" % (attr_name, backup))
             raise SDKException('Subclient', '102', o_str.format(output[2]))
 
     def _process_update_response(self, flag, response):
@@ -1123,3 +1130,11 @@ class Instance(object):
             return temp_backupset_obj.find(*args, **kwargs)
         else:
             raise SDKException('Instance', '104')
+
+    def refresh(self):
+        """Refresh the properties of the Instance."""
+        from .backupset import Backupsets
+
+        self._get_instance_properties()
+        self.backupsets = Backupsets(self)
+        self.subclients = Subclients(self)

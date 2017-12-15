@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -23,6 +22,7 @@ GlobalFilters:
 
     get()                           --  returns the GlobalFilter object for specified filter name
 
+
 GlobalFilter:
     __init__()                      --  initializes global filter object
 
@@ -42,6 +42,8 @@ GlobalFilter:
     overwrite()                     --  overwrites existing global list with specified
 
     delete_all()                    --  removes all the filters from global filters list
+
+    refresh()                       --  refresh the properties of the global filter
 
 """
 
@@ -104,7 +106,8 @@ class GlobalFilters(object):
         return GlobalFilter(
             self._commcell_object,
             filter_name.upper(),
-            self._global_filter_dict[filter_name.upper()])
+            self._global_filter_dict[filter_name.upper()]
+        )
 
 
 class GlobalFilter(object):
@@ -124,7 +127,7 @@ class GlobalFilter(object):
         self._GLOBAL_FILTER = self._commcell_object._services['GLOBAL_FILTER']
         self._content = []
 
-        self._initialize_global_filters()
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -188,7 +191,7 @@ class GlobalFilter(object):
             'POST', self._GLOBAL_FILTER, request_json
         )
 
-        self._initialize_global_filters()
+        self.refresh()
 
         if flag:
             if response.json() and 'error' in response.json():
@@ -266,3 +269,7 @@ class GlobalFilter(object):
                     if response is not success
         """
         self._update("DELETE", [])
+
+    def refresh(self):
+        """Refresh the properties of the GlobalFilter."""
+        self._initialize_global_filters()

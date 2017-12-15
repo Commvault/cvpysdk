@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -34,6 +33,8 @@ ClientGroups:
                                     for the the input client group name
 
     delete(clientgroup_name)   -- deletes the client group from the commcell
+
+    refresh()                  -- refresh the client groups associated with the commcell
 
 
 ClientGroup:
@@ -83,6 +84,8 @@ ClientGroup:
 
     remove_all_clients()           -- removes all the associated clients from client group
 
+    refresh()                      -- refresh the properties of the client group
+
 """
 
 from __future__ import absolute_import
@@ -109,7 +112,9 @@ class ClientGroups(object):
         """
         self._commcell_object = commcell_object
         self._CLIENTGROUPS = self._commcell_object._services['CLIENTGROUPS']
-        self._clientgroups = self._get_clientgroups()
+
+        self._clientgroups = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all clientgroups of the Commcell.
@@ -321,7 +326,7 @@ class ClientGroups(object):
                         )
                         raise SDKException('ClientGroup', '102', o_str)
                     elif 'clientGroupDetail' in response.json():
-                        self._clientgroups = self._get_clientgroups()
+                        self.refresh()
                         clientgroup_id = response.json()['clientGroupDetail'][
                             'clientGroup']['clientGroupId']
 
@@ -412,7 +417,7 @@ class ClientGroups(object):
                             if error_code == '0':
                                 # initialize the clientgroups again
                                 # so the clientgroups object has all the client groups
-                                self._clientgroups = self._get_clientgroups()
+                                self.refresh()
                             else:
                                 o_str = 'Failed to delete ClientGroup\nError: "{0}"'.format(
                                     error_message
@@ -431,6 +436,10 @@ class ClientGroups(object):
                     '102',
                     'No ClientGroup exists with name: "{0}"'.format(clientgroup_name)
                 )
+
+    def refresh(self):
+        """Refresh the client groups associated with the Commcell."""
+        self._clientgroups = self._get_clientgroups()
 
 
 class ClientGroup(object):
@@ -463,7 +472,7 @@ class ClientGroup(object):
 
         self._CLIENTGROUP = self._commcell_object._services['CLIENTGROUP'] % (self.clientgroup_id)
 
-        self._initialize_clientgroup_properties()
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -700,7 +709,7 @@ class ClientGroup(object):
             'POST', self._CLIENTGROUP, request_json
         )
 
-        self._initialize_clientgroup_properties()
+        self.refresh()
 
         if flag:
             if response.json():
@@ -1165,3 +1174,7 @@ class ClientGroup(object):
         else:
             o_str = 'Failed to remove clients from the ClientGroup\nError: "{0}"'
             raise SDKException('ClientGroup', '102', o_str.format(output[2]))
+
+    def refresh(self):
+        """Refresh the properties of the ClientGroup."""
+        self._initialize_clientgroup_properties()

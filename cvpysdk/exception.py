@@ -104,6 +104,10 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
     },
+    'Domain': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
     'Alert': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
@@ -111,7 +115,8 @@ EXCEPTION_DICT = {
     'Workflow': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
-        '103': 'Workflow XML is not a valid file'
+        '103': 'Workflow XML is not a valid file',
+        '104': 'No Workflow exists with the given name'
     },
     'Datacube': {
         '101': 'Data type of the input(s) is not valid',
@@ -139,7 +144,49 @@ EXCEPTION_DICT = {
     },
     'Virtual Machine': {
         '101': 'Data type of the input(s) is not valid',
-        '102':''
+        '102': ''
+    },
+    'User': {
+        '101': 'Data type of input(s) is not valid',
+        '102': ''
+    },
+    'Security': {
+        '101': 'Data type of input(s) is not valid',
+        '102': ''
+    },
+    'DownloadCenter': {
+        '101': 'Response received is not a proper XML. Please check the XML',
+        '102': '',
+        '103': 'Category does not exist at Download Center',
+        '104': 'Category already exists at Download Center',
+        '105': 'Sub Category already exists for the given Category at Download Center',
+        '106': 'Package does not exist at Download Center. Please check the name again',
+        '107': 'Failed to download the package',
+        '108': 'Category does not exists at Download Center',
+        '109': 'Sub Category does not exists at Download Center',
+        '110': 'Multiple platforms available. Please specify the platform',
+        '111': ('Multiple download types available for this platform. '
+                'Please specify the download type'),
+        '112': 'Package is not available for the given platform',
+        '113': 'Package is not available for the given download type',
+        '114': 'Package already exists with the given name',
+        '115': 'Version is not available on Download Center',
+        '116': 'Platform is not supported on Download Center',
+        '117': 'Download Type is not supported on Download Center',
+        '118': 'File is not a valid README file',
+        '119': 'Failed to upload the package'
+    },
+    'Organization': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'No organization exists with the given name',
+        '104': 'Failed to delete the organization',
+        '105': 'Email address is not valid',
+        '106': 'Organization already exists',
+        '107': 'Failed to add organization',
+        '108': 'Failed to enable Auth Code Generation for the Organization',
+        '109': 'Failed to disable Auth Code Generation for the Organization',
+        '110': 'Failed to update the properties of the Organization'
     }
 }
 
