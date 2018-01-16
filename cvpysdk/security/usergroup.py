@@ -22,8 +22,6 @@ UserGroups:
 
     __repr__()                 --  returns the string for the instance of the UserGroups class
 
-    __repr__()                 --  return all the usergroups associated with the specified commcell
-
     _get_usergroups()          --  gets all the usergroups associated with the commcell specified
 
     has_user_group()           --  checks if a user group exists with the given name or not
@@ -56,7 +54,7 @@ from __future__ import unicode_literals
 
 from past.builtins import basestring
 
-from .exception import SDKException
+from ..exception import SDKException
 
 
 class UserGroups(object):

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -59,7 +58,7 @@ class SalesforceInstance(CloudAppsInstance):
         self._org_id = None
         self._consumer_secret = None
         self._consumer_id = None
-        
+
         super(SalesforceInstance, self).__init__(agent_object, instance_name, instance_id)
 
     def _get_instance_properties(self):

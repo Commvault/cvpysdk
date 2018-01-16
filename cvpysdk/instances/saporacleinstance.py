@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -48,25 +47,23 @@ SAPOracleInstance:
 
     restore_in_place()                  -- runs the restore job for specified instance
 
-    restore_outof_place()                  -- runs the restore job for specified client and instance
+    restore_outof_place()               -- runs the restore job for specified client and instance
 
 """
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import time
-
 from ..agent import Agent
 from ..instance import Instance
 from ..client import Client
 from ..exception import SDKException
-from ..job import Job
 
 
 class SAPOracleInstance(Instance):
     """Derived class from Instance Base class, representing a SAPOracle instance,
         and to perform operations on that Instance."""
+
     def __init__(self, agent_object, instance_name, instance_id=None):
         """
         Constructor for the class
@@ -96,8 +93,7 @@ class SAPOracleInstance(Instance):
         Returns:
             string - string of sapdata_home
         """
-        return self._properties['sapOracleInstance']\
-            ['sapDataPath']
+        return self._properties['sapOracleInstance']['sapDataPath']
 
     @property
     def sapexepath(self):
@@ -106,8 +102,7 @@ class SAPOracleInstance(Instance):
         Returns:
             string - string of sapexepath
         """
-        return self._properties['sapOracleInstance']\
-            ['sapExeFolder']
+        return self._properties['sapOracleInstance']['sapExeFolder']
 
     @property
     def os_user(self):
@@ -116,8 +111,7 @@ class SAPOracleInstance(Instance):
         Returns:
             string - string of oracle software owner
         """
-        return self._properties['sapOracleInstance']\
-            ['oracleUser']['userName']
+        return self._properties['sapOracleInstance']['oracleUser']['userName']
 
     @property
     def cmd_sp(self):
@@ -126,9 +120,8 @@ class SAPOracleInstance(Instance):
         Returns:
             string - string for command line storage policy
         """
-        return self._properties['sapOracleInstance']\
-            ['oracleStorageDevice']\
-            ['commandLineStoragePolicy']['storagePolicyName']
+        return self._properties['sapOracleInstance']['oracleStorageDevice'][
+            'commandLineStoragePolicy']['storagePolicyName']
 
     @property
     def log_sp(self):
@@ -137,49 +130,43 @@ class SAPOracleInstance(Instance):
         Returns:
             string  -- string containing log storage policy
         """
-        return self._properties['sapOracleInstance']\
-            ['oracleStorageDevice']\
-            ['logBackupStoragePolicy']['storagePolicyName']
+        return self._properties['sapOracleInstance']['oracleStorageDevice'][
+            'logBackupStoragePolicy']['storagePolicyName']
 
     @property
     def saporacle_db_user(self):
         """
         Returns: Oracle database user for the instance
         """
-        return self._properties['sapOracleInstance']\
-            ['sqlConnect']['userName']
+        return self._properties['sapOracleInstance']['sqlConnect']['userName']
 
     @property
     def saporacle_db_connectstring(self):
         """
         Returns: Oracle database connect string for the instance
         """
-        return self._properties['sapOracleInstance']\
-            ['sqlConnect']['domainName']
+        return self._properties['sapOracleInstance']['sqlConnect']['domainName']
 
     @property
     def saporacle_blocksize(self):
         """
         Returns: blocksize for the instance
         """
-        return self._properties['sapOracleInstance']\
-            ['blockSize']
+        return self._properties['sapOracleInstance']['blockSize']
 
     @property
     def saporacle_sapsecurestore(self):
         """
         Returns: sapsecurestore option for the instance
         """
-        return self._properties['sapOracleInstance']\
-            ['useSAPSecureStore']
+        return self._properties['sapOracleInstance']['useSAPSecureStore']
 
     @property
     def saporacle_archivelogbackupstreams(self):
         """
         Returns: archivelogbackupstreams option for the instance
         """
-        return self._properties['sapOracleInstance']\
-            ['numberOfArchiveLogBackupStreams']
+        return self._properties['sapOracleInstance']['numberOfArchiveLogBackupStreams']
 
     @property
     def saporacle_instanceid(self):
@@ -188,9 +175,7 @@ class SAPOracleInstance(Instance):
         """
         return self._properties['instance']['instanceId']
 
-    def _restore_saporacle_request_json(
-            self, value):
-
+    def _restore_saporacle_request_json(self, value):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
         """
@@ -205,11 +190,11 @@ class SAPOracleInstance(Instance):
                     "options": {
                         "restoreOptions": {
                             "oracleOpt": {
-                                "noCatalog":value.get("noCatalog", True),
-                                "backupValidationOnly":value.get("backupValidationOnly", False),
+                                "noCatalog": value.get("noCatalog", True),
+                                "backupValidationOnly": value.get("backupValidationOnly", False),
                                 "restoreData": value.get("restoreData", True),
                                 "archiveLog": value.get("archiveLog", True),
-                                "recover":value.get("recover", True),
+                                "recover": value.get("recover", True),
                                 "switchDatabaseMode": value.get("switchDatabaseMode", True),
                                 "restoreStream": value.get("restoreStream", 2),
                                 "restoreControlFile": value.get("restoreControlFile", True),
@@ -217,8 +202,8 @@ class SAPOracleInstance(Instance):
                                 "openDatabase": value.get("openDatabase", True),
                                 "resetLogs": value.get("resetLogs", 1),
                                 "restoreTablespace": value.get("restoreTablespace", False),
-                                "databaseCopy":value.get("databaseCopy", False),
-                                "archiveLogBy":value.get("archiveLogBy", 'default'),
+                                "databaseCopy": value.get("databaseCopy", False),
+                                "archiveLogBy": value.get("archiveLogBy", 'default'),
                             },
                             "destination": {
                                 "destinationInstance": {
@@ -230,12 +215,12 @@ class SAPOracleInstance(Instance):
                                     "clientName": value.get("destination_client")
                                 }
                             },
-                            "fileOption":{
-                                    "sourceItem":value.get("sourceItem", ["/+BROWSE+"])
+                            "fileOption": {
+                                "sourceItem": value.get("sourceItem", ["/+BROWSE+"])
                             },
                             "browseOption": {
                                 "backupset": {
-                                    "clientName":  self._agent_object._client_object.client_name
+                                    "clientName": self._agent_object._client_object.client_name
                                 }
                             }
                         }
@@ -245,10 +230,11 @@ class SAPOracleInstance(Instance):
         }
         return request_json
 
-    def restore_in_place(self,
-                               destination_client=None,
-                               destination_instance=None,
-                               sap_options=None):
+    def restore_in_place(
+            self,
+            destination_client=None,
+            destination_instance=None,
+            sap_options=None):
         """perform inplace restore and recover  of sap oracle database
          Args:
 
@@ -384,7 +370,7 @@ class SAPOracleInstance(Instance):
 
         dest_agent = Agent(destination_client, 'sap for oracle')
 
-        #check if instance name is correct
+        # check if instance name is correct
         if destination_instance is None:
             destination_instance = self.instance_name
 

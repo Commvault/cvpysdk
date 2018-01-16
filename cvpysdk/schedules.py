@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -21,8 +20,11 @@ Schedules:
     _get_schedules()                --  gets all the schedules associated with the commcell entity
 
     has_schedule(schedule_name)     --  checks if schedule exists for the comcell entity or not
-    
-    delete(schedule_name)           -- deletes the given schedule
+
+    delete(schedule_name)           --  deletes the given schedule
+
+    refresh()                       --  refresh the schedules associated with the commcell entity
+
 
 Schedule: Class for performing operations for a specific Schedule.
 
@@ -72,6 +74,7 @@ Schedule:
     _process_schedule_update_response               -- processes the response and
                                                                 gives the error_code and message
 
+    refresh()                                       -- refresh the properties of the schedule
 
 """
 
@@ -117,20 +120,22 @@ class Schedules(object):
                 class_object.client_id
             )
             self._repr_str = "Client: {0}".format(class_object.client_name)
+
         elif isinstance(class_object, Agent):
             self._SCHEDULES = self._commcell_object._services['AGENT_SCHEDULES'] % (
                 class_object._client_object.client_id,
                 class_object.agent_id
             )
             self._repr_str = "Agent: {0}".format(class_object.agent_name)
+
         elif isinstance(class_object, Backupset):
             self._SCHEDULES = self._commcell_object._services['BACKUPSET_SCHEDULES'] % (
                 class_object._agent_object._client_object.client_id,
                 class_object._agent_object.agent_id,
                 class_object.backupset_id
             )
-            self._repr_str = "Backupset: {0}".format(
-                class_object.backupset_name)
+            self._repr_str = "Backupset: {0}".format(class_object.backupset_name)
+
         elif isinstance(class_object, Subclient):
             self._SCHEDULES = self._commcell_object._services['SUBCLIENT_SCHEDULES'] % (
                 class_object._backupset_object._agent_object._client_object.client_id,
@@ -138,12 +143,12 @@ class Schedules(object):
                 class_object._backupset_object.backupset_id,
                 class_object.subclient_id
             )
-            self._repr_str = "Subclient: {0}".format(
-                class_object.subclient_name)
+            self._repr_str = "Subclient: {0}".format(class_object.subclient_name)
         else:
             raise SDKException('Schedules', '101')
 
-        self.schedules = self._get_schedules()
+        self.schedules = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all schedules of the commcell entity.
@@ -317,7 +322,7 @@ class Schedules(object):
                     if response.json():
                         if 'errorCode' in response.json():
                             if response.json()['errorCode'] == 0:
-                                self.schedules = self._get_schedules()
+                                self.refresh()
                             else:
                                 raise SDKException(
                                     'Schedules', '102', response.json()['errorMessage'])
@@ -336,6 +341,10 @@ class Schedules(object):
                     'Schedules', '102', 'No schedule exists with name: {0}'.format(
                         schedule_name)
                 )
+
+    def refresh(self):
+        """Refresh the Schedules associated with the Client / Agent / Backupset / Subclient."""
+        self.schedules = self._get_schedules()
 
 
 class Schedule(object):
@@ -421,7 +430,7 @@ class Schedule(object):
         self._description = None
         self._alert_type = None
 
-        self._get_schedule_properties()
+        self.refresh()
 
     def _get_schedule_id(self):
         """
@@ -903,8 +912,7 @@ class Schedule(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def _process_schedule_update_response(self, flag, response):
@@ -942,6 +950,9 @@ class Schedule(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """Refresh the properties of the Schedule."""
+        self._get_schedule_properties()

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -56,6 +55,7 @@ class NASBackupset(FSBackupset):
             Raises:
                 SDKException:
                     if failed to set this as the image backupset
+
         """
         if self.is_image_backupset is False:
             request_json = {

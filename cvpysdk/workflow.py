@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -31,6 +30,8 @@ WorkFlow:
     delete_workflow(workflow_name)      --  deletes a workflow from the commcell
 
     _download_workflow(workflow_name)   --  downloads given workflow from the cloud.commvault.com
+
+    refresh()                           --  refresh the workflows added to the Commcell
 
 """
 
@@ -65,7 +66,8 @@ class WorkFlow(object):
         self._DEPLOY_WORKFLOW = self._commcell_object._services['DEPLOY_WORKFLOW']
         self._EXECUTE_WORKFLOW = self._commcell_object._services['EXECUTE_WORKFLOW']
 
-        self._workflows = self._get_workflows()
+        self._workflows = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all workflows of the Commcell.
@@ -109,7 +111,7 @@ class WorkFlow(object):
                     'Is Required'
                 )
 
-                for index, wf_input in enumerate(workflow_inputs):
+                for index1, wf_input in enumerate(workflow_inputs):
                     input_name = wf_input['input_name']
                     is_required = wf_input['is_required']
 
@@ -129,7 +131,7 @@ class WorkFlow(object):
                         default_value = wf_input['default_value']
 
                     sub_str += '\t\t{:^5}\t{:35}\t{:35}\t{:70}\t{:20}\t{:^20}\n'.format(
-                        index + 1,
+                        index1 + 1,
                         input_name,
                         display_name,
                         description,
@@ -309,7 +311,7 @@ class WorkFlow(object):
             'POST', self._WORKFLOWS, workflow_xml
         )
 
-        self._workflows = self._get_workflows()
+        self.refresh()
 
         if flag is False:
             raise SDKException(
@@ -375,7 +377,7 @@ class WorkFlow(object):
             'POST', workflow_deploy_service, workflow_xml
         )
 
-        self._workflows = self._get_workflows()
+        self.refresh()
 
         if flag:
             if response.json():
@@ -490,7 +492,7 @@ class WorkFlow(object):
             'POST', self._WORKFLOWS, workflow_xml
         )
 
-        self._workflows = self._get_workflows()
+        self.refresh()
 
         if flag is False:
             raise SDKException(
@@ -577,3 +579,7 @@ class WorkFlow(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """Refresh the list of workflows deployed on the Commcell."""
+        self._workflows = self._get_workflows()

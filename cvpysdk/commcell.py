@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2017 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -72,7 +71,8 @@ from .storage import MediaAgents
 from .storage import DiskLibraries
 from .storage import StoragePolicies
 from .storage import SchedulePolicies
-from .usergroup import UserGroups
+from .security.usergroup import UserGroups
+from .domains import Domains
 from .workflow import WorkFlow
 from .exception import SDKException
 from .clientgroup import ClientGroups
@@ -80,6 +80,9 @@ from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
 from .plan import Plans
 from .job import JobController
+from .security.user import Users
+from .download_center import DownloadCenter
+from .organization import Organizations
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -167,19 +170,7 @@ class Commcell(object):
 
         self._commserv_name = self._get_commserv_name()
 
-        self._clients = None
-        self._media_agents = None
-        self._workflows = None
-        self._alerts = None
-        self._disk_libraries = None
-        self._storage_policies = None
-        self._schedule_policies = None
-        self._user_groups = None
-        self._client_groups = None
-        self._global_filters = None
-        self._datacube = None
-        self._plans = None
-        self._job_controller = None
+        self.refresh()
 
         del self._password
 
@@ -232,11 +223,15 @@ class Commcell(object):
         del self._storage_policies
         del self._schedule_policies
         del self._user_groups
+        del self._domains
         del self._client_groups
         del self._global_filters
         del self._datacube
         del self._plans
         del self._job_controller
+        del self._users
+        del self._download_center
+        del self._organizations
 
         del self._web_service
         del self._cvpysdk_object
@@ -299,7 +294,7 @@ class Commcell(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     @property
@@ -425,6 +420,19 @@ class Commcell(object):
             return None
 
     @property
+    def domains(self):
+        """Returns the instance of the UserGroups class."""
+        try:
+            if self._domains is None:
+                self._domains = Domains(self)
+
+            return self._domains
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
     def client_groups(self):
         """Returns the instance of the ClientGroups class."""
         try:
@@ -484,6 +492,45 @@ class Commcell(object):
                 self._job_controller = JobController(self)
 
             return self._job_controller
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def users(self):
+        """Returns the instance of the Users class."""
+        try:
+            if self._users is None:
+                self._users = Users(self)
+
+            return self._users
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def download_center(self):
+        """Returns the instance of the DownloadCenter class."""
+        try:
+            if self._download_center is None:
+                self._download_center = DownloadCenter(self)
+
+            return self._download_center
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def organizations(self):
+        """Returns the instance of the Organizations class."""
+        try:
+            if self._organizations is None:
+                self._organizations = Organizations(self)
+
+            return self._organizations
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
         except SDKException:
@@ -556,3 +603,23 @@ class Commcell(object):
 
         if 'errorCode' in response_json and response_json['errorCode'] != 0:
             raise SDKException('Commcell', '104')
+
+    def refresh(self):
+        """Refresh the properties of the Commcell."""
+        self._clients = None
+        self._media_agents = None
+        self._workflows = None
+        self._alerts = None
+        self._disk_libraries = None
+        self._storage_policies = None
+        self._schedule_policies = None
+        self._user_groups = None
+        self._domains = None
+        self._client_groups = None
+        self._global_filters = None
+        self._datacube = None
+        self._plans = None
+        self._job_controller = None
+        self._users = None
+        self._download_center = None
+        self._organizations = None

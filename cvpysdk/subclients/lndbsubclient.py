@@ -1,21 +1,18 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
-# import sys
-# sys.path.append("..")
-"""
 
-File for operating on a Notes Database Subclient.
+"""File for operating on a Notes Database Subclient.
 
 LNDbSubclient is the only class defined in this file.
 
-LNDbSubclient: Derived class from Subclient Base class.
-            Represents a notes database subclient, and performs operations on that subclient
+LNDbSubclient:  Derived class from Subclient Base class.
+                    Represents a notes database subclient,
+                    and performs operations on that subclient
 
 LNDbSubclient:
 
@@ -27,10 +24,13 @@ LNDbSubclient:
 
     content()                            --  update the content of the subclient
 
-
 """
+
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
+import json
+
 from ..subclient import Subclient
 
 
@@ -112,3 +112,103 @@ class LNDbSubclient(Subclient):
     #         raise SDKException('Subclient', '102', '{} not given in content'.format(err))
     #
     #     self._set_subclient_properties("_content", content)
+
+    def restore_in_place(
+            self,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            common_options_dict=None,
+            lndb_restore_options=None):
+        """Restores the files/folders specified in the input paths list to the same location.
+
+            Args:
+                paths                   (list)  --  list of full paths of files/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+                restore_data_and_acl    (bool)  --  restore data and ACL files
+                    default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                    default: None
+
+            Returns:
+                object  -   instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if not (isinstance(paths, list) and
+                    isinstance(overwrite, bool) and
+                    isinstance(restore_data_and_acl, bool)):
+            raise SDKException('Subclient', '101')
+
+        if common_options_dict is None:
+            common_options_dict = {}
+
+        if lndb_restore_options is None:
+            lndb_restore_options = {}
+
+        paths = self._filter_paths(paths)
+
+        if paths == []:
+            raise SDKException('Subclient', '104')
+
+        request_json = self._restore_json(
+            paths=paths,
+            overwrite=overwrite,
+            restore_data_and_acl=restore_data_and_acl,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time
+        )
+
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["commonOptions"] = {
+                "doNotReplayTransactLogs": common_options_dict.get('doNotReplayTransactLogs', False),
+                "clusterDBBackedup": common_options_dict.get('clusterDBBackedup', False),
+                "recoverWait": common_options_dict.get('recoverWait', False),
+                "restoreToDisk": common_options_dict.get('restoreToDisk', False),
+                "offlineMiningRestore": common_options_dict.get('offlineMiningRestore', False),
+                "restoreToExchange": common_options_dict.get('restoreToExchange', False),
+                "recoverZapIfNecessary": common_options_dict.get('recoverZapIfNecessary', False),
+                "recoverZapReplica": common_options_dict.get('recoverZapReplica', False),
+                "onePassRestore": common_options_dict.get('onePassRestore', False),
+                "recoverZap": common_options_dict.get('recoverZap', False),
+                "recoverRefreshBackup": common_options_dict.get('recoverRefreshBackup', False),
+                "unconditionalOverwrite": common_options_dict.get('unconditionalOverwrite', False),
+                "syncRestore": common_options_dict.get('syncRestore', False),
+                "recoverPointInTime": common_options_dict.get('recoverPointInTime', False),
+            }
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["lotusNotesDBRestoreOption"] = {
+            "disableReplication": lndb_restore_options.get('disableReplication', False),
+            "disableBackgroundAgents": lndb_restore_options.get('disableBackgroundAgents', False)
+        }
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {"sourceItem": ["\\"]}
+        with open(r'C:/lndb_restore.json', 'w') as f:
+            f.write(json.dumps(request_json))
+        print(request_json)
+        return self._process_restore_response(request_json)

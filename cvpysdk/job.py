@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -64,6 +63,9 @@ Job:
     resume()                    --  resumes the job
 
     kill()                      --  kills the job
+
+    refresh()                   --  refresh the properties of the Job
+
 
 Usage:
 
@@ -312,6 +314,7 @@ class JobController(object):
         """
         return Job(self._commcell_object, job_id)
 
+
 class Job(object):
     """Class for performing client operations for a specific client."""
 
@@ -363,8 +366,7 @@ class Job(object):
         self._pending_reason = None
         self._status = None
 
-        self._initialize_job_properties()
-        self.is_finished
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class.
@@ -768,3 +770,8 @@ class Job(object):
 
         if wait_for_job_to_kill is True:
             self._wait_for_status("KILLED")
+
+    def refresh(self):
+        """Refresh the properties of the Job."""
+        self._initialize_job_properties()
+        self.is_finished

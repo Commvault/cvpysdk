@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -87,8 +86,7 @@ class SybaseInstance(Instance):
             object - instance of the Sybase Instance class
 
         """
-        super(SybaseInstance, self).__init__(
-            agent_object, instance_name, instance_id)
+        super(SybaseInstance, self).__init__(agent_object, instance_name, instance_id)
         self._instanceprop = {}  # instance variable to hold instance properties
 
     @property
@@ -375,12 +373,22 @@ class SybaseInstance(Instance):
             device_options = None
 
         basic_sybase_options = self._get_sybase_restore_base_json(
-            destination_client, destination_instance_name, pointintime, instance_restore, timevalue, sybasecreatedevice, renamedatabases)
+            destination_client,
+            destination_instance_name,
+            pointintime,
+            instance_restore,
+            timevalue,
+            sybasecreatedevice,
+            renamedatabases
+        )
         restore_json = self._restore_json(paths=r'/')
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"] = basic_sybase_options
         db_options = self._db_option(
-            database_list, renamedatabases, sybasecreatedevice, device_options)
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sybaseRstOption"]["sybaseDatabase"] = db_options
+            database_list, renamedatabases, sybasecreatedevice, device_options
+        )
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "sybaseRstOption"]["sybaseDatabase"] = db_options
+
         return restore_json
 
     def _get_sybase_full_restore_json(self,
@@ -421,7 +429,13 @@ class SybaseInstance(Instance):
 
         instance_restore = True
         basic_sybase_options = self._get_sybase_restore_base_json(
-            destination_client, destination_instance_name, pointintime, instance_restore, timevalue, sybasecreatedevice, renamedatabases)
+            destination_client,
+            destination_instance_name,
+            pointintime,
+            instance_restore,
+            timevalue,
+            sybasecreatedevice,
+            renamedatabases)
         restore_json = self._restore_json(paths=r'/')
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"] = basic_sybase_options
         db_options = []
@@ -439,10 +453,16 @@ class SybaseInstance(Instance):
         database_list = dblist
         db_options = self._db_option(
             database_list, renamedatabases, sybasecreatedevice, device_options)
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sybaseRstOption"]["sybaseDatabase"] = db_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "sybaseRstOption"]["sybaseDatabase"] = db_options
         return restore_json
 
-    def _get_single_database_json(self, dbname, device_options=None, renamedatabases=False, sybasecreatedevice=False):
+    def _get_single_database_json(
+            self,
+            dbname,
+            device_options=None,
+            renamedatabases=False,
+            sybasecreatedevice=False):
         """
             Method to construct database JSON for individual Sybase databases with create device and rename database parameters
 
@@ -623,9 +643,15 @@ class SybaseInstance(Instance):
 
         sybasecreatedevice = True
         request_json = self._get_sybase_full_restore_json(
-            destination_client, destination_instance_name, pointintime, timevalue, sybasecreatedevice, renamedatabases, device_options)
+            destination_client,
+            destination_instance_name,
+            pointintime,
+            timevalue,
+            sybasecreatedevice,
+            renamedatabases,
+            device_options)
 
-       #subclient_object = self.subclients.get('default')
+        # subclient_object = self.subclients.get('default')
         return self._process_restore_response(request_json)
 
     def restore_database(self,
@@ -709,6 +735,12 @@ class SybaseInstance(Instance):
                                'Restore Database List cannot be empty')
 
         request_json = self._get_sybase_restore_json(
-            destination_client, destination_instance_name, database_list, timevalue, sybasecreatedevice, renamedatabases, device_options)
-      # subclient_object = self.subclients.get('default')
+            destination_client,
+            destination_instance_name,
+            database_list,
+            timevalue,
+            sybasecreatedevice,
+            renamedatabases,
+            device_options)
+        # subclient_object = self.subclients.get('default')
         return self._process_restore_response(request_json)

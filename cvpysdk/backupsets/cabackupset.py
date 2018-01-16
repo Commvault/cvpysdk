@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -57,8 +56,7 @@ class CloudAppsBackupset(Backupset):
             3: SalesforceBackupset
         }
 
-        cloud_apps_instance_type = instance_object._properties[
-            'cloudAppsInstance']['instanceType']
+        cloud_apps_instance_type = instance_object._properties['cloudAppsInstance']['instanceType']
 
         if cloud_apps_instance_type in instance_types:
             instance_type = instance_types[cloud_apps_instance_type]

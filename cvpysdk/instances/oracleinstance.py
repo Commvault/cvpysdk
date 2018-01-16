@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -60,7 +59,6 @@ from ..instance import Instance
 from ..exception import SDKException
 
 
-
 class OracleInstance(Instance):
     """
     Class to represent a standalone Oracle Instance
@@ -114,8 +112,9 @@ class OracleInstance(Instance):
         if 'tablespaces' in self._instanceprop:
             return self._instanceprop['tablespaces']
 
-        browse_service = self._commcell_object._services['ORACLE_INSTANCE_BROWSE']\
-                         % self.instance_id
+        browse_service = self._commcell_object._services['ORACLE_INSTANCE_BROWSE'] % (
+            self.instance_id
+        )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', browse_service, request_json
@@ -246,8 +245,8 @@ class OracleInstance(Instance):
             string - string for command line storage policy
 
         """
-        return self._properties['oracleInstance']['oracleStorageDevice']\
-            ['commandLineStoragePolicy']['storagePolicyName']
+        return self._properties['oracleInstance']['oracleStorageDevice'][
+            'commandLineStoragePolicy']['storagePolicyName']
 
     @property
     def log_sp(self):
@@ -258,8 +257,8 @@ class OracleInstance(Instance):
             string  -- string containing log storage policy
 
         """
-        return self._properties['oracleInstance']['oracleStorageDevice']\
-            ['logBackupStoragePolicy']['storagePolicyName']
+        return self._properties['oracleInstance']['oracleStorageDevice'][
+            'logBackupStoragePolicy']['storagePolicyName']
 
     @property
     def is_autobackup_on(self):
@@ -324,9 +323,9 @@ class OracleInstance(Instance):
 
     def browse(self, *args, **kwargs):
         """Overridden method to browse oracle database tablespaces"""
-        if len(args) > 0 and isinstance(args[0], dict):
+        if args and isinstance(args[0], dict):
             options = args[0]
-        elif len(kwargs) > 0:
+        elif kwargs:
             options = kwargs
         else:
             options = self._get_browse_options()
@@ -342,10 +341,11 @@ class OracleInstance(Instance):
         """
         return self.subclients.get(subclient_name).backup(r'full')
 
-    def restore(self,
-                subclient_name=r'default',
-                destination_client=None,
-                oracle_options=None):
+    def restore(
+            self,
+            subclient_name='default',
+            destination_client=None,
+            oracle_options=None):
         """
         Method to restore the entire database using latest backup
 
@@ -394,8 +394,10 @@ class OracleInstance(Instance):
             raise
         else:
             subclient = self.subclients.get(subclient_name)
-            options = subclient._get_oracle_restore_json(dest_client=destination_client,
-                                                         instance_name=self.instance_name,
-                                                         tablespaces=self.tablespaces,
-                                                         oracle_options=oracle_options)
+            options = subclient._get_oracle_restore_json(
+                dest_client=destination_client,
+                instance_name=self.instance_name,
+                tablespaces=self.tablespaces,
+                oracle_options=oracle_options
+            )
             return subclient._process_restore_response(options)

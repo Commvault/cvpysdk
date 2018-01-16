@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -33,10 +32,10 @@ CVPySDK:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from xml.parsers.expat import ExpatError
+
 import requests
 import xmltodict
-
-from xml.parsers.expat import ExpatError
 
 try:
     # Python 2 import
@@ -58,10 +57,11 @@ class CVPySDK(object):
         """Initialize the CVPySDK object for running various operations.
 
             Args:
-                commcell_object (object)  --  instance of the Commcell class
+                commcell_object (object)    --  instance of the Commcell class
 
             Returns:
-                object - instance of the CVPySDK class
+                object  -   instance of the CVPySDK class
+
         """
         self._commcell_object = commcell_object
 
@@ -69,14 +69,17 @@ class CVPySDK(object):
         """Checks if the service url is a valid url or not.
 
             Returns:
-                True - if the service url is valid
+                True    -   if the service url is valid
 
-                False - if the service url is invalid
+                False   -   if the service url is invalid
 
             Raises:
-                requests Connection Error   --  requests.exceptions.ConnectionError
+                requests Connection Error:
+                    requests.exceptions.ConnectionError
 
-                requests Timeout Error      --  requests.exceptions.Timeout
+                requests Timeout Error:
+                    requests.exceptions.Timeout
+
         """
         try:
             response = requests.get(self._commcell_object._web_service, timeout=184)
@@ -100,7 +103,9 @@ class CVPySDK(object):
 
                     if response is not success
 
-                requests Connection Error   --  requests.exceptions.ConnectionError
+                requests Connection Error:
+                    requests.exceptions.ConnectionError
+
         """
         try:
             if isinstance(self._commcell_object._password, dict):
@@ -147,7 +152,9 @@ class CVPySDK(object):
 
                     if response is not success
 
-                requests Connection Error   --  requests.exceptions.ConnectionError
+                requests Connection Error:
+                    requests.exceptions.ConnectionError
+
         """
         try:
             token_renew_request = {
@@ -179,7 +186,8 @@ class CVPySDK(object):
         """Posts a logout request to the server.
 
             Returns:
-                str - response string from server upon logout success
+                str     -   response string from server upon logout success
+
         """
         flag, response = self.make_request('POST', self._commcell_object._services['LOGOUT'])
 
@@ -193,37 +201,62 @@ class CVPySDK(object):
         else:
             return 'User already logged out'
 
-    def make_request(self, method, url, payload=None, attempts=0, headers=None):
-        """Makes the request of the type specified in the argument 'method'
+    def make_request(self, method, url, payload=None, attempts=0, headers=None, stream=False):
+        """Makes the request of the type specified in the argument 'method'.
 
             Args:
-                method    (str)         --  http operation to perform, e.g.; GET, POST, PUT, DELETE
+                method      (str)           --  HTTP operation to perform
 
-                url       (str)         --  the web url or service to run the HTTP request on
+                    e.g.:
+                        GET
 
-                payload   (dict / str)  --  data to be passed along with the request
+                        POST
+
+                        PUT
+
+                        DELETE
+
+
+                url         (str)           --  the web url or service to run the HTTP request on
+
+
+                payload     (dict / str)    --  data to be passed along with the request
+
                     default: None
 
-                attempts  (int)         --  number of attempts made with the same request
+
+                attempts    (int)           --  number of attempts made with the same request
+
                     default: 0
 
-                headers   (dict)        --  specific dict of request headers that is to be passed
-                                                if not specified we use default headers
+
+                headers     (dict)          --  dict of request headers for the request
+
+                        if not specified we use default headers
+
                     default: None
+
+
+                stream      (bool)          --  boolean specifying whether the request should get
+                data via stream or normal get
+
+                    default: False
 
             Returns:
                 tuple:
-                    (True, response) - in case of success
+                    (True, response)    -   in case of success
 
-                    (False, response) - in case of failure
+                    (False, response)   -   in case of failure
 
             Raises:
                 SDKException:
-                    if the method passed is incorrect/not supported
+                    if the method passed is incorrect / not supported
 
                     if the number of attempts exceed 3
 
-                requests Connection Error   --  requests.exceptions.ConnectionError
+                requests Connection Error:
+                    requests.exceptions.ConnectionError
+
         """
         try:
             if headers is None:
@@ -231,7 +264,7 @@ class CVPySDK(object):
 
             if method == 'POST':
                 if isinstance(payload, (dict, list)):
-                    response = requests.post(url, headers=headers, json=payload)
+                    response = requests.post(url, headers=headers, json=payload, stream=stream)
                 else:
                     try:
                         if payload is not None:
@@ -240,9 +273,9 @@ class CVPySDK(object):
                     except ExpatError:
                         headers['Content-type'] = 'text/plain'
                     finally:
-                        response = requests.post(url, headers=headers, data=payload)
+                        response = requests.post(url, headers=headers, data=payload, stream=stream)
             elif method == 'GET':
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, stream=stream)
             elif method == 'PUT':
                 response = requests.put(url, headers=headers, json=payload)
             elif method == 'DELETE':

@@ -75,6 +75,35 @@ class FileSystemSubclient(Subclient):
         }
         return subclient_json
 
+    def _set_content(self, content=None, filter_content=None):
+        """Sets the subclient content / filter content
+
+            Args:
+                content         (list)      --  list of subclient content
+
+                filter_content  (list)      --  list of filter content
+        """
+        if content is None:
+            content = self.content
+
+        if filter_content is None:
+            filter_content = self.filter_content
+
+        update_content = []
+        for path in content:
+            file_system_dict = {
+                "path": path
+            }
+            update_content.append(file_system_dict)
+
+        for path in filter_content:
+            filter_dict = {
+                "excludePath": path
+            }
+            update_content.append(filter_dict)
+
+        self._set_subclient_properties("_content", update_content)
+
     @property
     def content(self):
         """Gets the appropriate content from the Subclient relevant to the user.
@@ -100,14 +129,12 @@ class FileSystemSubclient(Subclient):
             Returns:
                 list - list of the appropriate JSON for an agent to send to the POST Subclient API
         """
-        content = []
-        for path in subclient_content:
-            file_system_dict = {
-                "path": path
-            }
-            content.append(file_system_dict)
-
-        self._set_subclient_properties("_content", content)
+        if isinstance(subclient_content, list) and subclient_content != []:
+            self._set_content(content=subclient_content)
+        else:
+            raise SDKException(
+                'Subclient', '102', 'Subclient content should be a list value and not empty'
+            )
 
     @property
     def filter_content(self):
@@ -124,7 +151,7 @@ class FileSystemSubclient(Subclient):
     def filter_content(self, value):
         """Sets the filter content of the subclient as the value provided as input.
 
-            example: ['/vol/Test_Vol', '/vol/test/file*', '/vol/test2/file.txt']
+            example: ['*book*', 'file**']
 
             Raises:
                 SDKException:
@@ -135,15 +162,7 @@ class FileSystemSubclient(Subclient):
                     if value list is empty
         """
         if isinstance(value, list) and value != []:
-            content = []
-
-            for path in value:
-                nas_dict = {
-                    "excludePath": path
-                }
-                content.append(nas_dict)
-
-            self._set_subclient_properties("_content", content)
+            self._set_content(filter_content=value)
         else:
             raise SDKException(
                 'Subclient', '102', 'Subclient filter content should be a list value and not empty'

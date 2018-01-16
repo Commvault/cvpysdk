@@ -29,6 +29,8 @@ set_http_authentication(username, pwd)
 
 disable_http_authentication()   --Removes HTTP authentication
 
+refresh()                       --  refresh the internet options
+
 """
 from __future__ import absolute_import
 from __future__ import unicode_literals
@@ -44,7 +46,7 @@ class InternetOptions(object):
     def __init__(self, commcell_object):
         self._commcell_object = commcell_object
         self._INTERNET = self._commcell_object._services['INTERNET_PROXY']
-        self._get_internet_config()
+        self.refresh()
 
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
@@ -146,3 +148,7 @@ class InternetOptions(object):
         """Removes HTTP authentication"""
         self._config['useProxyAuthentication'] = False
         self._save_config()
+
+    def refresh(self):
+        """Refresh the Internet Options."""
+        self._get_internet_config()

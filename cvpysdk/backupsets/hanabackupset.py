@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -92,10 +91,11 @@ class HANABackupset(Backupset):
                     if response is empty
 
                     if response is not success
+
         """
         from ..instance import Instance
 
-        if not (isinstance(instance, basestring) or isinstance(instance, Instance)):
+        if not isinstance(instance, (basestring, Instance)):
             raise SDKException('Backupset', '101')
 
         request_json = self._instance_object._restore_request_json(

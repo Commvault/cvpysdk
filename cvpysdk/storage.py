@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -40,6 +39,8 @@ MediaAgents:
     get(media_agent_name)       --  returns the instance of MediaAgent class
                                         of the media agent specified
 
+    refresh()                   --  refresh the media agents associated with the commcell
+
 
 MediaAgent:
     __init__(commcell_object,
@@ -65,6 +66,8 @@ MediaAgent:
 
     platform()                              --  returns os info of the media agent
 
+    refresh()                               --  refresh the properties of the media agent
+
 
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
@@ -81,6 +84,8 @@ DiskLibraries:
 
     get(library_name)           --  returns the instance of the DiskLibrary class
                                         for the library specified
+
+    refresh()                   --  refresh the disk libraries associated with the commcell
 
 
 DiskLibrary:
@@ -109,6 +114,9 @@ StoragePolicies:
 
     delete(storage_policy_name)  --  removes the specified storage policy from the commcell
 
+    refresh()                    --  refresh the storage policies associated with the commcell
+
+
 StoragePolicy:
     __init__(commcell_object,
              storage_policy_name,
@@ -136,6 +144,8 @@ StoragePolicy:
     run_aux_copy()                          --  starts a aux copy job for this storage policy and
                                                  returns the job object
 
+    refresh()                               --  refresh the properties of the storage policy
+
 
 SchedulePolicies:
     __init__(commcell_object)    --  initialize the SchedulePolicies instance for the commcell
@@ -147,6 +157,8 @@ SchedulePolicies:
     _get_policies()              --  gets all the schedule policies of the commcell
 
     has_policy(policy_name)      --  checks if a schedule policy exists with the given name
+
+    refresh()                    --  refresh the schedule policies associated with the commcell
 
 """
 
@@ -178,7 +190,8 @@ class MediaAgents(object):
         """
         self._commcell_object = commcell_object
         self._MEDIA_AGENTS = self._commcell_object._services['GET_MEDIA_AGENTS']
-        self._media_agents = self._get_media_agents()
+        self._media_agents = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all media agents of the commcell.
@@ -284,6 +297,10 @@ class MediaAgents(object):
                 'Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)
             )
 
+    def refresh(self):
+        """Refresh the media agents associated with the Commcell."""
+        self._media_agents = self._get_media_agents()
+
 
 class MediaAgent(object):
     """Class for a specific media agent."""
@@ -313,7 +330,7 @@ class MediaAgent(object):
             self._media_agent_name
         )
 
-        self._initialize_media_agent_properties()
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -400,6 +417,10 @@ class MediaAgent(object):
         """Treats the platform as read-only attribute"""
         return self._platform
 
+    def refresh(self):
+        """Refresh the properties of the MediaAgent."""
+        self._initialize_media_agent_properties()
+
 
 class DiskLibraries(object):
     """Class for getting all the disk libraries associated with the commcell."""
@@ -415,7 +436,9 @@ class DiskLibraries(object):
         """
         self._commcell_object = commcell_object
         self._LIBRARY = self._commcell_object._services['LIBRARY']
-        self._libraries = self._get_libraries()
+
+        self._libraries = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all disk libraries of the commcell.
@@ -563,7 +586,7 @@ class DiskLibraries(object):
 
                     # initialize the libraries again
                     # so the libraries object has all the libraries
-                    self._libraries = self._get_libraries()
+                    self.refresh()
 
                     return DiskLibrary(self._commcell_object, library['libraryName'])
                 elif 'errorCode' in response.json():
@@ -606,6 +629,10 @@ class DiskLibraries(object):
                 'Storage', '102', 'No disk library exists with name: {0}'.format(library_name)
             )
 
+    def refresh(self):
+        """Refresh the disk libraries associated with the Commcell."""
+        self._libraries = self._get_libraries()
+
 
 class DiskLibrary(object):
     """Class for a specific disk library."""
@@ -626,6 +653,7 @@ class DiskLibrary(object):
         """
         self._commcell_object = commcell_object
         self._library_name = library_name
+
         if library_id:
             self._library_id = str(library_id)
         else:
@@ -672,7 +700,9 @@ class StoragePolicies(object):
         """
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services['STORAGE_POLICY']
-        self._policies = self._get_policies()
+
+        self._policies = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all storage policies of the commcell.
@@ -872,7 +902,7 @@ class StoragePolicies(object):
                     if response.text:
                         # initialize the policies again
                         # so the policies object has all the policies
-                        self._policies = self._get_policies()
+                        self.refresh()
                         return response.text.strip()
                     else:
                         raise SDKException('Response', '102')
@@ -904,7 +934,7 @@ class StoragePolicies(object):
                     if 'archiveGroupCopy' in response.json():
                         # initialize the policies again
                         # so the policies object has all the policies
-                        self._policies = self._get_policies()
+                        self.refresh()
                         return StoragePolicy(
                             self._commcell_object, storage_policy_name,
                             self._policies[storage_policy_name]
@@ -956,7 +986,7 @@ class StoragePolicies(object):
                             raise SDKException('Storage', '102', o_str.format(error_message))
                 except ValueError:
                     if response.text:
-                        self._policies = self._get_policies()
+                        self.refresh()
                         return response.text.strip()
                     else:
                         raise SDKException('Response', '102')
@@ -967,6 +997,10 @@ class StoragePolicies(object):
             raise SDKException(
                 'Storage', '102', 'No policy exists with name: {0}'.format(storage_policy_name)
             )
+
+    def refresh(self):
+        """Refresh the storage policies associated with the Commcell."""
+        self._policies = self._get_policies()
 
 
 class StoragePolicy(object):
@@ -986,7 +1020,7 @@ class StoragePolicy(object):
             self.storage_policy_id
         )
 
-        self._initialize_storage_policy_properties()
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -1115,7 +1149,7 @@ class StoragePolicy(object):
             'POST', create_copy_service, request_xml
         )
 
-        self._initialize_storage_policy_properties()
+        self.refresh()
 
         if flag:
             if response.json():
@@ -1180,7 +1214,7 @@ class StoragePolicy(object):
             'POST', delete_copy_service, request_xml
         )
 
-        self._initialize_storage_policy_properties()
+        self.refresh()
 
         if flag:
             if response.json():
@@ -1310,6 +1344,10 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def refresh(self):
+        """Refresh the properties of the StoragePolicy."""
+        self._initialize_storage_policy_properties()
+
 
 class SchedulePolicies(object):
     """Class for getting all the schedule policies associated with the commcell."""
@@ -1325,7 +1363,9 @@ class SchedulePolicies(object):
         """
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services['SCHEDULE_POLICY']
-        self._policies = self._get_policies()
+
+        self._policies = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all schedule policies of the commcell.
@@ -1399,3 +1439,7 @@ class SchedulePolicies(object):
             raise SDKException('Storage', '101')
 
         return self._policies and policy_name.lower() in self._policies
+
+    def refresh(self):
+        """Refresh the Schedule Policies associated with the Commcell."""
+        self._policies = self._get_policies()

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -35,6 +34,8 @@ Backupsets:
                                            of the input backup set name
 
     delete(backupset_name)          -- removes the backupset from the agent of the specified client
+
+    refresh()                       -- refresh the backupsets associated with the agent
 
 
 Backupset:
@@ -79,6 +80,8 @@ Backupset:
     browse()                        -- browse the content of the backupset
 
     find()                          -- find content in the backupset
+
+    refresh()                       -- refresh the properties of the backupset
 
 """
 
@@ -139,7 +142,8 @@ class Backupsets(object):
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
             self._BACKUPSETS += '&excludeHidden=0'
 
-        self._backupsets = self._get_backupsets()
+        self._backupsets = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all backupsets of the agent of a client.
@@ -332,17 +336,12 @@ class Backupsets(object):
                         raise SDKException('Backupset', '102', o_str)
                     else:
                         if error_code == '0':
-                            backupset_id = response_value['entity']['backupsetId']
-
                             # initialize the backupsets again
                             # so the backupsets object has all the backupsets
-                            self._backupsets = self._get_backupsets()
+                            self.refresh()
 
-                            return Backupset(
-                                self._instance_object,
-                                backupset_name,
-                                backupset_id
-                            )
+                            return self.get(backupset_name)
+
                         else:
                             o_str = ('Failed to create new backupset with error code: "{0}"\n'
                                      'Please check the documentation for '
@@ -454,7 +453,7 @@ class Backupsets(object):
                             if error_code == '0':
                                 # initialize the backupsets again
                                 # so the backupsets object has all the backupsets
-                                self._backupsets = self._get_backupsets()
+                                self.refresh()
                             else:
                                 o_str = ('Failed to delete backupset with error code: "{0}"\n'
                                          'Please check the documentation for '
@@ -474,6 +473,10 @@ class Backupsets(object):
             raise SDKException(
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
             )
+
+    def refresh(self):
+        """Refresh the backupsets associated with the Agent / Instance."""
+        self._backupsets = self._get_backupsets()
 
 
 class Backupset(object):
@@ -518,10 +521,9 @@ class Backupset(object):
         self._properties = None
         self._backupset_association = {}
 
-        self._get_backupset_properties()
-
-        self.subclients = Subclients(self)
-        self.schedules = Schedules(self)
+        self.subclients = None
+        self.schedules = None
+        self.refresh()
 
         self._default_browse_options = {
             'operation': 'browse',
@@ -740,7 +742,7 @@ class Backupset(object):
             # if not convertible to int, then convert the timestamp input to Epoch time
             try:
                 return int(time.mktime(time.strptime(timestamp, "%Y-%m-%d %H:%M:%S")))
-            except:
+            except Exception:
                 raise SDKException('Subclient', '106')
 
     def _set_defaults(self, final_dict, defaults_dict):
@@ -857,7 +859,7 @@ class Backupset(object):
             }]
         }
 
-        if len(options['filters']) > 0:
+        if options['filters']:
             # [('FileName', '*.txt'), ('FileSize','GT','100')]
             request_json['queries'][0]['whereClause'] = []
 
@@ -1181,8 +1183,8 @@ class Backupset(object):
             Runs Full Backup job for a subclient, if no job had been ran earlier for it.
 
             Returns:
-                list  -  list consisting of the job objects for the backup jobs started for
-                        the subclients in the backupset
+                list    -   list consisting of the job objects for the backup jobs started for
+                                the subclients in the backupset
         """
         return_list = []
         thread_list = []
@@ -1232,7 +1234,7 @@ class Backupset(object):
 
             dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        if len(args) > 0 and isinstance(args[0], dict):
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -1281,7 +1283,7 @@ class Backupset(object):
 
             dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
-        if len(args) > 0 and isinstance(args[0], dict):
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -1307,3 +1309,10 @@ class Backupset(object):
             options['filters'].append(('FileSize', options['file_size_et'], 'EQUALSBLAH'))
 
         return self._do_browse(options)
+
+    def refresh(self):
+        """Refresh the properties of the Backupset."""
+        self._get_backupset_properties()
+
+        self.subclients = Subclients(self)
+        self.schedules = Schedules(self)

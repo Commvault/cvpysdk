@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -34,6 +33,8 @@ Alerts:
 
     console_alerts()            --  returns the list of all console alerts
 
+    refresh()                   --   refresh the alerts associated with the commcell
+
 
 Alert:
     __init__(commcell_object,
@@ -57,6 +58,8 @@ Alert:
     enable_notification_type()    --  enables notification type of alert
 
     disable_notification_type()   --  disables notification type of alert
+
+    refresh()                     --  refresh the properties of the Alert
 
 """
 
@@ -82,7 +85,9 @@ class Alerts(object):
         """
         self._commcell_object = commcell_object
         self._ALERTS = self._commcell_object._services['GET_ALL_ALERTS']
-        self._alerts = self._get_alerts()
+
+        self._alerts = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all alerts of the Commcell.
@@ -291,7 +296,7 @@ class Alerts(object):
                             if response.json()['errorCode'] == 0:
                                 # initialize the alerts again
                                 # to refresh with the latest alerts
-                                self._alerts = self._get_alerts()
+                                self.refresh()
                             else:
                                 raise SDKException('Alert', '102', response.json()['errorMessage'])
                     else:
@@ -307,6 +312,10 @@ class Alerts(object):
                 raise SDKException(
                     'Alert', '102', 'No alert exists with name: {0}'.format(alert_name)
                 )
+
+    def refresh(self):
+        """Refresh the alerts associated with the Commcell."""
+        self._alerts = self._get_alerts()
 
 
 class Alert(object):
@@ -359,7 +368,7 @@ class Alert(object):
         self._description = None
         self._alert_type = None
 
-        self._get_alert_properties()
+        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -655,3 +664,7 @@ class Alert(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """Refresh the properties of the Alert."""
+        self._get_alert_properties()
