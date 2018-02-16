@@ -136,7 +136,7 @@ class DownloadCenter(object):
     def __repr__(self):
         """Returns the string representation of an instance of this class."""
         return "DownloadCenter class instance for Commcell: '{0}'".format(
-            self._commcell_object.webconsole_hostname
+            self._commcell_object.commserv_name
         )
 
     def _get_properties(self):
@@ -975,13 +975,13 @@ class DownloadCenter(object):
                 "@id": self._platforms[platform]['id'],
                 "downloadType": {
                     "@name": download_type,
-                    "@id": 3
+                    "@id": self._download_types[download_type]['id']
                 },
                 'pkgRepository': {
                     '@repositoryId': package_repository_id,
                     '@respositoryName': package_repository_name
                 },
-                '@size': 1
+                '@size': 186646528
             }
 
             platforms.append(temp)
@@ -1005,12 +1005,12 @@ class DownloadCenter(object):
         }
 
         if 'sub_category' in kwargs:
-            sub_category = kwargs['sub_category']
+            sub_category_name = kwargs['sub_category']
             sub_categories = self.sub_categories(category)
 
-            if sub_category in sub_categories:
+            if sub_category_name in sub_categories:
                 sub_category["@id"] = self._categories[category][
-                    'sub_categories'][sub_category]['id']
+                    'sub_categories'][sub_category_name]['id']
             else:
                 raise SDKException(
                     'DownloadCenter', '109', 'Available Sub Categories: {0}'.format(sub_categories)

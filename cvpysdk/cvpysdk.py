@@ -10,9 +10,24 @@
 
 """Helper file for session operations.
 
-CVPySDK: Class for common operations for the CS, as well as the python package
+This file is used to perform Authentication for the user on the Commcell.
+
+    #.  Check if the web server and service is valid and running
+
+    #.  Perform Login operation to the Commcell using the credentials provided by the user
+
+    #.  Store the Authtoken received after Login REST API call to use for the entire session
+
+    #.  Renew Authtoken if credentials were given by the user during Commcell object
+        initialization, and the current token has expired
+
+    #.  Logout the current user from the Commcell, and disconnect the API session
+
+    #.  Common method to be used in the entire SDK to perform REST API call on the Web Server
+
 
 CVPySDK:
+
     __init__(commcell_object)   --  initialise object of the CVPySDK class and bind to the commcell
 
     _is_valid_service()         --  checks if the service is valid and running or not
@@ -22,10 +37,10 @@ CVPySDK:
     _renew_login_token()        --  renews the Authtoken for the currently logged in user
 
     _logout()                   --  sign out the current logged in user from the commcell,
-                                        and ends the session
+    and ends the session
 
     make_request()              --  run the http request specified on the URL/WebService provided,
-                                        and return the flag specifying success/fail, and response
+    and return the flag specifying success/fail, and response
 
 """
 
@@ -57,7 +72,7 @@ class CVPySDK(object):
         """Initialize the CVPySDK object for running various operations.
 
             Args:
-                commcell_object (object)    --  instance of the Commcell class
+                commcell_object     (object)    --  instance of the Commcell class
 
             Returns:
                 object  -   instance of the CVPySDK class
@@ -267,13 +282,22 @@ class CVPySDK(object):
                     response = requests.post(url, headers=headers, json=payload, stream=stream)
                 else:
                     try:
-                        if payload is not None:
-                            xmltodict.parse(payload)
-                        headers['Content-type'] = 'application/xml'
-                    except ExpatError:
-                        headers['Content-type'] = 'text/plain'
-                    finally:
-                        response = requests.post(url, headers=headers, data=payload, stream=stream)
+                        # call encode on the payload in case the characters in the payload
+                        # are not encoded, and to encode the string payload to bytes
+                        payload = payload.encode()
+                    except AttributeError:
+                        # pass silently if payload is alredy encoded in bytes
+                        pass
+
+                    if 'Content-type' in headers:
+                        try:
+                            if payload is not None:
+                                xmltodict.parse(payload)
+                            headers['Content-type'] = 'application/xml'
+                        except ExpatError:
+                            headers['Content-type'] = 'text/plain'
+
+                    response = requests.post(url, headers=headers, data=payload, stream=stream)
             elif method == 'GET':
                 response = requests.get(url, headers=headers, stream=stream)
             elif method == 'PUT':

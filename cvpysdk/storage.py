@@ -34,10 +34,12 @@ MediaAgents:
 
     _get_media_agents()         --  gets all the media agents of the commcell
 
+    all_media_agents()          --  returns all the media agents on the commcell
+
     has_media_agent()           --  checks if a media agent exists with the given name or not
 
     get(media_agent_name)       --  returns the instance of MediaAgent class
-                                        of the media agent specified
+    of the media agent specified
 
     refresh()                   --  refresh the media agents associated with the commcell
 
@@ -46,13 +48,13 @@ MediaAgent:
     __init__(commcell_object,
              media_agent_name,
              media_agent_id)                --  initialize the instance of MediaAgent class for a
-                                                    specific media agent of the commcell
+    specific media agent of the commcell
 
     __repr__()                              --  returns a string representation of the
-                                                    MediaAgent instance
+    MediaAgent instance
 
     _get_media_agent_id()                   --  gets the id of the MediaAgent instance from
-                                                    commcell
+    commcell
 
     _get_media_agent_properties()           --  returns media agent properties
 
@@ -78,12 +80,14 @@ DiskLibraries:
 
     _get_libraries()            --  gets all the disk libraries of the commcell
 
+    all_disk_libraries()        --  returns the dict of all the disk libraries on commcell
+
     has_library(library_name)   --  checks if a disk library exists with the given name or not
 
     add()                       --  adds a new disk library to the commcell
 
     get(library_name)           --  returns the instance of the DiskLibrary class
-                                        for the library specified
+    for the library specified
 
     refresh()                   --  refresh the disk libraries associated with the commcell
 
@@ -92,7 +96,7 @@ DiskLibrary:
     __init__(commcell_object,
              library_name,
              library_id)        --  initialize the instance of DiskLibrary class for a specific
-                                        disk library of the commcell
+    disk library of the commcell
 
     __repr__()                  --  returns a string representation of the DiskLibrary instance
 
@@ -108,6 +112,8 @@ StoragePolicies:
 
     _get_policies()              --  gets all the storage policies of the commcell
 
+    all_storage_policies()       --  returns the dict of all the storage policies on commcell
+
     has_policy(policy_name)      --  checks if a storage policy exists with the given name
 
     add()                        --  adds a new storage policy to the commcell
@@ -121,10 +127,10 @@ StoragePolicy:
     __init__(commcell_object,
              storage_policy_name,
              storage_policy_id)             --  initialize the instance of StoragePolicy class for
-                                                 a specific storage policy of the commcell
+    a specific storage policy of the commcell
 
     __repr__()                              --  returns a string representation of the
-                                                 StoragePolicy instance
+    StoragePolicy instance
 
     _get_storage_policy_id()                --  gets the id of the StoragePolicy instance
 
@@ -139,10 +145,10 @@ StoragePolicy:
     delete_secondary_copy()                 --  deletes storage policy copy
 
     copies()                                --  returns the storage policy copies associated with
-                                                 this storage policy
+    this storage policy
 
     run_aux_copy()                          --  starts a aux copy job for this storage policy and
-                                                 returns the job object
+    returns the job object
 
     refresh()                               --  refresh the properties of the storage policy
 
@@ -156,9 +162,12 @@ SchedulePolicies:
 
     _get_policies()              --  gets all the schedule policies of the commcell
 
+    all_schedule_policies()      --  returns the dict of all the schedule policies on commcell
+
     has_policy(policy_name)      --  checks if a schedule policy exists with the given name
 
     refresh()                    --  refresh the schedule policies associated with the commcell
+
 
 """
 
@@ -210,7 +219,7 @@ class MediaAgents(object):
     def __repr__(self):
         """Representation string for the instance of the MediaAgents class."""
         return "MediaAgents class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_media_agents(self):
@@ -249,6 +258,18 @@ class MediaAgents(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_media_agents(self):
+        """Returns dict of all the media agents on this commcell
+
+            dict - consists of all media agents of the commcell
+                    {
+                         "media_agent1_name": media_agent1_id,
+                         "media_agent2_name": media_agent2_id
+                    }
+        """
+        return self._media_agents
 
     def has_media_agent(self, media_agent_name):
         """Checks if a media agent exists in the commcell with the input media agent name.
@@ -337,7 +358,7 @@ class MediaAgent(object):
         representation_string = 'MediaAgent class instance for MA: "{0}", of Commcell: "{1}"'
 
         return representation_string.format(
-            self.media_agent_name, self._commcell_object._headers['Host']
+            self.media_agent_name, self._commcell_object.commserv_name
         )
 
     def _get_media_agent_id(self):
@@ -457,7 +478,7 @@ class DiskLibraries(object):
     def __repr__(self):
         """Representation string for the instance of the DiskLibraries class."""
         return "DiskLibraries class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_libraries(self):
@@ -494,6 +515,19 @@ class DiskLibraries(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_disk_libraries(self):
+        """Returns dict of all the disk libraries on this commcell
+
+            dict - consists of all disk libraries of the commcell
+                    {
+                         "disk_library1_name": disk_library1_id,
+                         "disk_library2_name": disk_library2_id
+                    }
+
+        """
+        return self._libraries
 
     def has_library(self, library_name):
         """Checks if a library exists in the commcell with the input library name.
@@ -663,7 +697,7 @@ class DiskLibrary(object):
         """String representation of the instance of this class."""
         representation_string = 'DiskLibrary class instance for library: "{0}" of Commcell: "{1}"'
         return representation_string.format(
-            self.library_name, self._commcell_object._headers['Host']
+            self.library_name, self._commcell_object.commserv_name
         )
 
     def _get_library_id(self):
@@ -721,7 +755,7 @@ class StoragePolicies(object):
     def __repr__(self):
         """Representation string for the instance of the Clients class."""
         return "StoragePolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_policies(self):
@@ -763,6 +797,18 @@ class StoragePolicies(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    @property
+    def all_storage_policies(self):
+        """Returns dict of all the storage policies on this commcell
+
+            dict - consists of all storage policies of the commcell
+                    {
+                         "storage_policy1_name": storage_policy1_id,
+                         "storage_policy2_name": storage_policy2_id
+                    }
+        """
+        return self._policies
+
     def has_policy(self, policy_name):
         """Checks if a storage policy exists in the commcell with the input storage policy name.
 
@@ -798,6 +844,8 @@ class StoragePolicies(object):
         """
         if not isinstance(storage_policy_name, basestring):
             raise SDKException('Storage', '101')
+
+        storage_policy_name = storage_policy_name.lower()
 
         if self.has_policy(storage_policy_name):
             return StoragePolicy(
@@ -898,6 +946,7 @@ class StoragePolicies(object):
                             o_str = 'Failed to add storage policy\nError: "{0}"'
 
                             raise SDKException('Storage', '102', o_str.format(error_message))
+
                 except ValueError:
                     if response.text:
                         # initialize the policies again
@@ -935,10 +984,7 @@ class StoragePolicies(object):
                         # initialize the policies again
                         # so the policies object has all the policies
                         self.refresh()
-                        return StoragePolicy(
-                            self._commcell_object, storage_policy_name,
-                            self._policies[storage_policy_name]
-                        )
+
                     elif 'error' in response.json():
                         error_message = response.json()['error']['errorMessage']
                         o_str = 'Failed to create storage policy\nError: "{0}"'
@@ -949,6 +995,8 @@ class StoragePolicies(object):
             else:
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
+
+            return self.get(storage_policy_name)
 
     def delete(self, storage_policy_name):
         """Deletes a storage policy from the commcell.
@@ -1008,7 +1056,7 @@ class StoragePolicy(object):
 
     def __init__(self, commcell_object, storage_policy_name, storage_policy_id=None):
         """Initialise the Storage Policy class instance."""
-        self._storage_policy_name = storage_policy_name
+        self._storage_policy_name = storage_policy_name.lower()
         self._commcell_object = commcell_object
 
         if storage_policy_id:
@@ -1384,7 +1432,7 @@ class SchedulePolicies(object):
     def __repr__(self):
         """Representation string for the instance of the SchedulePolicies class."""
         return "SchedulePolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_policies(self):
@@ -1421,6 +1469,18 @@ class SchedulePolicies(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_schedule_policies(self):
+        """Returns the schedule policies on this commcell
+
+            dict - consists of all schedule policies of the commcell
+                    {
+                         "schedule_policy1_name": schedule_policy1_id,
+                         "schedule_policy2_name": schedule_policy2_id
+                    }
+        """
+        return self._policies
 
     def has_policy(self, policy_name):
         """Checks if a schedule policy exists in the commcell with the input schedule policy name.

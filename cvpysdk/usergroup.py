@@ -95,7 +95,7 @@ class UserGroups(object):
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
         return "UserGroups class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_user_groups(self):
@@ -299,7 +299,7 @@ class UserGroup(object):
         representation_string = 'User Group instance for UserGroup: "{0}", of Commcell: "{1}"'
 
         return representation_string.format(
-            self.user_group_name, self._commcell_object._headers['Host']
+            self.user_group_name, self._commcell_object.commserv_name
         )
 
     def _get_usergroup_id(self):

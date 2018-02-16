@@ -16,21 +16,23 @@ ClientGroup:  Class for representing a single Client Group of the commcell
 
 ClientGroups:
     __init__(commcell_object)  -- initialise instance of the ClientGroups associated with
-                                    the specified commcell
+    the specified commcell
 
     __repr__()                 -- return all the clientgroup associated with the specified commcell
 
     _get_clientgroups()        -- gets all the clientgroups associated with the commcell specified
 
     _valid_clients()           -- returns the list of all the valid clients,
-                                    from the list of clients provided
+    from the list of clients provided
+
+    all_clientgroups()         -- returns the dict of all the clientgroups on the commcell
 
     has_clientgroup()          -- checks if a client group exists with the given name or not
 
     add(clientgroup_name)      -- adds a new client group to the commcell
 
     get(clientgroup_name)      -- returns the instance of the ClientGroup class,
-                                    for the the input client group name
+    for the the input client group name
 
     delete(clientgroup_name)   -- deletes the client group from the commcell
 
@@ -41,7 +43,7 @@ ClientGroup:
     __init__(commcell_object,
              clientgroup_name,
              clientgroup_id=None)  -- initialise object of ClientGroup class with the specified
-                                         client group name and id
+    client group name and id
 
     __repr__()                     -- return the client group name, the instance is associated with
 
@@ -52,7 +54,7 @@ ClientGroup:
     _initialize_clientgroup_properties() --  initializes the properties of this ClientGroup
 
     _request_json_()               -- returns the appropriate JSON to pass for enabling/disabling
-                                          an activity
+    an activity
 
     _process_request_()            -- processes the response received for the CG properties request
 
@@ -84,7 +86,12 @@ ClientGroup:
 
     remove_all_clients()           -- removes all the associated clients from client group
 
+    network()                      -- returns Network class object
+
+    push_network_config()          -- performs a push network configuration on client group
+
     refresh()                      -- refresh the properties of the client group
+
 
 """
 
@@ -96,6 +103,7 @@ import time
 from past.builtins import basestring
 
 from .exception import SDKException
+from .network import Network
 
 
 class ClientGroups(object):
@@ -137,7 +145,7 @@ class ClientGroups(object):
                 str - string of all the client groups associated with the commcell
         """
         return "ClientGroups class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_clientgroups(self):
@@ -203,6 +211,18 @@ class ClientGroups(object):
                     clients.append(client)
 
         return clients
+
+    @property
+    def all_clientgroups(self):
+        """Returns dict of all the clientgroups associated with this commcell
+
+            dict - consists of all clientgroups of the commcell
+                    {
+                         "clientgroup1_name": clientgroup1_id,
+                         "clientgroup2_name": clientgroup2_id,
+                    }
+        """
+        return self._clientgroups
 
     def has_clientgroup(self, clientgroup_name):
         """Checks if a client group exists in the commcell with the input client group name.
@@ -521,6 +541,7 @@ class ClientGroup(object):
     def _initialize_clientgroup_properties(self):
         """Initializes the common properties for the clientgroup."""
         clientgroup_props = self._get_clientgroup_properties()
+        self._properties = clientgroup_props
 
         if 'clientGroupName' in clientgroup_props['clientGroup']:
             self._clientgroup_name = clientgroup_props['clientGroup']['clientGroupName']
@@ -831,6 +852,14 @@ class ClientGroup(object):
     def is_data_aging_enabled(self):
         """Treats the clientgroup data aging attribute as a property of the ClientGroup class."""
         return self._is_data_aging_enabled
+
+    @property
+    def network(self):
+        """Returns the object of Network class."""
+        if self._networkprop is None:
+            self._networkprop = Network(self)
+
+        return self._networkprop
 
     def enable_backup(self):
         """Enable Backup for this ClientGroup.
@@ -1175,6 +1204,56 @@ class ClientGroup(object):
             o_str = 'Failed to remove clients from the ClientGroup\nError: "{0}"'
             raise SDKException('ClientGroup', '102', o_str.format(output[2]))
 
+    def push_network_config(self):
+        """Performs a push network configuration on the client group
+
+                Raises:
+                SDKException:
+                    if input data is invalid
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        xml_execute_command = """
+                        <App_PushFirewallConfigurationRequest>
+                        <entity clientGroupName="{0}"/>
+                        </App_PushFirewallConfigurationRequest>
+            """.format(self.clientgroup_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._commcell_object._services[
+            'EXECUTE_QCOMMAND'], xml_execute_command)
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = ""
+                if 'entityResponse' in response.json():
+                    error_code = response.json()['entityResponse'][0]['errorCode']
+
+                    if 'errorMessage' in response.json():
+                        error_message = response.json()['errorMessage']
+
+                elif 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    if 'errorCode' in response.json():
+                        error_code = response.json()['errorCode']
+
+                if error_code !=0:
+                    raise SDKException('ClientGroup', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def refresh(self):
         """Refresh the properties of the ClientGroup."""
         self._initialize_clientgroup_properties()
+        self._networkprop = Network(self)
+
+

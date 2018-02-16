@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ?2016 Commvault Systems, Inc.
+# Copyright  Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -32,26 +31,23 @@ HypervSubclient:
                                                     user to the same location
 """
 
-
+from enum import Enum
+from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-from past.builtins import basestring
+
 
 
 class HyperVVirtualServerSubclient(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient  Base class, representing a
     Hyper-V  virtual server subclient,and to perform operations on that subclient."""
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
-
-            Args:
-                class_object (backupset_object, subclient_name, subclient_id)  --  instance of the
-                                            backupset class, subclient name, subclient id
-
-                """
-        super(HyperVVirtualServerSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+    class disk_pattern(Enum):
+        """
+        stores the disk pattern of all hypervisors
+        """
+        name = "name"
+        datastore = "DestinationPath"
 
     def disk_restore(self,
                      vm_name=None,
@@ -111,8 +107,12 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         _disk_restore_option["unconditional_overwrite"] = overwrite
 
-        client = self._set_default_client(destination_client)
-        _disk_restore_option["destination_client_name"] = client.client_name
+        if destination_client is None:
+            _disk_restore_option[
+                "client_name"] = self._backupset_object._instance_object.co_ordinator
+        else:
+            _disk_restore_option["client_name"] = destination_client
+
         _disk_restore_option["destination_path"] = destination_path
 
         # if disk list is given
@@ -147,8 +147,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             _src_item_list.append(
                 "\\" + _vm_ids[vm_name] + "\\" + each_disk.split("\\")[-1])
 
-        _disk_restore_option["source_item"] = _src_item_list
-        # _disk_restore_option["browse_filters"] = constants.browse_filters()
+        _disk_restore_option["paths"] = _src_item_list
 
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
 
@@ -156,6 +155,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
     def full_vm_restore_out_of_place(self,
                                      destination_client=None,
+                                     proxy_client=None,
                                      destination_path=None,
                                      vm_to_restore=None,
                                      overwrite=False,
@@ -194,7 +194,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                 in the restore path
 
             destination_path         (str)   - path where the disk needs to be restored
-            client_name              (str)  - client where the disk needs to be restored
+            destination_client      (str)  - Hyperv Host Client Name where VM needs to be restored
 
             destination_vendor      (int)    - vendor id of the Hypervisor
             destination_disktype    (str)   - type of disk needs to be restored like VHDX,VHD,VMDK
@@ -239,15 +239,11 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
         """
 
-        self._advanced_restore_option_list = []
-        _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
-        browse_result = self.vm_files_browse()
-
         # restore options
         if restore_option is None:
             restore_option = {}
 
-        # check input parameters are correct
+        # check mandatory input parameters are correct
         if bool(restore_option):
             if not (isinstance(destination_path, basestring) and
                     isinstance(overwrite, bool) and
@@ -255,61 +251,23 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                     isinstance(add_to_failover, bool)):
                 raise SDKException('Subclient', '101')
 
-        client = self._set_default_client(destination_client)
-        restore_option["destination_client_name"] = client.client_name
-        restore_option["copy_precedence"] = copy_precedence
-
-        restore_option['vm_to_restore'] = self._set_vm_to_restore(vm_to_restore, restore_option)
-
         # set attr for all the option in restore xml from user inputs
-        self._set_advanced_attributes(restore_option, unconditional_overwrite=overwrite,
-                                      power_on=power_on, add_to_failover=add_to_failover,
-                                      destination_path=destination_path)
-
-        # set advanced restore options
-        restore_option['volume_level_restore'] = 1
-        restore_option['source_item'] = []
-        for _each_vm_to_restore in restore_option['vm_to_restore']:
-
-            # vs metadata from browse result
-            vm_disks = []
-            _metadata = browse_result[1][('\\' + _each_vm_to_restore)]
-            vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
-
-            # populate restore source item
-            restore_option['source_item'].append(
-                "\\" + _vm_ids[_each_vm_to_restore])
-
-            # populate restore disk
-            disk_list, disk_info_dict = self.disk_level_browse(
-                "\\" + _vm_ids[_each_vm_to_restore])
-
-            for each_disk in disk_list:
-                disk_dict = {
-                    "name": each_disk.split("\\")[-1],
-                    "DestinationPath": restore_option['destination_path']
-                }
-
-                vm_disks.append(disk_dict)
-
-            if vm_disks == []:
-                raise SDKException('Subclient', 104)
-
-            # populate VM Specific values
-            self._set_vm_attributes(restore_option, disks=vm_disks,
-                                    guid=_vm_ids[_each_vm_to_restore],
-                                    new_name=restore_option.get(
-                                        "restore_new_name", (
-                                            "Delete" + _each_vm_to_restore)),
-                                    esx_host=vs_metadata['esxHost'],
-                                    name=_each_vm_to_restore)
-
-            self._json_restore_advancedRestoreOptions(restore_option)
-            self._advanced_restore_option(
-                self._advanced_option_restore_json)
+        self._set_restore_inputs(
+            restore_option,
+            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            unconditional_overwrite=overwrite,
+            power_on=power_on,
+            copy_preceedence=copy_precedence,
+            volume_level_restore=1,
+            vcenter_client=destination_client,
+            client_name=proxy_client,
+            add_to_failover=add_to_failover,
+            datastore=destination_path,
+            out_place=True,
+            restore_new_name=restore_new_name
+        )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-
         return self._process_restore_response(request_json)
 
     def full_vm_restore_in_place(self,
@@ -346,66 +304,25 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
         """
 
-        self._advanced_restore_option_list = []
-        _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         restore_option = {}
+        # check mandatory input parameters are correct
+        if not (isinstance(overwrite, bool) and
+                isinstance(power_on, bool) and
+                isinstance(add_to_failover, bool)):
+            raise SDKException('Subclient', '101')
 
-        # check input parameters are correct
-        if bool(restore_option):
-            if not (isinstance(overwrite, bool) and
-                    isinstance(power_on, bool) and
-                    isinstance(add_to_failover, bool)):
-                raise SDKException('Subclient', '101')
-
-        restore_option['vm_to_restore'] = self._set_vm_to_restore(vm_to_restore)
-        browse_result = self.vm_files_browse()
 
         # set attr for all the option in restore xml from user inputs
-        self._set_advanced_attributes(restore_option, unconditional_overwrite=overwrite,
-                                      power_on=power_on, add_to_failover=add_to_failover)
-
-        # set advanced restore options
-        restore_option['volume_level_restore'] = 1
-        restore_option['source_item'] = []
-        for _each_vm_to_restore in restore_option['vm_to_restore']:
-
-            # vs metadata from browse result
-            vm_disks = []
-            _metadata = browse_result[1][('\\' + _each_vm_to_restore)]
-            vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
-
-            # populate restore source item
-            restore_option['source_item'].append(
-                "\\" + _vm_ids[_each_vm_to_restore])
-
-            # populate restore disk
-            disk_list, disk_info_dict = self.disk_level_browse(
-                "\\\\" + _vm_ids[_each_vm_to_restore])
-            for disk, data in disk_info_dict.items():
-                destination_path = data["advanced_data"]["browseMetaData"][
-                    "virtualServerMetaData"]['datastore']
-
-                disk_dict = {
-                    "name": disk.split('\\')[-1],
-                    "DestinationPath": destination_path
-                }
-
-                vm_disks.append(disk_dict)
-
-            if vm_disks == []:
-                raise SDKException('Subclient', 104)
-
-            # populate VM Specific values
-            self._set_vm_attributes(restore_option, disks=vm_disks,
-                                    guid=_vm_ids[_each_vm_to_restore],
-                                    new_name=_each_vm_to_restore, esx_host=vs_metadata['esxHost'],
-                                    name=_each_vm_to_restore, destination_path=destination_path,
-                                    destination_client_name=vs_metadata['esxHost'])
-
-            self._json_restore_advancedRestoreOptions(restore_option)
-            self._advanced_restore_option(
-                self._advanced_option_restore_json)
+        self._set_restore_inputs(
+            restore_option,
+            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            unconditional_overwrite=overwrite,
+            power_on=power_on,
+            copy_preceedence=copy_precedence,
+            volume_level_restore=1,
+            add_to_failover=add_to_failover,
+            out_place=False
+        )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-
         return self._process_restore_response(request_json)

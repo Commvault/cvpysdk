@@ -126,7 +126,7 @@ class Datasources(object):
     def __repr__(self):
         """Representation string for the instance of the Datasources class."""
         return "Datasources class instance for Commcell: '{0}'".format(
-            self._datacube_object._commcell_object._headers['Host']
+            self._datacube_object._commcell_object.commserv_name
         )
 
     @staticmethod
@@ -464,7 +464,7 @@ class Datasource(object):
         representation_string = 'Datasource class instance for Commcell: "{0}"'
 
         return representation_string.format(
-            self._datacube_object._commcell_object._headers['Host']
+            self._datacube_object._commcell_object.commserv_name
         )
 
     def _get_datasource_id(self):

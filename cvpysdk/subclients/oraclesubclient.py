@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -52,7 +51,8 @@ class OracleSubclient(DatabaseSubclient):
             subclient_name    (str)     -- name of the subclient
             subclient_id      (str)     -- id of the subclient
         """
-        super(OracleSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
+        super(OracleSubclient, self).__init__(
+            backupset_object, subclient_name, subclient_id)
         self._oracle_properties = {}
 
     def _oracle_cumulative_backup_json(self):
@@ -76,46 +76,6 @@ class OracleSubclient(DatabaseSubclient):
         )
         return request_json
 
-    def _get_oracle_restore_json(self, destination_client,
-                                 instance_name, tablespaces, oracle_options):
-        """
-        Gets the basic restore JSON from base class and modifies it for oracle
-
-        Returns: dict -- JSON formatted options to restore the oracle database
-
-        Args:
-            destination_client (str) -- Destination client name
-            instance_name (str) -- instance name to restore
-            tablespaces (list) -- tablespace name list
-            oracle_options (dict) --  dict containing other oracle options
-
-        """
-        if not isinstance(tablespaces, list):
-            raise TypeError('Expecting a list for tablespaces')
-        destination_id = self._commcell_object.clients.get(destination_client)
-        tslist = ["SID: " + instance_name + " Tablespace: " + ts for ts in tablespaces]
-        oracle_options = {
-            "browseOption": {
-                "timeRange": {
-                }
-            },
-            "commonOptions": {
-            },
-            "destination": {
-                "destClient": {
-                    "clientId": destination_id,
-                    "clientName": destination_client
-                }
-            },
-            "fileOption": {
-                "sourceItem": tslist
-            },
-            "oracleOpt": oracle_options
-        }
-        restore_json = self._restore_json(paths=r'/')
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"] = oracle_options
-        return restore_json
-
     @property
     def data_sp(self):
         """
@@ -124,8 +84,7 @@ class OracleSubclient(DatabaseSubclient):
         Returns:
             string - string representing data storage policy
         """
-        return self._commonProperties['storageDevice']\
-            ['dataBackupStoragePolicy']['storagePolicyName']
+        return self._commonProperties['storageDevice']['dataBackupStoragePolicy']['storagePolicyName']
 
     @property
     def is_snapenabled(self):
@@ -142,7 +101,7 @@ class OracleSubclient(DatabaseSubclient):
         raise AttributeError("'{0}' object has no attribute '{1}'".format(
             self.__class__.__name__, 'find'))
 
-    def backup(self, backup_level=InstanceBackupType.FULL, cumulative=False):
+    def backup(self, backup_level=InstanceBackupType.FULL.value, cumulative=False):
         """
 
         Args:
@@ -163,7 +122,7 @@ class OracleSubclient(DatabaseSubclient):
                 if response does not succeed
 
         """
-        if backup_level.lower() not in ['full', 'incremental']:
+        if backup_level not in ['full', 'incremental']:
             raise SDKException(r'Subclient', r'103')
 
         if not cumulative:
@@ -176,8 +135,7 @@ class OracleSubclient(DatabaseSubclient):
         )
         return self._process_backup_response(flag, response)
 
-    def restore(self,
-                subclient_name=r'default',
+    def restore(self, common_options=None,
                 destination_client=None,
                 oracle_options=None):
         """
@@ -185,8 +143,8 @@ class OracleSubclient(DatabaseSubclient):
 
         Args:
             destination_client (str) -- destination client name
-            subclient_name (str) -- name of subclient to use to pull restore JSON
-                default -- default sto default subclient
+            common_options (str) -- common options to be passed on for restore
+                default -- None
             oracle_options (dict): dictionary containing other oracle options
                 default -- By default it restores the controlfile and datafiles
                                 from latest backup
@@ -203,6 +161,6 @@ class OracleSubclient(DatabaseSubclient):
         Returns:
             object -- Job containing restore details
         """
-        return self._backupset_object._instance_object.restore(subclient_name,
-                                                               destination_client,
+        return self._backupset_object._instance_object.restore(destination_client,
+                                                               common_options,
                                                                oracle_options)

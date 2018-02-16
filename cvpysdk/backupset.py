@@ -13,12 +13,12 @@ Backupsets and Backupset are 2 classes defined in this file.
 Backupsets: Class for representing all the backup sets associated with a specific agent
 
 Backupset:  Class for a single backup set selected for an agent,
-                and to perform operations on that backup set
+and to perform operations on that backup set
 
 
 Backupsets:
     __init__(class_object)          -- initialise object of Backupsets class associated with
-                                           the specified agent/instance
+    the specified agent/instance
 
     __str__()                       -- returns all the backupsets associated with the agent
 
@@ -26,12 +26,17 @@ Backupsets:
 
     _get_backupsets()               -- gets all the backupsets associated with the agent specified
 
+    default_backup_set()            -- returns the name of the default backup set
+
+    all_backupsets()              -- returns the dict of all the backupsets for the Agent / Instance
+    of the selected Client
+
     has_backupset(backupset_name)   -- checks if a backupset exists with the given name or not
 
     add(backupset_name)             -- adds a new backupset to the agent of the specified client
 
     get(backupset_name)             -- returns the Backupset class object
-                                           of the input backup set name
+    of the input backup set name
 
     delete(backupset_name)          -- removes the backupset from the agent of the specified client
 
@@ -39,10 +44,8 @@ Backupsets:
 
 
 Backupset:
-    __init__(instance_object,
-             backupset_name,
-             backupset_id=None)    -- initialise object of Backupset with the specified backupset
-                                         name and id, and associated to the specified instance
+    __init__()                      -- initialise object of Backupset with the specified backupset
+    name and id, and associated to the specified instance
 
     __getattr__()                   -- provides access to restore helper methods
 
@@ -52,14 +55,14 @@ Backupset:
 
     _get_backupset_properties()     -- get the properties of this backupset
 
-    _run_backup(subclient_name,
-                return_list)        -- runs full backup for the specified subclient,
-                                        and appends the job object to the return list
+    _run_backup()                   -- runs full backup for the specified subclient,
+    and appends the job object to the return list
 
     _update()                       -- updates the properties of the backupset
 
     _get_epoch_time()               -- gets the Epoch time given the input time is in format
-                                           %Y-%m-%d %H:%M:%S
+
+                                            %Y-%m-%d %H:%M:%S
 
     _set_defaults()                 -- recursively sets default values on a dictionary
 
@@ -72,10 +75,10 @@ Backupset:
     _do_browse()                    -- performs a browse operation with the given options
 
     set_default_backupset()         -- sets the backupset as the default backup set for the agent,
-                                        if not already default
+    if not already default
 
     backup()                        -- runs full backup for all subclients
-                                        associated with this backupset
+    associated with this backupset
 
     browse()                        -- browse the content of the backupset
 
@@ -143,6 +146,7 @@ class Backupsets(object):
             self._BACKUPSETS += '&excludeHidden=0'
 
         self._backupsets = None
+        self._default_backup_set = None
         self.refresh()
 
     def __str__(self):
@@ -214,6 +218,10 @@ class Backupsets(object):
                                 "id": temp_id,
                                 "instance": instance
                             }
+
+                            if dictionary['commonBackupSet'].get('isDefaultBackupSet'):
+                                self._default_backup_set = temp_name
+
                     elif self._agent_object.agent_name in agent:
                         temp_name = dictionary['backupSetEntity']['backupsetName'].lower()
                         temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
@@ -223,11 +231,17 @@ class Backupsets(object):
                                 "id": temp_id,
                                 "instance": instance
                             }
+
+                            if dictionary['commonBackupSet'].get('isDefaultBackupSet'):
+                                self._default_backup_set = "{0}\\{1}".format(instance, temp_name)
                         else:
                             return_dict[temp_name] = {
                                 "id": temp_id,
                                 "instance": instance
                             }
+
+                            if dictionary['commonBackupSet'].get('isDefaultBackupSet'):
+                                self._default_backup_set = temp_name
 
                 return return_dict
             else:
@@ -235,6 +249,24 @@ class Backupsets(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_backupsets(self):
+        """Returns the dict of backupsets for the Agent / Instance of the selected Client
+
+            dict - consists of all backupsets
+                    {
+                         "backupset1_name": {
+                             "id": backupset1_id,
+                             "instance": instance
+                         },
+                         "backupset2_name": {
+                             "id": backupset2_id,
+                             "instance": instance
+                         }
+                    }
+        """
+        return self._backupsets
 
     def has_backupset(self, backupset_name):
         """Checks if a backupset exists for the agent with the input backupset name.
@@ -477,6 +509,11 @@ class Backupsets(object):
     def refresh(self):
         """Refresh the backupsets associated with the Agent / Instance."""
         self._backupsets = self._get_backupsets()
+
+    @property
+    def default_backup_set(self):
+        """Returns the name of the default backup set for the selected Client and Agent."""
+        return self._default_backup_set
 
 
 class Backupset(object):
@@ -1000,7 +1037,10 @@ class Backupset(object):
                         for result in result_set:
 
                             name = result['displayName']
-                            path = result['path']
+                            if 'path' in result:
+                                path = result['path']
+                            else:
+                                path = '\\'.join([options['path'], name])
 
                             if 'modificationTime' in result:
                                 mod_time = time.localtime(result['modificationTime'])

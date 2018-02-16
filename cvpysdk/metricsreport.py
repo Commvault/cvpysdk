@@ -6,7 +6,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""Main file for performing Metrics operations.
+"""File for performing Metrics operations.
 
 _Metrics        : Class for representing all common operations on Metrics Reporting
 PrivateMetrics  : Class for representing Private Metrics and performing operations on it.
@@ -59,8 +59,17 @@ Metrics:
 
     upload_now()                 -- Performs Upload Now operation of metrics
 
-    refresh()                    -- refresh the properties and config of the Metrics Server
+    wait_for_download_completion()-- waits for metrics download operation to complete
 
+    wait_for_collection_completion-- waits for metrics collection operation to complete
+
+    wait_for_upload_completion()  -- waits for metrics upload operation to complete
+
+    wait_for_uploadnow_completion()-- waits for complete metrics operation to complete
+
+    get_possible_uploaded_filenames-- gives the possible names for the uploaded files
+
+    refresh()                      -- refresh the properties and config of the Metrics Server
 
 PrivateMetrics:
     __init__(Commcell_object)   --  initialise with object of CommCell
@@ -70,8 +79,7 @@ PrivateMetrics:
     enable_chargeback(daily, weekly, monthly)
                                 --  deletes the subclient (subclient name) from the backupset
 
-
-CloudMetrics:
+PublicMetrics:
     __init__(Commcell_object)   --  initialise with object of CommCell
 
     enable_chargeback()         --  deletes the subclient (subclient name) from the backupset
@@ -92,6 +100,9 @@ CloudMetrics:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from time import sleep
+
+from cvpysdk.license import LicenseDetails
 from .exception import SDKException
 
 
@@ -106,7 +117,7 @@ class _Metrics(object):
         self._GET_METRICS = self._commcell_object._services['GET_METRICS'] % self._isprivate
         self._enable_service = True
         self._disable_service = False
-        self.refresh()
+        self._get_metrics_config()
 
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
@@ -116,7 +127,7 @@ class _Metrics(object):
             metrics_type = 'Public'
         return "{0} Metrics class instance for Commcell: '{1}' with config '{2}'".format(
             metrics_type,
-            self._commcell_object.webconsole_hostname,
+            self._commcell_object.commserv_name,
             self._metrics_config
         )
 
@@ -141,11 +152,20 @@ class _Metrics(object):
         else:
             raise SDKException('Response', '101', response.text)
 
+    def refresh(self):
+        """updates metrics object with the latest configuration"""
+        self._get_metrics_config()
+
     def _update_service_state(self, service_name, state):
         for idx, service in enumerate(self._service_list):
             if service['service']['name'] == service_name:
                 self._service_list[idx]['enabled'] = state
                 self.services[service_name] = state
+
+    @property
+    def lastdownloadtime(self):
+        """Returns last download time in unix time format"""
+        return self._metrics_config['config']['scriptDownloadTime']
 
     @property
     def lastcollectiontime(self):
@@ -155,7 +175,7 @@ class _Metrics(object):
     @property
     def lastuploadtime(self):
         """Returns last upload time in unix time format"""
-        return self._metrics_config['config'][' lastUploadTime']
+        return self._metrics_config['config']['lastUploadTime']
 
     @property
     def nextuploadtime(self):
@@ -329,9 +349,120 @@ class _Metrics(object):
         # reset upload now flag
         self._metrics_config['config']['uploadNow'] = 0
 
-    def refresh(self):
-        """Refresh the properties and config of the Metrics Server."""
-        self._get_metrics_config()
+    def wait_for_download_completion(self, timeout=150):
+        """
+        Waits for Metrics collection to complete for maximum of seconds given in timeout
+
+        Args:
+            timeout (int): maximum seconds to wait
+        """
+        self.refresh()
+        timelimit = timeout
+        while timelimit > 0:
+            if self.lastdownloadtime > 0:
+                return True
+            else:
+                sleep(30)
+                timelimit -= 30
+                self.refresh()
+        raise TimeoutError(
+            "Download process didn't complete after {0} seconds".format(timeout))
+
+    def wait_for_collection_completion(self, timeout=400):
+        """
+        Waits for Metrics collection to complete for maximum of seconds given in timeout
+
+        Args:
+            timeout (int): maximum seconds to wait
+
+        Raises: Timeout error if collection didn't complete within timeout period
+        """
+        self.refresh()
+        timelimit = timeout
+        while timelimit > 0:
+            if self.lastcollectiontime > 0:
+                return True
+            else:
+                sleep(30)
+                timelimit -= 30
+                self.refresh()
+        raise TimeoutError("Collection process didn't complete after {0} seconds".format(timeout))
+
+    def wait_for_upload_completion(self, timeout=120):
+        """
+        Waits for Metrics upload to complete for maximum of seconds given in timeout
+
+        Args:
+            timeout (int): maximum seconds to wait
+
+        Raises: Timeout error if upload didn't complete within timeout period
+        """
+        self.refresh()
+        timelimit = timeout
+        while timelimit > 0:
+            if self.lastuploadtime >= self.lastcollectiontime and self.lastuploadtime > 0:
+                return True
+            else:
+                sleep(30)
+                timelimit -= 30
+                self.refresh()
+        raise TimeoutError("Upload process didn't complete after {0} seconds".format(timeout))
+
+    def wait_for_uploadnow_completion(self,
+                                      download_timeout=150,
+                                      collection_timeout=400,
+                                      upload_timeout=120):
+        """
+        Waits for Metrics uploadNow operation to complete, checks both collection and upload
+
+        Args:
+            download_timeout (int): maximum seconds to wait for download
+            collection_timeout (int): maximum seconds to wait for collection
+            upload_timeout (int): maximum seconds to wait for upload
+
+        Raises: Timeout error if uploadNow operation didn't complete
+
+        """
+        self.wait_for_download_completion(download_timeout)
+        self.wait_for_collection_completion(collection_timeout)
+        self.wait_for_upload_completion(upload_timeout)
+
+    def _get_commcell_id(self):
+        """returns the hexadecimal value of commcell id"""
+        license_details = LicenseDetails(self._commcell_object)
+        ccid = license_details.commcell_id
+        if ccid == -1:
+            commcellid = 'FFFFF'
+        else:
+            commcellid = hex(ccid).split('x')[1].upper()
+        return commcellid
+
+    def get_possible_uploaded_filenames(self, queryid=None):
+        """
+        Gets the possible list of uploaded file names
+
+        Args:
+            queryid (int): optional argument to get file name specific to a query
+
+        Returns : list of possible file names
+        """
+
+        commcellid = self._get_commcell_id()
+        cs_lastuploadtime = int(self.lastuploadtime)
+        if cs_lastuploadtime == 0:
+            raise Exception("last upload time is 0, Upload didn't complete or failed")
+        expected_files = []
+        i = 1
+        while i < 10:
+            if queryid is None:
+                file_name = "CSS" + "" + str(cs_lastuploadtime) + "_" + str(commcellid) + ".xml"
+            else:
+                file_name = "CSS" + "" + str(cs_lastuploadtime) + "_" + str(
+                    commcellid) + "_" + str(queryid) + ".xml"
+            cs_lastuploadtime += 1
+            expected_files.append(file_name)
+            i = i + 1
+        return expected_files
 
 
 class PrivateMetrics(_Metrics):
@@ -420,6 +551,10 @@ class CloudMetrics(_Metrics):
         """
         _Metrics.__init__(self, commcell_object, isprivate=0)
 
+    @property
+    def randomization_minutes(self):
+        return self._metrics_config['config']['randomization']
+
     def enable_chargeback(self):
         """Enables Chargeback service"""
         if self.services['Charge Back'] is not True:
@@ -456,3 +591,20 @@ class CloudMetrics(_Metrics):
         """disables Cloud Assist service"""
         if self.services['Cloud Assist'] is True:
             self._update_service_state('Cloud Assist', self._disable_service)
+
+    def set_randomization_minutes(self, minutes=0):
+        """
+        Sets the randomization value in gxglobal param
+
+        Args:
+            minutes (int): randomization value in minutes
+        """
+        qcommand = self._commcell_object._services['QCOMMAND']
+        qoperation = ('qoperation execscript -sn SetKeyIntoGlobalParamTbl.sql '
+                      '-si CommservSurveyRandomizationEnabled -si y -si {0}'.format(minutes))
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', qcommand, qoperation
+        )
+        if not flag:
+            raise SDKException('Response', '101', response.text)

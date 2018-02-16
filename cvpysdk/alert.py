@@ -17,13 +17,16 @@ Alert: Class for a single alert selected
 
 Alerts:
     __init__(commcell_object)   --  initialise object of Alerts class associated with
-                                        the specified commcell
+    the specified commcell
 
     __str__()                   --  returns all the alerts associated with the commcell
 
     __repr__()                  --  returns the string for the instance of the Alerts class
 
     _get_alert()                --  gets all the alerts associated with the commcell specified
+
+    all_alerts()                --  returns the dict of all the alerts associated
+    with the commcell
 
     has_alert(alert_name)       --  checks whether the alert exists or not
 
@@ -40,10 +43,10 @@ Alert:
     __init__(commcell_object,
              alert_name,
              alert_id=None)       --  initialise object of alert with the specified commcell name
-                                        and id, and associated to the specified commcell
+    and id, and associated to the specified commcell
 
     __repr__()                    --  return the alert name with description and category,
-                                        the alert is associated with
+    the alert is associated with
 
     _get_alert_id()               --  method to get the alert id, if not specified in __init__
 
@@ -115,7 +118,7 @@ class Alerts(object):
     def __repr__(self):
         """Representation string for the instance of the Alerts class."""
         return "Alerts class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_alerts(self):
@@ -166,6 +169,24 @@ class Alerts(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_alerts(self):
+        """Returns the dict of all the alerts configured on this commcell
+
+            dict - consists of all alerts of the commcell
+                    {
+                         "alert1_name": {
+                             "id": alert1_id,
+                             "category": alert1_category
+                         },
+                         "alert2_name": {
+                             "id": alert2_id,
+                             "category": alert2_category
+                         }
+                    }
+        """
+        return self._alerts
 
     def has_alert(self, alert_name):
         """Checks if a alert exists for the commcell with the input alert name.

@@ -17,13 +17,15 @@ Agent:      Class for a single agent selected for a client, and to perform opera
 
 Agents:
     __init__(client_object)     --  initialise object of Agents class associated with
-                                        the specified client
+    the specified client
 
     __str__()                   --  returns all the agents associated with the client
 
     __repr__()                  --  returns the string for the instance of the Agents class
 
     _get_agents()               --  gets all the agents associated with the client specified
+
+    all_agents()                --  returns the dict of all the agents installed on client
 
     has_agent(agent_name)       --  checks if an agent exists with the given name
 
@@ -36,7 +38,7 @@ Agent:
     __init__(client_object,
              agent_name,
              agent_id=None)     --   initialise object of Agent with the specified agent name
-                                         and id, and associated to the specified client
+    and id, and associated to the specified client
 
     __repr__()                  --   return the agent name, the instance is associated with
 
@@ -156,6 +158,19 @@ class Agents(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_agents(self):
+        """Returns dict of all the agents installed on client
+        
+            dict - consists of all agents in the client
+                    {
+                         "agent1_name": agent1_id,
+                         "agent2_name": agent2_id
+                    }
+                    
+        """
+        return self._agents
 
     def has_agent(self, agent_name):
         """Checks if an agent is installed for the client with the input agent name.

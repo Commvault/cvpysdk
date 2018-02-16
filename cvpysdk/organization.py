@@ -109,9 +109,6 @@ Attributes:
         'plan2']**                  --  update the list of plans associated with the organization
 
 
-# TODO: check with API team to get the list of default plans, only from which the user can select
-
-
 """
 
 import re
@@ -163,7 +160,7 @@ class Organizations:
     def __repr__(self):
         """Returns the string representation of an instance of this class."""
         return "Organizations class instance for Commcell: '{0}'".format(
-            self._commcell_object.webconsole_hostname
+            self._commcell_object.commserv_name
         )
 
     def _get_organizations(self):
@@ -188,18 +185,16 @@ class Organizations:
         flag, response = self._cvpysdk_object.make_request('GET', self._organizations_api)
 
         if flag:
-            if response.json() and 'providers' in response.json():
-                organizations = {}
+            organizations = {}
 
+            if response.json() and 'providers' in response.json():
                 for provider in response.json()['providers']:
                     name = provider['connectName'].lower()
                     organization_id = provider['shortName']['id']
 
                     organizations[name] = organization_id
 
-                return organizations
-            else:
-                raise SDKException('Response', '102')
+            return organizations
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -535,7 +530,7 @@ class Organization:
                 self._machine_count = organization_properties['totalMachineCount']
                 self._user_count = organization_properties['userCount']
 
-                for contact in organization_properties['primaryContacts']:
+                for contact in organization_properties.get('primaryContacts', []):
                     self._contacts[contact['user']['userName']] = {
                         'id': contact['user']['userId'],
                         'name': contact['fullName']
@@ -545,7 +540,7 @@ class Organization:
                     self._default_plan = plan['plan']['planName']
 
                 for plan in organization_info.get('planDetails', []):
-                    self._plans[plan['plan']['planName']] = plan['plan']['planId']
+                    self._plans[plan['plan']['planName'].lower()] = plan['plan']['planId']
 
                 return organization_info
             else:
@@ -677,22 +672,22 @@ class Organization:
         if not isinstance(value, basestring):
             raise SDKException('Organization', '101')
 
-        if not self._commcell_object.plans.has_plan(value):
-            raise SDKException(
-                'Organization', '102', 'Plan: "{0}" does not exist on Commcell'.format(value)
-            )
+        value = value.lower()
 
-        temp_plan = self._commcell_object.plans.get(value)
-        temp = [{
-            'plan': {
-                'planId': int(temp_plan.plan_id),
-                'planName': temp_plan.plan_name
-            },
-            'subtype': temp_plan.subtype
-        }]
+        if value not in self.plans:
+            raise SDKException('Organization', '111')
+        else:
+            temp_plan = self._commcell_object.plans.get(value)
+            temp = [{
+                'plan': {
+                    'planId': int(temp_plan.plan_id),
+                    'planName': temp_plan.plan_name
+                },
+                'subtype': temp_plan.subtype
+            }]
 
-        self._update_properties_json({'defaultPlans': temp})
-        self._update_properties()
+            self._update_properties_json({'defaultPlans': temp})
+            self._update_properties()
 
     @property
     def plans(self):

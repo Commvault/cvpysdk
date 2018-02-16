@@ -25,6 +25,7 @@ class HypervisorType(Enum):
     MS_VIRTUAL_SERVER = "Hyper-V"
     AZURE = "Azure"
     AZURE_V2 = "Azure Resource Manager"
+    FUSION_COMPUTE = "FusionCompute"
 
 
 class AppIDAType(Enum):

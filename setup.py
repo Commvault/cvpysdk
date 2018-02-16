@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -17,6 +16,7 @@ from setuptools import setup, find_packages
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
+
 ROOT = os.path.dirname(__file__)
 VERSION = re.compile(r'''__version__ = ['"]([0-9.]+)['"]''')
 
@@ -39,6 +39,7 @@ def get_license():
     license_file = os.path.join(ROOT, 'LICENSE.txt')
     with open(license_file) as file_object:
         return file_object.read()
+
 
 setup(
     name='cvpysdk',

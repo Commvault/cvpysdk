@@ -10,41 +10,118 @@
 
 Commcell is the main class for the CVPySDK python package.
 
-Commcell: Initializes a connection to the commcell and is a wrapper for the entire commcell ops.
+Commcell:   Initializes a connection to the commcell and is a wrapper for the entire commcell ops.
 
 Commcell:
-    __init__(webconsole_hostname,
-             commcell_username,
-             commcell_password)  --  initialise object of the Commcell class
+    __init__()                  --  initialize instance of the Commcell class
 
-    __repr__()                   --  return the name of the commcell, user is connected to,
-                                        along with the user name of the connected user
+    __repr__()                  --  return the name of the commcell, user is connected to,
+    along with the user name of the connected user
 
-    __enter__()                  --  returns the current instance, using the "with" context manager
+    __enter__()                 --  returns the current instance, using the "with" context manager
 
-    __exit__()                   --  logs out the user associated with the current instance
+    __exit__()                  --  logs out the user associated with the current instance
 
-    _attribs_()                  --  initializes the objects of the classes given in the input list
+    _update_response_()         --  returns only the relevant response for the response received
+    from the server
 
-    _init_attrib_()              --  initializes the object of the class given as input and stores
-                                        in the given input dictionary with class name as key
+    _remove_attribs_()          --  removes all the attributs associated with the commcell
+    object upon call to the logout method
 
-    _update_response_()          --  returns only the relevant response for the response received
-                                        from the server
+    _get_commserv_details()     --  gets the details of the commserv, the Commcell class instance
+    is initialized for
 
-    _remove_attribs_()           --  removes all the attributs associated with the commcell
-                                        object upon logout
+    _qoperation_execute()       --  runs the qoperation execute rest api on specified input xml
 
-    _get_commserv_name()         --  returns the commserv name
+    logout()                    --  logs out the user associated with the current instance
 
-    _qoperation_execute()        --  runs the qoperation execute rest api on specified input xml
+    request()                   --  runs an input HTTP request on the API specified,
+    and returns its response
 
-    logout()                     --  logs out the user associated with the current instance
+    send_mail()                 --  sends an email to the specified user
 
-    request()                    --  runs an input HTTP request on the API specified,
-                                        and returns its response
+    refresh()                   --  refresh the properties associated with the Commcell
+    class instance
 
-    send_mail()                  --  sends an email to the specified user
+
+Commcell instance Attributes
+============================
+
+    **commserv_guid**           --  returns the `CommServ` GUID, class instance is initalized for
+
+    **commserv_hostname**       --  returns the hostname of the `CommServ`, class instance is
+    initalized for
+
+    **commserv_name**           --  returns the `CommServ` name, class instance is initalized for
+
+    **commserv_timezone**       --  returns the time zone of the `CommServ`,
+    class instance is initalized for
+
+    **commserv_timezone_name**  --  returns the name of the `CommServ` time zone,
+    class instance is initalized for
+
+    **commserv_version**        --  returns the ContentStore version installed on the `CommServ`,
+    class instance is initalized for
+
+    **webconsole_hostname**     --  returns the host name of the `webconsole`,
+    class instance is connected to
+
+    **device_id**               --  returns the id associated with the calling machine
+
+    **clients**                 --  returns the instance of the `Clients` class,
+    to interact with the clients added on the Commcell
+
+    **media_agents**            --  returns the instance of the `MediaAgents` class,
+    to interact with the media agents associated with the Commcell class instance
+
+    **workflows**               --  returns the instance of the `WorkFlow` class,
+    to interact with the workflows deployed on the Commcell
+
+    **alerts**                  --  returns the instance of the `Alerts` class,
+    to interact with the alerts available on the Commcell
+
+    **disk_libraries**          --  returns the instance of the `DiskLibraries` class,
+    to interact with the disk libraries added on the Commcell
+
+    **storage_policies**        --  returns the instance of the `StoragePolicies` class,
+    to interact with the storage policies available on the Commcell
+
+    **schedule_policies**       --  returns the instance of the `SchedulePolicies` class,
+    to interact with the schedule policies added to the Commcell
+
+    **user_groups**             --  returns the instance of the `UserGroups` class,
+    to interact with the user groups added to the Commcell
+
+    **domains**                 --  returns the instance of the `Domains` class,
+    to interact with the domains added to the Commcell
+
+    **client_groups**           --  returns the instance of the `ClientGroups` class,
+    to interact with the client groups added to the Commcell
+
+    **global_filters**       --  returns the instance of the `GlobalFilters` class,
+    to interact with the global filters available on the Commcell
+
+    **datacube**            --  returns the instance of the `Datacube` class,
+    to interact with the datacube engine deployed on the Commcell
+
+    **plans**               --  returns the instance of the `Plans` class,
+    to interact with the plans associated with the Commcell
+
+    **job_controller**      --  returns the instance of the `JobController` class,
+    to interact with all the jobs finished / running on the Commcell
+
+    **users**               --  returns the instance of the `Users` class,
+    to interact with the users added to the Commcell
+
+    **download_center**     --  returns the instance of the `DownloadCenter` class,
+    to interact with the download center repositories deployed on the Commcell WebConsole
+
+    **organizations**       --  returns the instance of the `Organizations` class,
+    to interact with the organizations/companies added on the Commcell
+
+    **storage_pools**       --  returns the instance of the `StoragePools` class,
+    to interact with the storage pools added to the Commcell Admin Console
+
 
 """
 
@@ -73,7 +150,7 @@ from .storage import StoragePolicies
 from .storage import SchedulePolicies
 from .security.usergroup import UserGroups
 from .domains import Domains
-from .workflow import WorkFlow
+from .workflow import WorkFlows
 from .exception import SDKException
 from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
@@ -83,11 +160,13 @@ from .job import JobController
 from .security.user import Users
 from .download_center import DownloadCenter
 from .organization import Organizations
+from .storage_pool import StoragePools
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
                 of the Commcell class, after the user was logged out.
+
 """
 
 
@@ -103,6 +182,7 @@ class Commcell(object):
                 commcell_username    (str)  --  username of the user to log in to commcell console
 
                 commcell_password    (str)  --  plain text password to log in to commcell console
+
                     default: None
 
             Returns:
@@ -113,6 +193,7 @@ class Commcell(object):
                     if the web service is down or not reachable
 
                     if no token is received upon log in
+
         """
         web_service = [
             r'https://{0}/webconsole/api/'.format(webconsole_hostname),
@@ -168,7 +249,31 @@ class Commcell(object):
         if not self._headers['Authtoken']:
             raise SDKException('Commcell', '102')
 
-        self._commserv_name = self._get_commserv_name()
+        self._commserv_name = None
+        self._commserv_hostname = None
+        self._commserv_timezone = None
+        self._commserv_timezone_name = None
+        self._commserv_guid = None
+        self._commserv_version = None
+
+        self._clients = None
+        self._media_agents = None
+        self._workflows = None
+        self._alerts = None
+        self._disk_libraries = None
+        self._storage_policies = None
+        self._schedule_policies = None
+        self._user_groups = None
+        self._domains = None
+        self._client_groups = None
+        self._global_filters = None
+        self._datacube = None
+        self._plans = None
+        self._job_controller = None
+        self._users = None
+        self._download_center = None
+        self._organizations = None
+        self._storage_pools = None
 
         self.refresh()
 
@@ -179,15 +284,17 @@ class Commcell(object):
 
             Returns:
                 str - string about the details of the Commcell class instance
+
         """
         representation_string = 'Commcell class instance of Commcell: "{0}", for User: "{1}"'
-        return representation_string.format(self.webconsole_hostname, self._user)
+        return representation_string.format(self.commserv_name, self._user)
 
     def __enter__(self):
         """Returns the current instance.
 
             Returns:
-                object - the initialized instance referred by self
+                object  -   the initialized instance referred by self
+
         """
         return self
 
@@ -201,10 +308,11 @@ class Commcell(object):
         """Returns only the relevant response from the response received from the server.
 
             Args:
-                input_string (str)  --  input string to retrieve the relevant response from
+                input_string    (str)   --  input string to retrieve the relevant response from
 
             Returns:
-                str - final response to be used
+                str     -   final response to be used
+
         """
         if '<title>' in input_string and '</title>' in input_string:
             response_string = input_string.split("<title>")[1]
@@ -232,6 +340,7 @@ class Commcell(object):
         del self._users
         del self._download_center
         del self._organizations
+        del self._storage_pools
 
         del self._web_service
         del self._cvpysdk_object
@@ -239,30 +348,40 @@ class Commcell(object):
         del self._services
         del self
 
-    def _get_commserv_name(self):
-        """Returns the name of the CommServ, the commcell is connected to.
+    def _get_commserv_details(self):
+        """Gets the details of the CommServ, the Commcell class instance is initialized for,
+            and updates the class instance attributes.
 
             Returns:
-                str     -   name of the CommServ
+                None
 
             Raises:
                 SDKException:
-                    if failed to get commserv name
+                    if failed to get commserv details
 
                     if response received is empty
 
                     if response is not success
-        """
-        request_url = self._services['COMMSERV']
 
-        flag, response = self._cvpysdk_object.make_request('GET', request_url)
+        """
+        import re
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['COMMSERV'])
 
         if flag:
             if response.json():
-                if 'commcell' in response.json() and 'commCellName' in response.json()['commcell']:
-                    return response.json()['commcell']['commCellName']
-                else:
-                    raise SDKException('Commcell', '103')
+                try:
+                    self._commserv_guid = response.json()['commcell']['csGUID']
+                    self._commserv_hostname = response.json()['hostName']
+                    self._commserv_name = response.json()['commcell']['commCellName']
+                    self._commserv_timezone_name = response.json()['csTimeZone']['TimeZoneName']
+                    self._commserv_version = response.json()['currentSPVersion']
+
+                    self._commserv_timezone = re.search(
+                        r'\(.*', response.json()['timeZone']
+                    ).group()
+                except KeyError as error:
+                    raise SDKException('Commcell', '103', 'Key does not exist: {0}'.format(error))
             else:
                 raise SDKException('Response', '102')
         else:
@@ -276,13 +395,14 @@ class Commcell(object):
                 request_xml     (str)   --  request xml that is to be passed
 
             Returns:
-                (dict)  -   json response received from the server
+                dict    -   json response received from the server
 
             Raises:
                 SDKException:
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['EXECUTE_QCOMMAND'], request_xml
@@ -298,9 +418,34 @@ class Commcell(object):
             raise SDKException('Response', '101', response_string)
 
     @property
+    def commserv_guid(self):
+        """Returns the GUID of the CommServ."""
+        return self._commserv_guid
+
+    @property
+    def commserv_hostname(self):
+        """Returns the hostname of the CommServ."""
+        return self._commserv_hostname
+
+    @property
     def commserv_name(self):
-        """Returns the value of the CommServ name attribute."""
+        """Returns the name of the CommServ."""
         return self._commserv_name
+
+    @property
+    def commserv_timezone(self):
+        """Returns the time zone of the CommServ."""
+        return self._commserv_timezone
+
+    @property
+    def commserv_timezone_name(self):
+        """Returns the name of the time zone of the CommServ."""
+        return self._commserv_timezone_name
+
+    @property
+    def commserv_version(self):
+        """Returns the version installed on the CommServ."""
+        return self._commserv_version
 
     @property
     def webconsole_hostname(self):
@@ -343,10 +488,10 @@ class Commcell(object):
 
     @property
     def workflows(self):
-        """Returns the instance of the Workflow class."""
+        """Returns the instance of the Workflows class."""
         try:
             if self._workflows is None:
-                self._workflows = WorkFlow(self)
+                self._workflows = WorkFlows(self)
 
             return self._workflows
         except AttributeError:
@@ -536,6 +681,19 @@ class Commcell(object):
         except SDKException:
             return None
 
+    @property
+    def storage_pools(self):
+        """Returns the instance of the StoragePools class."""
+        try:
+            if self._storage_pools is None:
+                self._storage_pools = StoragePools(self)
+
+            return self._storage_pools
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
@@ -550,17 +708,41 @@ class Commcell(object):
             in the arguments.
 
             Args:
-                request_type (str)   --  type of HTTP request to run on the Commcell
-                    e.g.; POST, GET, PUT, DELETE
+                request_type    (str)   --  type of HTTP request to run on the Commcell
 
-                request_url  (str)   --  API name to run the request on with params, if any
-                    e.g.; Backupset, Agent, Client, Client/{clientId}, ..., etc.
+                    e.g.;
 
-                request_body (dict)  --  JSON request body to pass along with the request
+                        - POST
+
+                        - GET
+
+                        - PUT
+
+                        - DELETE
+
+                request_url     (str)   --  API name to run the request on with params, if any
+
+                    e.g.;
+
+                        - Backupset
+
+                        - Agent
+
+                        - Client
+
+                        - Client/{clientId}
+
+                        - ...
+
+                        etc.
+
+                request_body    (dict)  --  JSON request body to pass along with the request
+
                     default: None
 
             Returns:
-                object - the response received from the server
+                object  -   the response received from the server
+
         """
         request_url = self._web_service + request_url
 
@@ -587,6 +769,7 @@ class Commcell(object):
                     if response is empty
 
                     if response is not success
+
         """
         # encode the body if that contains special characters
         import html
@@ -623,3 +806,6 @@ class Commcell(object):
         self._users = None
         self._download_center = None
         self._organizations = None
+        self._storage_pools = None
+
+        self._get_commserv_details()

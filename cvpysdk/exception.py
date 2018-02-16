@@ -8,11 +8,63 @@
 
 """File for handling all the exceptions for the CVPySDK python package.
 
-EXCEPTION_DICT:     A python dictionary for holding all the exception messages
-                        for a specific event or class.
+EXCEPTION_DICT:
+    A python dictionary for holding all the exception messages for a specific event or class.
 
-SDKException:       Class inheriting the "Exception" Base class for raising
-                        a specific exception for the CVPySDK python package.
+    Any exceptions to be raised from the SDK in a module should be added to this dictionary.
+
+    where,
+
+        -   the key is the module name or the class name where the exception is raised
+
+        -   the value is a dictionary:
+
+            -   key is a unique ID to identify the exception message
+
+            -   value is the exception message
+
+|
+
+SDKException:
+    Class inheriting the "Exception" Base class for raising
+    a specific exception for the CVPySDK python package.
+
+    The user should create an instance of the SDKException class:
+
+        **SDKException(exception_module, exception_id, exception_message)**
+
+        where,
+
+            -   exception_module:   the module in which the exception is being raised
+
+                -   key in the EXCEPTION_DICT
+
+            -   exception_id:       unique ID which identifies the message for the Exception
+
+            -   exception_message:  additional message to the exception
+
+                -   only applicable if the user wishes to provide an additional message to the
+                    exception along with the message already present as the value for the
+                    exception_module - exception_id pair
+
+    Example:
+
+        **raise SDKException('CVPySDK', '101')**
+
+        will raise the exception as:
+
+            SDKException: Failed to Login with the credentials provided
+
+        and, **raise SDKException('CVPySDK', '101', 'Please check the credentials')**
+
+        will raise:
+
+            SDKException: Failed to Login with the credentials provided
+
+            Please check the credentials
+
+        where the user given message is appended to the original message joined by new line
+
 """
 
 from __future__ import absolute_import
@@ -27,7 +79,7 @@ EXCEPTION_DICT = {
     'Commcell': {
         '101': 'Commcell is not reachable. Please check the commcell name and services again',
         '102': 'Authtoken not received. Please try again.',
-        '103': 'Failed to get CommServ name',
+        '103': 'Failed to get the CommServ details',
         '104': 'Failed to send an email to specified user'
     },
     'CVPySDK': {
@@ -42,8 +94,9 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Time Value should be greater than current time',
         '104': 'Time Value entered is not of correct format',
-        '105': 'Script is not a valid file',
-        '106': 'Failed to get the instance'
+        '105': 'Script Type is not supported',
+        '106': 'Failed to get the instance',
+        '107': 'Service Restart timed out'
     },
     'Agent': {
         '101': 'Data type of the input(s) is not valid',
@@ -115,7 +168,7 @@ EXCEPTION_DICT = {
     'Workflow': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
-        '103': 'Workflow XML is not a valid file',
+        '103': 'Input is not valid XML / file path',
         '104': 'No Workflow exists with the given name'
     },
     'Datacube': {
@@ -186,7 +239,14 @@ EXCEPTION_DICT = {
         '107': 'Failed to add organization',
         '108': 'Failed to enable Auth Code Generation for the Organization',
         '109': 'Failed to disable Auth Code Generation for the Organization',
-        '110': 'Failed to update the properties of the Organization'
+        '110': 'Failed to update the properties of the Organization',
+        '111': ('Plan is not associated with the organization. '
+                'Add plan to the Organization, and then set it as the default')
+    },
+    'StoragePool': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'No storage pool exists with the given name',
     }
 }
 
@@ -205,7 +265,8 @@ class SDKException(Exception):
                 exception_message (str)  --  additional message about the exception
 
             Returns:
-                object - instance of the SDKException class of type Exception
+                object  -   instance of the SDKException class of type Exception
+
         """
         self.exception_module = exception_module
         self.exception_id = exception_id

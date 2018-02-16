@@ -5,7 +5,6 @@
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
-
 """
 File for operating on a Oracle Instance.
 
@@ -76,6 +75,37 @@ class OracleInstance(Instance):
         """
         super(OracleInstance, self).__init__(agent_object, instance_name, instance_id)
         self._instanceprop = {}  # instance variable to hold instance properties
+
+    def _get_oracle_restore_json(self, destination_client,
+                                 instance_name, tablespaces,
+                                 common_options, oracle_options):
+        """
+        Gets the basic restore JSON from base class and modifies it for oracle
+
+        Returns: dict -- JSON formatted options to restore the oracle database
+
+        Args:
+            destination_client (str) -- Destination client name
+            instance_name (str) -- instance name to restore
+            tablespaces (list) -- tablespace name list
+            common_options (dict) --  dict containing common options
+            oracle_options (dict) --  dict containing other oracle options
+
+        """
+        if not isinstance(tablespaces, list):
+            raise TypeError('Expecting a list for tablespaces')
+        destination_id = int(self._commcell_object.clients.get(
+            destination_client).client_id)
+        tslist = ["SID: {0} Tablespace: {1}".format(instance_name, ts) for ts in tablespaces]
+        restore_json = self._restore_json(paths=r'/')
+        if common_options is not None:
+            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "commonOptions"] = common_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["oracleOpt"] = oracle_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {
+            "sourceItem": tslist
+        }
+        return restore_json
 
     def _get_browse_options(self):
         """Method to return the database instance properties for browse and restore"""
@@ -329,7 +359,6 @@ class OracleInstance(Instance):
             options = kwargs
         else:
             options = self._get_browse_options()
-
         return self._process_browse_response(options)
 
     def backup(self, subclient_name=r"default"):
@@ -341,18 +370,14 @@ class OracleInstance(Instance):
         """
         return self.subclients.get(subclient_name).backup(r'full')
 
-    def restore(
-            self,
-            subclient_name='default',
-            destination_client=None,
-            oracle_options=None):
+    def restore(self, destination_client=None, common_options = None, oracle_options=None):
         """
         Method to restore the entire database using latest backup
 
         Args:
             destination_client (str) -- destination client name
-            subclient_name (str) -- name of subclient to use to pull restore JSON
-                default -- default sto default subclient
+            common_options(dict): dictionary containing common options
+                default -- None
             oracle_options (dict): dictionary containing other oracle options
                 default -- By default it restores the controlfile and datafiles
                                 from latest backup
@@ -384,20 +409,16 @@ class OracleInstance(Instance):
         if not isinstance(oracle_options, dict):
             raise TypeError('Expecting a dict for oracle_options')
 
-        if not isinstance(destination_id, int):
-            raise TypeError('Expecting an int for destination_id')
-
         try:
             if destination_client is None:
-                destination_client = self.client_name
+                destination_client = self._properties['instance']['clientName']
         except SDKException:
             raise
         else:
-            subclient = self.subclients.get(subclient_name)
-            options = subclient._get_oracle_restore_json(
-                dest_client=destination_client,
-                instance_name=self.instance_name,
-                tablespaces=self.tablespaces,
-                oracle_options=oracle_options
-            )
-            return subclient._process_restore_response(options)
+            # subclient = self.subclients.get(subclient_name)
+            options = self._get_oracle_restore_json(destination_client=destination_client,
+                                                    instance_name=self.instance_name,
+                                                    tablespaces=self.tablespaces,
+                                                    common_options=common_options,
+                                                    oracle_options=oracle_options)
+            return self._process_restore_response(options)

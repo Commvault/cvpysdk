@@ -16,7 +16,7 @@ UserGroup:  Class for representing a single User Group of the commcell
 
 UserGroups:
     __init__(commcell_object)  --  initialise instance of the UserGroups associated with
-                                       the specified commcell
+    the specified commcell
 
     __str__()                  --  returns all the user groups associated with the commcell
 
@@ -24,15 +24,17 @@ UserGroups:
 
     _get_usergroups()          --  gets all the usergroups associated with the commcell specified
 
+    all_user_groups()          -- returns the dict of all the usergroups on commcell
+
     has_user_group()           --  checks if a user group exists with the given name or not
 
     get(user_group_name)       --  returns the instance of the UserGroup class,
-                                       for the the input user group name
+    for the the input user group name
 
     delete(user_group_name)    --  deletes the user group from the commcell
 
     refresh()                  --  refresh the user groups associated with the commcell
-
+    
 
 UserGroup:
     __init__(commcell_object,
@@ -93,7 +95,7 @@ class UserGroups(object):
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
         return "UserGroups class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_user_groups(self):
@@ -132,6 +134,18 @@ class UserGroups(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_user_groups(self):
+        """Returns dict of all the user groups associated with this commcell
+        
+            dict - consists of all user group in the commcell
+                    {
+                         "user_group1_name": user_group1_id,
+                         "user_group2_name": user_group2_id
+                    }
+        """
+        return self._user_groups
 
     def has_user_group(self, user_group_name):
         """Checks if a user group exists in the commcell with the input user group name.
@@ -297,7 +311,7 @@ class UserGroup(object):
         representation_string = 'User Group instance for UserGroup: "{0}", of Commcell: "{1}"'
 
         return representation_string.format(
-            self.user_group_name, self._commcell_object._headers['Host']
+            self.user_group_name, self._commcell_object.commserv_name
         )
 
     def _get_usergroup_id(self):

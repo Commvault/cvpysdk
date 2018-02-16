@@ -8,9 +8,21 @@
 
 """Service URLs for REST API operations.
 
-SERVICES_DICT:  A python dictionary for holding all the API services endpoints.
+SERVICES_DICT:
+    A python dictionary for holding all the API services endpoints.
 
-get_services(web_service):  updates the SERVICES_DICT with the WebConsole API URL
+|
+
+get_services(web_service):
+    updates the SERVICES_DICT with the WebConsole API URL
+
+
+To add a new REST API End-point to the SDK, user needs to add a key to the SERVICES_DICT_TEMPLATE
+dictionary, for their usage, and the value will be in the format:
+
+    "{0}{{ENDPOINT}}"
+
+{0} will be replaced by the webconsole URL
 
 """
 
@@ -27,19 +39,22 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
     'CLIENT': '{0}Client/%s',
+    'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
+    'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
+    'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=true&resourceCapacity=true',
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
     'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s',
 
-    'GET_ALL_BACKUPSETS': '{0}Backupset?clientId=%s',
+    'GET_ALL_BACKUPSETS': '{0}Backupset?clientId=%s&propertyLevel=10',
     'BACKUPSET': '{0}Backupset/%s',
     'ADD_BACKUPSET': '{0}Backupset',
 
     'GET_ALL_INSTANCES': '{0}Instance?clientId=%s',
     'INSTANCE': '{0}Instance/%s',
 
-    'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s',
+    'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
@@ -98,6 +113,7 @@ SERVICES_DICT_TEMPLATE = {
     'SQL_RESTORE_OPTIONS': '{0}SQL/RestoreOptions',
 
     'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute',
+    'QCOMMAND': '{0}QCommand',
 
     'SOFTWARESTORE_DOWNLOADITEM': '{0}DownloadFile',
     'SOFTWARESTORE_PKGINFO': '{0}SoftwareStore/getPackagePublishInfo?packageName=%s',
@@ -132,6 +148,7 @@ SERVICES_DICT_TEMPLATE = {
     'PLAN': '{0}V2/Plan/%s',
     'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
     'ADD_USERS_TO_PLAN': '{0}V2/Plan/%s/Users',
+    'GET_PLAN_TEMPLATE': '{0}V2/Plan/template?type=%s&subType=%s',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -143,7 +160,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
-    'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
+    'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
 
     'USERS': '{0}User',
@@ -167,6 +184,10 @@ SERVICES_DICT_TEMPLATE = {
     'ORGANIZATION': '{0}Organization/%s',
     'UPDATE_ORGANIZATION': '{0}Organization?organizationId=%s',
     'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
+
+    'STORAGE_POOL': '{0}StoragePool',
+
+    'LICENSE': '{0}CommcellRegistrationInformation'
 }
 
 
@@ -178,6 +199,7 @@ def get_services(web_service):
 
         Returns:
             dict    -   services dict consisting of all APIs
+
     """
     services_dict = SERVICES_DICT_TEMPLATE.copy()
     for service in services_dict:

@@ -6,7 +6,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""Main file for performing client operations.
+"""File for performing client related operations on the Commcell.
 
 Clients and Client are 2 classes defined in this file.
 
@@ -16,42 +16,65 @@ Client:     Class for a single client of the commcell
 
 
 Clients:
-    __init__(commcell_object)       --  initialise object of Clients class associated with the
-                                            commcell
+    __init__(commcell_object)             --  initialize object of Clients class associated with
+    the commcell
 
-    __str__()                       --  returns all the clients associated with the commcell
+    __str__()                             --  returns all the clients associated with the commcell
 
-    __repr__()                      --  returns the string to represent the instance of the Clients
-                                            class
+    __repr__()                            --  returns the string to represent the instance of the
+    Clients class
 
-    _get_clients()                  --  gets all the clients associated with the commcell
+    _get_clients()                        --  gets all the clients associated with the commcell
 
-    _get_client_dict()              --  returns the client dict for client to be added to member
-                                            server
+    _get_hidden_clients()                 --  gets all the hidden clients associated with the
+    commcell
 
-    _member_servers()               --  returns member clients to be associated with the Virtual
-                                            Client
+    _get_virtualization_clients()         --  gets all the virtualization clients associated with
+    the commcell
 
-    _get_client_from_hostname()     --  returns the client name if associated with specified
-                                            hostname if exists
+    _get_client_dict()                    --  returns the client dict for client to be added to
+    member server
 
-    has_client(client_name)         --  checks if a client exists with the given name or not
+    _member_servers()                     --  returns member clients to be associated with the
+    Virtual Client
 
-    add_vmware_client()             --  adds a new VMWare Virtualization Client to the Commcell
+    _get_client_from_hostname()           --  returns the client name if associated with specified
+    hostname if exists
 
-    get(client_name)                --  returns the Client class object of the input client name
+    _get_hidden_client_from_hostname()    --  returns the client name if associated with specified
+    hostname if exists
 
-    delete(client_name)             --  deletes the client specified by the client name from the
-                                            commcell
+    has_client(client_name)               --  checks if a client exists with the given name or not
 
-    refresh()                       --  refresh the clients associated with the commcell
+    has_hidden_client(client_name)        --  checks if a hidden client exists with the given name
+
+    add_vmware_client()                   --  adds a new VMWare Virtualization Client to the
+    Commcell
+
+    get(client_name)                      --  returns the Client class object of the input client
+    name
+
+    delete(client_name)                   --  deletes the client specified by the client name from
+    the commcell
+
+    refresh()                             --  refresh the clients associated with the commcell
+
+Attributes
+==========
+
+    **all_clients**             --  returns the dictioanry consisting of all the clients that are
+    associated with the commcell and their information such as id and hostname
+
+    **hidden_clients**          --  returns the dictioanry consisting of only the hidden clients
+    that are associated with the commcell and their information such as id and hostname
+
+    **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
+    clients that are associated with the commcell and their information such as id and hostname
 
 
 Client:
-    __init__(commcell_object,
-             client_name,
-             client_id=None)     --  initialise object of Class with the specified client name
-                                         and id, and associated to the commcell
+    __init__()                   --  initialize object of Class with the specified client name
+    and id, and associated to the commcell
 
     __repr__()                   --  return the client name and id, the instance is associated with
 
@@ -89,17 +112,77 @@ Client:
 
     disable_intelli_snap()       --  disables intelli snap for the client
 
-    is_ready                     --  checks if CommServ is able to communicate to client
-
     upload_file()                --  uploads the specified file on controller to the client machine
 
     upload_folder()              --  uploads the specified folder on controller to client machine
 
     restart_services()           --  executes the command on the client to restart the services
 
+    network()                    --  returns Network class object
+
+    push_network_config()        --  performs a push network configuration on the client
+
     add_user_association()       --  adds the user associations on this client
 
     refresh()                    --  refresh the properties of the client
+
+Attributes
+==========
+
+    **available_security_roles**    --  returns the security roles available for the selected
+    client
+
+    **client_id**                   --  returns the id of the client
+
+    **client_name**                 --  returns the name of the client
+
+    **client_hostname**             --  returns the host name of the client
+
+    **os_info**                     --  returns string consisting of OS information of the client
+
+    **is_data_recovery_enabled**    --  boolean specifying whether data recovery is enabled for the
+    client or not
+
+    **is_data_management_enabled**  --  boolean specifying whether data management is enabled for
+    the client or not
+
+    **is_ci_enabled**               --  boolean specifying whether content indexing is enabled for
+    the client or not
+
+    **is_backup_enabled**           --  boolean specifying whether backup activity is enabled for
+    the client or not
+
+    **is_restore_enabled**          --  boolean specifying whether restore activity is enabled for
+    the client or not
+
+    **is_data_aging_enabled**       --  boolean specifying whether data aging is enabled for the
+    client or not
+
+    **is_intelli_snap_enabled**     --  boolean specifying whether intelli snap is enabled for the
+    client or not
+
+    **install_directory**           --  returns the path where the client is installed at
+
+    **version**                     --  returns the version of the product installed on the client
+
+    **service_pack**                --  returns the service pack installed on the client
+
+    **agents**                      --  returns the instance of the Agents class representing
+    the list of agents installed on the Client
+
+    **schedules**                   --  returns the instance of the Schedules class representing
+    the list of schedules configured for the Client
+
+    **users**                       --  returns the instance of the Users class representing the
+    list of users with access to the Client
+
+    **network**                     --  returns object of the Network class corresponding to the
+    selected client
+
+    **instance**                    --  returns the Instance of the client
+
+    **is_ready**                    --  returns boolean value specifying whether services on the
+    client are running or not, and whether the CommServ is able to communicate with the client
 
 """
 
@@ -113,9 +196,14 @@ import time
 from base64 import b64encode
 from past.builtins import basestring
 
+import requests
+
 from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
+
+from .network import Network
+
 from .security.user import Users
 
 
@@ -132,10 +220,22 @@ class Clients(object):
                 object - instance of the Clients class
         """
         self._commcell_object = commcell_object
-        self._CLIENTS = self._commcell_object._services['GET_ALL_CLIENTS']
-        self._ADD_CLIENT = self._commcell_object._services['GET_ALL_CLIENTS']
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
+        # TODO: check with API team for additional property to remove multiple API calls
+        # and use a single API call to get all types of clients, and to be able to distinguish
+        # them
+        self._CLIENTS = self._ADD_CLIENT = self._services['GET_ALL_CLIENTS']
+        self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
+        self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
 
         self._clients = None
+        self._hidden_clients = None
+        self._virtualization_clients = None
+
         self.refresh()
 
     def __str__(self):
@@ -146,7 +246,7 @@ class Clients(object):
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Client')
 
-        for index, client in enumerate(self._clients):
+        for index, client in enumerate(self.all_clients):
             sub_str = '{:^5}\t{:20}\n'.format(index + 1, client)
             representation_string += sub_str
 
@@ -155,7 +255,7 @@ class Clients(object):
     def __repr__(self):
         """Representation string for the instance of the Clients class."""
         return "Clients class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_clients(self):
@@ -164,8 +264,14 @@ class Clients(object):
             Returns:
                 dict - consists of all clients in the commcell
                     {
-                         "client1_name": client1_id,
-                         "client2_name": client2_id
+                         "client1_name": {
+                                "id": client1_id,
+                                "hostname": client1_hostname
+                        },
+                         "client2_name": {
+                                "id": client2_id,
+                                "hostname": client2_hostname
+                         },
                     }
 
             Raises:
@@ -174,7 +280,7 @@ class Clients(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._CLIENTS)
+        flag, response = self._cvpysdk_object.make_request('GET', self._CLIENTS)
 
         if flag:
             if response.json() and 'clientProperties' in response.json():
@@ -193,10 +299,111 @@ class Clients(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_client_dict(self, client_object):
+    def _get_hidden_clients(self):
+        """Gets all the clients associated with the commcell, including all VM's and hidden clients
+
+            Returns:
+                dict - consists of all clients (including hidden clients) in the commcell
+                    {
+                         "client1_name": {
+                                "id": client1_id,
+                                "hostname": client1_hostname
+                        },
+                         "client2_name": {
+                                "id": client2_id,
+                                "hostname": client2_hostname
+                         },
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._ALL_CLIENTS)
+
+        if flag:
+            if response.json() and 'clientProperties' in response.json():
+                all_clients_dict = {}
+                hidden_clients_dict = {}
+
+                for dictionary in response.json()['clientProperties']:
+                    temp_name = dictionary['client']['clientEntity']['clientName'].lower()
+                    temp_id = str(dictionary['client']['clientEntity']['clientId']).lower()
+                    temp_hostname = dictionary['client']['clientEntity']['hostName'].lower()
+                    all_clients_dict[temp_name] = {
+                        'id': temp_id,
+                        'hostname': temp_hostname
+                    }
+
+                # hidden clients = all clients - true clients
+                hidden_clients_dict = {
+                    client: all_clients_dict.get(
+                        client, client in all_clients_dict or self.all_clients[client]
+                    )
+                    for client in set(all_clients_dict) - set(self.all_clients)
+                }
+                return hidden_clients_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_virtualization_clients(self):
+        """REST API call to get all virtualization clients in the commcell
+
+            Returns:
+                dict    -   consists of all virtualization clients in the commcell
+
+                    {
+
+                        "client1_name": {
+                            "id": client1_id,
+
+                            "hostname": client1_hostname
+                        },
+
+                        "client2_name": {
+                            "id": client2_id,
+
+                            "hostname": client2_hostname
+                        },
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._VIRTUALIZATION_CLIENTS)
+
+        if flag:
+            if response.json() and 'VSPseudoClientsList' in response.json():
+                pseudo_clients = response.json()['VSPseudoClientsList']
+                virtualization_clients = {}
+
+                for pseudo_client in pseudo_clients:
+                    virtualization_clients[pseudo_client['client']['clientName']] = {
+                        'clientId': pseudo_client['client']['clientId'],
+                        'hostName': pseudo_client['client']['hostName']
+                    }
+
+                return virtualization_clients
+
+            return {}
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @staticmethod
+    def _get_client_dict(client_object):
         """Returns the client dict for the client object to be appended to member server.
 
             Args:
@@ -204,6 +411,7 @@ class Clients(object):
 
             Returns:
                 dict    -   dictionary for a single client to be associated with the Virtual Client
+
         """
         client_dict = {
             "client": {
@@ -253,18 +461,96 @@ class Clients(object):
         return member_servers
 
     def _get_client_from_hostname(self, hostname):
-        """Checks if client associated given hostname exists and returns the client name
+        """Checks if a client is associated with the given hostname.
 
             Args:
                 hostname    (str)   --  host name of the client on this commcell
 
             Return:
-                str  -  name of the client associated with this hostname
+                str  -  name of the client associated with this hostname. Returns the input
+                        hostname if no client matches the criteria
 
         """
-        for client in self._clients:
-            if hostname in self._clients[client]['hostname']:
+        for client in self.all_clients:
+            if hostname.lower() == self.all_clients[client]['hostname']:
                 return client
+
+        return hostname
+
+    def _get_hidden_client_from_hostname(self, hostname):
+        """Checks if hidden client associated given hostname exists and returns the hidden client
+            name
+
+            Args:
+                hostname    (str)   --  host name of the client on this commcell
+
+            Return:
+                str  -  name of the client associated with this hostname. Returns the input
+                        hostname if no client matches the criteria
+
+        """
+        for hidden_client in self.hidden_clients:
+            if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
+                return hidden_client
+
+        return hostname
+
+    @property
+    def all_clients(self):
+        """Returns the dictionary consisting of all the clients and their info.
+
+            dict - consists of all clients in the commcell
+                    {
+                         "client1_name": {
+                                "id": client1_id,
+                                "hostname": client1_hostname
+                        },
+                         "client2_name": {
+                                "id": client2_id,
+                                "hostname": client2_hostname
+                         },
+                    }
+
+        """
+        return self._clients
+
+    @property
+    def hidden_clients(self):
+        """Returns the dictionary consisting of the hidden clients and their info.
+
+            dict - consists of all clients in the commcell
+                    {
+                         "client1_name": {
+                                "id": client1_id,
+                                "hostname": client1_hostname
+                        },
+                         "client2_name": {
+                                "id": client2_id,
+                                "hostname": client2_hostname
+                         },
+                    }
+
+        """
+        return self._hidden_clients
+
+    @property
+    def virtualization_clients(self):
+        """Returns the dictionary consisting of the virtualization clients and their info.
+
+            dict - consists of all clients in the commcell
+                    {
+                         "client1_name": {
+                                "id": client1_id,
+                                "hostname": client1_hostname
+                        },
+                         "client2_name": {
+                                "id": client2_id,
+                                "hostname": client2_hostname
+                         },
+                    }
+
+        """
+        return self._virtualization_clients
 
     def has_client(self, client_name):
         """Checks if a client exists in the commcell with the input client name.
@@ -282,7 +568,26 @@ class Clients(object):
         if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
 
-        return self._clients and client_name.lower() in self._clients
+        return self.all_clients and client_name.lower() in self.all_clients
+
+    def has_hidden_client(self, client_name):
+        """Checks if a client exists in the commcell with the input client name as a hidden client.
+
+            Args:
+                client_name (str)  --  name of the client
+
+            Returns:
+                bool - boolean output whether the client exists in the commcell or not as a hidden
+                        client
+
+            Raises:
+                SDKException:
+                    if type of the client name argument is not string
+        """
+        if not isinstance(client_name, basestring):
+            raise SDKException('Client', '101')
+
+        return self.hidden_clients and client_name.lower() in self.hidden_clients
 
     def add_vmware_client(
             self,
@@ -344,9 +649,7 @@ class Clients(object):
             }
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._ADD_CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._ADD_CLIENT, request_json)
 
         if flag:
             if response.json():
@@ -358,12 +661,10 @@ class Clients(object):
                         o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
                         raise SDKException('Client', '102', o_str)
                     else:
-                        client_id = response.json()['response']['entity']['clientId']
-
                         # initialize the clients again
                         # so the client object has all the clients
                         self.refresh()
-                        return Client(self._commcell_object, client_name, client_id)
+                        return self.get(client_name)
                 elif 'errorMessage' in response.json():
                     error_string = response.json()['errorMessage']
                     o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
@@ -373,7 +674,7 @@ class Clients(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def get(self, name):
@@ -396,17 +697,30 @@ class Clients(object):
         if not isinstance(name, basestring):
             raise SDKException('Client', '101')
         else:
-            client_name = name.lower()
+            name = name.lower()
+            client_name = None
+            client_id = None
 
-            if not self.has_client(client_name):
-                client_name = self._get_client_from_hostname(client_name)
+            if self.has_client(name):
+                client_name = name
+            elif self._get_client_from_hostname(name) is not None:
+                client_name = self._get_client_from_hostname(name)
+            elif self.has_hidden_client(name):
+                client_name = name
+            elif self._get_hidden_client_from_hostname(name) is not None:
+                client_name = self._get_hidden_client_from_hostname(name)
 
             if client_name is not None:
-                return Client(self._commcell_object, client_name, self._clients[client_name]['id'])
+                try:
+                    client_id = self.all_clients[client_name]['id']
+                except KeyError:
+                    client_id = self.hidden_clients[client_name]['id']
 
-            raise SDKException(
-                'Client', '102', 'No client exists with name: {0}'.format(client_name)
-            )
+                return Client(self._commcell_object, client_name, client_id)
+            else:
+                raise SDKException(
+                    'Client', '102', 'No client exists with name: {0}'.format(name)
+                )
 
     def delete(self, client_name):
         """Deletes the client from the commcell.
@@ -425,6 +739,7 @@ class Clients(object):
                     if response is not success
 
                     if no client exists with the given name
+
         """
         if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
@@ -432,13 +747,11 @@ class Clients(object):
             client_name = client_name.lower()
 
             if self.has_client(client_name):
-                client_id = self._clients[client_name]['id']
-                client_delete_service = self._commcell_object._services['CLIENT'] % (client_id)
+                client_id = self.all_clients[client_name]['id']
+                client_delete_service = self._services['CLIENT'] % (client_id)
                 client_delete_service += "?forceDelete=1"
 
-                flag, response = self._commcell_object._cvpysdk_object.make_request(
-                    'DELETE', client_delete_service
-                )
+                flag, response = self._cvpysdk_object.make_request('DELETE', client_delete_service)
 
                 error_code = warning_code = 0
 
@@ -471,7 +784,7 @@ class Clients(object):
                     else:
                         raise SDKException('Response', '102')
                 else:
-                    response_string = self._commcell_object._update_response_(response.text)
+                    response_string = self._update_response_(response.text)
                     raise SDKException('Response', '101', response_string)
             else:
                 raise SDKException(
@@ -481,6 +794,8 @@ class Clients(object):
     def refresh(self):
         """Refresh the clients associated with the Commcell."""
         self._clients = self._get_clients()
+        self._hidden_clients = self._get_hidden_clients()
+        self._virtualization_clients = self._get_virtualization_clients()
 
 
 class Client(object):
@@ -490,17 +805,22 @@ class Client(object):
         """Initialise the Client class instance.
 
             Args:
-                commcell_object (object)  --  instance of the Commcell class
+                commcell_object (object)     --  instance of the Commcell class
 
-                client_name     (str)     --  name of the client
+                client_name     (str)        --  name of the client
 
-                client_id       (str)     --  id of the client
+                client_id       (str)        --  id of the client
                     default: None
 
             Returns:
                 object - instance of the Client class
         """
         self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
         self._client_name = client_name.lower()
 
         if client_id:
@@ -508,14 +828,41 @@ class Client(object):
         else:
             self._client_id = self._get_client_id()
 
-        self._CLIENT = self._commcell_object._services['CLIENT'] % (self.client_id)
+        _client_type = {
+            'Client': 0,
+            'Hidden Client': 1
+        }
+
+        if self._commcell_object.clients.has_client(client_name):
+            self._client_type_id = _client_type['Client']
+        else:
+            self._client_type_id = _client_type['Hidden Client']
+
+        self._CLIENT = self._services['CLIENT'] % (self.client_id)
 
         self._instance = None
-        self.agents = None
-        self.schedules = None
+
+        self._agents = None
+        self._schedules = None
         self._users = None
+        self._network = None
 
         self._association_object = None
+
+        self._properties = None
+
+        self._os_info = None
+        self._install_directory = None
+        self._version = None
+        self._service_pack = None
+        self._is_backup_enabled = None
+        self._is_ci_enabled = None
+        self._is_data_aging_enabled = None
+        self._is_data_management_enabled = None
+        self._is_data_recovery_enabled = None
+        self._is_intelli_snap_enabled = None
+        self._is_restore_enabled = None
+        self._client_hostname = None
 
         self.refresh()
 
@@ -530,8 +877,7 @@ class Client(object):
             Returns:
                 str - id associated with this client
         """
-        clients = Clients(self._commcell_object)
-        return clients.get(self.client_name).client_id
+        return self._commcell_object.clients.get(self.client_name).client_id
 
     def _get_client_properties(self):
         """Gets the client properties of this client.
@@ -545,7 +891,7 @@ class Client(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._CLIENT)
+        flag, response = self._cvpysdk_object.make_request('GET', self._CLIENT)
 
         if flag:
             if response.json() and 'clientProperties' in response.json():
@@ -561,10 +907,6 @@ class Client(object):
                     os_info['SubType'],
                     os_name
                 )
-
-                self._install_directory = None
-                self._version = None
-                self._service_pack = None
 
                 client_props = self._properties['clientProps']
 
@@ -608,7 +950,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def _request_json(self, option, enable=True, enable_time=None):
@@ -671,8 +1013,8 @@ class Client(object):
 
         if enable_time:
             return request_json2
-        else:
-            return request_json1
+
+        return request_json1
 
     def _update_client_props_json(self, properties_dict):
         """Returns the update client properties JSON request to pass to the API as per
@@ -744,7 +1086,7 @@ class Client(object):
         if request_id is not None:
             upload_url += '&requestId={0}'.format(request_id)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
+        flag, response = self._cvpysdk_object.make_request(
             'POST', upload_url, file_contents, headers=headers
         )
 
@@ -772,7 +1114,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def _get_instance_of_client(self):
@@ -892,13 +1234,48 @@ class Client(object):
         return self._service_pack
 
     @property
+    def agents(self):
+        """Returns the instance of the Agents class representing the list of Agents
+        installed / configured on the Client.
+        """
+        if self._agents is None:
+            self._agents = Agents(self)
+
+        return self._agents
+
+    @property
+    def schedules(self):
+        """Returns the instance of the Schedules class representing the Schedules
+        configured on the Client.
+        """
+        if self._schedules is None:
+            self._schedules = Schedules(self)
+
+        return self._schedules
+
+    @property
+    def users(self):
+        """Returns the instance of the Users class representing the list of Users
+        with permissions set on the Client.
+        """
+        if self._users is None:
+            self._users = Users(self._commcell_object)
+
+        return self._users
+
+    @property
+    def network(self):
+        """Returns the object of Network class"""
+        if self._network is None:
+            self._network = Network(self)
+
+        return self._network
+
+    @property
     def instance(self):
         """Returns the value of the instance the client is installed on."""
         if self._instance is None:
             try:
-                # HACK: use the method _get_instance_of_client till the time the value of instance
-                # is not returned in the API response
-                # use the value in the API response once it is present
                 self._instance = self._get_instance_of_client()
             except SDKException:
                 # pass silently if failed to get the value of instance
@@ -919,9 +1296,7 @@ class Client(object):
         """
         request_json = self._request_json('Backup')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -939,7 +1314,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def enable_backup_at_time(self, enable_time):
@@ -970,9 +1345,7 @@ class Client(object):
 
         request_json = self._request_json('Backup', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -990,7 +1363,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def disable_backup(self):
@@ -1006,9 +1379,7 @@ class Client(object):
         """
         request_json = self._request_json('Backup', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1026,7 +1397,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def enable_restore(self):
@@ -1042,9 +1413,7 @@ class Client(object):
         """
         request_json = self._request_json('Restore')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1062,7 +1431,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def enable_restore_at_time(self, enable_time):
@@ -1093,9 +1462,7 @@ class Client(object):
 
         request_json = self._request_json('Restore', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1113,7 +1480,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def disable_restore(self):
@@ -1129,9 +1496,7 @@ class Client(object):
         """
         request_json = self._request_json('Restore', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1149,7 +1514,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def enable_data_aging(self):
@@ -1165,9 +1530,7 @@ class Client(object):
         """
         request_json = self._request_json('Data Aging')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1185,7 +1548,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def enable_data_aging_at_time(self, enable_time):
@@ -1216,9 +1579,7 @@ class Client(object):
 
         request_json = self._request_json('Data Aging', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1236,7 +1597,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def disable_data_aging(self):
@@ -1252,9 +1613,7 @@ class Client(object):
         """
         request_json = self._request_json('Data Aging', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1272,26 +1631,52 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def execute_script(self, script_type, script):
+    def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True):
         """Executes the given script of the script type on this client.
 
             Args:
-                script_type     (str)   --  type of script to be executed on the client
-                    JAVA / Python / PowerShell / WindowsBatch / UnixShell
+                script_type             (str)   --  type of script to be executed on the client
 
-                script          (str)   --  path of the script to be executed on the client
+                    Script Types Supported:
+
+                        JAVA
+
+                        Python
+
+                        PowerShell
+
+                        WindowsBatch
+
+                        UnixShell
+
+                script                  (str)   --  path of the script to be executed on the client
+
+                script_arguments        (str)   --  arguments to the script
+
+                    default: None
+
+                wait_for_completion     (bool)  --  boolean specifying whether to wait for the
+                script execution to finish or not
+
+                    default: True
 
             Returns:
-                    (int, str)
+                    (int, str, str)
 
                 int     -   exit code returned from executing the script on the client
+
                     default: -1     (exit code not returned in the response)
 
                 str     -   output returned from executing the script on the client
+
                     default: ''     (output not returned in the response)
+
+                str     -   error returned from executing the script on the client
+
+                    default: ''     (error not returned in the response)
 
             Raises:
                 SDKException:
@@ -1319,34 +1704,39 @@ class Client(object):
         if script_type.lower() not in script_types:
             raise SDKException('Client', '105')
 
+        import html
+
         if os.path.isfile(script):
             with open(script, 'r') as temp_file:
-                script_file = temp_file.read()
+                script = html.escape(temp_file.read())
         else:
-            raise SDKException('Client', '105')
+            script = html.escape(script)
 
-        import html
-        script = html.escape(script_file)
         script_lines = ""
         script_lines_template = '<scriptLines val="{0}"/>'
 
         for line in script.split('\n'):
             script_lines += script_lines_template.format(line)
 
+        script_arguments = '' if script_arguments is None else script_arguments
+        script_arguments = html.escape(script_arguments)
+
         xml_execute_script = """
-        <App_ExecuteCommandReq arguments="" scriptType="{0}" waitForProcessCompletion="1">
-            <client clientId="{1}" clientName="{2}"/>
-            "{3}"
+        <App_ExecuteCommandReq arguments="{0}" scriptType="{1}" waitForProcessCompletion="{5}">
+            <client clientId="{2}" clientName="{3}"/>
+            "{4}"
         </App_ExecuteCommandReq>
         """.format(
+            script_arguments,
             script_types[script_type.lower()],
             self.client_id,
             self.client_name,
-            script_lines
+            script_lines,
+            1 if wait_for_completion else 0
         )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_script
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], xml_execute_script
         )
 
         if flag:
@@ -1368,23 +1758,38 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def execute_command(self, command):
+    def execute_command(self, command, script_arguments=None, wait_for_completion=True):
         """Executes a command on this client.
 
             Args:
-                command     (str)   --  command in string to be executed on the client
+                command                 (str)   --  command in string to be executed on the client
+
+                script_arguments        (str)   --  arguments to the script
+
+                    default: None
+
+                wait_for_completion     (bool)  --  boolean specifying whether to wait for the
+                script execution to finish or not
+
+                    default: True
 
             Returns:
-                    (int, str)
+                    (int, str, str)
 
                 int     -   exit code returned from executing the command on the client
+
                     default: -1     (exit code not returned in the response)
 
                 str     -   output returned from executing the command on the client
+
                     default: ''     (output not returned in the response)
+
+                str     -   error returned from executing the command on the client
+
+                    default: ''     (error not returned in the response)
 
             Raises:
                 SDKException:
@@ -1393,6 +1798,7 @@ class Client(object):
                     if response is empty
 
                     if response is not success
+
         """
         if not isinstance(command, basestring):
             raise SDKException('Client', '101')
@@ -1400,17 +1806,26 @@ class Client(object):
         import html
         command = html.escape(command)
 
+        script_arguments = '' if script_arguments is None else script_arguments
+        script_arguments = html.escape(script_arguments)
+
         xml_execute_command = """
-        <App_ExecuteCommandReq arguments="" command="{0}" waitForProcessCompletion="1">
+        <App_ExecuteCommandReq arguments="{0}" command="{1}" waitForProcessCompletion="{4}">
             <processinginstructioninfo>
                 <formatFlags continueOnError="1" elementBased="1" filterUnInitializedFields="0" formatted="0" ignoreUnknownTags="1" skipIdToNameConversion="0" skipNameToIdConversion="0"/>
             </processinginstructioninfo>
-            <client clientId="{1}" clientName="{2}"/>
+            <client clientId="{2}" clientName="{3}"/>
         </App_ExecuteCommandReq>
-        """.format(command, self.client_id, self.client_name)
+        """.format(
+            script_arguments,
+            command,
+            self.client_id,
+            self.client_name,
+            1 if wait_for_completion else 0
+        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_command
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], xml_execute_command
         )
 
         if flag:
@@ -1432,7 +1847,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def enable_intelli_snap(self):
@@ -1452,9 +1867,7 @@ class Client(object):
 
         request_json = self._update_client_props_json(enable_intelli_snap_dict)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1472,7 +1885,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def disable_intelli_snap(self):
@@ -1492,9 +1905,7 @@ class Client(object):
 
         request_json = self._update_client_props_json(disable_intelli_snap_dict)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
         self._get_client_properties()
 
@@ -1512,7 +1923,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     @property
@@ -1530,14 +1941,8 @@ class Client(object):
 
                     if response is not success
         """
-        request_xml = """
-        <EVGui_CheckReadinessReq >
-            <entity clientName="{0}" />
-        </EVGui_CheckReadinessReq>
-        """.format(self.client_name)
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['CHECK_READINESS'] % self.client_id
         )
 
         if flag:
@@ -1546,7 +1951,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
     def upload_file(self, source_file_path, destination_folder):
@@ -1585,11 +1990,11 @@ class Client(object):
         file_stream = open(source_file_path, 'rb')
 
         if file_size <= chunk_size:
-            upload_url = self._commcell_object._services['UPLOAD_FULL_FILE'] % (self.client_id)
+            upload_url = self._services['UPLOAD_FULL_FILE'] % (self.client_id)
             headers['FileSize'] = str(file_size)
             self._make_request(upload_url, file_stream.read(), headers)
         else:
-            upload_url = self._commcell_object._services['UPLOAD_CHUNKED_FILE'] % (self.client_id)
+            upload_url = self._services['UPLOAD_CHUNKED_FILE'] % (self.client_id)
             while file_size > chunk_size:
                 file_size = file_size - chunk_size
                 headers['FileSize'] = str(chunk_size)
@@ -1648,14 +2053,41 @@ class Client(object):
             else:
                 self.upload_folder(item, destination_dir)
 
-    def restart_services(self):
-        """Executes the command on the client machine to restart all services."""
+    def restart_services(self, wait_for_service_restart=True, timeout=10):
+        """Executes the command on the client machine to restart all services.
+
+            Args:
+                wait_for_service_restart    (bool)  --  boolean to specify whether to wait for the
+                services to restart, or just execute the command and exit
+
+                    if set to True, the method will wait till the services of the client are up
+
+                    otherwise, the method will trigger a service restart, and exit
+
+                    default: True
+
+                timeout                     (int)   --  timeout **(in minutes)** to wait for the
+                services to restart
+
+                    if the services are not restarted by the timeout value, the method will exit
+                    out with Exception
+
+                    default: 10
+
+            Returns:
+                None    -   if the services were restarted sucessfully
+
+            Raises:
+                SDKException:
+                    if failed to restart the services before the timeout value
+
+        """
         if 'windows' in self.os_info.lower():
             command = '"{0}" -consoleMode -restartsvcgrp ALL'.format(
                 os.path.join(self.install_directory, 'Base', 'GxAdmin.exe')
             )
 
-            __, output, __ = self.execute_command(command)
+            __, output, __ = self.execute_command(command, wait_for_completion=False)
 
             if output:
                 raise SDKException(
@@ -1665,7 +2097,7 @@ class Client(object):
             if self.instance:
                 command = 'commvault -instance {0} restart'.format(self.instance)
 
-                __, __, error = self.execute_command(command)
+                __, __, error = self.execute_command(command, wait_for_completion=False)
 
                 if error:
                     raise SDKException(
@@ -1675,6 +2107,69 @@ class Client(object):
                 raise SDKException('Client', '102', 'Operation not supported for this Client')
         else:
             raise SDKException('Client', '102', 'Operation not supported for this Client')
+
+        if wait_for_service_restart:
+            start_time = time.time()
+
+            while True:
+                try:
+                    if self.is_ready:
+                        break
+
+                    if time.time() - start_time > timeout * 60:
+                        raise SDKException('Client', '107')
+                except requests.ConnectionError:
+                    continue
+
+                time.sleep(5)
+
+    def push_network_config(self):
+        """Performs a push network configuration on the client
+
+                Raises:
+                SDKException:
+                    if input data is invalid
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        xml_execute_command = """
+        <App_PushFirewallConfigurationRequest>
+            <entity clientName="{0}"/>
+        </App_PushFirewallConfigurationRequest>
+        """.format(self.client_name)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], xml_execute_command
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = ""
+                if 'entityResponse' in response.json():
+                    error_code = response.json()['entityResponse'][0]['errorCode']
+
+                    if 'errorMessage' in response.json():
+                        error_message = response.json()['errorMessage']
+
+                elif 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    if 'errorCode' in response.json():
+                        error_code = response.json()['errorCode']
+
+                if error_code != 0:
+                    raise SDKException('Client', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def add_user_associations(self, associations_list):
         """Adds the users to the owners list of this client
@@ -1702,9 +2197,11 @@ class Client(object):
         self._security_association._add_security_association(associations_list, user=True)
 
     def refresh(self):
-        """Refreshs the properties of the Client."""
+        """Refreshes the properties of the Client."""
         self._get_client_properties()
 
-        self.agents = Agents(self)
-        self.schedules = Schedules(self)
-        self._users = Users(self._commcell_object)
+        if self._client_type_id == 0:
+            self._agents = None
+            self._schedules = None
+            self._users = None
+            self._network = None

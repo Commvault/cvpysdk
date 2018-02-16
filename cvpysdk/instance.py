@@ -17,8 +17,8 @@ Instance:  Class for a single instance selected for an agent,
 
 
 Instances:
-    __init__(agent_object)          --  initialise object of Instances class associated with
-                                            the specified agent
+    __init__(agent_object)          --  initialize object of Instances class associated with
+    the specified agent
 
     __str__()                       --  returns all the instances associated with the agent
 
@@ -26,10 +26,12 @@ Instances:
 
     _get_instances()                --  gets all the instances associated with the agent specified
 
+    all_instances()                 --  returns the dict of all the instances
+
     has_instance(instance_name)     --  checks if a instance exists with the given name or not
 
     get(instance_name)              --  returns the Instance class object
-                                            of the input backup set name
+    of the input backup set name
 
     add_sybase_instance(
         sybase_options
@@ -42,7 +44,7 @@ Instance:
     __init__(agent_object,
              instance_name,
              instance_id=None)      --  initialise object of Instance with the specified instance
-                                             name and id, and associated to the specified agent
+    name and id, and associated to the specified agent
 
     __repr__()                      --  return the instance name, the object is associated with
 
@@ -53,24 +55,36 @@ Instance:
     _process_update_response()      --  updates the instance properties
 
     _process_restore_response()     --  processes the restore request sent to server
-                                            and returns the restore job object
+    and returns the restore job object
 
     _filter_paths()                 --  filters the path as per the OS, and the Agent
 
+    _impersonation_json()           --  setter for impersonation Property
+
+    _restore_browse_option_json()   --  setter for  browse option  property in restore
+
+    _restore_commonOptions_json()   --  setter for common options property in restore
+
+    _restore_destination_json()     --  setter for destination options property in restore
+
+    _restore_fileoption_json()      -- setter for file option property in restore
+
+    _restore_destination_json()     -- setter for destination property in restore
+
+
     _restore_json()                 --  returns the apppropriate JSON request to pass for either
-                                            Restore In-Place or Out-of-Place operation
+    Restore In-Place or Out-of-Place operation
 
     _restore_in_place()             --  Restores the files/folders specified in the
-                                            input paths list to the same location
+    input paths list to the same location
 
     _restore_out_of_place()         --  Restores the files/folders specified in the input paths
-                                            list to the input client, at the specified destionation
-                                            location
+    list to the input client, at the specified destination location
 
     _task()                         --  the task dict used while restore/backup job
 
     _restore_sub_task()             --  the restore job specific sub task dict used to form
-                                            restore json
+    restore json
 
     instance_id()                   --  id of this instance
 
@@ -210,6 +224,19 @@ class Instances(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    @property
+    def all_instances(self):
+        """Returns dict of all the instances associated with the agent
+
+            dict - consists of all instances of the agent
+                    {
+                         "instance1_name": instance1_id,
+                         "instance2_name": instance2_id
+                    }
+
+        """
+        return self._instances
+
     def has_instance(self, instance_name):
         """Checks if a instance exists for the agent with the input instance name.
 
@@ -278,7 +305,7 @@ class Instances(object):
                             'sybase_home':'C:\\SAP',
                             'config_file':'C:\\SAP\\SAISYB.cfg',
                             'enable_auto_discovery':True,
-                            'shared_memory_directory':'C:\SAP\ASE-16_0',
+                            'shared_memory_directory':'C:\\SAP\\ASE-16_0',
                             'storage_policy':'sai-sp',
                             'sa_username':'sa',
                             'sa_password':'commvault!12',
@@ -480,8 +507,8 @@ class Instance(object):
 
         """
         backup = None
-        exec("backup = self.%s" % (attr_name))          # Take backup of old value
-        exec("self.%s = %s" % (attr_name, 'value'))     # set new value
+        exec("backup = self.%s" % (attr_name))  # Take backup of old value
+        exec("self.%s = %s" % (attr_name, 'value'))  # set new value
 
         request_json = self._get_instance_properties_json()
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -635,163 +662,59 @@ class Instance(object):
 
     def _restore_json(
             self,
-            paths,
-            in_place=True,
-            client=None,
-            destination_path=None,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            fs_options=None):
+            **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
-                paths   (list)  --  list of full paths of files/folders to restore
+                kwargs   (list)  --  list of options need to be set for restore
 
             Returns:
                 dict - JSON request to pass to the API
         """
+
+        restore_option = {}
+        if kwargs.get("restore_option"):
+            restore_option = kwargs["restore_option"]
+            for key in kwargs:
+                if not key == "restore_option":
+                    restore_option[key] = kwargs[key]
+        else:
+            restore_option.update(kwargs)
+
         if self._restore_association is None:
             self._restore_association = self._instance
 
-        if client is None and destination_path is None:
-            client_id = int(self._agent_object._client_object.client_id)
-            client_name = self._agent_object._client_object.client_name
-        else:
-            client_id = int(client.client_id)
-            client_name = client.client_name
+        if restore_option.get('copy_precedence') is None:
+            restore_option['copy_precedence'] = 0
 
-        if fs_options is None:
-            fs_options = {}
+        if restore_option.get('overwrite') is not None:
+            restore_option['unconditional_overwrite'] = restore_option['overwrite']
 
-        request_json = {
-            "taskInfo": {
-                "associations": [self._restore_association],
-                "task": self._task,
-                "subTasks": [{
-                    "subTaskOperation": 1,
-                    "subTask": self._restore_sub_task,
-                    "options": {
-                        "restoreOptions": {
-                            "browseOption": {
-                                "mediaOption": {}
-                            },
-                            "commonOptions": {
-                                "unconditionalOverwrite": overwrite,
-                                "preserveLevel": fs_options.get("preserve_level", 1),
-                                "stripLevel": 2,
-                                "stripLevelType": 0
-                            },
-                            "impersonation": {},
-                            "destination": {
-                                "inPlace": in_place,
-                                "destClient": {
-                                    "clientId": client_id,
-                                    "clientName": client_name,
-                                }
-                            },
-                            "fileOption": {
-                                "sourceItem": paths
-                            }
-                        }
-                    }
-                }]
-            }
-        }
+        # set client details
+        client = restore_option.get("client",
+                                    self._agent_object._client_object)
 
-        if restore_data_and_acl:
-            request_json["taskInfo"]["subTasks"][0]["options"][
-                "restoreOptions"]["restoreACLsType"] = 3
+        if isinstance(client, basestring):
+            client = self._commcell_object.clients.get(client)
+        restore_option["client_name"] = client.client_name
+        restore_option["client_id"] = int(client.client_id)
 
-        if destination_path is not None:
-            request_json['taskInfo']["subTasks"][0]["options"][
-                "restoreOptions"]["destination"]["destPath"] = [destination_path]
+        #set time zone
+        from_time = restore_option.get("from_time", None)
+        to_time = restore_option.get("to_time", None)
+        time_list = ['01/01/1970 00:00:00', '1/1/1970 00:00:00']
 
-        if copy_precedence:
-            temp = {
-                "copyPrecedence": {
-                    "copyPrecedenceApplicable": True,
-                    "synchronousCopyPrecedence": copy_precedence,
-                    "copyPrecedence": copy_precedence
-                }
-            }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                'browseOption']['mediaOption'].update(temp)
+        if from_time and from_time not in time_list:
+            restore_option["from_time"] = from_time
 
-        if fs_options.get("proxy_client"):
-            temp = {
-                "proxyForSnapClients":
-                {
-                    "clientName": fs_options.get("proxy_client", '')
-                }
-            }
+        if to_time and to_time not in time_list:
+            restore_option["to_time"] = to_time
 
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                'browseOption']['mediaOption'].update(temp)
-
-        if fs_options.get("impersonate_user"):
-            temp = {
-                "useImpersonation": True,
-                "user": {
-                    "userName": fs_options['impersonate_user'],
-                    "password": fs_options['impersonate_password']
-                }
-            }
-
-            request_json['taskInfo']['subTasks'][0]['options'][
-                'restoreOptions']['impersonation'] = temp
-
-        restore_option = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']
-
-        if from_time and (from_time != '01/01/1970 00:00:00' and from_time != '1/1/1970 00:00:00'):
-            temp = {
-                "browseOption": {
-                    "timeRange": {
-                        "fromTimeValue": from_time
-                    }
-                }
-            }
-
-            if 'browseOption' in restore_option:
-                if 'timeRange' in restore_option['browseOption']:
-                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                        'browseOption']['timeRange'].update(temp['browseOption']['timeRange'])
-                else:
-                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                        'browseOption'].update(temp['browseOption'])
-            else:
-                request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(temp)
-
-        if to_time and (to_time != '01/01/1970 00:00:00' and to_time != '1/1/1970 00:00:00'):
-            temp = {
-                "browseOption": {
-                    "timeRange": {
-                        "toTimeValue": to_time
-                    }
-                }
-            }
-
-            if 'browseOption' in restore_option:
-                if 'timeRange' in restore_option['browseOption']:
-                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                        'browseOption']['timeRange'].update(temp['browseOption']['timeRange'])
-                else:
-                    request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                        'browseOption'].update(temp['browseOption'])
-            else:
-                request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(temp)
-
-        if fs_options.get('all_versions') and fs_options['all_versions'] is True:
-            request_json['taskInfo']['subTasks'][0]['options'][
-                'restoreOptions']['commonOptions']['allVersion'] = True
-
-        if fs_options.get('versions'):
-            versions = fs_options['versions']
+        # set versions
+        if "versions" in restore_option:
+            versions = restore_option['versions']
             if not isinstance(versions, list):
                 raise SDKException('Instance', '101')
-
             if 'win' in self._agent_object._client_object.os_info.lower():
                 version_string = "|\\|#15!vErSiOnS|#15!\\{0}"
             else:
@@ -799,8 +722,34 @@ class Instance(object):
 
             for version in versions:
                 version = version_string.format(version)
-                request_json['taskInfo']['subTasks'][0]['options'][
-                    'restoreOptions']['fileOption']['sourceItem'].append(version)
+                restore_option["paths"].append(version)
+
+        self._restore_browse_option_json(restore_option)
+        self._restore_common_options_json(restore_option)
+        self._impersonation_json(restore_option)
+        self._restore_destination_json(restore_option)
+        self._restore_fileoption_json(restore_option)
+
+        request_json = {
+            "taskInfo": {
+                "associations": [self._restore_association],
+                "task": self._json_task,
+                "subTasks": [{
+                    "subTaskOperation": 1,
+                    "subTask": self._json_restore_subtask,
+                    "options": {
+                        "restoreOptions": {
+                            "impersonation": self._impersonation_json_,
+                            "browseOption": self._browse_restore_json,
+                            "commonOptions": self._commonoption_restore_json,
+                            "destination": self._destination_restore_json,
+                            "fileOption": self._fileoption_restore_json,
+                            "sharePointRstOption": self._restore_sharepoint_json
+                        }
+                    }
+                }]
+            }
+        }
 
         return request_json
 
@@ -934,6 +883,7 @@ class Instance(object):
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
                         versions            : list of version numbers to be backed up
+                        media_agent         : Media Agent need to be used for Browse and restore
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -988,7 +938,7 @@ class Instance(object):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options
+            restore_option=fs_options
         )
 
         return self._process_restore_response(request_json)
@@ -1130,6 +1080,162 @@ class Instance(object):
             return temp_backupset_obj.find(*args, **kwargs)
         else:
             raise SDKException('Instance', '104')
+
+    def _impersonation_json(self, value):
+        """setter of Impersonation Json entity of Json"""
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        if value.get("impersonate_user"):
+            use_impersonate = True
+
+        else:
+            use_impersonate = False
+
+        self._impersonation_json_ = {
+            "useImpersonation": use_impersonate,
+            "user": {
+                "userName": value.get("impersonate_user", ""),
+                "password": value.get("impersonate_password", "")
+            }
+        }
+
+    def _restore_browse_option_json(self, value):
+        """setter  the Browse options for restore in Json"""
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        if "copy_precedence" in value:
+            value["copy_precedence_applicable"] = True
+
+        time_range_dict = {}
+        if value.get('from_time'):
+            time_range_dict['fromTimeValue'] = value.get('from_time')
+
+        if value.get('to_time'):
+            time_range_dict['toTimeValue'] = value.get('to_time')
+
+        self._browse_restore_json = {
+            "listMedia": False,
+            "useExactIndex": False,
+            "noImage": False,
+            "commCellId": 2,
+            "mediaOption": {
+                "mediaAgent": {
+                    "mediaAgentName": value.get("media_agent", "")
+                },
+                "proxyForSnapClients": {
+                    "clientName": value.get("proxy_client", '')
+                },
+                "library": {},
+                "copyPrecedence": {
+                    "copyPrecedenceApplicable": value.get("copy_precedence_applicable", False),
+                    "copyPrecedence": value.get("copy_precedence", 0)
+                },
+                "drivePool": {}
+            },
+            "backupset": {
+                "clientName": value.get("client_name", ""),
+                "appName": self._agent_object.agent_name
+            },
+            "timeZone": {
+                "TimeZoneName": "(UTC) Coordinated Universal Time",
+            },
+            "timeRange": time_range_dict
+        }
+
+    def _restore_common_options_json(self, value):
+        """setter for  the Common options of in restore JSON"""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._commonoption_restore_json = {
+            "systemStateBackup": False,
+            "clusterDBBackedup": False,
+            "powerRestore": False,
+            "restoreToDisk": False,
+            "offlineMiningRestore": False,
+            "onePassRestore": False,
+            "detectRegularExpression": True,
+            "wildCard": False,
+            "preserveLevel": value.get("preserve_level", 1),
+            "restoreToExchange": False,
+            "stripLevel": 0,
+            "restoreACLs": value.get("restore_ACL", True),
+            "stripLevelType": value.get("striplevel_type", 0),
+            "allVersion": value.get("all_versions", False),
+            "unconditionalOverwrite": value.get("unconditional_overwrite", False)
+        }
+
+    def _restore_destination_json(self, value):
+        """setter for  the destination restore option in restore JSON"""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._destination_restore_json = {
+            "isLegalHold": False,
+            "inPlace": value.get("in_place", True),
+            "destPath": [value.get("destination_path", "")],
+            "destClient": {
+                "clientName": value.get("client_name", ""),
+                "clientId": value.get("client_id", "")
+            }
+        }
+
+    def _restore_fileoption_json(self, value):
+        """setter for  the fileoption restore option in restore JSON"""
+        self._fileoption_restore_json = {
+            "sourceItem": value.get("paths", []),
+            "browseFilters": value.get("browse_filters", [])
+        }
+
+    @property
+    def _restore_sharepoint_json(self):
+        """getter for Sharepoint restore option in JSON. it is read only attribute"""
+        _sharepoint_restore_json = {
+            "is90OrUpgradedClient": False
+        }
+
+        return _sharepoint_restore_json
+
+    @property
+    def _json_task(self):
+        """getter for the task information in JSON"""
+
+        _taks_option_json = {
+            "initiatedFrom": 2,
+            "taskType": 1,
+            "policyType": 0,
+            "taskFlags": {
+                "disabled": False
+            }
+        }
+
+        return _taks_option_json
+
+    @property
+    def _json_restore_subtask(self):
+        """getter for the subtask in restore JSON . It is read only attribute"""
+
+        _subtask_restore_json = {
+            "subTaskType": 3,
+            "operationType": 1001
+        }
+
+        return _subtask_restore_json
+
+    @property
+    def _json_backup_subtasks(self):
+        """getter for the subtask in restore JSON . It is read only attribute"""
+
+        _backup_subtask = {
+            "subTaskType": 2,
+            "operationType": 2
+        }
+
+        return _backup_subtask
 
     def refresh(self):
         """Refresh the properties of the Instance."""

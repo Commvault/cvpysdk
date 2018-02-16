@@ -176,7 +176,8 @@ class VirtualMachinePolicies(object):
         """Representation string for the instance of the Clients class."""
 
         return "VirtualMachinePolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host'])
+            self._commcell_object.commserv_name
+        )
 
     def _get_vm_policies(self):
         """Gets all the virtual machine policies associated to the commcell specified by the
@@ -927,7 +928,7 @@ class VirtualMachinePolicy(object):
 
         return ("VirtualMachinePolicy class instance for Virtual Machine Policy: '{0}' for "
                 "Commcell: '{1}'".format(
-                    self.vm_policy_name, self._commcell_object._headers['Host']
+                    self.vm_policy_name, self._commcell_object.commserv_name
                 ))
 
     def _get_vm_policy_id(self):

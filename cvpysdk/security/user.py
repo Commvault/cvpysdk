@@ -21,17 +21,22 @@ Users
 
     _process_add_or_delete_response()   --  process the add or delete users response
 
+    all_users()                         --  returns the dict of all the users on commcell
+
     add_local_user()                    --  adds the local user on this commcell
 
+    add_external_user()                 --  adds the external user on this commcell
+
     has_user()                          --  checks if user with specified user exists
-                                                on this commcell
+    on this commcell
 
     get()                               --  returns the user class object for the
-                                                specified user name
+    specified user name
 
     delete()                            --  deletes the user on this commcell
 
     refresh()                           --  refreshes the list of users on this commcell
+
 
 User
     __init__()                          --  initiaizes the user class object
@@ -45,7 +50,7 @@ User
     _update_user_props()                --  updates the properties associated with this user
 
     _update_usergroup_request()         --  makes the request to update usergroups associated
-                                                with this user
+    with this user
 
     user_name()                         --  returns the name of this user
 
@@ -60,7 +65,7 @@ User
     remove_usergroups()                 --  disassociated the usergroups with this user
 
     overwrite_usergroups()              --  reassociates the usergroups with new list of usergroups
-                                                on this user
+    on this user
 
     refresh()                           --  refreshes the properties of this user
 
@@ -104,11 +109,19 @@ class Users(object):
     def __repr__(self):
         """Representation string for the instance of the Users class."""
         return "Users class instance for Commcell: '{0}'".format(
-            self._commcell_object._headers['Host']
+            self._commcell_object.commserv_name
         )
 
     def _get_users(self):
-        """Returns the list of users configured on this commcell"""
+        """Returns the list of users configured on this commcell
+        
+            Returns:
+                dict of all the users on this commcell
+                    {
+                        'user_name_1': user_id_1
+                    }
+        
+        """
         GET_ALL_USERS_SERVICE = self._commcell_object._services['USERS']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -134,14 +147,14 @@ class Users(object):
     def _process_add_or_delete_response(self, flag, response):
         """Processes the flag and response received from the server during add / delete request
 
-        Args:
-            request_object  (object)  --  request objects specifying the details to request
+            Args:
+                request_object  (object)  --  request objects specifying the details to request
 
-        Raises:
-            SDKException:
-                if response is empty
+            Raises:
+                SDKException:
+                    if response is empty
 
-                if reponse is not success
+                    if reponse is not success
         """
         if flag:
             if response.json():
@@ -163,6 +176,39 @@ class Users(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _add_user(self, create_user_request):
+        """Makes the add user request on the server
+
+            Args:
+                create_user_request     (dict)  --  request json to create an user
+        """
+        ADD_USER = self._commcell_object._services['USERS']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', ADD_USER, create_user_request
+        )
+
+        error_code, error_message = self._process_add_or_delete_response(flag, response)
+
+        if not error_message:
+            error_message = 'Failed to add user. Please check logs for further details.'
+
+        if error_code != 0:
+            raise SDKException('User', '102', error_message)
+
+        self._users = self._get_users()
+
+    @property
+    def all_users(self):
+        """Returns the dict of all the users on the commcell
+        
+            dict of all the users on commcell
+                {
+                    'user_name_1': user_id_1
+                }
+        """
+        return self._users
 
     def add_local_user(self,
                        user_name,
@@ -230,33 +276,62 @@ class Users(object):
             }]
         }
 
-        ADD_USER = self._commcell_object._services['USERS']
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', ADD_USER, create_local_user_request
-        )
-
-        error_code, error_message = self._process_add_or_delete_response(flag, response)
-
-        if not error_message:
-            error_message = 'Failed to add user. Please check logs for further details.'
-
-        if error_code != 0:
-            raise SDKException('User', '102', error_message)
-
-        self._users = self._get_users()
+        self._add_user(create_local_user_request)
 
         return self.get(user_name)
+
+    def add_external_user(self, domain, user_name, email):
+        """Adds an external user on the specified domain
+
+            Args:
+                domain      (str)   --  name of the domain to which the user is to be included
+
+                user_name   (str)   --  name of the user as under domain
+
+                email       (str)   --  email id of the user
+
+            Raises:
+                SDKException:
+                    if data type of input is invalid
+
+                    if user with specified name already exists
+
+                    if password or system_generated_password are not set
+
+                    if failed to add user to commcell
+
+        """
+        if not (isinstance(domain, basestring) and
+                isinstance(user_name, basestring) and
+                isinstance(email, basestring)):
+            raise SDKException('User', '101')
+
+        username = "{0}\\{1}".format(domain, user_name)
+        create_user_request = {
+            "userType": 5,
+            "users": [
+              {
+                "email": email,
+                "userEntity": {
+                  "userName": username
+                }
+              }
+            ]
+          }
+
+        self._add_user(create_user_request)
+
+        return self.get(username)
 
     def has_user(self, user_name):
         """Checks if any user with specified name exists on this commcell
 
-        Args:
-            user_name         (str)     --     name of the user which has to be checked if exists
+            Args:
+                user_name         (str)     --     name of the user which has to be checked if exists
 
-        Raises:
-            SDKException:
-                if data type of input is invalid
+            Raises:
+                SDKException:
+                    if data type of input is invalid
         """
         if not isinstance(user_name, basestring):
             raise SDKException('User', '101')
@@ -266,12 +341,12 @@ class Users(object):
     def get(self, user_name):
         """Returns the user object for the specified user name
 
-        Args:
-            user_name  (str)  --  name of the user for which the object has to be created
+            Args:
+                user_name  (str)  --  name of the user for which the object has to be created
 
-        Raises:
-            SDKException:
-                if user doesn't exist with specified name
+            Raises:
+                SDKException:
+                    if user doesn't exist with specified name
         """
         if not self.has_user(user_name):
             raise SDKException(
@@ -283,16 +358,16 @@ class Users(object):
     def delete(self, user_name):
         """Deletes the specified user from the existing commcell users
 
-        Args:
-            user_name     (str)     --     name of the user which has to be deleted
+            Args:
+                user_name     (str)     --     name of the user which has to be deleted
 
-        Raises:
-            SDKException:
-                if user doesn't exist
+            Raises:
+                SDKException:
+                    if user doesn't exist
 
-                if response is empty
+                    if response is empty
 
-                if response is not success
+                    if response is not success
 
         """
         if not self.has_user(user_name):
@@ -430,10 +505,11 @@ class User(object):
     def _update_usergroup_request(self, request_type, usergroups_list=[]):
         """Updates the usergroups this user is associated to
 
-        Args:
-            usergroups_list     (list)     --     list of usergroups to be updated
+            Args:
+                usergroups_list     (list)     --     list of usergroups to be updated
 
-            request_type         (str)     --     type of request to be done
+                request_type         (str)     --     type of request to be done
+
         """
         update_usergroup_request = {
             "NONE": 0,
@@ -497,14 +573,15 @@ class User(object):
     def add_usergroups(self, usergroups_list):
         """Adds the specified usergroups to this commcell user
 
-        Args:
-            usergroups_list     (list)     --     list of usergroups to be added
+            Args:
+                usergroups_list     (list)     --     list of usergroups to be added
 
-        Raises:
-            SDKException:
-                if data type of input is invalid
+            Raises:
+                SDKException:
+                    if data type of input is invalid
 
-                if failed to add usergroups
+                    if failed to add usergroups
+
         """
         if not isinstance(usergroups_list, list):
             raise SDKException('USER', '101')
@@ -514,14 +591,15 @@ class User(object):
     def remove_usergroups(self, usergroups_list):
         """Removes the specified usergroups to this commcell user
 
-        Args:
-            usergroups_list     (list)     --     list of usergroups to be deleted
+            Args:
+                usergroups_list     (list)     --     list of usergroups to be deleted
 
-        Raises:
-            SDKException:
-                if data type of input is invalid
+            Raises:
+                SDKException:
+                    if data type of input is invalid
 
-                if failed to delete usergroups
+                    if failed to delete usergroups
+
         """
         if not isinstance(usergroups_list, list):
             raise SDKException('USER', '101')
@@ -531,14 +609,15 @@ class User(object):
     def overwrite_usergroups(self, usergroups_list):
         """Overwrites the specified usergroups to this commcell user
 
-        Args:
-            usergroups_list     (list)     --     list of usergroups to be overwritten
+            Args:
+                usergroups_list     (list)     --     list of usergroups to be overwritten
 
-        Raises:
-            SDKException:
-                if data type of input is invalid
+            Raises:
+                SDKException:
+                    if data type of input is invalid
 
-                if failed to overwrite usergroups
+                    if failed to overwrite usergroups
+
         """
         if not isinstance(usergroups_list, list):
             raise SDKException('USER', '101')

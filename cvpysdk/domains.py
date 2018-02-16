@@ -15,7 +15,7 @@ Domains: Class for representing all the associated domains with the commcell.
 Domains:
 
     __init__(commcell_object)  --  initialize instance of the Domains associated with
-                                       the specified commcell
+    the specified commcell
 
     __str__()                  --  returns all the domains associated with the commcell
 
@@ -23,10 +23,12 @@ Domains:
 
     _get_domains()             --  gets all the domains associated with the commcell specified
 
+    all_domains()              -- returns the dict of all the domanin configured
+
     has_domain()               --  checks if a domain exists with the given name or not
 
     get(domain_name)           --  returns the instance of the Domain class,
-                                       for the the input domain name
+    for the the input domain name
 
     delete(domain_name)        --  deletes the domain from the commcell
 
@@ -86,7 +88,7 @@ class Domains(object):
     def __repr__(self):
         """Representation string for the instance of the Domains class."""
         return "Domains class instance for Commcell: '{0}'".format(
-            self._commcell_object.webconsole_hostname
+            self._commcell_object.commserv_name
         )
 
     def _get_domains(self):
@@ -125,6 +127,20 @@ class Domains(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_domains(self):
+        """Returns the domains configured on this commcell
+
+            dict - consists of all domain in the commcell
+
+                    {
+                         "domain1_name": domain_Details_dict1,
+
+                         "domain2_name": domain_Details_dict2
+                    }
+        """
+        return self._domains
 
     def has_domain(self, domain_name):
         """Checks if a domain exists in the commcell with the input domain name.

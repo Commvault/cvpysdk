@@ -61,6 +61,6 @@ class CloudAppsBackupset(Backupset):
         if cloud_apps_instance_type in instance_types:
             instance_type = instance_types[cloud_apps_instance_type]
         else:
-            instance_type = Backupset
+            instance_type = cls
 
         return object.__new__(instance_type)
