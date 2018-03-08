@@ -236,7 +236,7 @@ class VirtualServerSubclient(Subclient):
         """
         vm_filter = []
 
-        if not self._vmFilter:
+        if  self._vmFilter:
             subclient_filter = self._vmFilter
 
             if 'children' in subclient_filter:
@@ -1157,7 +1157,8 @@ class VirtualServerSubclient(Subclient):
                            restore_ACL=True,
                            from_date=None,
                            to_date=None,
-                           show_deleted_files=True):
+                           show_deleted_files=True,
+                           fbr_ma = None):
         """perform Guest file restore of the provided path
 
         Args:
@@ -1214,14 +1215,11 @@ class VirtualServerSubclient(Subclient):
         if destination_client is None:
             destination_client = self._backupset_object._instance_object.co_ordinator
 
-        if isinstance(destination_client, Client):
-            client = destination_client
-        elif isinstance(destination_client, basestring):
-            client = Client(self._commcell_object, destination_client)
-        else:
-            raise SDKException('Subclient', '105')
+        if fbr_ma:
+            _file_restore_option["proxy_client"] = fbr_ma
 
-        _file_restore_option["client_name"] = client.client_name
+
+        _file_restore_option["client"] = destination_client
         _file_restore_option["destination_path"] = destination_path
 
         # process the folder to restore for browse
@@ -1250,9 +1248,6 @@ class VirtualServerSubclient(Subclient):
         _file_restore_option["unconditional_overwrite"] = unconditional_overwrite
         _file_restore_option["restore_ACL"] = restore_ACL
 
-        # set the browse option
-        _file_restore_option["copy_precedence_applicable"] = True
-        _file_restore_option["copy_precedence"] = copy_preceedence
 
         # prepare and execute the Json
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
@@ -1474,13 +1469,14 @@ class VirtualServerSubclient(Subclient):
             instance = agent.instances.get(instancekeys)
             restore_option["destination_instance"] = instance.instance_name
 
-        restore_option["esx_server"] = instance.server_host_name[0]
+        if (("esx_server" not in restore_option) or (
+                    restore_option["esx_server"] is None)):
+            restore_option["esx_server"] = instance.server_host_name[0]
 
         if (("client_name" not in restore_option) or
                 (restore_option["client_name"] is None)):
             restore_option["client_name"] = instance.co_ordinator
-        else:
-            restore_option["client_name"] = restore_option["proxy_client"]
+
 
     def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
         """
@@ -1551,12 +1547,18 @@ class VirtualServerSubclient(Subclient):
         nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore)
         restore_option["nics"] = nics_list
 
+        if not (restore_option["out_place"]):
+            if "hyper" in  restore_option["destination_instance"] :
+                restore_option["client_name"] = vs_metadata['esxHost']
+                restore_option["esx_server"] = vs_metadata['esxHost']
+
         # populate VM Specific values
         self._set_restore_inputs(
             restore_option,
             disks=vm_disks,
             esx_host=vs_metadata['esxHost'],
-            new_name="Delete" + vm_to_restore
+            new_name="Delete" + vm_to_restore,
+            client=restore_option["client_name"]
         )
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)

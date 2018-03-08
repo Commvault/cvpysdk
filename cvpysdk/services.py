@@ -41,7 +41,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENT': '{0}Client/%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
-    'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=true&resourceCapacity=true',
+    'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=true&resourceCapacity=false',
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
@@ -187,7 +187,14 @@ SERVICES_DICT_TEMPLATE = {
 
     'STORAGE_POOL': '{0}StoragePool',
 
-    'LICENSE': '{0}CommcellRegistrationInformation'
+    'LICENSE': '{0}CommcellRegistrationInformation',
+    
+    'GET_ALL_MONITORING_POLICIES' : '{0}getLMCloudAndMonitoringPolicyList',
+    'GET_ALL_ANALYTICS_SERVERS' : '{0}AnalyticsServers',
+    'GET_ALL_TEMPLATES' : '{0}logmonitoring/search/getListOfTemplate',
+    'CREATE_DELETE_EDIT_OPERATIONS' : '{0}logmonitoring/policy/operations',
+    'GET_MONITORING_POLICY_PROP' : '{0}logmonitoring/Policy/%s',
+    'RUN_MONITORING_POLICY' : '{0}logmonitoring/Policy/%s/Action/Run'
 }
 
 

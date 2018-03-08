@@ -184,6 +184,11 @@ Attributes
     **is_ready**                    --  returns boolean value specifying whether services on the
     client are running or not, and whether the CommServ is able to communicate with the client
 
+
+    set_encryption_prop ()       --    Set encryption properties on a client
+
+    set_dedup_prop()             --     Set DDB properties
+
 """
 
 from __future__ import absolute_import
@@ -935,6 +940,9 @@ class Client(object):
                 if 'installDirectory' in self._properties['client']:
                     self._install_directory = self._properties['client']['installDirectory']
 
+                if 'jobResulsDir' in self._properties['client']:
+                    self._job_results_directory = self._properties['client']['jobResulsDir']['path']
+
                 if 'GalaxyRelease' in self._properties['client']['versionInfo']:
                     self._version = self._properties['client'][
                         'versionInfo']['GalaxyRelease']['ReleaseString']
@@ -1232,6 +1240,11 @@ class Client(object):
     def service_pack(self):
         """Treats the service pack as a read-only attribute."""
         return self._service_pack
+
+    @property
+    def job_results_directory(self):
+        """Treats the job_results_directory pack as a read-only attribute."""
+        return self._job_results_directory
 
     @property
     def agents(self):
@@ -2205,3 +2218,160 @@ class Client(object):
             self._schedules = None
             self._users = None
             self._network = None
+
+    def set_encryption_property(self,
+                                value,
+                                key=None,
+                                key_len=None):
+        """updates encryption properties on client
+        Args:
+            value   (str)   --  enable(True) or disable (False) encryption
+            key     (str)   --  cipher type
+            key_len  (str)   --  cipher key length
+
+
+            to enable encryption : give value, key, key_len params
+            to disable: give value param
+
+        """
+
+        client_props = self._properties['clientProps']
+
+        if value is True:
+            client_props['CipherType'] = key
+            client_props['EnableEncryption'] = value
+            client_props['EncryptKeyLength'] = int(key_len)
+
+        else:
+            client_props['EnableEncryption'] = value
+
+        request_json = self._update_client_props_json(client_props)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json)
+
+        self._get_client_properties()
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json()['errorCode'])
+                    if error_code != 0:
+                        if 'errorMessage' in response.json():
+                            error_message = "Failed to update client {0}.\nError: {1}".format(
+                                self.client_name, response.json()['errorMessage']
+                            )
+                        else:
+                            error_message = "Failed to update {0} client".format(
+                                self.client_name
+                            )
+
+                        raise SDKException('Client', '102', error_message)
+                elif 'response' in response.json():
+                    error_code = int(response.json()['response'][0]['errorCode'])
+
+                    if error_code != 0:
+                        error_message = "Failed to update the client"
+                        raise SDKException('Client', '102', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def set_dedup_property(self,
+                           prop_name,
+                           prop_value,
+                           client_side_cache=None,
+                           max_cache_db=None):
+        """
+            Set DDB propeties
+
+          :param prop_name:    property name
+        :param prop_value:   property value
+        :return:
+
+        prop_name and prop_value:
+            clientSideDeduplication values:
+                USE_SPSETTINGS, to use storage policy settings
+                ON_CLIENT, to enable client side deduplication
+                OFF, to disable client side deduplication
+
+                enableClientSideCache: True/False
+                maxCacheDB: Valid values are:
+                                1024
+                                2048
+                                4096
+                                8192
+                                16384
+                                32768
+                                65536
+                                131072
+
+
+        """
+        if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):
+            raise SDKException('Client', '101')
+
+        if prop_name == "clientSideDeduplication" and prop_value == "ON_CLIENT":
+            if client_side_cache is True and max_cache_db is not None:
+                dedupe_props = {
+                    'deDuplicationProperties': {
+                        'clientSideDeduplication': prop_value,
+                        'enableClientSideDiskCache': client_side_cache,
+                        'maxCacheDb': max_cache_db
+                    }
+                }
+
+            else:
+                dedupe_props = {
+                    'deDuplicationProperties': {
+                        'clientSideDeduplication': prop_value,
+                        'enableClientSideDiskCache': client_side_cache
+                    }
+                }
+
+        else:
+            dedupe_props = {
+                'deDuplicationProperties': {
+                    'clientSideDeduplication': prop_value
+                }
+            }
+
+        request_json = self._update_client_props_json(dedupe_props)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json)
+
+        self._get_client_properties()
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json()['errorCode'])
+                    if error_code != 0:
+                        if 'errorMessage' in response.json():
+                            error_message = "Failed to update client {0}.\nError: {1}".format(
+                                self.client_name, response.json()['errorMessage']
+                            )
+                        else:
+                            error_message = "Failed to update {0} client".format(
+                                self.client_name
+                            )
+
+                        raise SDKException('Client', '102', error_message)
+                elif 'response' in response.json():
+                    error_code = int(response.json()['response'][0]['errorCode'])
+
+                    if error_code != 0:
+                        error_message = "Failed to update the client"
+                        raise SDKException('Client', '102', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

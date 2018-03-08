@@ -1107,7 +1107,7 @@ class Instance(object):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
-        if "copy_precedence" in value:
+        if "copy_precedence" in value and value["copy_precedence"] != 0:
             value["copy_precedence_applicable"] = True
 
         time_range_dict = {}

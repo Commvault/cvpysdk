@@ -118,6 +118,8 @@ StoragePolicies:
 
     add()                        --  adds a new storage policy to the commcell
 
+    add_tape_sp()               -- add new storage policy with tape library as data path
+
     delete(storage_policy_name)  --  removes the specified storage policy from the commcell
 
     refresh()                    --  refresh the storage policies associated with the commcell
@@ -128,6 +130,7 @@ StoragePolicy:
              storage_policy_name,
              storage_policy_id)             --  initialize the instance of StoragePolicy class for
     a specific storage policy of the commcell
+
 
     __repr__()                              --  returns a string representation of the
     StoragePolicy instance
@@ -142,6 +145,8 @@ StoragePolicy:
 
     create_secondary_copy()                 --  creates a storage policy copy
 
+    create_dedupe_secondary_copy()          --  create secondary copy with dedupe enabled
+
     delete_secondary_copy()                 --  deletes storage policy copy
 
     copies()                                --  returns the storage policy copies associated with
@@ -151,6 +156,12 @@ StoragePolicy:
     returns the job object
 
     refresh()                               --  refresh the properties of the storage policy
+
+	update_transactional_ddb()              --  enable/disable transactional DDB option on a DDB
+
+    seal_ddb()                               --  seal a DDB store
+
+    delete_job()                             -- delete a job from storage policy node
 
 
 SchedulePolicies:
@@ -905,7 +916,7 @@ class StoragePolicies(object):
 
         if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
                 (not (isinstance(storage_policy_name, basestring) and
-                      isinstance(retention_period, int))) or
+                          isinstance(retention_period, int))) or
                 (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
             raise SDKException('Storage', '101')
 
@@ -997,6 +1008,50 @@ class StoragePolicies(object):
                 raise SDKException('Response', '101', response_string)
 
             return self.get(storage_policy_name)
+
+
+
+    def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool):
+        """
+
+        :param storage_policy_name: name of the new storage policy to add
+        :param library: name or instance of the library to add the policy to
+        :param media_agent: name or instance of media agent to add the policy to
+        :param drive_pool: name of the drive pool associated with the storage policy
+        :param scratch_pool: name of the scratch pool associated with the storage policy
+        :return:
+        """
+
+        from urllib.parse import urlencode
+        tape_library = library
+        encode_dict = {"storagepolicy": storage_policy_name, "mediaagent": media_agent, "library": tape_library,
+                       "drivepool": drive_pool, "scratchpool": scratch_pool}
+        web_service = self._POLICY + '?' + urlencode(encode_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', web_service)
+
+        if flag:
+            try:
+                if response.json():
+                    if 'errorCode' in response.json():
+                        error_code = response.json()['errorCode']
+                        if error_code != 0:
+                            o_str = 'Failed to add storage policy\nError: "{0}"'
+                            raise SDKException('Storage', '102', o_str.format(error_code))
+
+            except ValueError:
+                if response.text:
+                    # initialize the policies again
+                    # so the policies object has all the policies
+                    self.refresh()
+                    return response.text.strip()
+                else:
+                    raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return storage_policy_name
 
     def delete(self, storage_policy_name):
         """Deletes a storage policy from the commcell.
@@ -1145,7 +1200,15 @@ class StoragePolicy(object):
 
         return self._copies and copy_name.lower() in self._copies
 
-    def create_secondary_copy(self, copy_name, library_name, media_agent_name):
+    def create_secondary_copy(self,
+                              copy_name,
+                              library_name,
+                              media_agent_name,
+                              drive_pool=None,
+                              spare_pool=None,
+                              tape_library_id=None,
+                              drive_pool_id=None,
+                              spare_pool_id=None):
         """Creates Synchronous copy for this storage policy
 
             Args:
@@ -1176,20 +1239,37 @@ class StoragePolicy(object):
             err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
             raise SDKException('Storage', '102', err_msg)
 
-        library_id = self._commcell_object.disk_libraries._libraries[library_name]
         media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]
 
-        request_xml = """
-        <App_CreateStoragePolicyCopyReq copyName="{0}">
-            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
-                <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
-                <library _type_="9" libraryId="{3}" libraryName="{4}" />
-                <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
-                <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
-            </storagePolicyCopyInfo>
-        </App_CreateStoragePolicyCopyReq>
-        """.format(copy_name, self.storage_policy_id, self.storage_policy_name, library_id,
-                   library_name, media_agent_id, media_agent_name)
+        if drive_pool is not None:
+            request_xml = """
+                        <App_CreateStoragePolicyCopyReq copyName="{0}">
+                            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
+                                <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
+                                <library _type_="9" libraryId="{3}" libraryName="{4}" />
+                                <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                                <drivePool drivePoolId = "{7}" drivePoolName = "{8}"  libraryName = "{4}" />
+                                <spareMediaGroup spareMediaGroupId = "{9}" spareMediaGroupName = "{10}" libraryName = "{4}" />
+                                <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
+                            </storagePolicyCopyInfo>
+                        </App_CreateStoragePolicyCopyReq>
+                        """.format(copy_name, self.storage_policy_id, self.storage_policy_name, tape_library_id,
+                                   library_name, media_agent_id, media_agent_name, drive_pool_id, drive_pool,
+                                   spare_pool_id, spare_pool)
+
+        else:
+            library_id = self._commcell_object.disk_libraries._libraries[library_name]
+            request_xml = """
+            <App_CreateStoragePolicyCopyReq copyName="{0}">
+                <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
+                    <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
+                    <library _type_="9" libraryId="{3}" libraryName="{4}" />
+                    <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                    <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
+                </storagePolicyCopyInfo>
+            </App_CreateStoragePolicyCopyReq>
+            """.format(copy_name, self.storage_policy_id, self.storage_policy_name, library_id,
+                       library_name, media_agent_id, media_agent_name)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -1211,7 +1291,6 @@ class StoragePolicy(object):
                             error_message = "Failed to create {0} Storage Policy copy".format(
                                 copy_name
                             )
-
                         raise SDKException('Storage', '102', error_message)
 
                 else:
@@ -1283,7 +1362,7 @@ class StoragePolicy(object):
 
     @property
     def copies(self):
-        """"Treatss the storage policy copies as a read-only attribute"""
+        """Treats the storage policy copies as a read-only attribute"""
         return self._copies
 
     @property
@@ -1296,7 +1375,7 @@ class StoragePolicy(object):
         """Treats the storage policy name as a read-only attribute."""
         return self._storage_policy_name
 
-    def run_aux_copy(self, storage_policy_copy_name, media_agent, streams=0):
+    def run_aux_copy(self, storage_policy_copy_name, media_agent, use_scale=False, streams=0):
         """Runs the aux copy job from the commcell.
 
             Args:
@@ -1305,6 +1384,8 @@ class StoragePolicy(object):
                 media_agent              (str)  --  name of the media agent
 
                 streams                  (int)  --  number of streams to use
+
+                use_scale                       --  use Scalable Resource Management (True/False)
 
             Returns:
                 object - instance of the Job class for this aux copy job
@@ -1357,6 +1438,7 @@ class StoragePolicy(object):
                                     "auxcopyJobOption": {
                                         "maxNumberOfStreams": streams,
                                         "useMaximumStreams": use_max_streams,
+                                        "useScallableResourceManagement": use_scale,
                                         "mediaAgent": {
                                             "mediaAgentName": media_agent
                                         }
@@ -1395,6 +1477,197 @@ class StoragePolicy(object):
     def refresh(self):
         """Refresh the properties of the StoragePolicy."""
         self._initialize_storage_policy_properties()
+
+    def delete_job(self, jobID, SPName, copy_name):
+        """
+        Deletes a job on Storage Policy
+        :param jobID: ID for the job to be deleted
+        :param SPName: name of the storage policy
+        :param copy_name: name of the copy
+        :return:
+        """
+
+        if not (isinstance(SPName, basestring) and
+                isinstance(copy_name, basestring) and isinstance(jobID, basestring)):
+            raise SDKException('Storage', '101')
+
+        request_xml = """       
+        <App_JobOperationCopyReq operationType="2">
+        <jobList appType="" commCellId="2" jobId="{0}"><copyInfo copyName="{1}" storagePolicyName="{2}"/></jobList>
+        <commCellInfo commCellId="2"/></App_JobOperationCopyReq>
+        """.format(jobID, copy_name, SPName)
+
+        self._commcell_object._qoperation_execute(request_xml)
+
+    def seal_ddb(self, SPName, copy_name):
+        """
+        Seals the related DDB
+        :param SPName: name of the storage policy
+        :param copy_name: name od teh associated copy
+        :return:
+        """
+        if not (isinstance(SPName, basestring) and
+                isinstance(copy_name, basestring)):
+            raise SDKException('Storage', '101')
+
+        request_xml = """
+        <App_SealSIDBStoreReq>
+            <archiveGroupCopy>
+                <copyName>{0}</copyName>
+                <storagePolicyName>{1}</storagePolicyName>
+            </archiveGroupCopy>
+        </App_SealSIDBStoreReq>
+
+        """.format(copy_name, SPName)
+        self._commcell_object._qoperation_execute(request_xml)
+
+    def update_transactional_ddb(self, updateValue, copy_name, SPName, media_agent_name):
+        """
+        Enables TransactionalDDB on the related DDB
+
+        :param updateValue :   enable(True)/disable(False)
+        :param copy_name: name of the associated copy
+        :param SPName: name of the associated storage policy
+        :param : media_agent_name : name of the media agent
+        :return:
+        """
+        if not (isinstance(SPName, basestring) and
+                isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
+            raise SDKException('Storage', '101')
+
+        request_xml = """
+        <App_UpdateStoragePolicyCopyReq >
+            <storagePolicyCopyInfo >
+                <StoragePolicyCopy>
+                    <copyName>{0}</copyName> 
+                    <storagePolicyName>{1}</storagePolicyName>
+                </StoragePolicyCopy>		
+                <DDBPartitionInfo>
+                    <maInfoList>
+                        <mediaAgent>  
+                            <mediaAgentName>{2}</mediaAgentName>
+                        </mediaAgent>
+                            </maInfoList>			
+                            <sidbStoreInfo>
+                                <sidbStoreFlags> 
+                            <enableTransactionalDDB>{3}</enableTransactionalDDB>
+                        </sidbStoreFlags> 
+                            </sidbStoreInfo>
+                    </DDBPartitionInfo>
+           </storagePolicyCopyInfo>
+        </App_UpdateStoragePolicyCopyReq>
+        """.format(copy_name, SPName, media_agent_name, updateValue)
+
+        self._commcell_object._qoperation_execute(request_xml)
+
+    def create_dedupe_secondary_copy(self, copy_name, library_name, media_agent_name, path, ddb_media_agent,
+                                     enableDASHFull=None, enableClientSideDedup=None, enableSourceSideDiskCache=None):
+        """Creates Synchronous copy for this storage policy
+
+            Args:
+                copy_name           (str)   --  copy name to create
+
+                library_name        (str)   --  library name to be assigned
+
+                media_agent_name    (str)   --  media_agent to be assigned
+
+            Raises:
+                SDKException:
+                    if type of inputs in not string
+
+                    if copy with given name already exists
+
+                    if failed to create copy
+
+                    if response received is empty
+
+                    if response is not success
+        """
+        if not (isinstance(copy_name, basestring) and
+                isinstance(library_name, basestring) and
+                isinstance(media_agent_name, basestring)):
+            raise SDKException('Storage', '101')
+
+        if enableClientSideDedup is None:
+            enableClientSideDedup = "2"
+        if enableDASHFull is None:
+            enableDASHFull = "2"
+        if enableSourceSideDiskCache is None:
+            enableSourceSideDiskCache = "2"
+
+        if self.has_copy(copy_name):
+            err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
+            raise SDKException('Storage', '102', err_msg)
+
+        library_id = self._commcell_object.disk_libraries._libraries[library_name]
+        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]
+
+        request_xml = """
+        <App_CreateStoragePolicyCopyReq copyName="{0}">
+            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
+                <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
+                <library _type_="9" libraryId="{3}" libraryName="{4}" />
+                <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                <copyFlags auxCopyReencryptData="1" />
+                <dedupeFlags enableDeduplication="1" enableDASHFull="{9}" enableClientSideDedup="{10}" enableSourceSideDiskCache="{11}"/>
+                <dataEncryption>
+                    <encryptData>1</encryptData>
+                    <encryptionType>AES</encryptionType>
+                    <encryptionKeyLength>256</encryptionKeyLength>
+                </dataEncryption>
+                <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
+                <DDBPartitionInfo>
+                    <maInfoList>
+                        <mediaAgent mediaAgentName="{8}"/>
+                        <subStoreList>
+                            <diskFreeThresholdMB>5120</diskFreeThresholdMB>
+                            <diskFreeWarningThreshholdMB>10240</diskFreeWarningThreshholdMB>
+                            <accessPath path="{7}"/>
+                        </subStoreList>
+                    </maInfoList>
+                    <sidbStoreInfo>
+                        <operation>1</operation>
+                        <copyName>{0}</copyName>
+                        <sidbStoreFlags enableSoftwareCompression="2"/>
+                    </sidbStoreInfo>
+                </DDBPartitionInfo>
+
+            </storagePolicyCopyInfo>
+        </App_CreateStoragePolicyCopyReq>
+        """.format(copy_name, self.storage_policy_id, self.storage_policy_name, library_id,
+                   library_name, media_agent_id, media_agent_name, path, ddb_media_agent, enableDASHFull,
+                   enableClientSideDedup, enableSourceSideDiskCache)
+
+        create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_copy_service, request_xml
+        )
+
+        self.refresh()
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 0:
+                        if 'errorMessage' in response.json()['error']:
+                            error_message = "Failed to create {0} Storage Policy copy with error \
+                            {1}".format(copy_name, str(response.json()['error']['errorMessage']))
+                        else:
+                            error_message = "Failed to create {0} Storage Policy copy".format(
+                                copy_name
+                            )
+
+                        raise SDKException('Storage', '102', error_message)
+
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
 
 class SchedulePolicies(object):

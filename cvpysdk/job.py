@@ -116,7 +116,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import time
-from json import JSONDecodeError
 
 from .exception import SDKException
 
@@ -329,7 +328,7 @@ class JobController(object):
                 else:
                     raise SDKException('Response', '102')
 
-            except JSONDecodeError:
+            except ValueError:
                 raise SDKException('Response', '102', 'Please check the inputs.')
         else:
             response_string = self._update_response_(response.text)

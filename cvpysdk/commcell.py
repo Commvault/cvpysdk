@@ -43,6 +43,7 @@ Commcell:
     refresh()                   --  refresh the properties associated with the Commcell
     class instance
 
+    run_data_aging()             --  run data ageing from comcell level
 
 Commcell instance Attributes
 ============================
@@ -121,6 +122,9 @@ Commcell instance Attributes
 
     **storage_pools**       --  returns the instance of the `StoragePools` class,
     to interact with the storage pools added to the Commcell Admin Console
+    
+    **monitoring_policies**       --  returns the instance of the `MonitoringPolicies` class,
+    to interact with the MonitoringPolicies added to the Commcell 
 
 
 """
@@ -161,6 +165,7 @@ from .security.user import Users
 from .download_center import DownloadCenter
 from .organization import Organizations
 from .storage_pool import StoragePools
+from .monitoring import MonitoringPolicies
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -274,6 +279,7 @@ class Commcell(object):
         self._download_center = None
         self._organizations = None
         self._storage_pools = None
+        self._monitoring_policies = None
 
         self.refresh()
 
@@ -341,6 +347,7 @@ class Commcell(object):
         del self._download_center
         del self._organizations
         del self._storage_pools
+        del self._monitoring_policies
 
         del self._web_service
         del self._cvpysdk_object
@@ -693,6 +700,19 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
         except SDKException:
             return None
+            
+    @property
+    def monitoring_policies(self):
+        """Returns the instance of the MonitoringPolicies class."""
+        try:
+            if self._monitoring_policies is None:
+                self._monitoring_policies = MonitoringPolicies(self)
+                
+            return self._monitoring_policies
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
 
     def logout(self):
         """Logs out the user associated with the current instance."""
@@ -807,5 +827,95 @@ class Commcell(object):
         self._download_center = None
         self._organizations = None
         self._storage_pools = None
+        self._monitoring_policies = None
 
         self._get_commserv_details()
+
+    def run_data_aging(self,
+                       copy_name=None,
+                       storage_policy_name=None,
+                       is_granular=False,
+                       include_all=True,
+                       include_all_clients=False,
+                       select_copies=False,
+                       prune_selected_copies=False):
+        """
+        Runs the Data Aging from Commcell,SP and copy level
+
+
+        """
+
+        if storage_policy_name is None:
+            copy_name = ""
+            storage_policy_name = ""
+
+        if copy_name is None:
+            copy_name = ""
+
+        request_json = {
+            "taskInfo": {
+                "associations": [
+                ],
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 2,
+                    "policyType": 0,
+                    "alert": {
+                        "alertName": ""
+                    },
+                    "taskFlags": {
+                        "isEdgeDrive": False,
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4018
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "dataAgingOption": {
+                                    "selectCopies": select_copies,
+                                    "includeAllClients": include_all_clients,
+                                    "pruneSelectedCopies": prune_selected_copies,
+                                    "isGranular": is_granular,
+                                    "includeAll": include_all,
+                                    "archiveGroupCopy": [
+                                        {
+                                            "copyName": copy_name,
+                                            "storagePolicyName": storage_policy_name
+                                        }
+                                    ]
+                                }
+                            }
+
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['CREATE_TASK'], request_json)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    from .job import Job
+                    return Job(self, response.json()['jobIds'][0])
+
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Data Aging job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '102', 'Failed to run the Data Aging job')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

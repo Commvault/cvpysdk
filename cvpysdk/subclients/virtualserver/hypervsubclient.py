@@ -109,9 +109,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         if destination_client is None:
             _disk_restore_option[
-                "client_name"] = self._backupset_object._instance_object.co_ordinator
+                "client"] = self._backupset_object._instance_object.co_ordinator
         else:
-            _disk_restore_option["client_name"] = destination_client
+            _disk_restore_option["client"] = destination_client
 
         _disk_restore_option["destination_path"] = destination_path
 
@@ -138,7 +138,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         else:
             _disk_restore_option["destination_vendor"] = \
                 self._backupset_object._instance_object._vendor_id
-            _disk_restore_option["destination_disktype"] = 4
+            _disk_restore_option["destination_disktype"] = 0
+
+        _disk_restore_option["volume_level_restore"] = 4
 
 
         # set Source item List
@@ -261,6 +263,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             volume_level_restore=1,
             vcenter_client=destination_client,
             client_name=proxy_client,
+            esx_server=proxy_client,
+            esx_host=proxy_client,
             add_to_failover=add_to_failover,
             datastore=destination_path,
             out_place=True,

@@ -24,11 +24,13 @@ WorkFlows:
 
     _get_workflows()                    --  gets all the workflows deployed on the commcell
 
-    _get_activities()                   --  gets all the workflow activities deployed on the commcell
+    _get_activities()                   --  gets all the workflow activities deployed
+    on the commcell
 
     has_workflow(workflow_name)         --  checks if the workflow exists with given name or not
 
-    has_activity(activity_name)         --  checks if the workflow activity exists with given name or not
+    has_activity(activity_name)         --  checks if the workflow activity exists with given name
+    or not
 
     import_workflow(workflow_xml)       --  imports a workflow to the Commcell
 
@@ -222,7 +224,7 @@ class WorkFlows(object):
                                 workflow_input['display_name'] = a_input.get('displayName')
                                 workflow_input['documentation'] = a_input.get('documentation')
                                 workflow_input['default_value'] = a_input.get('defaultValue')
-                                workflow_input['is_required'] = a_input.get('required',False)
+                                workflow_input['is_required'] = a_input.get('required', False)
 
                                 workflow_inputs.append(workflow_input)
                         else:
@@ -246,7 +248,6 @@ class WorkFlows(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-
 
     def _get_activities(self):
         """Gets all the workflow activities associated to the commcell.
@@ -285,10 +286,7 @@ class WorkFlows(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException(
-                            'Response',
-                            '101',
-                            self._update_response_(response.text))
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def has_workflow(self, workflow_name):
         """Checks if a workflow exists in the commcell with the input workflow name.
@@ -310,7 +308,6 @@ class WorkFlows(object):
 
         return self._workflows and workflow_name.lower() in self._workflows
 
-
     def has_activity(self, activity_name):
         """Checks if a workflow activity exists in the commcell with the input
             activity name.
@@ -331,7 +328,6 @@ class WorkFlows(object):
             raise SDKException('Workflow', '101')
 
         return self._activities and activity_name.lower() in self._activities
-
 
     def import_workflow(self, workflow_xml):
         """Imports a workflow to the Commcell.
@@ -374,12 +370,12 @@ class WorkFlows(object):
         self.refresh()
 
         if flag is False:
-            response_string = self.update_response(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException(
-                    'Workflow',
-                    '102',
-                    'Importing Workflow failed. {0}'.format(response_string)
-                )
+                'Workflow',
+                '102',
+                'Importing Workflow failed. {0}'.format(response_string)
+            )
 
     def import_activity(self, activity_xml):
         """Imports a workflow activity to the Commcell.
@@ -425,11 +421,11 @@ class WorkFlows(object):
         self.refresh_activities()
 
         if flag is False:
-            response_string = self.update_response(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException(
-                    'Workflow',
-                    '102',
-                    'Importing Workflow activity failed. {0}'.format(response_string)
+                'Workflow',
+                '102',
+                'Importing Workflow activity failed. {0}'.format(response_string)
             )
 
     def download_workflow_from_store(
@@ -549,12 +545,13 @@ class WorkFlows(object):
         workflow_id = self._workflows[workflow_name].get('id')
 
         if self.has_workflow(workflow_name):
-            return WorkFlow(self._commcell_object, workflow_name , workflow_id)
+            return WorkFlow(self._commcell_object, workflow_name, workflow_id)
         else:
             raise SDKException(
-                'Workflow', '102', 'No workflow exists with name: {0}'.\
-                    format(workflow_name)
-                )
+                'Workflow',
+                '102',
+                'No workflow exists with name: {0}'.format(workflow_name)
+            )
 
     def delete_workflow(self, workflow_name):
         """Deletes a workflow from the Commcell.
@@ -585,7 +582,7 @@ class WorkFlows(object):
         self.refresh()
 
         if flag is False:
-            response_string = self.update_response(response.text)
+            response_string = self._update_response_(response.text)
             raise SDKException(
                 'Workflow', '102', 'Deleting Workflow failed. {0}'.format(response_string)
             )
@@ -607,6 +604,7 @@ class WorkFlows(object):
     def all_activities(self):
         """Treats the activities as a read-only attribute."""
         return self._activities
+
 
 class WorkFlow(object):
     """Class for representing a workflow on a commcell."""
@@ -633,8 +631,7 @@ class WorkFlow(object):
         self._update_response_ = commcell_object._update_response_
         self._workflow_name = workflow_name.lower()
 
-        self._workflow_id = str(workflow_id) if workflow_id else \
-                self._get_workflow_id()
+        self._workflow_id = str(workflow_id) if workflow_id else self._get_workflow_id()
 
         self._DEPLOY_WORKFLOW = self._services['DEPLOY_WORKFLOW']
         self._EXECUTE_WORKFLOW = self._services['EXECUTE_WORKFLOW']
@@ -661,7 +658,7 @@ class WorkFlow(object):
 
             Args:
                 input_dict (dict)   --  dictionary containing the values for a
-                                        workflow input
+                workflow input
 
                     {
                         'input_name',
@@ -738,7 +735,6 @@ class WorkFlow(object):
         if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
                 (workflow_xml is not None and isinstance(workflow_xml, basestring))):
             raise SDKException('Workflow', '101')
-
 
         if not self._commcell_object.workflows.has_workflow(workflow_name):
             raise SDKException('Workflow', '104')
@@ -844,8 +840,7 @@ class WorkFlow(object):
             if workflow_inputs is None:
                 if 'inputs' in workflow_vals:
                     o_str = 'Workflow Name: \t\t"{0}"\n'.format(workflow_name)
-                    o_str += 'Workflow Description: \t"{0}"\n'.\
-                                format(workflow_vals['description'])
+                    o_str += 'Workflow Description: \t"{0}"\n'.format(workflow_vals['description'])
 
                     print(o_str)
 
@@ -856,7 +851,7 @@ class WorkFlow(object):
 
             flag, response = self._cvpysdk_object.make_request(
                 'POST', self._EXECUTE_WORKFLOW % workflow_name, execute_workflow_json
-             )
+            )
 
             if flag:
                 if response.json():
@@ -870,8 +865,7 @@ class WorkFlow(object):
                             return 'Workflow Execution Finished Successfully'
                         else:
                             error_message = response.json()['errorMessage']
-                            o_str = 'Executing Workflow failed\nError: "{0}"'.\
-                                        format(error_message)
+                            o_str = 'Executing Workflow failed\nError: "{0}"'.format(error_message)
 
                             raise SDKException('Workflow', '102', o_str)
                     else:
@@ -893,6 +887,3 @@ class WorkFlow(object):
     def workflow_id(self):
         """Treats the workflow id as a read-only attribute."""
         return self._workflow_id
-
-
-
