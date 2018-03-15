@@ -133,6 +133,14 @@ Subclient operations are currently supported for the following Agents:
 
 #. Sybase
 
+#. SAP ORACLE
+
+
+Documentation
+-------------
+
+To get started, please see the `full documentation for this library <https://commvaultengg.github.io/cvpysdk/>`_
+
 
 Contribution Guidelines
 -----------------------
@@ -178,12 +186,12 @@ chat rooms, and mailing lists is expected to follow the
 
 
 License
-=======
+-------
 **CVPySDK** and its contents are licensed under `Commvault License <https://raw.githubusercontent.com/CommvaultEngg/cvpysdk/master/LICENSE.txt>`_
 
 
 About Commvault
-===============
+---------------
 .. image:: https://upload.wikimedia.org/wikipedia/en/thumb/1/12/Commvault_logo.png/150px-Commvault_logo.png
     :align: center
 
