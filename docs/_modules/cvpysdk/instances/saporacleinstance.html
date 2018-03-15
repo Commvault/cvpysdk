@@ -1,0 +1,466 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.instances.saporacleinstance &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.instances.saporacleinstance</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a SAP Oracle Instance.</span>
+
+<span class="sd">SAPOracleInstance is the only class defined in this file.</span>
+
+<span class="sd">SAPOracleInstance: Derived class from Instance Base class, representing a SAPOracle instance,</span>
+<span class="sd">                       and to perform operations on that instance</span>
+
+<span class="sd">SAPOracleInstance:</span>
+<span class="sd">    __init__()                          -- Constructor for the class</span>
+
+
+<span class="sd">    oracle_home()                       -- Getter for $ORACLE_HOME of this instance</span>
+
+<span class="sd">    sapdata_home()                      -- Getter for $SAPDATA_HOME of this instance</span>
+
+<span class="sd">    sapexepath()                        -- Getter for $SAPEXE of this instance</span>
+
+<span class="sd">     os_user()                          -- Getter for OS user owning oracle software</span>
+
+<span class="sd">    cmd_sp()                            -- Getter for command line storage policy</span>
+
+<span class="sd">    log_sp()                            -- Getter for log storage policy</span>
+
+<span class="sd">    db_user()                           -- Getter for SYS database user name</span>
+
+<span class="sd">    saporacle_db_connectstring()        -- Getter for getting oracle database connect string</span>
+
+<span class="sd">    saporacle_blocksize()               -- Getter for getting blocksize value</span>
+
+<span class="sd">    saporacle_sapsecurestore()          -- Getter for getting sapsecure store option</span>
+
+<span class="sd">    saporacle_archivelogbackupstreams() -- Getter for getting archivelog backup streams</span>
+
+<span class="sd">    saporacle_instanceid()              -- Getter for getting InstanceId</span>
+
+<span class="sd">    _restore_request_json()             -- returns the restore request json</span>
+
+<span class="sd">    _process_restore_response()         -- processes response received for the Restore request</span>
+
+<span class="sd">    restore_in_place()                  -- runs the restore job for specified instance</span>
+
+<span class="sd">    restore_outof_place()               -- runs the restore job for specified client and instance</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">..agent</span> <span class="k">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">..client</span> <span class="k">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="SAPOracleInstance"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.saporacleinstance.SAPOracleInstance">[docs]</a><span class="k">class</span> <span class="nc">SAPOracleInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Instance Base class, representing a SAPOracle instance,</span>
+<span class="sd">        and to perform operations on that Instance.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the class</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            agent_object    -- instance of the Agent class</span>
+<span class="sd">            instance_name   -- name of the instance</span>
+<span class="sd">            instance_id     --  id of the instance</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SAPOracleInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># variable to hold instance properties to be changed</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">oracle_home</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        getter for oracle home</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of oracle_home</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleHome&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sapdata_home</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        getter for sapdata home</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of sapdata_home</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;sapDataPath&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sapexepath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        getter for sapexepath</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of sapexepath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;sapExeFolder&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">os_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for oracle software owner</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of oracle software owner</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cmd_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for Command Line storage policy</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string for command line storage policy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleStorageDevice&#39;</span><span class="p">][</span>
+            <span class="s1">&#39;commandLineStoragePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">log_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Oracle Instance&#39;s Log Storage Poplicy</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            string  -- string containing log storage policy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleStorageDevice&#39;</span><span class="p">][</span>
+            <span class="s1">&#39;logBackupStoragePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">saporacle_db_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns: Oracle database user for the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;sqlConnect&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">saporacle_db_connectstring</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns: Oracle database connect string for the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;sqlConnect&#39;</span><span class="p">][</span><span class="s1">&#39;domainName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">saporacle_blocksize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns: blocksize for the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;blockSize&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">saporacle_sapsecurestore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns: sapsecurestore option for the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;useSAPSecureStore&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">saporacle_archivelogbackupstreams</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns: archivelogbackupstreams option for the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sapOracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;numberOfArchiveLogBackupStreams&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">saporacle_instanceid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns: saporacle_instanceid option for the instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;instanceId&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_restore_saporacle_request_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_association</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_restore_association</span><span class="p">],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task</span><span class="p">,</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_sub_task</span><span class="p">,</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;oracleOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;noCatalog&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;noCatalog&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                                <span class="s2">&quot;backupValidationOnly&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;backupValidationOnly&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                                <span class="s2">&quot;restoreData&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restoreData&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                                <span class="s2">&quot;archiveLog&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;archiveLog&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                                <span class="s2">&quot;recover&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;recover&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                                <span class="s2">&quot;switchDatabaseMode&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;switchDatabaseMode&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                                <span class="s2">&quot;restoreStream&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restoreStream&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                                <span class="s2">&quot;restoreControlFile&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restoreControlFile&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                                <span class="s2">&quot;partialRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;partialRestore&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                                <span class="s2">&quot;openDatabase&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;openDatabase&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                                <span class="s2">&quot;resetLogs&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resetLogs&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                <span class="s2">&quot;restoreTablespace&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restoreTablespace&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                                <span class="s2">&quot;databaseCopy&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;databaseCopy&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                                <span class="s2">&quot;archiveLogBy&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;archiveLogBy&quot;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">),</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;destination&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_client&quot;</span><span class="p">),</span>
+                                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_instance&quot;</span><span class="p">)</span>
+                                <span class="p">},</span>
+                                <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_client&quot;</span><span class="p">)</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;fileOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;sourceItem&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sourceItem&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;/+BROWSE+&quot;</span><span class="p">])</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;browseOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">request_json</span>
+
+<div class="viewcode-block" id="SAPOracleInstance.restore_in_place"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.saporacleinstance.SAPOracleInstance.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sap_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;perform inplace restore and recover  of sap oracle database</span>
+<span class="sd">         Args:</span>
+
+<span class="sd">            destination_client        (str)         --  destination client name where saporacle</span>
+<span class="sd">                                                          client package exists if this value</span>
+<span class="sd">                                                          not provided,it will automatically</span>
+<span class="sd">                                                          use source backup client</span>
+<span class="sd">            destination_instance        (str)       --  destination instance name where saporacle</span>
+<span class="sd">                                                        client package exists if this value not</span>
+<span class="sd">                                                         provided,it will automatically use</span>
+<span class="sd">                                                          source backup instance</span>
+<span class="sd">            sap_options                (dict)</span>
+
+<span class="sd">                backupset_name         (str)        --  backupset name of the instance to be</span>
+<span class="sd">                                                            restored. If the instance is a single</span>
+<span class="sd">                                                            DB instance then the backupset name is</span>
+<span class="sd">                                                            ``default``.</span>
+<span class="sd">                    default: default</span>
+
+<span class="sd">                restoreData               (bool)   --  RestoreData  if true mean restore data</span>
+<span class="sd">                                                          is selected.</span>
+<span class="sd">                                                        true - restore data selected</span>
+<span class="sd">                                                        false - restore data unselected</span>
+
+<span class="sd">                    default:true</span>
+
+<span class="sd">                streams                  (int)      :  no of streams to use for restore</span>
+<span class="sd">                    default:2</span>
+
+<span class="sd">                copy_precedence          (int)      :  copy number to use for restore</span>
+<span class="sd">                    default:0</span>
+
+<span class="sd">                archiveLog               (bool)     :  Restore archive log</span>
+<span class="sd">                                                        true - restore archive log selected</span>
+<span class="sd">                                                        false - restore archive log unselected</span>
+<span class="sd">                     default: True</span>
+
+<span class="sd">                recover                  (bool)     :  recover database</span>
+<span class="sd">                                                        true - recover database selected</span>
+<span class="sd">                                                        false - recover database unselected</span>
+<span class="sd">                     default: True</span>
+
+<span class="sd">                switchDatabaseMode       (bool)     :  switchDatabaseMode option</span>
+<span class="sd">                                                        true - switchDatabaseMode selected</span>
+<span class="sd">                                                        false - switchDatabaseMode unselected</span>
+<span class="sd">                     default: True</span>
+
+<span class="sd">                restoreControlFile       (bool)     :  restoreControlFile option</span>
+<span class="sd">                                                        true - restoreControlFile selected</span>
+<span class="sd">                                                        false - restoreControlFile unselected</span>
+<span class="sd">                     default: True</span>
+
+<span class="sd">                partialRestore       (bool)         :  partialRestore option</span>
+<span class="sd">                                                        true - partialRestore selected</span>
+<span class="sd">                                                        false - partialRestore unselected</span>
+<span class="sd">                     default: False</span>
+
+<span class="sd">                openDatabase       (bool)           :  openDatabase option</span>
+<span class="sd">                                                        true - openDatabase selected</span>
+<span class="sd">                                                        false - openDatabase unselected</span>
+<span class="sd">                     default: True</span>
+
+<span class="sd">                resetLogs       (bool)              :  resetLogs option</span>
+<span class="sd">                                                        true - resetLogs selected</span>
+<span class="sd">                                                        false - resetLogs unselected</span>
+<span class="sd">                     default: True</span>
+
+<span class="sd">                point_in_time            (str)      :  date to use for restore and recover  database</span>
+<span class="sd">                                                       format: dd/MM/YYYY</span>
+<span class="sd">                                                       gets content from 01/01/1970 if not specified</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                backupValidationOnly       (bool)   :  backupValidationOnly option</span>
+<span class="sd">                                                        true - backupValidationOnly selected</span>
+<span class="sd">                                                        false - backupValidationOnly unselected</span>
+<span class="sd">                     default: False</span>
+
+<span class="sd">                 restoreTablespace       (bool)     :  restoreTablespace option</span>
+<span class="sd">                                                        true - restoreTablespace selected</span>
+<span class="sd">                                                        false - restoreTablespace unselected</span>
+<span class="sd">                     default: False</span>
+
+<span class="sd">                noCatalog       (bool)              :  noCatalog option</span>
+<span class="sd">                                                        true - noCatalog selected</span>
+<span class="sd">                                                        false - noCatalog unselected</span>
+<span class="sd">                     default: True</span>
+
+<span class="sd">                sourceItem       (list)              :  sourceItem means browse options for</span>
+<span class="sd">                                                         sap oracle restores</span>
+<span class="sd">                                                        /+BROWSE+ - means both data and logs</span>
+<span class="sd">                                                        are selected</span>
+<span class="sd">                                                        /+BROWSE+DATA -data only selected</span>
+<span class="sd">                                                        /+BROWSE+LOG -log only selected</span>
+<span class="sd">                     default: /+BROWSE+</span>
+<span class="sd">                databaseCopy       (bool)            :  databaseCopy option</span>
+<span class="sd">                                                        true - databaseCopy selected</span>
+<span class="sd">                                                        false - databaseCopy unselected</span>
+<span class="sd">                     default: False</span>
+
+<span class="sd">                archiveLogBy       (str)            :  for restore archive log options,</span>
+<span class="sd">                                                        default means restore archivelogall</span>
+<span class="sd">                                                        is selected</span>
+
+<span class="sd">                     default: default</span>
+
+<span class="sd">         Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed to browse content</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if destination client does not exist on commcell</span>
+
+<span class="sd">                    if destination instance does not exist on commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">sap_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sap_options</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check if client name is correct</span>
+        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="n">destination_client</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+        <span class="n">dest_agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="s1">&#39;sap for oracle&#39;</span><span class="p">)</span>
+
+        <span class="c1"># check if instance name is correct</span>
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="n">destination_instance</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="n">dest_agent</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+        <span class="n">sap_options</span><span class="p">[</span><span class="s2">&quot;destination_client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination_client</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="n">sap_options</span><span class="p">[</span><span class="s2">&quot;destination_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination_instance</span><span class="o">.</span><span class="n">instance_name</span>
+
+        <span class="c1"># prepare and execute</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_saporacle_request_json</span><span class="p">(</span><span class="n">sap_options</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

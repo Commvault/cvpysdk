@@ -4,27 +4,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Backupset &#8212; Developer SDK - Python 1.0.0 documentation</title>
-    
+    <title>Backupset &#8212; Developer SDK - Python v11 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.0.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Client" href="client.html" />
@@ -35,8 +24,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
@@ -49,69 +37,56 @@
 <p>Main file for performing backup set operations.</p>
 <p>Backupsets and Backupset are 2 classes defined in this file.</p>
 <p>Backupsets: Class for representing all the backup sets associated with a specific agent</p>
+<p>Backupset:  Class for a single backup set selected for an agent,
+and to perform operations on that backup set</p>
 <dl class="docutils">
-<dt>Backupset:  Class for a single backup set selected for an agent,</dt>
-<dd>and to perform operations on that backup set</dd>
 <dt>Backupsets:</dt>
-<dd><dl class="first docutils">
-<dt>__init__(class_object)          – initialise object of Backupsets class associated with</dt>
-<dd>the specified agent/instance</dd>
-</dl>
+<dd><p class="first">__init__(class_object)          – initialise object of Backupsets class associated with
+the specified agent/instance</p>
 <p>__str__()                       – returns all the backupsets associated with the agent</p>
 <p>__repr__()                      – returns the string for the instance of the Backupsets class</p>
 <p>_get_backupsets()               – gets all the backupsets associated with the agent specified</p>
+<p>default_backup_set()            – returns the name of the default backup set</p>
+<p>all_backupsets()              – returns the dict of all the backupsets for the Agent / Instance
+of the selected Client</p>
 <p>has_backupset(backupset_name)   – checks if a backupset exists with the given name or not</p>
 <p>add(backupset_name)             – adds a new backupset to the agent of the specified client</p>
-<dl class="docutils">
-<dt>get(backupset_name)             – returns the Backupset class object</dt>
-<dd>of the input backup set name</dd>
-</dl>
-<p class="last">delete(backupset_name)          – removes the backupset from the agent of the specified client</p>
+<p>get(backupset_name)             – returns the Backupset class object
+of the input backup set name</p>
+<p>delete(backupset_name)          – removes the backupset from the agent of the specified client</p>
+<p class="last">refresh()                       – refresh the backupsets associated with the agent</p>
 </dd>
 <dt>Backupset:</dt>
-<dd><dl class="first docutils">
-<dt>__init__(instance_object,</dt>
-<dd><p class="first">backupset_name,
-backupset_id=None)    – initialise object of Backupset with the specified backupset</p>
-<blockquote class="last">
-<div>name and id, and associated to the specified instance</div></blockquote>
-</dd>
-</dl>
+<dd><p class="first">__init__()                      – initialise object of Backupset with the specified backupset
+name and id, and associated to the specified instance</p>
+<p>__getattr__()                   – provides access to restore helper methods</p>
 <p>__repr__()                      – return the backupset name, the instance is associated with</p>
 <p>_get_backupset_id()             – method to get the backupset id, if not specified in __init__</p>
 <p>_get_backupset_properties()     – get the properties of this backupset</p>
-<dl class="docutils">
-<dt>_run_backup(subclient_name,</dt>
-<dd><dl class="first last docutils">
-<dt>return_list)        – runs full backup for the specified subclient,</dt>
-<dd>and appends the job object to the return list</dd>
-</dl>
-</dd>
-</dl>
+<p>_run_backup()                   – runs full backup for the specified subclient,
+and appends the job object to the return list</p>
 <p>_update()                       – updates the properties of the backupset</p>
-<dl class="docutils">
-<dt>_get_epoch_time()               – gets the Epoch time given the input time is in format</dt>
-<dd>%Y-%m-%d %H:%M:%S</dd>
-</dl>
+<p>_get_epoch_time()               – gets the Epoch time given the input time is in format</p>
+<blockquote>
+<div>%Y-%m-%d %H:%M:%S</div></blockquote>
 <p>_set_defaults()                 – recursively sets default values on a dictionary</p>
 <p>_prepare_browse_options()       – prepares the options for the Browse/find operation</p>
 <p>_prepare_browse_json()          – prepares the JSON object for the browse request</p>
 <p>_process_browse_response()      – retrieves the items from browse response</p>
 <p>_do_browse()                    – performs a browse operation with the given options</p>
-<dl class="docutils">
-<dt>set_default_backupset()         – sets the backupset as the default backup set for the agent,</dt>
-<dd>if not already default</dd>
-<dt>backup()                        – runs full backup for all subclients</dt>
-<dd>associated with this backupset</dd>
-</dl>
+<p>set_default_backupset()         – sets the backupset as the default backup set for the agent,
+if not already default</p>
+<p>backup()                        – runs full backup for all subclients
+associated with this backupset</p>
 <p>browse()                        – browse the content of the backupset</p>
-<p class="last">find()                          – find content in the backupset</p>
+<p>find()                          – find content in the backupset</p>
+<p class="last">refresh()                       – refresh the properties of the backupset</p>
 </dd>
 </dl>
 <dl class="class">
 <dt id="cvpysdk.backupset.Backupset">
 <em class="property">class </em><code class="descclassname">cvpysdk.backupset.</code><code class="descname">Backupset</code><span class="sig-paren">(</span><em>instance_object</em>, <em>backupset_name</em>, <em>backupset_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/backupset.html#Backupset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupset.Backupset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for performing backupset operations for a specific backupset.</p>
 <dl class="method">
 <dt id="cvpysdk.backupset.Backupset.backup">
@@ -121,7 +96,7 @@ Runs Full Backup job for a subclient, if no job had been ran earlier for it.</p>
 <dl class="docutils">
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>list  -  list consisting of the job objects for the backup jobs started for</dt>
+<dt>list    -   list consisting of the job objects for the backup jobs started for</dt>
 <dd>the subclients in the backupset</dd>
 </dl>
 </dd>
@@ -266,6 +241,12 @@ to_time=‘2016-04-31 12:00:00’</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.backupset.Backupset.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/backupset.html#Backupset.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupset.Backupset.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties of the Backupset.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.backupset.Backupset.set_default_backupset">
 <code class="descname">set_default_backupset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/backupset.html#Backupset.set_default_backupset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupset.Backupset.set_default_backupset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the backupset represented by this Backupset class instance as the default backupset
@@ -285,7 +266,7 @@ if it is not the default backupset.</p>
 <dl class="class">
 <dt id="cvpysdk.backupset.Backupsets">
 <em class="property">class </em><code class="descclassname">cvpysdk.backupset.</code><code class="descname">Backupsets</code><span class="sig-paren">(</span><em>class_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/backupset.html#Backupsets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupset.Backupsets" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for getting all the backupsets associated with a client.</p>
 <dl class="method">
 <dt id="cvpysdk.backupset.Backupsets.add">
@@ -316,6 +297,38 @@ if it is not the default backupset.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.backupset.Backupsets.all_backupsets">
+<code class="descname">all_backupsets</code><a class="headerlink" href="#cvpysdk.backupset.Backupsets.all_backupsets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dict of backupsets for the Agent / Instance of the selected Client</p>
+<dl class="docutils">
+<dt>dict - consists of all backupsets</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd><dl class="first docutils">
+<dt>“backupset1_name”: {</dt>
+<dd>“id”: backupset1_id,
+“instance”: instance</dd>
+</dl>
+<p>},
+“backupset2_name”: {</p>
+<blockquote>
+<div>“id”: backupset2_id,
+“instance”: instance</div></blockquote>
+<p class="last">}</p>
+</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.backupset.Backupsets.default_backup_set">
+<code class="descname">default_backup_set</code><a class="headerlink" href="#cvpysdk.backupset.Backupsets.default_backup_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the default backup set for the selected Client and Agent.</p>
 </dd></dl>
 
 <dl class="method">
@@ -377,6 +390,12 @@ if it is not the default backupset.</p>
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.backupset.Backupsets.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/backupset.html#Backupsets.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupset.Backupsets.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the backupsets associated with the Agent / Instance.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -406,12 +425,14 @@ if it is not the default backupset.</p>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -419,11 +440,11 @@ if it is not the default backupset.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2017, Commvault Systems Inc..
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
       <a href="_sources/backupset.rst.txt"

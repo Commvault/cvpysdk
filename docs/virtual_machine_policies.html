@@ -1,0 +1,421 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Virtual Machine Policies &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Workflow" href="workflow.html" />
+    <link rel="prev" title="Subclient" href="subclient.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.virtualmachinepolicies">
+<span id="virtual-machine-policies"></span><h1>Virtual Machine Policies<a class="headerlink" href="#module-cvpysdk.virtualmachinepolicies" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing virtual machine related operations on the Commcell.</p>
+<dl class="docutils">
+<dt>VirtualMachinePolicies:         Class for representing all the Virtual Machine Policies associated</dt>
+<dd>with the Commcell</dd>
+<dt>VirtualMachinePolicy:           Class for representing a single Virtual Machine Policy. Contains</dt>
+<dd>method definitions for common methods among all VM Policies</dd>
+<dt>LiveMountPolicy:                Class for representing a single Live Mount Policy associated with</dt>
+<dd>the Commcell; inherits VirtualMachinePolicy</dd>
+<dt>VirtualMachinePolicies:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object)               –  initialize the VirtualMachinePolicies instance for</dt>
+<dd>the Commcell</dd>
+<dt>__str__()                               –  returns all the Virtual Machine policies associated</dt>
+<dd>with the Commcell</dd>
+<dt>__repr__()                              –  returns a string for the instance of the</dt>
+<dd>VirtualMachinePolicies class</dd>
+<dt>_get_vm_policies()                      –  gets all the Virtual Machine policies of the</dt>
+<dd>Commcell</dd>
+<dt>has_policy(vm_policy_name)              –  checks if a Virtual Machine policy exists with the</dt>
+<dd>given name in a particular instance</dd>
+<dt>get(vm_policy_name)                     –  returns a VirtualMachinePolicy object of the</dt>
+<dd>specified virtual machine policy name</dd>
+<dt>add(vm_policy_name,</dt>
+<dd><dl class="first last docutils">
+<dt>vm_policy_json_path)                –  adds a new Virtual Machine policy to the</dt>
+<dd>VirtualMachinePolicies instance,and returns an
+object of corresponding vm_policy_type</dd>
+</dl>
+</dd>
+<dt>delete(vm_policy_name)                  –  removes the specified Virtual Machine policy from</dt>
+<dd>the Commcell</dd>
+<dt>clone(<a href="#id1"><span class="problematic" id="id2">source_</span></a> vm_policy_name,</dt>
+<dd><dl class="first last docutils">
+<dt><a href="#id3"><span class="problematic" id="id4">desired_</span></a> vm_policy_name)          –  copies properties of specified VM Policy and</dt>
+<dd>creates a new VM Policy with the given name</dd>
+</dl>
+</dd>
+<dt>_prepare_add_vmpolicy_json_default</dt>
+<dd><dl class="first last docutils">
+<dt>(vm_policy_options)     –  sets values for creating the add policy json</dt>
+<dd>that are common across all vm policies</dd>
+</dl>
+</dd>
+<dt>_prepare_add_vmpolicy_json_livemount</dt>
+<dd><dl class="first last docutils">
+<dt>(vm_policy_options)     –  sets values for creating the add policy json that</dt>
+<dd>are specific for creating Live Mount policy</dd>
+</dl>
+</dd>
+<dt>_data_stores_json(options)              –  sets values for creating the datastore value in the</dt>
+<dd>add policy json</dd>
+<dt>_esx_servers_json(options)              –  sets values for creating the esx server value in</dt>
+<dd>the add policy json</dd>
+<dt>_security_associations_json(options)    –  sets values for creating the security associations</dt>
+<dd><blockquote class="first">
+<div>value in the add policy json</div></blockquote>
+<dl class="last docutils">
+<dt>_network_names_json(options)           –  sets values for creating the network names value in</dt>
+<dd>the add policy json</dd>
+</dl>
+</dd>
+<dt>_data_center_json(options)              –  sets values for creating the datacenter json value</dt>
+<dd>in the add policy json</dd>
+<dt>_set_data_center(options)               –  sets the datacenter name if provided by user, or</dt>
+<dd><dl class="first last docutils">
+<dt>sets the alphabetically lowest one in the</dt>
+<dd>vcenter as default</dd>
+</dl>
+</dd>
+<dt>_entity_json()                          –  sets values for creating the entity json value in</dt>
+<dd>the add policy json</dd>
+<dt>_media_agent_json(options)              –  sets values for creating the media agent json</dt>
+<dd>value in the add policy json
+(only for Live Mount policy)</dd>
+</dl>
+<p class="last">refresh()                               –  refresh the virtual machine policies</p>
+</dd>
+<dt>VirtualMachinePolicy:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><p class="first">vm_policy_name,
+vm_policy_type,
+VMPolicy_id,
+vm_policy_details)                   –  initialize the instance of</p>
+<blockquote class="last">
+<div>VirtualMachinePolicy class for a specific
+virtual machine policy of the Commcell</div></blockquote>
+</dd>
+<dt>__repr__()                                    –  returns a string representation of the</dt>
+<dd>VirtualMachinePolicy instance</dd>
+<dt>_get_VMPolicy_id()                            –  gets the id of the VirtualMachinePolicy</dt>
+<dd>instance</dd>
+</dl>
+<p>_initialize_ VMPolicy _properties()           –  initializes the VM policy properties</p>
+<p>disable(vm_policy_name)                       –  disables the specified policy, if enabled</p>
+<p>enable(vm_policy_name)                        –  enables the specified policy, if disabled</p>
+<p>modify(vm_policy_name, vm_policy_details)     –  modifies the specified policy</p>
+<dl class="last docutils">
+<dt>properties(vm_policy_name)                    –  gives a summary of the properties of the</dt>
+<dd>specified policy</dd>
+</dl>
+</dd>
+<dt>LiveMountPolicy:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><p class="first">vm_policy_name,
+vm_policy_type,
+VMPolicy_id,
+vm_policy_details)                   –  initialize the instance of LiveMountPolicy</p>
+<blockquote class="last">
+<div>class for a specific virtual machine
+policy of the Commcell</div></blockquote>
+</dd>
+<dt>__repr__()                                    –  returns a string representation of the</dt>
+<dd>LiveMountPolicy instance</dd>
+</dl>
+<p>_initialize_ LiveMountPolicy _properties()    –  initializes the LiveMountPolicy properties</p>
+<dl class="last docutils">
+<dt>view_active_mounts()                          –  shows all active mounts for the specified</dt>
+<dd>Live Mount Policy</dd>
+</dl>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicies">
+<em class="property">class </em><code class="descclassname">cvpysdk.virtualmachinepolicies.</code><code class="descname">VirtualMachinePolicies</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for representing all the Virtual Machine Policies associated with the Commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>vm_policy_name</em>, <em>vm_policy_type</em>, <em>vcenter_name</em>, <em>vclient_name=None</em>, <em>vm_policy_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicies.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new Virtual Machine Policy to the Commcell.
+Args:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>vm_policy_name       (str)   –  name of the new virtual machine policy to add to</dt>
+<dd>the Commcell instance</dd>
+<dt>vcenter_name         (str)   –  name of the vcenter where the vm policy is to be</dt>
+<dd>added</dd>
+<dt>vclient_name         (str)   –  the name of the virtualization client under which</dt>
+<dd>vm policy is to be added</dd>
+<dt>vm_policy_type       (str)   –  type of virtual machine policy to be added</dt>
+<dd>[“Live Mount”, “Clone From Template”,
+“Restore From Backup”]</dd>
+<dt>vm_policy_options    (dict)  –  optional dictionary passed by user to create a vm</dt>
+<dd><blockquote class="first">
+<div>policy. Allowed key-value pairs and input types
+are given below</div></blockquote>
+<dl class="docutils">
+<dt>“allDataStoresSelected”    (Boolean) <span class="classifier-delimiter">:</span> <span class="classifier">if all data stores are to be selected;</span></dt>
+<dd>matters only if migrateVMs is set
+to True,</dd>
+</dl>
+<p>“daysRetainUntil”          (int)      : how many days to retain backup until,
+“migrateVMs”               (Boolean)  : migrate to datastore after expiry</p>
+<blockquote>
+<div>(only for LiveMount),</div></blockquote>
+<p>“senderEmailId”            (str)      : email id of sender,
+“minutesRetainUntil”       (int)      : how many days to retain backup until
+“notifyToEmailIds”         (str)      : email id’s to notify to; multiple</p>
+<blockquote>
+<div>emails separated by a comma</div></blockquote>
+<dl class="docutils">
+<dt>“quotaType”                (int) <span class="classifier-delimiter">:</span> <span class="classifier">number of vm’s/live mounts/labs per</span></dt>
+<dd>user,</dd>
+</dl>
+<p>“maxVMQuota”               (int)      : maximum number of VM quota,
+“namingPattern”            (str)      : naming patter,
+“description”              (str)      : description of vm policy,
+“enabled”                  (Boolean)  : whether vm policy is enabled or not,
+“allowRenewals”            (Boolean)  : whether to allow renewals or not,
+“disableSuccessEmail”      (Boolean)  : send email on succesful creation of vm</p>
+<blockquote>
+<div>policy,</div></blockquote>
+<p>“allESXServersSelected”    (Boolean)  : select all esx servers in the vcenter,
+“dataStores”               list(str)  : list of data store names,
+“esxServers”               list(str)  : list of esx server names,
+“users”                    list(str)  : list of users (user-names) to add to vm</p>
+<blockquote>
+<div>policy,</div></blockquote>
+<dl class="docutils">
+<dt>“userGroups”               list(str) <span class="classifier-delimiter">:</span> <span class="classifier">list of usergroups (usergroup-names) to</span></dt>
+<dd>add to vm policy,</dd>
+</dl>
+<p class="last">“networkNames”             list(str)  : list of network names,
+“dataCenterName”           (str)      : data center name for vm policy,
+———————— only for Live Mount ————————
+“mediaAgent”               (str)      : media agent name for Live Mount,
+“performAutoMigration”     (Boolean)  : automatic migration of vm</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object    –  object of the corresponding virtual machine policy type</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the vm policy name argument is not string</p>
+<p>if type of the vcenter name argument is not string</p>
+<p>if type of virtualization client name argument is not string or None</p>
+<p>if policy type is not one of the virtual machine policy types as defined</p>
+<p>if the type of vm policy options is not dict or None</p>
+<p>if vm policy already exists with the given name</p>
+<dl class="docutils">
+<dt>if there is not at least one virtual machine policy already associated with</dt>
+<dd>this commcell (workaround because datacenter id is not fetchable)</dd>
+</dl>
+<p>if vm policy is created but “enabled” attribute is set to false</p>
+<p>if failed to create vm policy</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.clone">
+<code class="descname">clone</code><span class="sig-paren">(</span><em>source_vm_policy_name</em>, <em>desired_vm_policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicies.clone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>copies properties of specified VM Policy and creates a new VM Policy with the given name</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>source_vm_policy_name    (str)  –  VM policy name whose properties are going to be</dt>
+<dd>cloned</dd>
+</dl>
+<p class="last">desired_vm_policy_name   (str)  –  name of the policy that is going to be created</p>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>object                          –  object of the corresponding virtual machine policy</dt>
+<dd>type</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>vm_policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicies.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the specified virtual machine policy from the commcell.
+Args:</p>
+<blockquote>
+<div>vm_policy_name (str)  –  name of the virtual machine policy to delete</div></blockquote>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the virtual machine policy name argument is not string</p>
+<p>if failed to delete virtual machine policy</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>vm_policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicies.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a VirtualMachinePolicy object of the specified virtual machine policy name.
+Args:</p>
+<blockquote>
+<div>vm_policy_name     (str)   –  name of the virtual machine policy</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object - instance of the VirtualMachinePolicy class for the given policy name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the virtual machine policy name argument is not string
+if no virtual machine policy exists with the given name</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.has_policy">
+<code class="descname">has_policy</code><span class="sig-paren">(</span><em>vm_policy_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicies.has_policy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.has_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a Virtual Machine policy exists with the given name
+Args:</p>
+<blockquote>
+<div>policy_name (str)  –  name of the storage policy</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the storage policy exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the storage policy name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicies.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the Virtual Machine policies.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicy">
+<em class="property">class </em><code class="descclassname">cvpysdk.virtualmachinepolicies.</code><code class="descname">VirtualMachinePolicy</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>vm_policy_name</em>, <em>vm_policy_type</em>, <em>vm_policy_id=None</em>, <em>vm_policy_details=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/virtualmachinepolicies.html#VirtualMachinePolicy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for representing a single Virtual Machine Policy. Contains method definitions for
+common operations among all VM Policies</p>
+<dl class="attribute">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicy.vm_policy_id">
+<code class="descname">vm_policy_id</code><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicy.vm_policy_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the virtual machine policy id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.virtualmachinepolicies.VirtualMachinePolicy.vm_policy_name">
+<code class="descname">vm_policy_name</code><a class="headerlink" href="#cvpysdk.virtualmachinepolicies.VirtualMachinePolicy.vm_policy_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the virtual machine policy name as a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="subclient.html" title="previous chapter">Subclient</a></li>
+      <li>Next: <a href="workflow.html" title="next chapter">Workflow</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/virtual_machine_policies.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/virtual_machine_policies.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

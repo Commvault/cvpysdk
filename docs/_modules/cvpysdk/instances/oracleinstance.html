@@ -1,0 +1,502 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.instances.oracleinstance &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.instances.oracleinstance</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">File for operating on a Oracle Instance.</span>
+
+<span class="sd">OracleInstance is the only class defined in this file.</span>
+
+<span class="sd">OracleInstance: Derived class from Instance Base class, representing an</span>
+<span class="sd">                            oracle instance, and to perform operations on that instance</span>
+
+<span class="sd">OracleInstance:</span>
+
+<span class="sd">    __init__()                  -- Constructor for the class</span>
+
+<span class="sd">    _get_browse_options         -- Method to get browse options for oracle instance</span>
+
+<span class="sd">    _process_browse_response    -- Method to process browse response</span>
+
+<span class="sd">    oracle_home()               -- Getter for $ORACLE_HOME of this instance</span>
+
+<span class="sd">    version()                   -- Getter for oracle database version</span>
+
+<span class="sd">    is_catalog_enabled()        -- Getter to check if catalog is enabled for backups</span>
+
+<span class="sd">    catalog_user()              -- Getter for getting catalog user</span>
+
+<span class="sd">    catalog_db()                -- Getter for catalog database name</span>
+
+<span class="sd">    archive_log_dest()          -- Getter for archivelog destination</span>
+
+<span class="sd">    os_user()                   -- Getter for OS user owning oracle software</span>
+
+<span class="sd">    cmd_sp()                    -- Getter for command line storage policy</span>
+
+<span class="sd">    log_sp()                    -- Getter for log storage policy</span>
+
+<span class="sd">    is_autobackup_on()          -- Getter to check if autobackup is enabled</span>
+
+<span class="sd">    db_user()                   -- Getter for SYS database user name</span>
+
+<span class="sd">    tns_name()                  -- Getter for TNS connect string</span>
+
+<span class="sd">    dbid()                      -- Getter for getting DBID of database</span>
+
+<span class="sd">    restore()                   -- Method to restore the instance</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="OracleInstance"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance">[docs]</a><span class="k">class</span> <span class="nc">OracleInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to represent a standalone Oracle Instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the class</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            agent_object    -- instance of the Agent class</span>
+<span class="sd">            instance_name   -- name of the instance</span>
+<span class="sd">            instance_id     --  id of the instance</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">OracleInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># instance variable to hold instance properties</span>
+
+    <span class="k">def</span> <span class="nf">_get_oracle_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">,</span>
+                                 <span class="n">instance_name</span><span class="p">,</span> <span class="n">tablespaces</span><span class="p">,</span>
+                                 <span class="n">common_options</span><span class="p">,</span> <span class="n">oracle_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the basic restore JSON from base class and modifies it for oracle</span>
+
+<span class="sd">        Returns: dict -- JSON formatted options to restore the oracle database</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            destination_client (str) -- Destination client name</span>
+<span class="sd">            instance_name (str) -- instance name to restore</span>
+<span class="sd">            tablespaces (list) -- tablespace name list</span>
+<span class="sd">            common_options (dict) --  dict containing common options</span>
+<span class="sd">            oracle_options (dict) --  dict containing other oracle options</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tablespaces</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Expecting a list for tablespaces&#39;</span><span class="p">)</span>
+        <span class="n">destination_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">destination_client</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="n">tslist</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SID: </span><span class="si">{0}</span><span class="s2"> Tablespace: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance_name</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">tablespaces</span><span class="p">]</span>
+        <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">common_options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;commonOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">common_options</span>
+        <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;oracleOpt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">oracle_options</span>
+        <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;fileOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;sourceItem&quot;</span><span class="p">:</span> <span class="n">tslist</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">restore_json</span>
+
+    <span class="k">def</span> <span class="nf">_get_browse_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to return the database instance properties for browse and restore&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;appName&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">),</span>
+                <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;applicationId&#39;</span><span class="p">]),</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">]),</span>
+                <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_process_browse_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the DBBrowse API with the request JSON provided for Browse,</span>
+<span class="sd">            and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_json    (dict)  --  JSON request to run for the API</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list containing tablespaces for the instance</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if browse job failed</span>
+
+<span class="sd">                    if browse is empty</span>
+
+<span class="sd">                    if browse is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;tablespaces&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span><span class="p">[</span><span class="s1">&#39;tablespaces&#39;</span><span class="p">]</span>
+
+        <span class="n">browse_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ORACLE_INSTANCE_BROWSE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span>
+        <span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">browse_service</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="n">response_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">response_data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;oracleContent&quot;</span> <span class="ow">in</span> <span class="n">response_data</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span><span class="p">[</span><span class="s1">&#39;tablespaces&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response_data</span><span class="p">[</span><span class="s2">&quot;oracleContent&quot;</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span><span class="p">[</span><span class="s1">&#39;tablespaces&#39;</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response_data</span><span class="p">:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Browse job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">oracle_home</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        getter for oracle home</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of oracle_home</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleHome&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_catalog_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to check if catalog has been enabled</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Bool - True if catalog is enabled. Else False.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;useCatalogConnect&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">catalog_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for catalog user</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string  - String containing catalog user</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if not set</span>
+
+<span class="sd">                if catalog is not enabled</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_catalog_enabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Catalog is not enabled.&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;catalogConnect&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">error_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Catalog user not set - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_str</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">catalog_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for catalog database</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string  - String containing catalog database</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if not set</span>
+
+<span class="sd">                if catalog is not enabled</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_catalog_enabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Catalog is not enabled.&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;catalogConnect&#39;</span><span class="p">][</span><span class="s1">&#39;domainName&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">error_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;Catalog database not set - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_str</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">os_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for oracle software owner</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of oracle software owner</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for oracle version</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of oracle instance version</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">archive_log_dest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for the instance&#39;s archive log dest</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string for archivelog location</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;archiveLogDest&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cmd_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for Command Line storage policy</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string for command line storage policy</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleStorageDevice&#39;</span><span class="p">][</span>
+            <span class="s1">&#39;commandLineStoragePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">log_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Oracle Instance&#39;s Log Storage Poplicy</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string  -- string containing log storage policy</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;oracleStorageDevice&#39;</span><span class="p">][</span>
+            <span class="s1">&#39;logBackupStoragePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_autobackup_on</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to check whether autobackup is set to ON</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Bool - True if autobackup is set to ON. Else False.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;ctrlFileAutoBackup&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">db_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to get the database user used to log into the database</span>
+
+<span class="sd">        Returns: Oracle database user for the instance</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;sqlConnect&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tns_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to get the TNS Names of the database</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string  -- TNS name of the instance configured</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if not set</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;sqlConnect&#39;</span><span class="p">][</span><span class="s1">&#39;domainName&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">error_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;Instance TNS Entry not set - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_str</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dbid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to get the DBID of the database instance</span>
+
+<span class="sd">        Returns: DBID of the oracle database</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;DBID&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tablespaces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for listing out all tablespaces for the instance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list -- list containing tablespace names for the database</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ts</span><span class="p">[</span><span class="s1">&#39;tableSpace&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">()]</span>
+
+<div class="viewcode-block" id="OracleInstance.browse"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Overridden method to browse oracle database tablespaces&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_browse_options</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_response</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OracleInstance.backup"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Uses the default subclient to backup the database</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            subclient_name (str) -- name of subclient to use</span>
+<span class="sd">                default: default</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;full&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OracleInstance.restore"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_options</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">oracle_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to restore the entire database using latest backup</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            destination_client (str) -- destination client name</span>
+<span class="sd">            common_options(dict): dictionary containing common options</span>
+<span class="sd">                default -- None</span>
+<span class="sd">            oracle_options (dict): dictionary containing other oracle options</span>
+<span class="sd">                default -- By default it restores the controlfile and datafiles</span>
+<span class="sd">                                from latest backup</span>
+<span class="sd">                Example: {</span>
+<span class="sd">                            &quot;resetLogs&quot;: 1,</span>
+<span class="sd">                            &quot;switchDatabaseMode&quot;: True,</span>
+<span class="sd">                            &quot;noCatalog&quot;: True,</span>
+<span class="sd">                            &quot;restoreControlFile&quot;: True,</span>
+<span class="sd">                            &quot;recover&quot;: True,</span>
+<span class="sd">                            &quot;recoverFrom&quot;: 3,</span>
+<span class="sd">                            &quot;restoreData&quot;: True,</span>
+<span class="sd">                            &quot;restoreFrom&quot;: 3</span>
+<span class="sd">                        }</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            object -- Job containing restore details</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">oracle_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">oracle_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;resetLogs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;switchDatabaseMode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;noCatalog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;restoreControlFile&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;recover&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;recoverFrom&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                <span class="s2">&quot;restoreData&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;restoreFrom&quot;</span><span class="p">:</span> <span class="mi">3</span>
+            <span class="p">}</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">oracle_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Expecting a dict for oracle_options&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># subclient = self.subclients.get(subclient_name)</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_oracle_restore_json</span><span class="p">(</span><span class="n">destination_client</span><span class="o">=</span><span class="n">destination_client</span><span class="p">,</span>
+                                                    <span class="n">instance_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                                                    <span class="n">tablespaces</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tablespaces</span><span class="p">,</span>
+                                                    <span class="n">common_options</span><span class="o">=</span><span class="n">common_options</span><span class="p">,</span>
+                                                    <span class="n">oracle_options</span><span class="o">=</span><span class="n">oracle_options</span><span class="p">)</span></div></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

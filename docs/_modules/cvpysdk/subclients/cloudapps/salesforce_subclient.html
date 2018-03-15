@@ -1,0 +1,1036 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.subclients.cloudapps.salesforce_subclient &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.subclients.cloudapps.salesforce_subclient</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a Salesforce Subclient.</span>
+
+<span class="sd">SalesforceSubclient is the only class defined in this file.</span>
+
+<span class="sd">SalesforceSubclient:     Derived class from CloudAppsSubclient Base class, representing a</span>
+<span class="sd">                            salesforce subclient, and to perform operations on that subclient</span>
+
+<span class="sd">SalesforceSubclient:</span>
+
+<span class="sd">    _get_subclient_properties()               --  Subclient class method overwritten to add</span>
+<span class="sd">                                                      salesforce subclient properties as well</span>
+
+<span class="sd">    _get_subclient_properties_json()          --  gets all the subclient  related properties of</span>
+<span class="sd">                                                      salesforce subclient.</span>
+
+<span class="sd">    browse()                                  --  Browses the salesforce content</span>
+
+<span class="sd">    _check_object_in_browse()                 --  internal method to check the object exists</span>
+<span class="sd">                                                      in browse content</span>
+
+<span class="sd">    _restore_salesforce_options_json()        --  internal method for salesforce options json</span>
+
+<span class="sd">    _restore_salesforce_destination_json()    --  internal method for salesforce destination option</span>
+<span class="sd">                                                      json</span>
+
+<span class="sd">    restore_to_file_system()                  --  restores the selected content to filesystem</span>
+
+<span class="sd">    restore_to_database()                     --  restores the selected content to database</span>
+
+<span class="sd">    restore_to_salesforce_from_database()     --  restores the selected content to salesforce from</span>
+<span class="sd">                                                      database</span>
+
+<span class="sd">    restore_to_salesforce_from_media()        --  restores the selected content to salesforce from</span>
+<span class="sd">                                                      media</span>
+
+<span class="sd">    _prepare_salesforce_restore_json()        --  internal method which prepares entire restore</span>
+<span class="sd">                                                      json for salesforce</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">..casubclient</span> <span class="k">import</span> <span class="n">CloudAppsSubclient</span>
+
+<span class="kn">from</span> <span class="nn">...client</span> <span class="k">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">...agent</span> <span class="k">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">...instance</span> <span class="k">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">...backupsets.cloudapps.salesforce_backupset</span> <span class="k">import</span> <span class="n">SalesforceBackupset</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="SalesforceSubclient"><a class="viewcode-back" href="../../../../subclients/cloudapps/cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient">[docs]</a><span class="k">class</span> <span class="nc">SalesforceSubclient</span><span class="p">(</span><span class="n">CloudAppsSubclient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from CloudAppsSubclient Base class, representing a Salesforce subclient,</span>
+<span class="sd">        and to perform operations on that subclient.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the properties of this subclient.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SalesforceSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="s1">&#39;CloudAppsSubclientProp&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;CloudAppsSubclientProp&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get the all subclient related properties of this subclient.</span>
+
+<span class="sd">           Returns:</span>
+<span class="sd">                dict - all subclient properties put inside a dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subclient_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;proxyClient&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxyClient</span><span class="p">,</span>
+                <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
+                <span class="s2">&quot;CloudAppsSubclientProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span><span class="p">,</span>
+                <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
+                <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">subclient_json</span>
+
+<div class="viewcode-block" id="SalesforceSubclient.check_object_in_browse"><a class="viewcode-back" href="../../../../subclients/cloudapps/cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.check_object_in_browse">[docs]</a>    <span class="k">def</span> <span class="nf">check_object_in_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_to_restore</span><span class="p">,</span> <span class="n">browse_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if the particular object is present in browse of the subclient</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                _object_to_restore     (str)   --  folder path whioch has to be restored</span>
+
+<span class="sd">                _browse_data           (str)   --  list of objects from browse response</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if object is not present in browse result</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">source_item</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">object_to_restore</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;/Objects&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span>
+                <span class="n">object_to_restore</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span>
+                <span class="n">object_to_restore</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;/Files&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">restore_object_name</span> <span class="o">=</span> <span class="s2">&quot;/Objects/&quot;</span> <span class="o">+</span> <span class="n">object_to_restore</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">restore_object_name</span> <span class="o">=</span> <span class="n">object_to_restore</span>
+
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">browse_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">restore_object_name</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">source_item</span> <span class="o">=</span> <span class="n">path</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">source_item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+</div>
+        <span class="k">return</span> <span class="n">restore_object_name</span>
+
+    <span class="k">def</span> <span class="nf">_restore_salesforce_options_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for the salesforce restore  options in restore json</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input value is not dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_salesforce_restore_option_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="s1">&#39;SALESFORCE&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;salesforceRestoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;restoreToFileSystem&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_fs&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s2">&quot;pathToStoreCsv&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;staging_path&quot;</span><span class="p">,</span> <span class="s1">&#39;/tmp/&#39;</span><span class="p">),</span>
+                <span class="s2">&quot;dependentRestoreLevel&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;isMetadataRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_metadata&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s2">&quot;restoreToSalesforce&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_cloud&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s2">&quot;restoreFromDatabase&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_database&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s2">&quot;overrideTable&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;override_table&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s2">&quot;syncDatabase&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;dbEnabled&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                    <span class="s2">&quot;dbType&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="s1">&#39;SQLSERVER&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;dbHost&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;dbPort&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="s1">&#39;1433&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;dbName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_name&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;dbInstance&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;dbUserPassword&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_user_name&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                        <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_user_password&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                    <span class="p">},</span>
+
+                <span class="p">}</span>
+
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_restore_salesforce_destination_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for  the salesforce destination restore option in restore JSON</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input value is not dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_client_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_instance_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="s1">&#39;Cloud Apps&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_client_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;destinationBackupset&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_backupset_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_instance_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="s1">&#39;Cloud Apps&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_client_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;noOfStreams&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streams&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="SalesforceSubclient.restore_to_file_system"><a class="viewcode-back" href="../../../../subclients/cloudapps/cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_file_system">[docs]</a>    <span class="k">def</span> <span class="nf">restore_to_file_system</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">objects_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sf_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;perform restore to file system to the provided path</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            objects_to_restore  (str)   --  list of objects to restore</span>
+
+<span class="sd">            destination_client  (str)   --  destination client name where cloud connector</span>
+<span class="sd">                                                package exists if this value not provided,</span>
+<span class="sd">                                                it will automatically use source backup client</span>
+
+<span class="sd">            sf_options          (dict)</span>
+
+<span class="sd">                destination_path    (str)   :   staging path for salesforce restore data.</span>
+<span class="sd">                                                    if this value is not provided, uses download</span>
+<span class="sd">                                                    cache path from source</span>
+
+<span class="sd">                dependent_level     (int)   :   restore children based on selected level.</span>
+<span class="sd">                                                    0   -   no Children</span>
+<span class="sd">                                                    1   -   immediate children</span>
+<span class="sd">                                                    -1  -   All children</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                streams             (int)   :   no of streams to use for restore</span>
+<span class="sd">                    default: 2</span>
+
+<span class="sd">                copy_precedence     (int)   :   copy number to use for restore</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                from_time           (str)   :   date to get the contents after</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets content from 01/01/1970 if not specified</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                to_time             (str)   :   date to get the contents before</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets content till latest if not specified</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                show_deleted_files  (bool)  :   include deleted files in the content or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">         Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if from time value is incorrect</span>
+
+<span class="sd">                    if to time value is incorrect</span>
+
+<span class="sd">                    if to time is less than from time</span>
+
+<span class="sd">                    if failed to browse content</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if destination client does not exist on commcell</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">file_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">sf_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sf_options</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check if client name is correct</span>
+        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">proxy_client</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">destination_client</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;destination_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;destination_path&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">download_cache_path</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_destination_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+
+        <span class="c1"># process the objects to restore</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span>
+            <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">each_object</span><span class="p">,</span> <span class="n">browse_files</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c1"># set the salesforce options</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;staging_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;destination_path&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">download_cache_path</span>
+        <span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_fs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;streams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streams&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># set the browse option</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence_applicable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># prepare and execute the Json</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_salesforce_restore_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SalesforceSubclient.restore_to_database"><a class="viewcode-back" href="../../../../subclients/cloudapps/cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_database">[docs]</a>    <span class="k">def</span> <span class="nf">restore_to_database</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">objects_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sf_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;perform Restore to  Database</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            objects_to_restore  (str)   --  list of objects to restore</span>
+
+<span class="sd">            destination_client  (str)   --  destination clientname where cloud connector package</span>
+<span class="sd">                                                exists. if this value not provided, it will</span>
+<span class="sd">                                                automatically use source backup client</span>
+
+<span class="sd">            sf_options          (dict)</span>
+
+<span class="sd">                destination_path    (str)   :   staging path for salesforce restore data.</span>
+<span class="sd">                                                    if this value is not provided, it will</span>
+<span class="sd">                                                    automatically use download cache path</span>
+<span class="sd">                                                    from source</span>
+
+<span class="sd">                db_type             (str)   :   database type. if database details does not</span>
+<span class="sd">                                                    provided, it will use syncdb database</span>
+<span class="sd">                                                    for restore</span>
+<span class="sd">                    default: SQLSERVER</span>
+
+<span class="sd">                db_host             (str)   :   database hostname (ex:dbhost.company.com)</span>
+
+<span class="sd">                db_instance         (str)   :   database instance name</span>
+<span class="sd">                                                    (provide if applicable for that database type)</span>
+
+<span class="sd">                db_name             (str)   :   database database name</span>
+<span class="sd">                                                    (it is where data will be imported)</span>
+
+<span class="sd">                db_port             (str)   :   database connection port</span>
+<span class="sd">                    default: 1433</span>
+
+<span class="sd">                db_user_name        (str)   :   database username</span>
+<span class="sd">                                                    (it should have read/write permissions on db)</span>
+
+<span class="sd">                db_user_password    (str)   :   database user password</span>
+
+<span class="sd">                overrirde_table     (bool)  :   overrides the tables on  database</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                dependent_level     (int)   :   restore dependent object based on selected level.</span>
+<span class="sd">                                                    0   -   no Children</span>
+<span class="sd">                                                    1   -   immediate children</span>
+<span class="sd">                                                   -1   -   All children</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                streams             (int)   :   no of streams to use for restore</span>
+<span class="sd">                    default: 2</span>
+
+<span class="sd">                copy_precedence     (int)   :   copy number to use for restore</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                from_date           (str)   :   date to get the contents after</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets contents from 01/01/1970 if not specified</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                to_date             (str)   :   date to get the contents before</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets contents till current day if not specified</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                show_deleted_files  (bool)  :   include deleted files in the content or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if from time value is incorrect</span>
+
+<span class="sd">                if to time value is incorrect</span>
+
+<span class="sd">                if to time is less than from time</span>
+
+<span class="sd">                if failed to browse content</span>
+
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+
+<span class="sd">                if destination client does not exist on commcell</span>
+
+<span class="sd">                if all the database details not provided</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">sf_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sf_options</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check if client name is correct</span>
+        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">proxy_client</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+            <span class="n">dest_client</span> <span class="o">=</span> <span class="n">destination_client</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">dest_client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_instance&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_user_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_user_password&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Salesforce&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1"># set the destination client</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_client</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;destination_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;destination_path&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">download_cache_path</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_destination_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+
+        <span class="c1"># process the objects to restore</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span>
+            <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">each_object</span><span class="p">,</span> <span class="n">browse_files</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c1"># set the salesforce options</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;staging_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;destination_path&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">download_cache_path</span>
+        <span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;streams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streams&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_fs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="s1">&#39;SQLSERVER&#39;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_name&quot;</span><span class="p">,</span> <span class="s2">&quot;autorestoredb&quot;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_port&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="s1">&#39;1433&#39;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_user_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_user_name&quot;</span><span class="p">,</span> <span class="s1">&#39;sa&#39;</span><span class="p">)</span>
+        <span class="n">db_base64_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">sf_options</span><span class="p">[</span><span class="s1">&#39;db_user_password&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_user_password&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">db_base64_password</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;override_table&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;override_table&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># set the browse option</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence_applicable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;from_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># prepare and execute the Json</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_salesforce_restore_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SalesforceSubclient.restore_to_salesforce_from_database"><a class="viewcode-back" href="../../../../subclients/cloudapps/cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_salesforce_from_database">[docs]</a>    <span class="k">def</span> <span class="nf">restore_to_salesforce_from_database</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">objects_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_backupset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sf_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;perform Restore to Salesforce from Database</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            objects_to_restore      (str)   --  list of objects to restore</span>
+
+<span class="sd">            destination_client      (str)   --  destination pseudo client name.</span>
+<span class="sd">                                                    if this value not provided, it will</span>
+<span class="sd">                                                    automatically select source client</span>
+
+<span class="sd">            destination_instance    (str)   --  destination instance name.</span>
+<span class="sd">                                                    if this value not provided, it will</span>
+<span class="sd">                                                    automatically select source instance name</span>
+
+<span class="sd">            destination_backupset   (str)   --  destination backupset name.</span>
+<span class="sd">                                                    if this value not provided, it will</span>
+<span class="sd">                                                    automatically select source backupset</span>
+<span class="sd">            sf_options              (dict)</span>
+
+<span class="sd">                destination_path    (str)   :   staging path for salesforce restore data</span>
+
+<span class="sd">                db_type             (str)   :   database type. if database details does not</span>
+<span class="sd">                                                    provided, it will use syncdb database</span>
+<span class="sd">                                                    for restore</span>
+<span class="sd">                    default: SQLSERVER</span>
+
+<span class="sd">                db_host             (str)   :   database hostname (ex:dbhost.company.com)</span>
+
+<span class="sd">                db_instance         (str)   :   database instance name</span>
+<span class="sd">                                                    (provide if applicable for that database type)</span>
+
+<span class="sd">                db_name             (str)   :   database database name</span>
+<span class="sd">                                                    (it is where data will be imported)</span>
+
+<span class="sd">                db_port             (str)   :   database connection port</span>
+<span class="sd">                    default: 1433</span>
+
+<span class="sd">                db_user_name        (str)   :   database username</span>
+<span class="sd">                                                    (read/write permissions needed on db)</span>
+
+<span class="sd">                db_user_password    (str)   :   database user password</span>
+
+<span class="sd">                overrirde_table     (bool)  :   overrides the tables on  database</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                dependent_level     (int)   :   restore children based on selected level.</span>
+<span class="sd">                                                    0   -   no Children</span>
+<span class="sd">                                                    1   -   immediate children</span>
+<span class="sd">                                                    -1  -   All children</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                streams             (int)   :   no of streams to use for restore</span>
+<span class="sd">                    default: 2</span>
+
+<span class="sd">                copy_precedence     (int)   :   copy number to use for restore</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                from_time           (str)   :   date to get the contents after</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets contents from 01/01/1970 if not specified</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                to_time             (str)   :   date to get the contents before</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets contents till current day if not specified</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                show_deleted_files  (bool)  :   include deleted files in the content or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if from date value is incorrect</span>
+
+<span class="sd">                if to date value is incorrect</span>
+
+<span class="sd">                if to date is less than from date</span>
+
+<span class="sd">                if failed to browse content</span>
+
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+
+<span class="sd">                if destination client does not exist</span>
+
+<span class="sd">                if destination instance does not exist</span>
+
+<span class="sd">                if destination backupset does not exist</span>
+
+<span class="sd">                if syncdb is not enabled and user not provided the database details</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">sf_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sf_options</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check if client name is correct</span>
+        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+            <span class="n">dest_client</span> <span class="o">=</span> <span class="n">destination_client</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">dest_client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+        <span class="n">dest_agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">dest_client</span><span class="p">,</span> <span class="s1">&#39;Cloud Apps&#39;</span><span class="p">)</span>
+
+        <span class="c1"># check if instance name is correct</span>
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
+            <span class="n">dest_instance</span> <span class="o">=</span> <span class="n">destination_instance</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">dest_instance</span> <span class="o">=</span> <span class="n">dest_agent</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+
+        <span class="c1"># check if backupset name is correct</span>
+        <span class="k">if</span> <span class="n">destination_backupset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_backupset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_backupset</span><span class="p">,</span> <span class="n">SalesforceBackupset</span><span class="p">):</span>
+            <span class="n">dest_backupset</span> <span class="o">=</span> <span class="n">destination_backupset</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_backupset</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">dest_backupset</span> <span class="o">=</span> <span class="n">SalesforceBackupset</span><span class="p">(</span><span class="n">dest_instance</span><span class="p">,</span> <span class="n">destination_backupset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;114&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">is_sync_db_enabled</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                    <span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span> <span class="s1">&#39;db_instance&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                    <span class="s1">&#39;db_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span> <span class="s1">&#39;db_user_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                    <span class="s1">&#39;db_user_password&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Salesforce&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1"># set salesforce destination client</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_client</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_instance_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_instance</span><span class="o">.</span><span class="n">instance_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_backupset_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_backupset</span><span class="o">.</span><span class="n">backupset_name</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_salesforce_destination_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+
+        <span class="c1"># process the objects to restore</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span> <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                        <span class="n">each_object</span><span class="p">,</span>
+                        <span class="n">browse_files</span><span class="p">))</span>
+
+        <span class="c1"># set the salesforce options</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;staging_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;destination_path&quot;</span><span class="p">,</span>
+            <span class="n">dest_backupset</span><span class="o">.</span><span class="n">download_cache_path</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;streams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streams&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_fs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_cloud&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;from_database&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">is_sync_db_enabled</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">dbtype</span> <span class="o">=</span> <span class="s1">&#39;SQLSERVER&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dbtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">is_sync_db_enabled</span>
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="n">dbtype</span><span class="p">)</span>
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_host</span>
+            <span class="p">)</span>
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_instance</span>
+            <span class="p">)</span>
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;db_name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_name</span>
+            <span class="p">)</span>
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_port&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_port</span>
+            <span class="p">)</span>
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_user_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;db_user_name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_user_name</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;db_user_password&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">:</span>
+                <span class="n">sf_options</span><span class="p">[</span><span class="s1">&#39;_db_base64_password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span>
+                    <span class="n">sf_options</span><span class="p">[</span><span class="s1">&#39;db_user_password&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_user_password&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;_db_base64_password&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_sync_db_user_password</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Salesforce&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;override_table&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;override_table&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># set the browse option</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence_applicable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;from_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># prepare and execute the Json</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_salesforce_restore_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SalesforceSubclient.restore_to_salesforce_from_media"><a class="viewcode-back" href="../../../../subclients/cloudapps/cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_salesforce_from_media">[docs]</a>    <span class="k">def</span> <span class="nf">restore_to_salesforce_from_media</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">objects_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_backupset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sf_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;perform Restore to Salesforce from Media.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            objects_to_restore      (str)   --  list of objects to restore</span>
+
+<span class="sd">            destination_client      (str)   --  destination pseudo client name.</span>
+<span class="sd">                                                    if this value not provided, it will</span>
+<span class="sd">                                                    automatically select source client</span>
+
+<span class="sd">            destination_instance    (str)   --  destination instance name.</span>
+<span class="sd">                                                    if this value not provided, it will</span>
+<span class="sd">                                                    automatically select source instance name</span>
+
+<span class="sd">            destination_backupset   (str)   --  destination backupset name.</span>
+<span class="sd">                                                    if this value not provided, it will</span>
+<span class="sd">                                                    automatically select source backupset</span>
+<span class="sd">            sf_options              (dict)</span>
+
+<span class="sd">                destination_path    (str)   :   staging path for salesforce restore data</span>
+
+<span class="sd">                db_type             (str)   :   database type. if database details does not</span>
+<span class="sd">                                                    provided, it will use syncdb database</span>
+<span class="sd">                                                    for restore</span>
+<span class="sd">                    default: SQLSERVER</span>
+
+<span class="sd">                db_host             (str)   :   database hostname (ex:dbhost.company.com)</span>
+
+<span class="sd">                db_instance         (str)   :   database instance name</span>
+<span class="sd">                                                    (provide if applicable for that database type)</span>
+
+<span class="sd">                db_name             (str)   :   database database name</span>
+<span class="sd">                                                    (it is where data will be imported)</span>
+
+<span class="sd">                db_port             (str)   :   database connection port</span>
+<span class="sd">                    default: 1433</span>
+
+<span class="sd">                db_user_name        (str)   :   database username</span>
+<span class="sd">                                                    (read/write permissions needed on db)</span>
+
+<span class="sd">                db_user_password    (str)   :   database user password</span>
+
+<span class="sd">                overrirde_table     (bool)  :   overrides the tables on  database</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                dependent_level     (int)   :   restore children based on selected level.</span>
+<span class="sd">                                                    0   -   no Children</span>
+<span class="sd">                                                    1   -   immediate children</span>
+<span class="sd">                                                    -1  -   All children</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                streams             (int)   :   no of streams to use for restore</span>
+<span class="sd">                    default: 2</span>
+
+<span class="sd">                copy_precedence     (int)   :   copy number to use for restore</span>
+<span class="sd">                    default: 0</span>
+
+<span class="sd">                from_time           (str)   :   date to get the contents after</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets contents from 01/01/1970 if not specified</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                to_time             (str)   :   date to get the contents before</span>
+<span class="sd">                                                    format: dd/MM/YYYY</span>
+<span class="sd">                                                    gets contents till current day if not specified</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                show_deleted_files  (bool)  :   include deleted files in the content or not</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if from date value is incorrect</span>
+
+<span class="sd">                    if to date value is incorrect</span>
+
+<span class="sd">                    if to date is less than from date</span>
+
+<span class="sd">                    if failed to browse content</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if destination client does not exist</span>
+
+<span class="sd">                    if destination instance does not exist</span>
+
+<span class="sd">                    if destination backupset does not exist</span>
+
+<span class="sd">                    if user does not provide staging database details</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">file_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">sf_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sf_options</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check if client name is correct</span>
+        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+            <span class="n">dest_client</span> <span class="o">=</span> <span class="n">destination_client</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">dest_client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+        <span class="n">dest_agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">dest_client</span><span class="p">,</span> <span class="s1">&#39;Cloud Apps&#39;</span><span class="p">)</span>
+
+        <span class="c1"># check if instance name is correct</span>
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
+            <span class="n">dest_instance</span> <span class="o">=</span> <span class="n">destination_instance</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">dest_instance</span> <span class="o">=</span> <span class="n">dest_agent</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">destination_instance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+
+        <span class="c1"># check if backupset name is correct</span>
+        <span class="k">if</span> <span class="n">destination_backupset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_backupset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_backupset</span><span class="p">,</span> <span class="n">SalesforceBackupset</span><span class="p">):</span>
+            <span class="n">dest_backupset</span> <span class="o">=</span> <span class="n">destination_backupset</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_backupset</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">dest_backupset</span> <span class="o">=</span> <span class="n">SalesforceBackupset</span><span class="p">(</span><span class="n">dest_instance</span><span class="p">,</span> <span class="n">destination_backupset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;114&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_instance&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_user_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                <span class="s1">&#39;db_user_password&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Salesforce&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_client</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_instance_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_instance</span><span class="o">.</span><span class="n">instance_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_backupset_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_backupset</span><span class="o">.</span><span class="n">backupset_name</span>
+
+        <span class="bp">self</span><span class="o">.</span> <span class="n">_restore_salesforce_destination_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+
+        <span class="c1"># process the objects to restore</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span>
+            <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">each_object</span><span class="p">,</span> <span class="n">browse_files</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c1"># set the salesforce options</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;staging_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;destination_path&quot;</span><span class="p">,</span> <span class="n">dest_backupset</span><span class="o">.</span><span class="n">download_cache_path</span>
+        <span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dependent_level&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;streams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streams&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_fs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_cloud&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;from_database&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="s1">&#39;SQLSERVER&#39;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_name&quot;</span><span class="p">,</span> <span class="s1">&#39;autorestoredb&#39;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_port&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="s1">&#39;1433&#39;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_user_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_user_name&quot;</span><span class="p">,</span> <span class="s1">&#39;sa&#39;</span><span class="p">)</span>
+        <span class="n">db_base64_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">sf_options</span><span class="p">[</span><span class="s1">&#39;db_user_password&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_user_password&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">db_base64_password</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;override_table&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;override_table&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># set the browse option</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence_applicable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;from_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># prepare and execute the Json</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_salesforce_restore_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_salesforce_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_restore_option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;prepares the  salesforce restore json from getters.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_fileoption_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_salesforce_options_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_browse_option_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_impersonation_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_commonOptions_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_task</span><span class="p">,</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_subtask</span><span class="p">,</span>
+                    <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;impersonation&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impersonation_json_</span><span class="p">,</span>
+                            <span class="s2">&quot;cloudAppsRestoreOptions&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_salesforce_restore_option_json</span><span class="p">,</span>
+                            <span class="s2">&quot;browseOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_browse_restore_json</span><span class="p">,</span>
+                            <span class="s2">&quot;commonOptions&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonoption_restore_json</span><span class="p">,</span>
+                            <span class="s2">&quot;destination&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">,</span>
+                            <span class="s2">&quot;fileOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fileoption_restore_json</span><span class="p">,</span>
+
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</div>
+        <span class="k">return</span> <span class="n">request_json</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

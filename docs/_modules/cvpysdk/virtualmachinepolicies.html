@@ -1,0 +1,1031 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.virtualmachinepolicies &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.virtualmachinepolicies</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing virtual machine related operations on the Commcell.</span>
+
+<span class="sd">VirtualMachinePolicies:         Class for representing all the Virtual Machine Policies associated</span>
+<span class="sd">                                    with the Commcell</span>
+
+<span class="sd">VirtualMachinePolicy:           Class for representing a single Virtual Machine Policy. Contains</span>
+<span class="sd">                                    method definitions for common methods among all VM Policies</span>
+
+<span class="sd">LiveMountPolicy:                Class for representing a single Live Mount Policy associated with</span>
+<span class="sd">                                    the Commcell; inherits VirtualMachinePolicy</span>
+
+
+<span class="sd">VirtualMachinePolicies:</span>
+<span class="sd">    __init__(commcell_object)               --  initialize the VirtualMachinePolicies instance for</span>
+<span class="sd">                                                    the Commcell</span>
+
+<span class="sd">    __str__()                               --  returns all the Virtual Machine policies associated</span>
+<span class="sd">                                                    with the Commcell</span>
+
+<span class="sd">    __repr__()                              --  returns a string for the instance of the</span>
+<span class="sd">                                                    VirtualMachinePolicies class</span>
+
+<span class="sd">    _get_vm_policies()                      --  gets all the Virtual Machine policies of the</span>
+<span class="sd">                                                    Commcell</span>
+
+<span class="sd">    has_policy(vm_policy_name)              --  checks if a Virtual Machine policy exists with the</span>
+<span class="sd">                                                    given name in a particular instance</span>
+
+<span class="sd">    get(vm_policy_name)                     --  returns a VirtualMachinePolicy object of the</span>
+<span class="sd">                                                    specified virtual machine policy name</span>
+
+<span class="sd">    add(vm_policy_name,</span>
+<span class="sd">        vm_policy_json_path)                --  adds a new Virtual Machine policy to the</span>
+<span class="sd">                                                    VirtualMachinePolicies instance,and returns an</span>
+<span class="sd">                                                    object of corresponding vm_policy_type</span>
+
+<span class="sd">    delete(vm_policy_name)                  --  removes the specified Virtual Machine policy from</span>
+<span class="sd">                                                    the Commcell</span>
+
+<span class="sd">    clone(source_ vm_policy_name,</span>
+<span class="sd">          desired_ vm_policy_name)          --  copies properties of specified VM Policy and</span>
+<span class="sd">                                                    creates a new VM Policy with the given name</span>
+
+<span class="sd">    _prepare_add_vmpolicy_json_default</span>
+<span class="sd">                    (vm_policy_options)     --  sets values for creating the add policy json</span>
+<span class="sd">                                                    that are common across all vm policies</span>
+
+<span class="sd">    _prepare_add_vmpolicy_json_livemount</span>
+<span class="sd">                    (vm_policy_options)     --  sets values for creating the add policy json that</span>
+<span class="sd">                                                     are specific for creating Live Mount policy</span>
+
+<span class="sd">    _data_stores_json(options)              --  sets values for creating the datastore value in the</span>
+<span class="sd">                                                     add policy json</span>
+
+<span class="sd">    _esx_servers_json(options)              --  sets values for creating the esx server value in</span>
+<span class="sd">                                                    the add policy json</span>
+
+<span class="sd">    _security_associations_json(options)    --  sets values for creating the security associations</span>
+<span class="sd">                                                    value in the add policy json</span>
+
+<span class="sd">     _network_names_json(options)           --  sets values for creating the network names value in</span>
+<span class="sd">                                                     the add policy json</span>
+
+<span class="sd">    _data_center_json(options)              --  sets values for creating the datacenter json value</span>
+<span class="sd">                                                    in the add policy json</span>
+
+<span class="sd">    _set_data_center(options)               --  sets the datacenter name if provided by user, or</span>
+<span class="sd">                                                    sets the alphabetically lowest one in the</span>
+<span class="sd">                                                     vcenter as default</span>
+
+<span class="sd">    _entity_json()                          --  sets values for creating the entity json value in</span>
+<span class="sd">                                                    the add policy json</span>
+
+<span class="sd">    _media_agent_json(options)              --  sets values for creating the media agent json</span>
+<span class="sd">                                                    value in the add policy json</span>
+<span class="sd">                                                    (only for Live Mount policy)</span>
+
+<span class="sd">    refresh()                               --  refresh the virtual machine policies</span>
+
+
+<span class="sd">VirtualMachinePolicy:</span>
+<span class="sd">    __init__(commcell_object,</span>
+<span class="sd">             vm_policy_name,</span>
+<span class="sd">             vm_policy_type,</span>
+<span class="sd">             VMPolicy_id,</span>
+<span class="sd">             vm_policy_details)                   --  initialize the instance of</span>
+<span class="sd">                                                          VirtualMachinePolicy class for a specific</span>
+<span class="sd">                                                          virtual machine policy of the Commcell</span>
+
+<span class="sd">    __repr__()                                    --  returns a string representation of the</span>
+<span class="sd">                                                          VirtualMachinePolicy instance</span>
+
+<span class="sd">    _get_VMPolicy_id()                            --  gets the id of the VirtualMachinePolicy</span>
+<span class="sd">                                                          instance</span>
+
+<span class="sd">    _initialize_ VMPolicy _properties()           --  initializes the VM policy properties</span>
+
+<span class="sd">    disable(vm_policy_name)                       --  disables the specified policy, if enabled</span>
+
+<span class="sd">    enable(vm_policy_name)                        --  enables the specified policy, if disabled</span>
+
+<span class="sd">    modify(vm_policy_name, vm_policy_details)     --  modifies the specified policy</span>
+
+<span class="sd">    properties(vm_policy_name)                    --  gives a summary of the properties of the</span>
+<span class="sd">                                                          specified policy</span>
+
+
+<span class="sd">LiveMountPolicy:</span>
+<span class="sd">    __init__(commcell_object,</span>
+<span class="sd">             vm_policy_name,</span>
+<span class="sd">             vm_policy_type,</span>
+<span class="sd">             VMPolicy_id,</span>
+<span class="sd">             vm_policy_details)                   --  initialize the instance of LiveMountPolicy</span>
+<span class="sd">                                                          class for a specific virtual machine</span>
+<span class="sd">                                                          policy of the Commcell</span>
+
+<span class="sd">    __repr__()                                    --  returns a string representation of the</span>
+<span class="sd">                                                          LiveMountPolicy instance</span>
+
+<span class="sd">    _initialize_ LiveMountPolicy _properties()    --  initializes the LiveMountPolicy properties</span>
+
+<span class="sd">    view_active_mounts()                          --  shows all active mounts for the specified</span>
+<span class="sd">                                                          Live Mount Policy</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="VirtualMachinePolicies"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies">[docs]</a><span class="k">class</span> <span class="nc">VirtualMachinePolicies</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing all the Virtual Machine Policies associated with the Commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize object of the VirtualMachinePolicies class.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the VirtualMachinePolicies class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_VMPOLICIES_URL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;VM_ALLOCATION_POLICY&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_VCLIENTS_URL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_VIRTUAL_CLIENTS&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_QOPERATION_URL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all virtual machine policies of the commcell.</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the virtual machine policies associated with the commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^28}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;Virtual Machine Policy&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">vm_policy</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span><span class="p">):</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">vm_policy</span><span class="p">)</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Clients class.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s2">&quot;VirtualMachinePolicies class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_vm_policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets all the virtual machine policies associated to the commcell specified by the</span>
+<span class="sd">            Commcell object.</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - consists of all storage policies of the commcell</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;vm_policy1_name&quot;: vm_policy1_id,</span>
+<span class="sd">                        &quot;vm_policy2_name&quot;: vm_policy2_id</span>
+<span class="sd">                    }</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_VMPOLICIES_URL</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;policy&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">vm_policies</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;policy&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">vm_policies</span> <span class="o">==</span> <span class="p">[]:</span>
+                    <span class="k">return</span> <span class="p">{}</span>
+
+                <span class="n">vm_policies_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="k">for</span> <span class="n">vm_policy</span> <span class="ow">in</span> <span class="n">vm_policies</span><span class="p">:</span>
+                    <span class="n">temp_name</span> <span class="o">=</span> <span class="n">vm_policy</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;vmAllocPolicyName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">vm_policy</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;vmAllocPolicyId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">vm_policies_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+
+                <span class="k">return</span> <span class="n">vm_policies_dict</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VirtualMachinePolicies.has_policy"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.has_policy">[docs]</a>    <span class="k">def</span> <span class="nf">has_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_policy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a Virtual Machine policy exists with the given name</span>
+<span class="sd">            Args:</span>
+<span class="sd">                policy_name (str)  --  name of the storage policy</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean output whether the storage policy exists in the commcell or not</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the storage policy name argument is not string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span> <span class="ow">and</span></div>
+                <span class="n">vm_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VirtualMachinePolicies.get"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_policy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a VirtualMachinePolicy object of the specified virtual machine policy name.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                vm_policy_name     (str)   --  name of the virtual machine policy</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the VirtualMachinePolicy class for the given policy name</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the virtual machine policy name argument is not string</span>
+<span class="sd">                    if no virtual machine policy exists with the given name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">VirtualMachinePolicy</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                <span class="n">vm_policy_name</span><span class="o">=</span><span class="n">vm_policy_name</span><span class="p">,</span>
+                <span class="n">vm_policy_type</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                <span class="n">vm_policy_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span><span class="p">[</span><span class="n">vm_policy_name</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span></div>
+                <span class="s1">&#39;No policy exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">))</span>
+
+<div class="viewcode-block" id="VirtualMachinePolicies.add"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">vm_policy_name</span><span class="p">,</span>
+            <span class="n">vm_policy_type</span><span class="p">,</span>
+            <span class="n">vcenter_name</span><span class="p">,</span>
+            <span class="n">vclient_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">vm_policy_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new Virtual Machine Policy to the Commcell.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                vm_policy_name       (str)   --  name of the new virtual machine policy to add to</span>
+<span class="sd">                                                    the Commcell instance</span>
+
+<span class="sd">                vcenter_name         (str)   --  name of the vcenter where the vm policy is to be</span>
+<span class="sd">                                                    added</span>
+
+<span class="sd">                vclient_name         (str)   --  the name of the virtualization client under which</span>
+<span class="sd">                                                    vm policy is to be added</span>
+
+<span class="sd">                vm_policy_type       (str)   --  type of virtual machine policy to be added</span>
+<span class="sd">                                                    [&quot;Live Mount&quot;, &quot;Clone From Template&quot;,</span>
+<span class="sd">                                                    &quot;Restore From Backup&quot;]</span>
+
+<span class="sd">                vm_policy_options    (dict)  --  optional dictionary passed by user to create a vm</span>
+<span class="sd">                                                   policy. Allowed key-value pairs and input types</span>
+<span class="sd">                                                   are given below</span>
+
+<span class="sd">                    &quot;allDataStoresSelected&quot;    (Boolean)  : if all data stores are to be selected;</span>
+<span class="sd">                                                                matters only if migrateVMs is set</span>
+<span class="sd">                                                                to True,</span>
+<span class="sd">                    &quot;daysRetainUntil&quot;          (int)      : how many days to retain backup until,</span>
+<span class="sd">                    &quot;migrateVMs&quot;               (Boolean)  : migrate to datastore after expiry</span>
+<span class="sd">                                                                (only for LiveMount),</span>
+<span class="sd">                    &quot;senderEmailId&quot;            (str)      : email id of sender,</span>
+<span class="sd">                    &quot;minutesRetainUntil&quot;       (int)      : how many days to retain backup until</span>
+<span class="sd">                    &quot;notifyToEmailIds&quot;         (str)      : email id&#39;s to notify to; multiple</span>
+<span class="sd">                                                                emails separated by a comma</span>
+<span class="sd">                    &quot;quotaType&quot;                (int)      : number of vm&#39;s/live mounts/labs per</span>
+<span class="sd">                                                                user,</span>
+<span class="sd">                    &quot;maxVMQuota&quot;               (int)      : maximum number of VM quota,</span>
+<span class="sd">                    &quot;namingPattern&quot;            (str)      : naming patter,</span>
+<span class="sd">                    &quot;description&quot;              (str)      : description of vm policy,</span>
+<span class="sd">                    &quot;enabled&quot;                  (Boolean)  : whether vm policy is enabled or not,</span>
+<span class="sd">                    &quot;allowRenewals&quot;            (Boolean)  : whether to allow renewals or not,</span>
+<span class="sd">                    &quot;disableSuccessEmail&quot;      (Boolean)  : send email on succesful creation of vm</span>
+<span class="sd">                                                                policy,</span>
+<span class="sd">                    &quot;allESXServersSelected&quot;    (Boolean)  : select all esx servers in the vcenter,</span>
+<span class="sd">                    &quot;dataStores&quot;               list(str)  : list of data store names,</span>
+<span class="sd">                    &quot;esxServers&quot;               list(str)  : list of esx server names,</span>
+<span class="sd">                    &quot;users&quot;                    list(str)  : list of users (user-names) to add to vm</span>
+<span class="sd">                                                                policy,</span>
+<span class="sd">                    &quot;userGroups&quot;               list(str)  : list of usergroups (usergroup-names) to</span>
+<span class="sd">                                                                add to vm policy,</span>
+<span class="sd">                    &quot;networkNames&quot;             list(str)  : list of network names,</span>
+<span class="sd">                    &quot;dataCenterName&quot;           (str)      : data center name for vm policy,</span>
+<span class="sd">                    ------------------------ only for Live Mount ------------------------</span>
+<span class="sd">                    &quot;mediaAgent&quot;               (str)      : media agent name for Live Mount,</span>
+<span class="sd">                    &quot;performAutoMigration&quot;     (Boolean)  : automatic migration of vm</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object    --  object of the corresponding virtual machine policy type</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the vm policy name argument is not string</span>
+
+<span class="sd">                    if type of the vcenter name argument is not string</span>
+
+<span class="sd">                    if type of virtualization client name argument is not string or None</span>
+
+<span class="sd">                    if policy type is not one of the virtual machine policy types as defined</span>
+
+<span class="sd">                    if the type of vm policy options is not dict or None</span>
+
+<span class="sd">                    if vm policy already exists with the given name</span>
+
+<span class="sd">                    if there is not at least one virtual machine policy already associated with</span>
+<span class="sd">                        this commcell (workaround because datacenter id is not fetchable)</span>
+
+<span class="sd">                    if vm policy is created but &quot;enabled&quot; attribute is set to false</span>
+
+<span class="sd">                    if failed to create vm policy</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+
+        <span class="n">_vm_policy_types</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Live Mount&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                            <span class="s1">&#39;Clone From Template&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                            <span class="s1">&#39;Restore From Backup&#39;</span><span class="p">:</span> <span class="mi">13</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vcenter_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vclient_name</span><span class="p">,</span> <span class="p">(</span><span class="n">basestring</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vm_policy_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_vm_policy_types</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not a valid virtual machine policy type.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">vm_policy_type</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">):</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Virtual Machine Policy &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">vm_policy_name</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;No virtual machine policies found. Please create at least one vm policy&#39;</span>
+                       <span class="s1">&#39;manually.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+                <span class="n">vm_policy_options</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;vmAllocPolicyName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_policy_name</span>
+            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;vCenterName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vcenter_name</span>
+
+            <span class="c1"># setting the vclient name and policy type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_vclient_name</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">,</span> <span class="n">vclient_name</span><span class="p">)</span>
+            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;policyType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_vm_policy_types</span><span class="p">[</span><span class="n">vm_policy_type</span><span class="p">]</span>
+
+            <span class="c1"># preparing the json values for adding the new policy</span>
+            <span class="n">_vm_policy_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_add_vmpolicy_json_default</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+
+            <span class="c1"># passing the built json to create the vm policy</span>
+            <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_VMPOLICIES_URL</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">_vm_policy_json</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create virtual machine policy</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">error_message</span><span class="p">)</span>
+
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># return object of corresponding Virtual Machine Policy here</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">_vm_policy_json</span><span class="p">[</span><span class="s1">&#39;policy&#39;</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="n">VirtualMachinePolicy</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                                <span class="n">vm_policy_name</span><span class="o">=</span><span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;vmAllocPolicyName&#39;</span><span class="p">],</span>
+                                <span class="n">vm_policy_type</span><span class="o">=</span><span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;policyType&#39;</span><span class="p">],</span>
+                                <span class="n">vm_policy_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span><span class="p">[</span><span class="n">vm_policy_name</span><span class="p">])</span>
+                        <span class="k">else</span><span class="p">:</span>           <span class="c1"># if policy is created but not enabled</span>
+                            <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Unable to return object. VM Policy &quot;</span><span class="si">{0}</span><span class="s1">&quot; is &#39;</span>
+                                       <span class="s1">&#39;disabled.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;vmAllocPolicyName&#39;</span><span class="p">]))</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VirtualMachinePolicies.delete"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_policy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes the specified virtual machine policy from the commcell.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                vm_policy_name (str)  --  name of the virtual machine policy to delete</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the virtual machine policy name argument is not string</span>
+
+<span class="sd">                    if failed to delete virtual machine policy</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">):</span>
+
+            <span class="c1"># retrieving the corresponding policy id for API call</span>
+
+            <span class="n">vm_policy_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_policies</span><span class="p">()[</span><span class="n">vm_policy_name</span><span class="p">]</span>
+            <span class="n">policy_delete_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_VMPOLICIES_URL</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vm_policy_id</span><span class="p">)</span>
+
+            <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">policy_delete_url</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                            <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                            <span class="n">output_string</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete virtual machine policy</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                                <span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">output_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span></div>
+                <span class="s1">&#39;No policy exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vm_policy_name</span><span class="p">))</span>
+
+<div class="viewcode-block" id="VirtualMachinePolicies.clone"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.clone">[docs]</a>    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_vm_policy_name</span><span class="p">,</span> <span class="n">desired_vm_policy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        copies properties of specified VM Policy and creates a new VM Policy with the given name</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_vm_policy_name    (str)  --  VM policy name whose properties are going to be</span>
+<span class="sd">                                                    cloned</span>
+
+<span class="sd">            desired_vm_policy_name   (str)  --  name of the policy that is going to be created</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object                          --  object of the corresponding virtual machine policy</span>
+<span class="sd">                                                    type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+</div>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_get_vclient_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns a list of virtualization clients in the commcell</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list   (str)  --  list of virtualization client names (empty list if no virtualization</span>
+<span class="sd">                                  client exists)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_VCLIENTS_URL</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;VSPseudoClientsList&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">pseudo_clients</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;VSPseudoClientsList&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">pseudo_clients</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">[]</span>
+
+                <span class="n">client_names</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="k">for</span> <span class="n">pseudo_client</span> <span class="ow">in</span> <span class="n">pseudo_clients</span><span class="p">:</span>
+                    <span class="n">client_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pseudo_client</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">])</span>
+
+                <span class="k">return</span> <span class="n">client_names</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_vclient_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">vclient_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the virtualization client name; if a virtualization client name is passed, checks</span>
+<span class="sd">         against the available virtualization clients, otherwise sets the first one in the list</span>
+<span class="sd">         as the virtualization client</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          vclient_name    --  parameter if passed by user (or None)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is not success</span>
+
+<span class="sd">                if no virtualization client exists on the Commcell</span>
+
+<span class="sd">                if virtualization client with given name does not exist on this Commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">vclient_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vclient_names</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">vclient_names</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;No virtualization clients exist on this Commcell.&#39;</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">vclient_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># choosing default vclient if not specified</span>
+            <span class="n">options</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vclient_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vclient_name</span> <span class="ow">in</span> <span class="n">vclient_names</span><span class="p">:</span>
+                <span class="n">options</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vclient_name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Virtualization client &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">vclient_name</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_add_vmpolicy_json_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets values for creating the add policy json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)  --  vm policy options provided by user (optional)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1">#  setting the json values using functions for elements having nested values</span>
+
+        <span class="n">_datacenter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_center_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+        <span class="n">_datastores</span> <span class="o">=</span> <span class="n">VirtualMachinePolicies</span><span class="o">.</span><span class="n">_data_stores_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+        <span class="n">_esxservers</span> <span class="o">=</span> <span class="n">VirtualMachinePolicies</span><span class="o">.</span><span class="n">_esx_servers_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+        <span class="n">_security_associations</span> <span class="o">=</span> <span class="n">VirtualMachinePolicies</span><span class="o">.</span><span class="n">_security_associations_json</span><span class="p">(</span>
+            <span class="n">vm_policy_options</span><span class="p">)</span>
+        <span class="n">_network_names</span> <span class="o">=</span> <span class="n">VirtualMachinePolicies</span><span class="o">.</span><span class="n">_network_names_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+        <span class="n">_entity</span> <span class="o">=</span> <span class="n">VirtualMachinePolicies</span><span class="o">.</span><span class="n">_entity_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+
+        <span class="n">_vm_policy_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;action&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>        <span class="c1"># 0 for add</span>
+            <span class="s1">&#39;policy&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;allDataStoresSelected&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;allDataStoresSelected&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;daysRetainUntil&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;daysRetainUntil&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                <span class="s1">&#39;migrateVMs&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;migrateVMs&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;senderEmailId&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;senderEmailId&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;notifyToEmailIds&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;notifyToEmailIds&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;quotaType&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;quotaType&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s1">&#39;maxVMQuota&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;maxVMQuota&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                <span class="s1">&#39;namingPattern&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;namingPattern&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;allowRenewals&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;allowRenewals&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;disableSuccessEmail&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;disableSuccessEmail&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;performAutoMigration&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;performAutoMigration&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;allESXServersSelected&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;allESXServersSelected&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;dataCenter&#39;</span><span class="p">:</span> <span class="n">_datacenter</span><span class="p">,</span>
+                <span class="s1">&#39;entity&#39;</span><span class="p">:</span> <span class="n">_entity</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="c1"># adding the optional values for the json if they exist</span>
+
+        <span class="k">if</span> <span class="n">_datastores</span><span class="p">:</span>
+            <span class="n">_vm_policy_json</span><span class="p">[</span><span class="s1">&#39;dataStores&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_datastores</span>
+
+        <span class="k">if</span> <span class="n">_esxservers</span><span class="p">:</span>
+            <span class="n">_vm_policy_json</span><span class="p">[</span><span class="s1">&#39;esxServers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_esxservers</span>
+
+        <span class="k">if</span> <span class="n">_network_names</span><span class="p">:</span>
+            <span class="n">_vm_policy_json</span><span class="p">[</span><span class="s1">&#39;networkNames&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_network_names</span>
+
+        <span class="k">if</span> <span class="n">_security_associations</span><span class="p">:</span>
+            <span class="n">_vm_policy_json</span><span class="p">[</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_security_associations</span>
+
+        <span class="c1"># setting json values that are specific to a particular policy type</span>
+
+        <span class="k">if</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s2">&quot;policyType&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>  <span class="c1"># for Live Mount policy</span>
+            <span class="n">VirtualMachinePolicies</span><span class="o">.</span><span class="n">_prepare_add_vmpolicy_json_livemount</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">,</span>
+                                                                        <span class="n">_vm_policy_json</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s2">&quot;policyType&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># for Clone from Template policy</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># for Restore from Backup policy</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">_vm_policy_json</span>
+
+    <span class="k">def</span> <span class="nf">_data_center_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns value for the datacenter json value in the add policy json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)  --  vm policy options provided by user</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _datacenter (dict)        --  datacenter json to add to vm policy json</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">])</span>
+        <span class="n">_client_id</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">client_id</span>
+        <span class="n">agent</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Virtual Server&#39;</span><span class="p">)</span>
+        <span class="n">instance_keys</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">_instances</span><span class="p">))</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">instance_keys</span><span class="p">)</span>
+        <span class="n">_instance_id</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">instance_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_data_center</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+        <span class="n">_datacenter</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;dataCenterId&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterId&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;dataCenterName&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterName&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;vCenterName&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;vCenterName&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;instanceEntity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;clientId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">_client_id</span><span class="p">),</span>
+                               <span class="s1">&#39;clientName&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;instanceId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">_instance_id</span><span class="p">)},</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">_datacenter</span>
+
+    <span class="k">def</span> <span class="nf">_set_data_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the datacenter name if provided by user, or sets the alphabetically lowest one in the</span>
+<span class="sd">         vcenter as default</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)  --  vm policy options provided by user</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if there is not at least one virtual machine policy already associated with this</span>
+<span class="sd">                 Commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;No virtual machine policy found. Please create at least one vm policy &#39;</span>
+                       <span class="s1">&#39;manually.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+
+        <span class="c1"># getting list of datacenters from first existing vm policy properties</span>
+        <span class="n">get_datacenter_xml</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot; ?&gt;&#39;</span>
+            <span class="s1">&#39;&lt;Ida_GetDataCenterListReq&gt;&lt;policyType policyType=&quot;4&quot; &#39;</span>
+            <span class="s1">&#39;vmAllocPolicyName=&quot;&#39;</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;&quot;/&gt;&lt;/Ida_GetDataCenterListReq&gt;&#39;</span>
+        <span class="p">)</span>
+
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_QOPERATION_URL</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">get_datacenter_xml</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;dataCenterList&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">datacenter_list</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;dataCenterList&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;dataCenterName&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">datacenter</span> <span class="ow">in</span> <span class="n">datacenter_list</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="p">(</span>
+                                <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">==</span>
+                                <span class="n">datacenter</span><span class="p">[</span><span class="s1">&#39;instanceEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="ow">and</span>
+                                <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">datacenter</span><span class="p">[</span><span class="s1">&#39;dataCenterName&#39;</span><span class="p">]</span>
+                        <span class="p">):</span>
+                            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datacenter</span><span class="p">[</span><span class="s1">&#39;dataCenterId&#39;</span><span class="p">]</span>
+                            <span class="k">return</span>  <span class="c1"># setting the datacenter name and id</span>
+                    <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;No datacenter found with name: </span><span class="si">{0}</span><span class="s1"> in virtual client: </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterName&#39;</span><span class="p">],</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]))</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">datacenter</span> <span class="ow">in</span> <span class="n">datacenter_list</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="p">(</span>
+                                <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">==</span>
+                                <span class="n">datacenter</span><span class="p">[</span><span class="s1">&#39;instanceEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+                        <span class="p">):</span>
+                            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datacenter</span><span class="p">[</span><span class="s1">&#39;dataCenterName&#39;</span><span class="p">]</span>
+                            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datacenter</span><span class="p">[</span><span class="s1">&#39;dataCenterId&#39;</span><span class="p">]</span>
+                            <span class="k">return</span>  <span class="c1"># setting the first datacenter for the given vclient</span>
+                    <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;No datacenter found for virtual client: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]))</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Virtual Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_prepare_add_vmpolicy_json_livemount</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">,</span> <span class="n">_vm_policy_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets values for creating the add policy json that are specific for creating Live Mount</span>
+<span class="sd">          policy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)  --  vm policy options provided by user</span>
+
+<span class="sd">            _vm_policy_json (dict)    --  vm policy json to which Live Mount policy specific</span>
+<span class="sd">                                            information is added</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_media_agent_json</span> <span class="o">=</span> <span class="n">VirtualMachinePolicies</span><span class="o">.</span><span class="n">_media_agent_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">)</span>
+
+        <span class="n">_vm_policy_json</span><span class="p">[</span><span class="s1">&#39;policy&#39;</span><span class="p">][</span><span class="s1">&#39;minutesRetainUntil&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_policy_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;minutesRetainUntil&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">_media_agent_json</span><span class="p">:</span>
+            <span class="n">_vm_policy_json</span><span class="p">[</span><span class="s1">&#39;mediaAgent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_media_agent_json</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_data_stores_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns list of datastores to which live mount is to be migrated</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)    --  vm policy options provided by user</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _datastores  (list)         --  list that stores values for datastore in add policy</span>
+<span class="sd">                                                json</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_datastores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;dataStores&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;migrateVms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;allDataStoresSelected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">datastore</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataStores&#39;</span><span class="p">]:</span>
+                <span class="c1"># insert datastore to _datastores; get type by api call</span>
+
+                <span class="n">datastore_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_type_&#39;</span><span class="p">:</span> <span class="mi">92</span><span class="p">,</span>
+                                  <span class="s1">&#39;dataStoreName&#39;</span><span class="p">:</span> <span class="n">datastore</span><span class="p">}</span>   <span class="c1"># datastore id needed</span>
+                <span class="n">_datastores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastore_dict</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;migrateVMs&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;migrateVMs&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="c1"># if no datastores are provided and migrateVMs is True</span>
+                <span class="c1"># select all datastores</span>
+                <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;allDataStoresSelected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">_datastores</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_esx_servers_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns list of esx servers in the add policy json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)  --  vm policy options provided by user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_esxservers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;esxServers&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+            <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;allESXServersSelected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">esxserver</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;esxServers&#39;</span><span class="p">]:</span>
+                <span class="c1"># add each esxServe to self._esxservers;</span>
+                <span class="n">esxserver_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_type_&#39;</span><span class="p">:</span> <span class="mi">91</span><span class="p">,</span>
+                                  <span class="s1">&#39;esxServerName&#39;</span><span class="p">:</span> <span class="n">esxserver</span><span class="p">}</span>  <span class="c1"># esxserver id needed</span>
+                <span class="n">_esxservers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">esxserver_dict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_esxservers</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_security_associations_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns json for the security associations in the add policy json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)  --  vm policy options provided by user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_users</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;users&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+            <span class="c1"># for user in vm_policy_options[&#39;users&#39;]:</span>
+                <span class="c1"># add each user {}; need api for type, id</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># default - empty</span>
+            <span class="k">pass</span>
+
+        <span class="n">_usergroups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;userGroups&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+            <span class="c1"># for usergroup in vm_policy_options[&#39;userGroups&#39;]:</span>
+                <span class="c1"># add each usergroup {}; need api for type, id</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># default empty</span>
+            <span class="k">pass</span>
+
+        <span class="n">_security_associations</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">_users</span><span class="p">:</span>
+            <span class="n">_security_associations</span><span class="p">[</span><span class="s1">&#39;users&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_users</span>
+        <span class="k">if</span> <span class="n">_usergroups</span><span class="p">:</span>
+            <span class="n">_security_associations</span><span class="p">[</span><span class="s1">&#39;userGroups&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_usergroups</span>
+
+        <span class="k">return</span> <span class="n">_security_associations</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_network_names_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns list of network names for the add policy json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)    --  vm policy options provided by user</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _network_names   (list)     --  list of network names (str)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_network_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;networkNames&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">network</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;networkNames&#39;</span><span class="p">]:</span>
+                <span class="n">_network_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_network_names</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_media_agent_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns json for the media agent json value in the add policy json (only for LM)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options (dict)  --  vm policy options provided by user (optional)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _media_agent_json (dict)  --  json containing media agent information if media agent</span>
+<span class="sd">                                            info is passed by user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_media_agent_json</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="s1">&#39;mediaAgent&#39;</span> <span class="ow">in</span> <span class="n">vm_policy_options</span><span class="p">:</span>
+            <span class="c1"># there can be only one MA -- validate this</span>
+            <span class="n">_media_agent_json</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;mediaAgent&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">_media_agent_json</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_entity_json</span><span class="p">(</span><span class="n">vm_policy_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns json for the entity  attribute in the add policy json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vm_policy_options  (dict)    --  vm policy options provided by user</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _entity            (dict)    --  json for the entity attribute in add policy json</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_entity</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># hardcoded</span>
+            <span class="s1">&#39;dataCenterId&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterId&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;dataCenterName&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;dataCenterName&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;vmAllocPolicyName&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s1">&#39;vmAllocPolicyName&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;_type_&#39;</span><span class="p">:</span> <span class="mi">93</span><span class="p">,</span>           <span class="c1"># hardcoded</span>
+            <span class="s1">&#39;policyType&#39;</span><span class="p">:</span> <span class="n">vm_policy_options</span><span class="p">[</span><span class="s2">&quot;policyType&quot;</span><span class="p">],</span>
+            <span class="s1">&#39;region&#39;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">_entity</span>
+
+<div class="viewcode-block" id="VirtualMachinePolicies.refresh"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicies.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the Virtual Machine policies.&quot;&quot;&quot;</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_policies</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="VirtualMachinePolicy"><a class="viewcode-back" href="../../virtual_machine_policies.html#cvpysdk.virtualmachinepolicies.VirtualMachinePolicy">[docs]</a><span class="k">class</span> <span class="nc">VirtualMachinePolicy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing a single Virtual Machine Policy. Contains method definitions for</span>
+<span class="sd">        common operations among all VM Policies&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">commcell_object</span><span class="p">,</span>
+            <span class="n">vm_policy_name</span><span class="p">,</span>
+            <span class="n">vm_policy_type</span><span class="p">,</span>
+            <span class="n">vm_policy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">vm_policy_details</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize object of the VirtualMachinePolicy class.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object    (object)  --  instance of the Commcell class</span>
+<span class="sd">                vm_policy_name     (str)     --</span>
+<span class="sd">                vm_policy_type     (int)     --</span>
+<span class="sd">                vm_policy_id       (int)     --</span>
+<span class="sd">                vm_policy_details  (dict)    --</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the VirtualMachinePolicies class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policy_name</span> <span class="o">=</span> <span class="n">vm_policy_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+
+        <span class="k">if</span> <span class="n">vm_policy_id</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policy_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">vm_policy_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policy_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_policy_id</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_VM_POLICY_URL</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_VM_ALLOCATION_POLICY&#39;</span><span class="p">]</span>
+                               <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policy_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of this class.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;VirtualMachinePolicy class instance for Virtual Machine Policy: &#39;</span><span class="si">{0}</span><span class="s2">&#39; for &quot;</span>
+                <span class="s2">&quot;Commcell: &#39;</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">vm_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+                <span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_vm_policy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the virtual machine policy id associated with the virtual machine policy&quot;&quot;&quot;</span>
+
+        <span class="n">vm_policies</span> <span class="o">=</span> <span class="n">VirtualMachinePolicies</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vm_policies</span><span class="o">.</span><span class="n">_get_vm_policies</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">vm_policy_name</span><span class="p">]</span>
+
+        <span class="c1"># check this?</span>
+        <span class="c1"># return vm_policies.get(self.vm_policy_name).vm_policy_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vm_policy_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the virtual machine policy name as a read-only attribute.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policy_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vm_policy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the virtual machine policy id as a read-only attribute.&quot;&quot;&quot;</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_policy_id</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

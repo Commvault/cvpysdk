@@ -4,39 +4,27 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Instance &#8212; Developer SDK - Python 1.0.0 documentation</title>
-    
+    <title>Instance &#8212; Developer SDK - Python v11 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.0.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Job" href="job.html" />
-    <link rel="prev" title="Global Filter" href="global_filter.html" />
+    <link rel="next" title="Internet Options" href="internet_options.html" />
+    <link rel="prev" title="Globalfilter" href="globalfilter.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
@@ -53,39 +41,62 @@
 <dt>Instance:  Class for a single instance selected for an agent,</dt>
 <dd>and to perform operations on that instance</dd>
 <dt>Instances:</dt>
-<dd><dl class="first docutils">
-<dt>__init__(agent_object)          –  initialise object of Instances class associated with</dt>
-<dd>the specified agent</dd>
-</dl>
+<dd><p class="first">__init__(agent_object)          –  initialize object of Instances class associated with
+the specified agent</p>
 <p>__str__()                       –  returns all the instances associated with the agent</p>
 <p>__repr__()                      –  returns the string for the object of the Instances class</p>
 <p>_get_instances()                –  gets all the instances associated with the agent specified</p>
+<p>all_instances()                 –  returns the dict of all the instances</p>
 <p>has_instance(instance_name)     –  checks if a instance exists with the given name or not</p>
-<dl class="last docutils">
-<dt>get(instance_name)              –  returns the Instance class object</dt>
-<dd>of the input backup set name</dd>
+<p>get(instance_name)              –  returns the Instance class object
+of the input backup set name</p>
+<dl class="docutils">
+<dt>add_sybase_instance(</dt>
+<dd>sybase_options</dd>
 </dl>
+<p>)                               –  To add sybase server instance</p>
+<p class="last">refresh()                       –  refresh the instances associated with the agent</p>
 </dd>
 <dt>Instance:</dt>
 <dd><dl class="first docutils">
 <dt>__init__(agent_object,</dt>
-<dd><p class="first">instance_name,
-instance_id=None)      –  initialise object of Instance with the specified instance</p>
-<blockquote class="last">
-<div>name and id, and associated to the specified agent</div></blockquote>
-</dd>
+<dd>instance_name,
+instance_id=None)      –  initialise object of Instance with the specified instance</dd>
 </dl>
+<p>name and id, and associated to the specified agent</p>
 <p>__repr__()                      –  return the instance name, the object is associated with</p>
 <p>_get_instance_id()              –  method to get the instance id, if not specified in __init__</p>
 <p>_get_instance_properties()      –  method to get the properties of the instance</p>
+<p>_process_update_response()      –  updates the instance properties</p>
+<p>_process_restore_response()     –  processes the restore request sent to server
+and returns the restore job object</p>
+<p>_filter_paths()                 –  filters the path as per the OS, and the Agent</p>
+<p>_impersonation_json()           –  setter for impersonation Property</p>
+<p>_restore_browse_option_json()   –  setter for  browse option  property in restore</p>
+<p>_restore_commonOptions_json()   –  setter for common options property in restore</p>
+<p>_restore_destination_json()     –  setter for destination options property in restore</p>
+<p>_restore_fileoption_json()      – setter for file option property in restore</p>
+<p>_restore_destination_json()     – setter for destination property in restore</p>
+<p>_restore_json()                 –  returns the apppropriate JSON request to pass for either
+Restore In-Place or Out-of-Place operation</p>
+<p>_restore_in_place()             –  Restores the files/folders specified in the
+input paths list to the same location</p>
+<p>_restore_out_of_place()         –  Restores the files/folders specified in the input paths
+list to the input client, at the specified destination location</p>
+<p>_task()                         –  the task dict used while restore/backup job</p>
+<p>_restore_sub_task()             –  the restore job specific sub task dict used to form
+restore json</p>
+<p>instance_id()                   –  id of this instance</p>
+<p>instance_name()                 –  name of this instance</p>
 <p>browse()                        –  browse the content of the instance</p>
-<p class="last">find()                          –  find content in the instance</p>
+<p>find()                          –  find content in the instance</p>
+<p class="last">refresh()                       –  refresh the properties of the instance</p>
 </dd>
 </dl>
 <dl class="class">
 <dt id="cvpysdk.instance.Instance">
 <em class="property">class </em><code class="descclassname">cvpysdk.instance.</code><code class="descname">Instance</code><span class="sig-paren">(</span><em>agent_object</em>, <em>instance_name</em>, <em>instance_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for performing instance operations for a specific instance.</p>
 <dl class="method">
 <dt id="cvpysdk.instance.Instance.browse">
@@ -220,13 +231,82 @@ to_time=‘2016-04-21 12:00:00’</dd>
 <dd><p>Treats the instance name as a read-only attribute.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.instance.Instance.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties of the Instance.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="cvpysdk.instance.Instances">
 <em class="property">class </em><code class="descclassname">cvpysdk.instance.</code><code class="descname">Instances</code><span class="sig-paren">(</span><em>agent_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for getting all the instances associated with a client.</p>
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.add_sybase_instance">
+<code class="descname">add_sybase_instance</code><span class="sig-paren">(</span><em>sybase_options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_sybase_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_sybase_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to Add new Sybase Instance to given Client
+Args:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Dictionary of sybase instance creation options:</dt>
+<dd><dl class="first last docutils">
+<dt>Example:</dt>
+<dd><dl class="first last docutils">
+<dt>sybase_options = {</dt>
+<dd><blockquote class="first">
+<div>‘instance_name’: ‘SAISYB’,
+‘sybase_ocs’: ‘OCS-16_0’,
+‘sybase_ase’: ‘ASE-16_0’,
+‘backup_server’: ‘SAISYB_BS’,
+‘sybase_home’:’C:SAP’,
+‘config_file’:’C:SAPSAISYB.cfg’,
+‘enable_auto_discovery’:True,
+‘shared_memory_directory’:’C:SAPASE-16_0’,
+‘storage_policy’:’sai-sp’,
+‘sa_username’:’sa’,
+‘sa_password’:’commvault!12’,
+‘localadmin_username’:’saisybadministrator’,
+‘localadmin_password’:’commvault!12’</div></blockquote>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if None value in sybase options</p>
+<p>if Sybase instance with same name already exists</p>
+<p class="last">if given storage policy does not exists in commcell</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instance.Instances.all_instances">
+<code class="descname">all_instances</code><a class="headerlink" href="#cvpysdk.instance.Instances.all_instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of all the instances associated with the agent</p>
+<dl class="docutils">
+<dt>dict - consists of all instances of the agent</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd>“instance1_name”: instance1_id,
+“instance2_name”: instance2_id</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="cvpysdk.instance.Instances.get">
 <code class="descname">get</code><span class="sig-paren">(</span><em>instance_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.get" title="Permalink to this definition">¶</a></dt>
@@ -265,6 +345,12 @@ to_time=‘2016-04-21 12:00:00’</dd>
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the instances associated with the Agent of the selected Client.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -279,8 +365,8 @@ to_time=‘2016-04-21 12:00:00’</dd>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
-      <li>Previous: <a href="global_filter.html" title="previous chapter">Global Filter</a></li>
-      <li>Next: <a href="job.html" title="next chapter">Job</a></li>
+      <li>Previous: <a href="globalfilter.html" title="previous chapter">Globalfilter</a></li>
+      <li>Next: <a href="internet_options.html" title="next chapter">Internet Options</a></li>
   </ul></li>
   </ul></li>
 </ul>
@@ -294,12 +380,14 @@ to_time=‘2016-04-21 12:00:00’</dd>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -307,11 +395,11 @@ to_time=‘2016-04-21 12:00:00’</dd>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2017, Commvault Systems Inc..
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
       <a href="_sources/instance.rst.txt"

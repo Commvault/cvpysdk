@@ -1,0 +1,232 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.internetoptions &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.internetoptions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for setting internet options</span>
+<span class="sd">InternetOptions: class for setting Internet options in CommServe</span>
+
+<span class="sd"> __init__(Commcell_object)      --  initialise with object of CommCell</span>
+
+<span class="sd">__repr__()                      --  returns the string to represent the instance of the</span>
+<span class="sd">                                            InternetOptions class</span>
+<span class="sd">set_internet_gateway_client(clientname)</span>
+<span class="sd">                                --  sets Internet gateway with provided client</span>
+
+<span class="sd">set_metrics_internet_gateway()  -- sets metrics server as internet gateway</span>
+
+<span class="sd">set_no_gateway()                -- Removes internet gateway</span>
+
+<span class="sd">set_http_proxy(servername, port)-- sets HTTP proxy enabled with the provided server name and port</span>
+
+<span class="sd">disable_http_proxy()            -- Removes HTTP proxy</span>
+
+<span class="sd">set_http_authentication(username, pwd)</span>
+<span class="sd">                                -- sets authentication to HTTP proxy</span>
+
+<span class="sd">disable_http_authentication()   --Removes HTTP authentication</span>
+
+<span class="sd">refresh()                       --  refresh the internet options</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="InternetOptions"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions">[docs]</a><span class="k">class</span> <span class="nc">InternetOptions</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for setting Internet options in CommServe&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_INTERNET</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INTERNET_PROXY&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the UserGroups class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;InternetOption class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39; with config &#39;</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_internet_config</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_internet_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_INTERNET</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_internet_config</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internet_config</span> <span class="ow">and</span> <span class="s1">&#39;config&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internet_config</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internet_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_save_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        updates the configuration of private Metrics</span>
+<span class="sd">        this must be called to save the configuration changes made in this object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_INTERNET</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internet_config</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+<div class="viewcode-block" id="InternetOptions.set_internet_gateway_client"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.set_internet_gateway_client">[docs]</a>    <span class="k">def</span> <span class="nf">set_internet_gateway_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        set internet gateway with the client name provided.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            client_name (str): client to be used as internet gateway</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if client doesnt exist in CommServe</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">client_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;InternetOptions&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s1">&#39;Client name is required&#39;</span><span class="p">)</span>
+        <span class="n">clientid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyClient&#39;</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">clientid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyClient&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client_name</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InternetOptions.set_metrics_internet_gateway"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.set_metrics_internet_gateway">[docs]</a>    <span class="k">def</span> <span class="nf">set_metrics_internet_gateway</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;sets metrics server as internet gateway&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InternetOptions.set_no_gateway"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.set_no_gateway">[docs]</a>    <span class="k">def</span> <span class="nf">set_no_gateway</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes internet gateway&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InternetOptions.set_http_proxy"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.set_http_proxy">[docs]</a>    <span class="k">def</span> <span class="nf">set_http_proxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">servername</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets HTTP proxy enabled with the provided server name and port</span>
+<span class="sd">        Args:</span>
+<span class="sd">            servername (str): hostname or IP of the HTTP proxy server</span>
+<span class="sd">            port (int): HTTP proxy server port</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if proxy server name and port are empty</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">servername</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s1">&#39;proxy server name and port cannot be empty&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;useHttpProxy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyServer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">servername</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyPort&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">port</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InternetOptions.disable_http_proxy"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.disable_http_proxy">[docs]</a>    <span class="k">def</span> <span class="nf">disable_http_proxy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes HTTP proxy&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;useHttpProxy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InternetOptions.set_http_authentication"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.set_http_authentication">[docs]</a>    <span class="k">def</span> <span class="nf">set_http_authentication</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">pwd</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets authentication to HTTP proxy</span>
+<span class="sd">        Args:</span>
+<span class="sd">            username: username for proxy server</span>
+<span class="sd">            pwd: password for proxy server</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;useProxyAuthentication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyCredentials&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyCredentials&#39;</span><span class="p">][</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">pwd</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;proxyCredentials&#39;</span><span class="p">][</span><span class="s1">&#39;confirmPassword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">pwd</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InternetOptions.disable_http_authentication"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.disable_http_authentication">[docs]</a>    <span class="k">def</span> <span class="nf">disable_http_authentication</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes HTTP authentication&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;useProxyAuthentication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InternetOptions.refresh"><a class="viewcode-back" href="../../internet_options.html#cvpysdk.internetoptions.InternetOptions.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the Internet Options.&quot;&quot;&quot;</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_internet_config</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

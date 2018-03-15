@@ -1,0 +1,688 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.metricsreport &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.metricsreport</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for performing Metrics operations.</span>
+
+<span class="sd">_Metrics        : Class for representing all common operations on Metrics Reporting</span>
+<span class="sd">PrivateMetrics  : Class for representing Private Metrics and performing operations on it.</span>
+<span class="sd">PublicMetrics   : Class for representing Public Metrics and performing operations on it.</span>
+
+<span class="sd">use method save_config() or upload_now() to save the updated configurations.</span>
+
+<span class="sd">Metrics:</span>
+<span class="sd">    __init__(Commcell_object, isprivate)--  initialise with object of CommCell and flag to</span>
+<span class="sd">                                            specificy metrics Type</span>
+
+<span class="sd">    __repr__()                   --  returns the string to represent the instance of the</span>
+<span class="sd">                                            Metrics class</span>
+<span class="sd">    enable_health()              --  enables Health service</span>
+
+<span class="sd">    disable_health()             --  disables Health service</span>
+
+<span class="sd">    enable_activity()            --  enables Activity service</span>
+
+<span class="sd">    disable_activity()           --  disables Activity service</span>
+
+<span class="sd">    enable_audit()               --  enables Audit service</span>
+
+<span class="sd">    disable_audit()              --  disables Audit service</span>
+
+<span class="sd">    disable_chargeback()         --  disables Chargeback service</span>
+
+<span class="sd">    enable_post_upgrade_check()  -- enables enable_post_upgrade_check Service</span>
+
+<span class="sd">    enable_all_services()        -- enables All Service in metrics</span>
+
+<span class="sd">    disable_all_services()       -- disables All Service</span>
+
+<span class="sd">    enable_metrics()             -- enables Metrics Service</span>
+
+<span class="sd">    disable_metrics()            -- disables Metrics Service in CommServe</span>
+
+<span class="sd">    set_upload_freq()            --  updates the upload frequency</span>
+
+<span class="sd">    set_data_collection_window   -- updates the data collection window</span>
+
+<span class="sd">    remove_data_collection_window-- removes data collection window</span>
+
+<span class="sd">    set_all_clientgroup()        -- updates metrics configuration with all client groups</span>
+
+<span class="sd">    set_clientgroups()           -- sets the client groups for metrics</span>
+
+<span class="sd">    save_config()                -- updates the configuration of Metrics, this must be</span>
+<span class="sd">                                    called to save the configuration changes made in this object</span>
+
+<span class="sd">    upload_now()                 -- Performs Upload Now operation of metrics</span>
+
+<span class="sd">    wait_for_download_completion()-- waits for metrics download operation to complete</span>
+
+<span class="sd">    wait_for_collection_completion-- waits for metrics collection operation to complete</span>
+
+<span class="sd">    wait_for_upload_completion()  -- waits for metrics upload operation to complete</span>
+
+<span class="sd">    wait_for_uploadnow_completion()-- waits for complete metrics operation to complete</span>
+
+<span class="sd">    get_possible_uploaded_filenames-- gives the possible names for the uploaded files</span>
+
+<span class="sd">    refresh()                      -- refresh the properties and config of the Metrics Server</span>
+
+<span class="sd">PrivateMetrics:</span>
+<span class="sd">    __init__(Commcell_object)   --  initialise with object of CommCell</span>
+
+<span class="sd">    update_url(hostname)        --  Updates Metrics URL for download and upload</span>
+
+<span class="sd">    enable_chargeback(daily, weekly, monthly)</span>
+<span class="sd">                                --  deletes the subclient (subclient name) from the backupset</span>
+
+<span class="sd">PublicMetrics:</span>
+<span class="sd">    __init__(Commcell_object)   --  initialise with object of CommCell</span>
+
+<span class="sd">    enable_chargeback()         --  deletes the subclient (subclient name) from the backupset</span>
+
+<span class="sd">    enable_upgrade_readiness()  -- Enables pre upgrade readiness service</span>
+
+<span class="sd">    disable_upgrade_readiness() -- disables pre upgrade readiness service</span>
+
+<span class="sd">    enable_proactive_support()  -- Enables Proactive Support service</span>
+
+<span class="sd">    disable_proactive_support() -- disables Proactive Support service</span>
+
+<span class="sd">    enable_cloud_assist()       -- Enables Cloud Assist service</span>
+
+<span class="sd">    disable_cloud_assist()      -- disables Cloud Assist service</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">sleep</span>
+
+<span class="kn">from</span> <span class="nn">cvpysdk.license</span> <span class="k">import</span> <span class="n">LicenseDetails</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<span class="k">class</span> <span class="nc">_Metrics</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for common operations in Metrics reporting</span>
+<span class="sd">    this will be inherited by Private and Cloud metrics&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">isprivate</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isprivate</span> <span class="o">=</span> <span class="n">isprivate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_METRICS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;METRICS&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_GET_METRICS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_METRICS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isprivate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_metrics_config</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the UserGroups class.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isprivate</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">metrics_type</span> <span class="o">=</span> <span class="s1">&#39;Private&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">metrics_type</span> <span class="o">=</span> <span class="s1">&#39;Public&#39;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> Metrics class instance for Commcell: &#39;</span><span class="si">{1}</span><span class="s2">&#39; with config &#39;</span><span class="si">{2}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">metrics_type</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_metrics_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GET_METRICS</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;isPrivateCloud&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_isprivate</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)})</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span> <span class="ow">and</span> <span class="s1">&#39;config&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">:</span>
+                <span class="c1"># get services</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">services</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cloud</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;cloud&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud</span><span class="p">[</span><span class="s1">&#39;serviceList&#39;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">:</span>
+                    <span class="n">service_name</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="s1">&#39;service&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                    <span class="n">status</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="n">service_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;updates metrics object with the latest configuration&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_metrics_config</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_update_service_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">service</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">service</span><span class="p">[</span><span class="s1">&#39;service&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">service_name</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="n">service_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lastdownloadtime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns last download time in unix time format&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;scriptDownloadTime&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lastcollectiontime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns last collection time in unix time format&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;lastCollectionTime&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lastuploadtime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns last upload time in unix time format&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;lastUploadTime&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nextuploadtime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns last Next time in unix time format&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;nextUploadTime&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">uploadfrequency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns last Next time in unix time format&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;uploadFrequency&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">enable_health</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;enables Health Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Health Check&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Health Check&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">disable_health</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables Health Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Health Check&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Health Check&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">enable_activity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;enables Activity Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Activity&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Activity&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">disable_activity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables Activity Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Activity&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Activity&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">enable_audit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;enables Audit Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Audit&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Audit&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">disable_audit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables Audit Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Audit&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Audit&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">enable_post_upgrade_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;enables post_upgrade_check Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Post Upgrade Check&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Post Upgrade Check&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">disables_post_upgrade_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables post_upgrade_check Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Post Upgrade Check&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Post Upgrade Check&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">disables_chargeback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables post_upgrade_check Service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Charge Back&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Charge Back&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">enable_all_services</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;enables All Service&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">service</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span>
+            <span class="n">service_name</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="s1">&#39;service&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="n">service_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span>
+
+    <span class="k">def</span> <span class="nf">disable_all_services</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables All Service&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">service</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span>
+            <span class="n">service_name</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="s1">&#39;service&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="n">service_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span>
+
+    <span class="k">def</span> <span class="nf">set_upload_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        updates the upload frequency</span>
+<span class="sd">        Args:</span>
+<span class="sd">            days (int): number of days for upload frequency, value can be between 1 to 7</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if invalid days supplied for upload frequency</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">days</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Metrics&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s1">&#39;Invalid Upload Frequency supplied&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;uploadFrequency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">days</span>
+
+    <span class="k">def</span> <span class="nf">set_data_collection_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="mi">28800</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        updates the data collection window</span>
+<span class="sd">        Args:</span>
+<span class="sd">            seconds: number for seconds after 12 AM</span>
+<span class="sd">            e.g.; 28800 for 8 AM</span>
+<span class="sd">            default; 28800</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if window specified is below 12.05 am</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">seconds</span> <span class="o">&lt;</span> <span class="mi">300</span><span class="p">:</span>  <span class="c1"># minimum 5 minutes after 12 midnight</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Metrics&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s1">&#39;Data collection window should be above 12.05 AM&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;dataCollectionTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">seconds</span>
+
+    <span class="k">def</span> <span class="nf">remove_data_collection_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;removes data collection window&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;dataCollectionTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">set_all_clientgroups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;updates metrics configuration with all client groups&quot;&quot;&quot;</span>
+
+        <span class="c1"># sets the list to one row with client group id as -1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroupList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;_type_&#39;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span> <span class="s1">&#39;clientGroupId&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}]</span>
+
+    <span class="k">def</span> <span class="nf">set_clientgroups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the client groups for metrics</span>
+<span class="sd">        Args:</span>
+<span class="sd">            clientgroup_name (list): list of client group names, None is set all client groups</span>
+<span class="sd">            will be enabled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">clientgroup_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_all_clientgroups</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">clientgroupid_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">each_clientgroup</span> <span class="ow">in</span> <span class="n">clientgroup_name</span><span class="p">:</span>
+                <span class="n">cg_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">each_clientgroup</span><span class="p">)</span><span class="o">.</span><span class="n">clientgroup_id</span>
+                <span class="n">clientgroupid_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cg_id</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroupList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">clientgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroupList&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">clientgroupid</span> <span class="ow">in</span> <span class="n">clientgroupid_list</span><span class="p">:</span>
+                <span class="n">clientgroup</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">{</span><span class="s1">&#39;_type_&#39;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span> <span class="s1">&#39;clientGroupId&#39;</span><span class="p">:</span> <span class="n">clientgroupid</span><span class="p">,</span> <span class="s1">&#39;clientGroupName&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">}</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">enable_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;enables Metrics in CommServe&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;commcellDiagUsage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span>
+
+    <span class="k">def</span> <span class="nf">disable_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables Metrics in CommServe&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;commcellDiagUsage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span>
+
+    <span class="k">def</span> <span class="nf">save_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        updates the configuration of Metrics</span>
+<span class="sd">        this must be called to save the configuration changes made in this object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_METRICS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">upload_now</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs Upload Now operation of metrics</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is not success:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;uploadNow&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_METRICS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="c1"># reset upload now flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;uploadNow&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">wait_for_download_completion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">150</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Waits for Metrics collection to complete for maximum of seconds given in timeout</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timeout (int): maximum seconds to wait</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="n">timelimit</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="n">timelimit</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastdownloadtime</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+                <span class="n">timelimit</span> <span class="o">-=</span> <span class="mi">30</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span>
+            <span class="s2">&quot;Download process didn&#39;t complete after </span><span class="si">{0}</span><span class="s2"> seconds&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">timeout</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">wait_for_collection_completion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">400</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Waits for Metrics collection to complete for maximum of seconds given in timeout</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timeout (int): maximum seconds to wait</span>
+
+<span class="sd">        Raises: Timeout error if collection didn&#39;t complete within timeout period</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="n">timelimit</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="n">timelimit</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastcollectiontime</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+                <span class="n">timelimit</span> <span class="o">-=</span> <span class="mi">30</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Collection process didn&#39;t complete after </span><span class="si">{0}</span><span class="s2"> seconds&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">timeout</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">wait_for_upload_completion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">120</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Waits for Metrics upload to complete for maximum of seconds given in timeout</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timeout (int): maximum seconds to wait</span>
+
+<span class="sd">        Raises: Timeout error if upload didn&#39;t complete within timeout period</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="n">timelimit</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="n">timelimit</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastuploadtime</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastcollectiontime</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastuploadtime</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+                <span class="n">timelimit</span> <span class="o">-=</span> <span class="mi">30</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Upload process didn&#39;t complete after </span><span class="si">{0}</span><span class="s2"> seconds&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">timeout</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">wait_for_uploadnow_completion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                      <span class="n">download_timeout</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+                                      <span class="n">collection_timeout</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
+                                      <span class="n">upload_timeout</span><span class="o">=</span><span class="mi">120</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Waits for Metrics uploadNow operation to complete, checks both collection and upload</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            download_timeout (int): maximum seconds to wait for download</span>
+<span class="sd">            collection_timeout (int): maximum seconds to wait for collection</span>
+<span class="sd">            upload_timeout (int): maximum seconds to wait for upload</span>
+
+<span class="sd">        Raises: Timeout error if uploadNow operation didn&#39;t complete</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_download_completion</span><span class="p">(</span><span class="n">download_timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_collection_completion</span><span class="p">(</span><span class="n">collection_timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_upload_completion</span><span class="p">(</span><span class="n">upload_timeout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_commcell_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the hexadecimal value of commcell id&quot;&quot;&quot;</span>
+        <span class="n">license_details</span> <span class="o">=</span> <span class="n">LicenseDetails</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+        <span class="n">ccid</span> <span class="o">=</span> <span class="n">license_details</span><span class="o">.</span><span class="n">commcell_id</span>
+        <span class="k">if</span> <span class="n">ccid</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">commcellid</span> <span class="o">=</span> <span class="s1">&#39;FFFFF&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">commcellid</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ccid</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">commcellid</span>
+
+    <span class="k">def</span> <span class="nf">get_possible_uploaded_filenames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queryid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the possible list of uploaded file names</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            queryid (int): optional argument to get file name specific to a query</span>
+
+<span class="sd">        Returns : list of possible file names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">commcellid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_commcell_id</span><span class="p">()</span>
+        <span class="n">cs_lastuploadtime</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastuploadtime</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cs_lastuploadtime</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;last upload time is 0, Upload didn&#39;t complete or failed&quot;</span><span class="p">)</span>
+        <span class="n">expected_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">queryid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">file_name</span> <span class="o">=</span> <span class="s2">&quot;CSS&quot;</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cs_lastuploadtime</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">commcellid</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.xml&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">file_name</span> <span class="o">=</span> <span class="s2">&quot;CSS&quot;</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cs_lastuploadtime</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
+                    <span class="n">commcellid</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">queryid</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.xml&quot;</span>
+            <span class="n">cs_lastuploadtime</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">expected_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">expected_files</span>
+
+
+<div class="viewcode-block" id="PrivateMetrics"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.PrivateMetrics">[docs]</a><span class="k">class</span> <span class="nc">PrivateMetrics</span><span class="p">(</span><span class="n">_Metrics</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for operations in private Metrics reporting&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the UserGroups class.</span>
+
+<span class="sd">                    Args:</span>
+<span class="sd">                        commcell_object (object)  --  instance of the Commcell class</span>
+<span class="sd">                        type -- 1 for private, 0 for public</span>
+
+<span class="sd">                    Returns:</span>
+<span class="sd">                        object - instance of the UserGroups class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_Metrics</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">isprivate</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_private_download_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">protocol</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud</span><span class="p">[</span><span class="s1">&#39;downloadURL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">://</span><span class="si">{1}</span><span class="s1">:</span><span class="si">{2}</span><span class="s1">/downloads/sqlscripts/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">protocol</span><span class="p">,</span>
+                                                                                  <span class="n">hostname</span><span class="p">,</span>
+                                                                                  <span class="n">port</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_private_upload_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">protocol</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud</span><span class="p">[</span><span class="s1">&#39;uploadURL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">://</span><span class="si">{1}</span><span class="s1">:</span><span class="si">{2}</span><span class="s1">/webconsole/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">protocol</span><span class="p">,</span> <span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_chargeback_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">daily</span><span class="p">,</span> <span class="n">weekly</span><span class="p">,</span> <span class="n">monthly</span><span class="p">):</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">daily</span><span class="p">:</span>
+            <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">|</span> <span class="mi">4</span>
+        <span class="k">if</span> <span class="n">weekly</span><span class="p">:</span>
+            <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">|</span> <span class="mi">8</span>
+        <span class="k">if</span> <span class="n">monthly</span><span class="p">:</span>
+            <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">|</span> <span class="mi">16</span>
+        <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">service</span><span class="p">[</span><span class="s1">&#39;service&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Charge Back&#39;</span><span class="p">:</span>
+                <span class="n">service</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flags</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">downloadurl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns download URL of private metrics&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;cloud&#39;</span><span class="p">][</span><span class="s1">&#39;downloadURL&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">uploadurl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Upload URL of private metrics&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;cloud&#39;</span><span class="p">][</span><span class="s1">&#39;uploadURL&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="PrivateMetrics.update_url"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.PrivateMetrics.update_url">[docs]</a>    <span class="k">def</span> <span class="nf">update_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="s1">&#39;http&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        updates private Metrics URL in CommServe</span>
+<span class="sd">        Args:</span>
+<span class="sd">            hostname (str): Metrics server hostname</span>
+<span class="sd">            port (int): port of webconsole</span>
+<span class="sd">                e.g.; 80 for http and 443 for https</span>
+<span class="sd">            protocol (str): http or https</span>
+<span class="sd">                default: http</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_private_download_url</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">protocol</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_private_upload_url</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">protocol</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PrivateMetrics.enable_chargeback"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.PrivateMetrics.enable_chargeback">[docs]</a>    <span class="k">def</span> <span class="nf">enable_chargeback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">daily</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weekly</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">monthly</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables Chargeback service as per the daily,weekly and Monthly arguments passes</span>
+<span class="sd">        Args:</span>
+<span class="sd">            daily  (bool): enables daily chargeback</span>
+<span class="sd">            weekly (bool): enables weekly chargeback</span>
+<span class="sd">            monthly(bool): enables Monthly chargeback</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Charge Back&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Charge Back&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_chargeback_flags</span><span class="p">(</span><span class="n">daily</span><span class="p">,</span> <span class="n">weekly</span><span class="p">,</span> <span class="n">monthly</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CloudMetrics"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics">[docs]</a><span class="k">class</span> <span class="nc">CloudMetrics</span><span class="p">(</span><span class="n">_Metrics</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for operations in Cloud Metrics reporting&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the UserGroups class.</span>
+
+<span class="sd">                    Args:</span>
+<span class="sd">                        commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">                    Returns:</span>
+<span class="sd">                        object - instance of the UserGroups class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_Metrics</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">isprivate</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">randomization_minutes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_config</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">][</span><span class="s1">&#39;randomization&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="CloudMetrics.enable_chargeback"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.enable_chargeback">[docs]</a>    <span class="k">def</span> <span class="nf">enable_chargeback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables Chargeback service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Charge Back&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Charge Back&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudMetrics.enable_upgrade_readiness"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.enable_upgrade_readiness">[docs]</a>    <span class="k">def</span> <span class="nf">enable_upgrade_readiness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables pre upgrade readiness service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Upgrade Readiness&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Upgrade Readiness&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudMetrics.disable_upgrade_readiness"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.disable_upgrade_readiness">[docs]</a>    <span class="k">def</span> <span class="nf">disable_upgrade_readiness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables pre upgrade readiness service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Upgrade Readiness&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Upgrade Readiness&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudMetrics.enable_proactive_support"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.enable_proactive_support">[docs]</a>    <span class="k">def</span> <span class="nf">enable_proactive_support</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables Proactive Support service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Proactive Support&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Proactive Support&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudMetrics.disable_proactive_support"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.disable_proactive_support">[docs]</a>    <span class="k">def</span> <span class="nf">disable_proactive_support</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables Proactive Support service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Proactive Support&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Proactive Support&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudMetrics.enable_cloud_assist"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.enable_cloud_assist">[docs]</a>    <span class="k">def</span> <span class="nf">enable_cloud_assist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables Cloud Assist service and proactive support if not already enabled&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Proactive Support&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># pro active support must be enabled to enable cloud assist</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enable_proactive_support</span><span class="p">()</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Cloud Assist&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_service</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudMetrics.disable_cloud_assist"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.disable_cloud_assist">[docs]</a>    <span class="k">def</span> <span class="nf">disable_cloud_assist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;disables Cloud Assist service&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">[</span><span class="s1">&#39;Cloud Assist&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_service_state</span><span class="p">(</span><span class="s1">&#39;Cloud Assist&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_service</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CloudMetrics.set_randomization_minutes"><a class="viewcode-back" href="../../metrics_report.html#cvpysdk.metricsreport.CloudMetrics.set_randomization_minutes">[docs]</a>    <span class="k">def</span> <span class="nf">set_randomization_minutes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the randomization value in gxglobal param</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            minutes (int): randomization value in minutes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">qcommand</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;QCOMMAND&#39;</span><span class="p">]</span>
+        <span class="n">qoperation</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;qoperation execscript -sn SetKeyIntoGlobalParamTbl.sql &#39;</span>
+                      <span class="s1">&#39;-si CommservSurveyRandomizationEnabled -si y -si </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">minutes</span><span class="p">))</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">qcommand</span><span class="p">,</span> <span class="n">qoperation</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span></div></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

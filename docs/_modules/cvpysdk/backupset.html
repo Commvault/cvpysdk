@@ -4,27 +4,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>cvpysdk.backupset &#8212; Developer SDK - Python 1.0.0 documentation</title>
-    
+    <title>cvpysdk.backupset &#8212; Developer SDK - Python v11 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '1.0.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -33,8 +22,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
@@ -43,11 +31,10 @@
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.backupset</h1><div class="highlight"><pre>
-<span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="c1"># -*- coding: utf-8 -*-</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
 <span class="c1"># --------------------------------------------------------------------------</span>
-<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
 <span class="c1"># See LICENSE.txt in the project root for</span>
 <span class="c1"># license information.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
@@ -59,12 +46,12 @@
 <span class="sd">Backupsets: Class for representing all the backup sets associated with a specific agent</span>
 
 <span class="sd">Backupset:  Class for a single backup set selected for an agent,</span>
-<span class="sd">                and to perform operations on that backup set</span>
+<span class="sd">and to perform operations on that backup set</span>
 
 
 <span class="sd">Backupsets:</span>
 <span class="sd">    __init__(class_object)          -- initialise object of Backupsets class associated with</span>
-<span class="sd">                                           the specified agent/instance</span>
+<span class="sd">    the specified agent/instance</span>
 
 <span class="sd">    __str__()                       -- returns all the backupsets associated with the agent</span>
 
@@ -72,21 +59,28 @@
 
 <span class="sd">    _get_backupsets()               -- gets all the backupsets associated with the agent specified</span>
 
+<span class="sd">    default_backup_set()            -- returns the name of the default backup set</span>
+
+<span class="sd">    all_backupsets()              -- returns the dict of all the backupsets for the Agent / Instance</span>
+<span class="sd">    of the selected Client</span>
+
 <span class="sd">    has_backupset(backupset_name)   -- checks if a backupset exists with the given name or not</span>
 
 <span class="sd">    add(backupset_name)             -- adds a new backupset to the agent of the specified client</span>
 
 <span class="sd">    get(backupset_name)             -- returns the Backupset class object</span>
-<span class="sd">                                           of the input backup set name</span>
+<span class="sd">    of the input backup set name</span>
 
 <span class="sd">    delete(backupset_name)          -- removes the backupset from the agent of the specified client</span>
 
+<span class="sd">    refresh()                       -- refresh the backupsets associated with the agent</span>
+
 
 <span class="sd">Backupset:</span>
-<span class="sd">    __init__(instance_object,</span>
-<span class="sd">             backupset_name,</span>
-<span class="sd">             backupset_id=None)    -- initialise object of Backupset with the specified backupset</span>
-<span class="sd">                                         name and id, and associated to the specified instance</span>
+<span class="sd">    __init__()                      -- initialise object of Backupset with the specified backupset</span>
+<span class="sd">    name and id, and associated to the specified instance</span>
+
+<span class="sd">    __getattr__()                   -- provides access to restore helper methods</span>
 
 <span class="sd">    __repr__()                      -- return the backupset name, the instance is associated with</span>
 
@@ -94,14 +88,14 @@
 
 <span class="sd">    _get_backupset_properties()     -- get the properties of this backupset</span>
 
-<span class="sd">    _run_backup(subclient_name,</span>
-<span class="sd">                return_list)        -- runs full backup for the specified subclient,</span>
-<span class="sd">                                        and appends the job object to the return list</span>
+<span class="sd">    _run_backup()                   -- runs full backup for the specified subclient,</span>
+<span class="sd">    and appends the job object to the return list</span>
 
 <span class="sd">    _update()                       -- updates the properties of the backupset</span>
 
 <span class="sd">    _get_epoch_time()               -- gets the Epoch time given the input time is in format</span>
-<span class="sd">                                           %Y-%m-%d %H:%M:%S</span>
+
+<span class="sd">                                            %Y-%m-%d %H:%M:%S</span>
 
 <span class="sd">    _set_defaults()                 -- recursively sets default values on a dictionary</span>
 
@@ -114,14 +108,16 @@
 <span class="sd">    _do_browse()                    -- performs a browse operation with the given options</span>
 
 <span class="sd">    set_default_backupset()         -- sets the backupset as the default backup set for the agent,</span>
-<span class="sd">                                        if not already default</span>
+<span class="sd">    if not already default</span>
 
 <span class="sd">    backup()                        -- runs full backup for all subclients</span>
-<span class="sd">                                        associated with this backupset</span>
+<span class="sd">    associated with this backupset</span>
 
 <span class="sd">    browse()                        -- browse the content of the backupset</span>
 
 <span class="sd">    find()                          -- find content in the backupset</span>
+
+<span class="sd">    refresh()                       -- refresh the properties of the backupset</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -167,18 +163,24 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
         <span class="p">)</span>
 
+        <span class="kn">from</span> <span class="nn">.backupsets.fsbackupset</span> <span class="k">import</span> <span class="n">FSBackupset</span>
         <span class="kn">from</span> <span class="nn">.backupsets.nasbackupset</span> <span class="k">import</span> <span class="n">NASBackupset</span>
         <span class="kn">from</span> <span class="nn">.backupsets.hanabackupset</span> <span class="k">import</span> <span class="n">HANABackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.cabackupset</span> <span class="k">import</span> <span class="n">CloudAppsBackupset</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;file system&#39;</span><span class="p">:</span> <span class="n">FSBackupset</span><span class="p">,</span>
             <span class="s1">&#39;nas&#39;</span><span class="p">:</span> <span class="n">NASBackupset</span><span class="p">,</span>
-            <span class="s1">&#39;sap hana&#39;</span><span class="p">:</span> <span class="n">HANABackupset</span>
+            <span class="s1">&#39;sap hana&#39;</span><span class="p">:</span> <span class="n">HANABackupset</span><span class="p">,</span>
+            <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="n">CloudAppsBackupset</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cloud apps&#39;</span><span class="p">,</span> <span class="s1">&#39;sql server&#39;</span><span class="p">,</span> <span class="s1">&#39;sap hana&#39;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_BACKUPSETS</span> <span class="o">+=</span> <span class="s1">&#39;&amp;excludeHidden=0&#39;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backupsets</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_default_backup_set</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all backupsets of the agent of a client.</span>
@@ -249,6 +251,10 @@
                                 <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">temp_id</span><span class="p">,</span>
                                 <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="n">instance</span>
                             <span class="p">}</span>
+
+                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonBackupSet&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isDefaultBackupSet&#39;</span><span class="p">):</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_default_backup_set</span> <span class="o">=</span> <span class="n">temp_name</span>
+
                     <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">:</span>
                         <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;backupSetEntity&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                         <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;backupSetEntity&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
@@ -258,11 +264,17 @@
                                 <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">temp_id</span><span class="p">,</span>
                                 <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="n">instance</span>
                             <span class="p">}</span>
+
+                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonBackupSet&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isDefaultBackupSet&#39;</span><span class="p">):</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_default_backup_set</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">temp_name</span><span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">return_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                                 <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">temp_id</span><span class="p">,</span>
                                 <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="n">instance</span>
                             <span class="p">}</span>
+
+                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonBackupSet&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isDefaultBackupSet&#39;</span><span class="p">):</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_default_backup_set</span> <span class="o">=</span> <span class="n">temp_name</span>
 
                 <span class="k">return</span> <span class="n">return_dict</span>
             <span class="k">else</span><span class="p">:</span>
@@ -270,6 +282,24 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_backupsets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dict of backupsets for the Agent / Instance of the selected Client</span>
+
+<span class="sd">            dict - consists of all backupsets</span>
+<span class="sd">                    {</span>
+<span class="sd">                         &quot;backupset1_name&quot;: {</span>
+<span class="sd">                             &quot;id&quot;: backupset1_id,</span>
+<span class="sd">                             &quot;instance&quot;: instance</span>
+<span class="sd">                         },</span>
+<span class="sd">                         &quot;backupset2_name&quot;: {</span>
+<span class="sd">                             &quot;id&quot;: backupset2_id,</span>
+<span class="sd">                             &quot;instance&quot;: instance</span>
+<span class="sd">                         }</span>
+<span class="sd">                    }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span>
 
 <div class="viewcode-block" id="Backupsets.has_backupset"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupsets.has_backupset">[docs]</a>    <span class="k">def</span> <span class="nf">has_backupset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if a backupset exists for the agent with the input backupset name.</span>
@@ -286,8 +316,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span> <span class="ow">and</span> <span class="n">backupset_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span> <span class="ow">and</span> <span class="n">backupset_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span>
 
 <div class="viewcode-block" id="Backupsets.add"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupsets.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">,</span> <span class="n">on_demand_backupset</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new backup set to the agent.</span>
@@ -371,17 +401,12 @@
                         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
-                            <span class="n">backupset_id</span> <span class="o">=</span> <span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetId&#39;</span><span class="p">]</span>
-
                             <span class="c1"># initialize the backupsets again</span>
                             <span class="c1"># so the backupsets object has all the backupsets</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backupsets</span><span class="p">()</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-                            <span class="k">return</span> <span class="n">Backupset</span><span class="p">(</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="p">,</span>
-                                <span class="n">backupset_name</span><span class="p">,</span>
-                                <span class="n">backupset_id</span>
-                            <span class="p">)</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
+
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Failed to create new backupset with error code: &quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
                                      <span class="s1">&#39;Please check the documentation for &#39;</span>
@@ -398,8 +423,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Backupsets.get"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupsets.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a backupset object of the specified backupset name.</span>
@@ -441,8 +466,8 @@
                     <span class="p">)</span>
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No backupset exists with name: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
-            <span class="p">)</span></div>
+                <span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No backupset exists with name: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span></div>
+            <span class="p">)</span>
 
 <div class="viewcode-block" id="Backupsets.delete"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupsets.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the backup set from the agent.</span>
@@ -493,7 +518,7 @@
                             <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
                                 <span class="c1"># initialize the backupsets again</span>
                                 <span class="c1"># so the backupsets object has all the backupsets</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backupsets</span><span class="p">()</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Failed to delete backupset with error code: &quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
                                          <span class="s1">&#39;Please check the documentation for &#39;</span>
@@ -511,8 +536,17 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No backupset exists with name: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
-            <span class="p">)</span></div></div>
+                <span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No backupset exists with name: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span></div>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="Backupsets.refresh"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupsets.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the backupsets associated with the Agent / Instance.&quot;&quot;&quot;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backupsets</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">default_backup_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the default backup set for the selected Client and Agent.&quot;&quot;&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_backup_set</span>
 
 
 <div class="viewcode-block" id="Backupset"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupset">[docs]</a><span class="k">class</span> <span class="nc">Backupset</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -536,6 +570,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_commcell_object</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_process_restore_response&#39;</span><span class="p">,</span> <span class="s1">&#39;_filter_paths&#39;</span><span class="p">,</span> <span class="s1">&#39;_restore_json&#39;</span><span class="p">]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_name</span> <span class="o">=</span> <span class="n">backupset_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -548,15 +584,16 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_BACKUPSET</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;BACKUPSET&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_BROWSE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;BROWSE&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RESTORE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_default</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_on_demand_backupset</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_association</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_get_backupset_properties</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span> <span class="o">=</span> <span class="n">Subclients</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_browse_options</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;operation&#39;</span><span class="p">:</span> <span class="s1">&#39;browse&#39;</span><span class="p">,</span>
@@ -573,6 +610,11 @@
             <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[],</span>
             <span class="s1">&#39;_subclient_id&#39;</span><span class="p">:</span> <span class="mi">0</span>
         <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the persistent attributes&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_methods</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="p">,</span> <span class="n">attribute</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
@@ -610,6 +652,8 @@
 
                 <span class="n">backupset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;backupSetEntity&quot;</span><span class="p">][</span><span class="s2">&quot;backupsetName&quot;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_name</span> <span class="o">=</span> <span class="n">backupset_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;backupSetEntity&#39;</span><span class="p">]</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_is_default</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;commonBackupSet&quot;</span><span class="p">][</span><span class="s2">&quot;isDefaultBackupSet&quot;</span><span class="p">])</span>
 
@@ -768,7 +812,7 @@
             <span class="c1"># if not convertible to int, then convert the timestamp input to Epoch time</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)))</span>
-            <span class="k">except</span><span class="p">:</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;106&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_set_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_dict</span><span class="p">,</span> <span class="n">defaults_dict</span><span class="p">):</span>
@@ -816,7 +860,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">operation_types</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;browse&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s1">&#39;find&#39;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="s1">&#39;find&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;all_versions&#39;</span><span class="p">:</span> <span class="mi">2</span>
         <span class="p">}</span>
 
         <span class="n">options</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
@@ -827,7 +872,8 @@
         <span class="c1"># add the browse mode value here, if it is different for an agent</span>
         <span class="c1"># if agent is not added in the dict, default value 2 will be used</span>
         <span class="n">browse_mode</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="mi">4</span>
+            <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="mi">3</span>
         <span class="p">}</span>
 
         <span class="n">mode</span> <span class="o">=</span> <span class="mi">2</span>
@@ -883,7 +929,7 @@
             <span class="p">}]</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;filters&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;filters&#39;</span><span class="p">]:</span>
             <span class="c1"># [(&#39;FileName&#39;, &#39;*.txt&#39;), (&#39;FileSize&#39;,&#39;GT&#39;,&#39;100&#39;)]</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;queries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;whereClause&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -903,6 +949,71 @@
                     <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;queries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;whereClause&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_process_browse_all_versions_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result_set</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the items from browse response.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            result_set  (dict)  --  browse response dict obtained from server</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict - Dictionary of the specified file with list of all the file versions and</span>
+<span class="sd">                    additional metadata retrieved from browse</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if failed to browse/search for content</span>
+
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">versions_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">result_set</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;displayName&#39;</span><span class="p">]</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="s1">&#39;modificationTime&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">mod_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;modificationTime&#39;</span><span class="p">])</span>
+                <span class="n">mod_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y %H:%M:%S&#39;</span><span class="p">,</span> <span class="n">mod_time</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mod_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="s1">&#39;file&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">][</span><span class="s1">&#39;file&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">file_or_folder</span> <span class="o">=</span> <span class="s1">&#39;File&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">file_or_folder</span> <span class="o">=</span> <span class="s1">&#39;Folder&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">file_or_folder</span> <span class="o">=</span> <span class="s1">&#39;Folder&#39;</span>
+
+            <span class="k">if</span> <span class="s1">&#39;size&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="s1">&#39;version&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">paths_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+                <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+                <span class="s1">&#39;modified_time&#39;</span><span class="p">:</span> <span class="n">mod_time</span><span class="p">,</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">file_or_folder</span><span class="p">,</span>
+                <span class="s1">&#39;advanced_data&#39;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;advancedData&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+
+            <span class="n">versions_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">paths_dict</span><span class="p">)</span>
+
+        <span class="n">all_versions_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">all_versions_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">versions_list</span>
+
+        <span class="k">return</span> <span class="n">all_versions_dict</span>
 
     <span class="k">def</span> <span class="nf">_process_browse_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieves the items from browse response.</span>
@@ -930,7 +1041,10 @@
 
         <span class="n">operation_types</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;browse&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;110&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to browse for subclient backup content</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="p">),</span>
-            <span class="s2">&quot;find&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;111&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to Search</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+            <span class="s2">&quot;find&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;111&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to Search</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="p">),</span>
+            <span class="s2">&quot;all_versions&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;112&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to browse all version for specified content</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+            <span class="p">)</span>
         <span class="p">}</span>
 
         <span class="n">exception_code</span> <span class="o">=</span> <span class="n">operation_types</span><span class="p">[</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
@@ -950,10 +1064,16 @@
                     <span class="k">if</span> <span class="s1">&#39;dataResultSet&#39;</span> <span class="ow">in</span> <span class="n">browse_result</span><span class="p">:</span>
                         <span class="n">result_set</span> <span class="o">=</span> <span class="n">browse_result</span><span class="p">[</span><span class="s1">&#39;dataResultSet&#39;</span><span class="p">]</span>
 
+                        <span class="k">if</span> <span class="s1">&#39;all_versions&#39;</span> <span class="ow">in</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]:</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_all_versions_response</span><span class="p">(</span><span class="n">result_set</span><span class="p">)</span>
+
                         <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">result_set</span><span class="p">:</span>
 
-                            <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;displayName&#39;</span><span class="p">])</span>
-                            <span class="n">path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
+                            <span class="n">name</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;displayName&#39;</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="s1">&#39;path&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                                <span class="n">path</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">name</span><span class="p">])</span>
 
                             <span class="k">if</span> <span class="s1">&#39;modificationTime&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
                                 <span class="n">mod_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;modificationTime&#39;</span><span class="p">])</span>
@@ -1128,16 +1248,16 @@
             <span class="k">if</span> <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                 <span class="k">return</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to set this as the Default Backup Set</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to set this as the Default Backup Set</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span></div>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
 
 <div class="viewcode-block" id="Backupset.backup"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupset.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs Incremental backup job for all subclients in this backupset.</span>
 <span class="sd">            Runs Full Backup job for a subclient, if no job had been ran earlier for it.</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                list  -  list consisting of the job objects for the backup jobs started for</span>
-<span class="sd">                        the subclients in the backupset</span>
+<span class="sd">                list    -   list consisting of the job objects for the backup jobs started for</span>
+<span class="sd">                                the subclients in the backupset</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">return_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">thread_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1154,8 +1274,8 @@
 
         <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">thread_list</span><span class="p">:</span>
             <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">return_list</span></div>
+</div>
+        <span class="k">return</span> <span class="n">return_list</span>
 
 <div class="viewcode-block" id="Backupset.browse"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupset.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the content of a Backupset.</span>
@@ -1187,14 +1307,14 @@
 
 <span class="sd">            dict - Dictionary of all the paths with additional metadata retrieved from browse</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">kwargs</span>
 
         <span class="n">options</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;browse&#39;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Backupset.find"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupset.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Searches a file/folder in the backupset backup content,</span>
@@ -1236,7 +1356,7 @@
 
 <span class="sd">            dict - Dictionary of all the paths with additional metadata retrieved from browse</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">kwargs</span>
@@ -1260,8 +1380,15 @@
 
         <span class="k">if</span> <span class="s1">&#39;file_size_et&#39;</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
             <span class="n">options</span><span class="p">[</span><span class="s1">&#39;filters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;FileSize&#39;</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;file_size_et&#39;</span><span class="p">],</span> <span class="s1">&#39;EQUALSBLAH&#39;</span><span class="p">))</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div></div>
+<div class="viewcode-block" id="Backupset.refresh"><a class="viewcode-back" href="../../backupset.html#cvpysdk.backupset.Backupset.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of the Backupset.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_backupset_properties</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span> <span class="o">=</span> <span class="n">Subclients</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -1279,12 +1406,14 @@
 </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -1292,11 +1421,11 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2017, Commvault Systems Inc..
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>
 

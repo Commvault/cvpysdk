@@ -4,39 +4,27 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Agent &#8212; Developer SDK - Python 1.0.0 documentation</title>
-    
+    <title>Agent &#8212; Developer SDK - Python v11 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.0.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Alert" href="alert.html" />
-    <link rel="prev" title="Virtual Server Subclients" href="cvpysdk.subclients.virtualserver.html" />
+    <link rel="prev" title="Virtual Server Subclients" href="subclients/virtualserver/virtualserver.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
@@ -48,43 +36,45 @@
 <span id="agent"></span><h1>Agent<a class="headerlink" href="#module-cvpysdk.agent" title="Permalink to this headline">¶</a></h1>
 <p>Main file for performing agent specific operations.</p>
 <p>Agents and Agent are 2 classes defined in this file.</p>
-<p>Agents: Class for representing all the agents associated with a specific client</p>
-<p>Agent: Class for a single agent selected for a client, and to perform operations on that agent</p>
+<p>Agents:     Class for representing all the agents associated with a specific client</p>
+<p>Agent:      Class for a single agent selected for a client, and to perform operations on that agent</p>
 <dl class="docutils">
 <dt>Agents:</dt>
-<dd><dl class="first docutils">
-<dt>__init__(client_object)     –  initialise object of Agents class associated with</dt>
-<dd>the specified client</dd>
-</dl>
+<dd><p class="first">__init__(client_object)     –  initialise object of Agents class associated with
+the specified client</p>
 <p>__str__()                   –  returns all the agents associated with the client</p>
 <p>__repr__()                  –  returns the string for the instance of the Agents class</p>
 <p>_get_agents()               –  gets all the agents associated with the client specified</p>
+<p>all_agents()                –  returns the dict of all the agents installed on client</p>
 <p>has_agent(agent_name)       –  checks if an agent exists with the given name</p>
-<p class="last">get(agent_name)             –  returns the Agent class object of the input agent name</p>
+<p>get(agent_name)             –  returns the Agent class object of the input agent name</p>
+<p class="last">refresh()                   –  refresh the agents installed on the client</p>
 </dd>
 <dt>Agent:</dt>
 <dd><dl class="first docutils">
 <dt>__init__(client_object,</dt>
-<dd><p class="first">agent_name,
-agent_id=None)     –   initialise object of Agent with the specified agent name</p>
-<blockquote class="last">
-<div>and id, and associated to the specified client</div></blockquote>
-</dd>
+<dd>agent_name,
+agent_id=None)     –   initialise object of Agent with the specified agent name</dd>
 </dl>
+<p>and id, and associated to the specified client</p>
 <p>__repr__()                  –   return the agent name, the instance is associated with</p>
 <p>_get_agent_id()             –   method to get the agent id</p>
+<p>_get_agent_properties()     –   get the properties of this agent</p>
 <p>enable_backup()             –   enables the backup for the agent</p>
 <p>enable_backup_at_time()     –   enables the backup for the agent at the input time specified</p>
 <p>disble_backup()             –   disbles the backup for the agent</p>
 <p>enable_restore()            –   enables the restore for the agent</p>
 <p>enable_restore_at_time()    –   enables the restore for the agent at the input time specified</p>
-<p class="last">disble_restore()            –   disbles the restore for the agent</p>
+<p>disble_restore()            –   disbles the restore for the agent</p>
+<p>is_backup_enabled()         –   returns boolean specifying whether backup is enabled or not</p>
+<p>is_restore_enabled()        –   returns boolean specifying whether restore is enabled or not</p>
+<p class="last">refresh()                   –   refresh the object properties</p>
 </dd>
 </dl>
 <dl class="class">
 <dt id="cvpysdk.agent.Agent">
 <em class="property">class </em><code class="descclassname">cvpysdk.agent.</code><code class="descname">Agent</code><span class="sig-paren">(</span><em>client_object</em>, <em>agent_name</em>, <em>agent_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/agent.html#Agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.agent.Agent" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for performing agent operations of an agent for a specific client.</p>
 <dl class="attribute">
 <dt id="cvpysdk.agent.Agent.agent_id">
@@ -216,13 +206,47 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="cvpysdk.agent.Agent.is_backup_enabled">
+<code class="descname">is_backup_enabled</code><a class="headerlink" href="#cvpysdk.agent.Agent.is_backup_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns boolean specifying whether backup is enabled for this agent or not.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.agent.Agent.is_restore_enabled">
+<code class="descname">is_restore_enabled</code><a class="headerlink" href="#cvpysdk.agent.Agent.is_restore_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns boolean specifying whether restore is enabled for this agent or not.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.agent.Agent.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/agent.html#Agent.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.agent.Agent.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties of the Agent.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="cvpysdk.agent.Agents">
 <em class="property">class </em><code class="descclassname">cvpysdk.agent.</code><code class="descname">Agents</code><span class="sig-paren">(</span><em>client_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/agent.html#Agents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.agent.Agents" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for getting all the agents associated with a client.</p>
+<dl class="attribute">
+<dt id="cvpysdk.agent.Agents.all_agents">
+<code class="descname">all_agents</code><a class="headerlink" href="#cvpysdk.agent.Agents.all_agents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of all the agents installed on client</p>
+<dl class="docutils">
+<dt>dict - consists of all agents in the client</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd>“agent1_name”: agent1_id,
+“agent2_name”: agent2_id</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="cvpysdk.agent.Agents.get">
 <code class="descname">get</code><span class="sig-paren">(</span><em>agent_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/agent.html#Agents.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.agent.Agents.get" title="Permalink to this definition">¶</a></dt>
@@ -261,6 +285,12 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.agent.Agents.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/agent.html#Agents.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.agent.Agents.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the agents installed on the Client.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -275,7 +305,7 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
-      <li>Previous: <a href="cvpysdk.subclients.virtualserver.html" title="previous chapter">Virtual Server Subclients</a></li>
+      <li>Previous: <a href="subclients/virtualserver/virtualserver.html" title="previous chapter">Virtual Server Subclients</a></li>
       <li>Next: <a href="alert.html" title="next chapter">Alert</a></li>
   </ul></li>
   </ul></li>
@@ -290,12 +320,14 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -303,11 +335,11 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2017, Commvault Systems Inc..
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
       <a href="_sources/agent.rst.txt"

@@ -4,27 +4,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>cvpysdk.job &#8212; Developer SDK - Python 1.0.0 documentation</title>
-    
+    <title>cvpysdk.job &#8212; Developer SDK - Python v11 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '1.0.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -33,8 +22,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
@@ -43,28 +31,53 @@
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.job</h1><div class="highlight"><pre>
-<span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="c1"># -*- coding: utf-8 -*-</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># pylint: disable=W0104</span>
 
 <span class="c1"># --------------------------------------------------------------------------</span>
-<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
 <span class="c1"># See LICENSE.txt in the project root for</span>
 <span class="c1"># license information.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Main file for performing operations on a job.</span>
 
-<span class="sd">Job: Class for keeping track of a job and perform various operations on it.</span>
+<span class="sd">JobController:  Class for managing jobs on this commcell</span>
 
-<span class="sd">Job:</span>
-<span class="sd">    __init__(commcell_object,</span>
-<span class="sd">             job_id)            --  initialises the instance of Job class associated with the</span>
-<span class="sd">                                        specified commcell of job with id: &#39;job_id&#39;</span>
+<span class="sd">Job:            Class for keeping track of a job and perform various operations on it.</span>
+
+
+<span class="sd">JobController:</span>
+
+<span class="sd">    __init__(commcell_object)   --  initializes the instance of JobController class associated</span>
+<span class="sd">    with the specified commcell</span>
+
+<span class="sd">    __str__()                   --  returns the string representation of the active jobs</span>
+<span class="sd">    on this commcell</span>
 
 <span class="sd">    __repr__()                  --  returns the string representation of the object of this class,</span>
-<span class="sd">                                        with the job id it is associated with</span>
+<span class="sd">    with the commcell it is associated with</span>
 
-<span class="sd">    _is_valid_job()             --  checks if the job with the given id is a valid job or not.</span>
+<span class="sd">    _get_jobs_list()            --  executes the request, and parses and returns the jobs response</span>
+
+<span class="sd">    all_jobs()                  --  returns all the jobs on this commcell</span>
+
+<span class="sd">    active_jobs()               --  returns the dict of active jobs and their details</span>
+
+<span class="sd">    finished_jobs()             --  retutns the dict of finished jobs and their details</span>
+
+<span class="sd">    get()                       --  returns the Job class instance for the given job id</span>
+
+
+<span class="sd">Job:</span>
+
+<span class="sd">    __init__()                  --  initializes the instance of Job class associated with the</span>
+<span class="sd">    specified commcell of job with id: &#39;job_id&#39;</span>
+
+<span class="sd">    __repr__()                  --  returns the string representation of the object of this class,</span>
+<span class="sd">    with the job id it is associated with</span>
+
+<span class="sd">    _is_valid_job()             --  checks if the job with the given id is a valid job or not</span>
 
 <span class="sd">    _get_job_summary()          --  gets the summary of the job with the given job id</span>
 
@@ -73,11 +86,12 @@
 <span class="sd">    _initialize_job_properties()--  initializes the properties of the job</span>
 
 <span class="sd">    _wait_for_status()          --  waits for 2 minutes or till the job status is changed</span>
-<span class="sd">                                        to given status, whichever is earlier</span>
+<span class="sd">    to given status, whichever is earlier</span>
 
 <span class="sd">    wait_for_completion()       --  waits for the job to finish, (job.is_finished == True)</span>
 
 <span class="sd">    is_finished()               --  checks for the status of the job.</span>
+
 <span class="sd">                                        Returns True if finished, else False</span>
 
 <span class="sd">    pause()                     --  suspend the job</span>
@@ -86,15 +100,48 @@
 
 <span class="sd">    kill()                      --  kills the job</span>
 
+<span class="sd">    refresh()                   --  refresh the properties of the Job</span>
 
-<span class="sd">job.status                      --  Gives the current status of the job.</span>
-<span class="sd">                                        (Completed / Suspended / Waiting / ... / etc.)</span>
 
-<span class="sd">job.is_finished                 --  Tells whether the job is finished or not. (True / False)</span>
+<span class="sd">Job instance Attributes</span>
+<span class="sd">=======================</span>
 
-<span class="sd">job.pending_reason              --  reason if job went into pending state</span>
+<span class="sd">**job.is_finished**         --  specifies whether the job is finished or not    (True / False)</span>
 
-<span class="sd">job.delay_reason                --  reason why the job was delayed</span>
+<span class="sd">**job.client_name**         --  returns the name of the client, job is running for</span>
+
+<span class="sd">**job.agent_name**          --  returns the name of the agent, job is running for</span>
+
+<span class="sd">**job.instance_name**       --  returns the name of the instance, job is running for</span>
+
+<span class="sd">**job.backupset_name**      --  returns the name of the backupset, job is running for</span>
+
+<span class="sd">**job.subclient_name**      --  returns the name of the subclient, job is running for</span>
+
+<span class="sd">**job.status**              --  returns the current status of the job</span>
+
+<span class="sd">                                    (Completed / Suspended / Waiting / ... / etc.)</span>
+
+
+<span class="sd">**job.job_id**              --  returns the id of the job</span>
+
+<span class="sd">**job.job_type**            --  returns the type of the job</span>
+
+<span class="sd">**job.backup_level**        --  returns the backup level (if applicable), otherwise None</span>
+
+<span class="sd">**job.start_time**          --  returns the start time of the job</span>
+
+<span class="sd">**job.end_time**            --  returns the end time of the job</span>
+
+<span class="sd">**job.delay_reason**        --  reason why the job was delayed</span>
+
+<span class="sd">**job.pending_reason**      --  reason if job went into pending state</span>
+
+<span class="sd">**job.phase**               --  returns the current phase of the job</span>
+
+<span class="sd">**job.summary**             --  returns the dictionary consisting of the full summary of the job</span>
+
+<span class="sd">**job.details**             --  returns the dictionary consisting of the full details of the job</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -104,6 +151,470 @@
 <span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="JobController"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController">[docs]</a><span class="k">class</span> <span class="nc">JobController</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for controlling all the jobs associated with the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize instance of the JobController class to get the details of Commcell Jobs.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object     (object)    --  instance of Commcell class to get the jobs of</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all active jobs on this commcell.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str     -   string of all the active jobs on this commcell</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">jobs_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_jobs</span><span class="p">()</span>
+
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^25}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;Job ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Operation&#39;</span><span class="p">,</span> <span class="s1">&#39;Status&#39;</span><span class="p">,</span> <span class="s1">&#39;Agent type&#39;</span><span class="p">,</span> <span class="s1">&#39;Job type&#39;</span><span class="p">,</span> <span class="s1">&#39;Progress&#39;</span><span class="p">,</span> <span class="s1">&#39;Pending Reason&#39;</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs_dict</span><span class="p">:</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:25}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\t</span><span class="si">{:20}</span><span class="s1">%</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">job</span><span class="p">,</span>
+                <span class="n">jobs_dict</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;operation&#39;</span><span class="p">],</span>
+                <span class="n">jobs_dict</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;status&#39;</span><span class="p">],</span>
+                <span class="n">jobs_dict</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;app_type&#39;</span><span class="p">],</span>
+                <span class="n">jobs_dict</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;job_type&#39;</span><span class="p">],</span>
+                <span class="n">jobs_dict</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;percent_complete&#39;</span><span class="p">],</span>
+                <span class="n">jobs_dict</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;pending_reason&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the JobController class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;JobController class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_jobs_request_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the request json for the jobs request</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                options     (dict)  --  dict of key-word arguments</span>
+
+<span class="sd">                Available Options:</span>
+
+<span class="sd">                    category        (str)   --  category name for which the list of jobs</span>
+<span class="sd">                    are to be retrieved</span>
+
+<span class="sd">                        Valid Values:</span>
+
+<span class="sd">                            - ALL</span>
+
+<span class="sd">                            - ACTIVE</span>
+
+<span class="sd">                            - FINISHED</span>
+
+<span class="sd">                        default: ALL</span>
+
+<span class="sd">                    limit           (int)   --  total number of jobs list that are to be returned</span>
+
+<span class="sd">                            default: 20</span>
+
+<span class="sd">                    lookup_time     (int)   --  list of jobs to be retrieved which are specified</span>
+<span class="sd">                    hours older</span>
+
+<span class="sd">                            default: 5 hours</span>
+
+<span class="sd">                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in</span>
+<span class="sd">                    the result or not</span>
+
+<span class="sd">                            default: False</span>
+
+<span class="sd">                    clients_list    (list)  --  list of clients to return the jobs for</span>
+
+<span class="sd">                            default: []</span>
+
+<span class="sd">                    job_type_list   (list)  --  list of job operation types</span>
+
+<span class="sd">                            default: []</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   request json that is to be sent to server</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">job_list_category</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;ALL&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;ACTIVE&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;FINISHED&#39;</span><span class="p">:</span> <span class="mi">2</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clients_list&#39;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No client with name </span><span class="si">{0}</span><span class="s1"> exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client</span><span class="p">))</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;scope&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="n">job_list_category</span><span class="p">[</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;ALL&#39;</span><span class="p">)],</span>
+            <span class="s2">&quot;pagingConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;sortDirection&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;sortField&quot;</span><span class="p">:</span> <span class="s2">&quot;jobId&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;limit&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;limit&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;jobFilter&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;completedJobLookupTime&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lookup_time&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+                <span class="s2">&quot;showAgedJobs&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;show_aged_jobs&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s2">&quot;clientList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">all_clients</span><span class="p">[</span><span class="n">client</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+                    <span class="p">}</span> <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clients_list&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;jobTypeList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="n">job_type</span> <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_type_list&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_get_jobs_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Executes a request on the server to get the list of jobs.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_json    (dict)  --  request that is to be sent to server</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dict containing details about all the retrieved jobs</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_jobs_request_json</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ALL_JOBS&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="n">jobs_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">&#39;jobs&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="n">all_jobs</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobs&#39;</span><span class="p">]</span>
+
+                        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">all_jobs</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="s1">&#39;jobSummary&#39;</span> <span class="ow">in</span> <span class="n">job</span> <span class="ow">and</span> <span class="n">job</span><span class="p">[</span><span class="s1">&#39;jobSummary&#39;</span><span class="p">][</span><span class="s1">&#39;isVisible&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+
+                                <span class="n">job_summary</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s1">&#39;jobSummary&#39;</span><span class="p">]</span>
+                                <span class="n">job_id</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;jobId&#39;</span><span class="p">]</span>
+
+                                <span class="n">status</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
+                                <span class="n">operation</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;localizedOperationName&#39;</span><span class="p">]</span>
+                                <span class="n">percent_complete</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;percentComplete&#39;</span><span class="p">]</span>
+
+                                <span class="n">app_type</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                                <span class="n">job_type</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                                <span class="n">pending_reason</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                                <span class="n">subclient_id</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+                                <span class="k">if</span> <span class="s1">&#39;appTypeName&#39;</span> <span class="ow">in</span> <span class="n">job_summary</span><span class="p">:</span>
+                                    <span class="n">app_type</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;appTypeName&#39;</span><span class="p">]</span>
+
+                                <span class="k">if</span> <span class="s1">&#39;jobType&#39;</span> <span class="ow">in</span> <span class="n">job_summary</span><span class="p">:</span>
+                                    <span class="n">job_type</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;jobType&#39;</span><span class="p">]</span>
+
+                                <span class="k">if</span> <span class="s1">&#39;pendingReason&#39;</span> <span class="ow">in</span> <span class="n">job_summary</span><span class="p">:</span>
+                                    <span class="n">pending_reason</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;pendingReason&#39;</span><span class="p">]</span>
+
+                                <span class="k">if</span> <span class="s1">&#39;subclient&#39;</span> <span class="ow">in</span> <span class="n">job_summary</span><span class="p">:</span>
+                                    <span class="n">job_subclient</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">]</span>
+                                    <span class="k">if</span> <span class="s1">&#39;subclientId&#39;</span> <span class="ow">in</span> <span class="n">job_subclient</span><span class="p">:</span>
+                                        <span class="n">subclient_id</span> <span class="o">=</span> <span class="n">job_subclient</span><span class="p">[</span><span class="s1">&#39;subclientId&#39;</span><span class="p">]</span>
+
+                                <span class="n">jobs_dict</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                                    <span class="s1">&#39;operation&#39;</span><span class="p">:</span> <span class="n">operation</span><span class="p">,</span>
+                                    <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+                                    <span class="s1">&#39;app_type&#39;</span><span class="p">:</span> <span class="n">app_type</span><span class="p">,</span>
+                                    <span class="s1">&#39;job_type&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="p">,</span>
+                                    <span class="s1">&#39;percent_complete&#39;</span><span class="p">:</span> <span class="n">percent_complete</span><span class="p">,</span>
+                                    <span class="s1">&#39;pending_reason&#39;</span><span class="p">:</span> <span class="n">pending_reason</span><span class="p">,</span>
+                                    <span class="s1">&#39;subclient_id&#39;</span><span class="p">:</span> <span class="n">subclient_id</span>
+                                <span class="p">}</span>
+
+                    <span class="k">return</span> <span class="n">jobs_dict</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Please check the inputs.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JobController.all_jobs"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.all_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">all_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lookup_time</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">job_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dict consisting of all the jobs executed on the Commcell within the number</span>
+<span class="sd">            of hours specified in lookup time value.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_name     (str)   --  name of the client to filter out the jobs for</span>
+
+<span class="sd">                    default: None, get all the jobs</span>
+
+
+<span class="sd">                lookup_time     (int)   --  get all the jobs executed within the number of hours</span>
+
+<span class="sd">                    default: 5 Hours</span>
+
+
+<span class="sd">                job_filter      (str)   --  type of jobs to filter</span>
+
+<span class="sd">                        for multiple filters, give the values **comma(,)** separated</span>
+
+<span class="sd">                        List of Possible Values:</span>
+
+<span class="sd">                            Backup</span>
+
+<span class="sd">                            Restore</span>
+
+<span class="sd">                            AUXCOPY</span>
+
+<span class="sd">                            WORKFLOW</span>
+
+<span class="sd">                            etc..</span>
+
+<span class="sd">                    http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm</span>
+<span class="sd">                        to get the complete list of filters available</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                options         (dict)  --  dict of key-word arguments</span>
+
+<span class="sd">                Available Options:</span>
+
+<span class="sd">                    limit           (int)   --  total number of jobs list that are to be returned</span>
+<span class="sd">                        default: 20</span>
+
+<span class="sd">                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in</span>
+<span class="sd">                    the result or not</span>
+
+<span class="sd">                        default: False</span>
+
+<span class="sd">                    clients_list    (list)  --  list of clients to return the jobs for</span>
+
+<span class="sd">                        default: []</span>
+
+<span class="sd">                    job_type_list   (list)  --  list of job operation types</span>
+
+<span class="sd">                        default: []</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of the job IDs matching the given criteria</span>
+<span class="sd">                as the key, and their details as its value</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if client name is given, and no client exists with the given name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ALL&#39;</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;lookup_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lookup_time</span>
+
+        <span class="k">if</span> <span class="n">job_filter</span><span class="p">:</span>
+            <span class="n">options</span><span class="p">[</span><span class="s1">&#39;job_type_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_type_list&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="n">job_filter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">client_name</span><span class="p">:</span>
+            <span class="n">options</span><span class="p">[</span><span class="s1">&#39;clients_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clients_list&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">client_name</span><span class="p">]</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_jobs_list</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JobController.active_jobs"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.active_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">active_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lookup_time</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">job_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dict consisting of all the active jobs currently being executed on the</span>
+<span class="sd">            Commcell within the number of hours specified in lookup time value.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_name     (str)   --  name of the client to filter out the jobs for</span>
+
+<span class="sd">                    default: None, get all the jobs</span>
+
+
+<span class="sd">                lookup_time     (int)   --  get all the jobs executed within the number of hours</span>
+
+<span class="sd">                    default: 1 Hour(s)</span>
+
+
+<span class="sd">                job_filter      (str)   --  type of jobs to filter</span>
+
+<span class="sd">                        for multiple filters, give the values **comma(,)** separated</span>
+
+<span class="sd">                        List of Possible Values:</span>
+
+<span class="sd">                            Backup</span>
+
+<span class="sd">                            Restore</span>
+
+<span class="sd">                            AUXCOPY</span>
+
+<span class="sd">                            WORKFLOW</span>
+
+<span class="sd">                            etc..</span>
+
+<span class="sd">                    http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm</span>
+<span class="sd">                        to get the complete list of filters available</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                options         (dict)  --  dict of key-word arguments</span>
+
+<span class="sd">                Available Options:</span>
+
+<span class="sd">                    limit           (int)   --  total number of jobs list that are to be returned</span>
+
+<span class="sd">                        default: 20</span>
+
+<span class="sd">                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in</span>
+<span class="sd">                    the result or not</span>
+
+<span class="sd">                        default: False</span>
+
+<span class="sd">                    clients_list    (list)  --  list of clients to return the jobs for</span>
+
+<span class="sd">                        default: []</span>
+
+<span class="sd">                    job_type_list   (list)  --  list of job operation types</span>
+
+<span class="sd">                        default: []</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of the job IDs matching the given criteria</span>
+<span class="sd">                as the key, and their details as its value</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if client name is given, and no client exists with the given name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ACTIVE&#39;</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;lookup_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lookup_time</span>
+
+        <span class="k">if</span> <span class="n">job_filter</span><span class="p">:</span>
+            <span class="n">options</span><span class="p">[</span><span class="s1">&#39;job_type_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_type_list&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="n">job_filter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">client_name</span><span class="p">:</span>
+            <span class="n">options</span><span class="p">[</span><span class="s1">&#39;clients_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clients_list&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">client_name</span><span class="p">]</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_jobs_list</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JobController.finished_jobs"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.finished_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">finished_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lookup_time</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">job_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dict consisting of all the finished jobs on the Commcell within the number</span>
+<span class="sd">            of hours specified in lookup time value.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_name     (str)   --  name of the client to filter out the jobs for</span>
+
+<span class="sd">                    default: None, get all the jobs ir-respective of client</span>
+
+
+<span class="sd">                lookup_time     (int)   --  get all the jobs executed within the number of hours</span>
+
+<span class="sd">                    default: 24 Hours</span>
+
+
+<span class="sd">                job_filter      (str)   --  type of jobs to filter</span>
+
+<span class="sd">                        for multiple filters, give the values **comma(,)** separated</span>
+
+<span class="sd">                        List of Possible Values:</span>
+
+<span class="sd">                            Backup</span>
+
+<span class="sd">                            Restore</span>
+
+<span class="sd">                            AUXCOPY</span>
+
+<span class="sd">                            WORKFLOW</span>
+
+<span class="sd">                            etc..</span>
+
+<span class="sd">                    http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm</span>
+<span class="sd">                        to get the complete list of filters available</span>
+
+<span class="sd">                    default: None</span>
+
+
+<span class="sd">                options         (dict)  --  dict of key-word arguments</span>
+
+<span class="sd">                Available Options:</span>
+
+<span class="sd">                    limit           (int)   --  total number of jobs list that are to be returned</span>
+
+<span class="sd">                        default: 20</span>
+
+<span class="sd">                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in</span>
+<span class="sd">                    the result or not</span>
+
+<span class="sd">                        default: False</span>
+
+<span class="sd">                    clients_list    (list)  --  list of clients to return the jobs for</span>
+
+<span class="sd">                        default: []</span>
+
+<span class="sd">                    job_type_list   (list)  --  list of job operation types</span>
+
+<span class="sd">                        default: []</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of the job IDs matching the given criteria</span>
+<span class="sd">                as the key, and their details as its value</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if client name is given, and no client exists with the given name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;FINISHED&#39;</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;lookup_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lookup_time</span>
+
+        <span class="k">if</span> <span class="n">job_filter</span><span class="p">:</span>
+            <span class="n">options</span><span class="p">[</span><span class="s1">&#39;job_type_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_type_list&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="n">job_filter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">client_name</span><span class="p">:</span>
+            <span class="n">options</span><span class="p">[</span><span class="s1">&#39;clients_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clients_list&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">client_name</span><span class="p">]</span>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_jobs_list</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JobController.get"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the job object for the given job id.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                job_id  (int)   --  id of the job to create Job class instance for</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   Job class object for the given job id</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if no job with specified job id exists</span>
+
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+        <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Job"><a class="viewcode-back" href="../../job.html#cvpysdk.job.Job">[docs]</a><span class="k">class</span> <span class="nc">Job</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -132,17 +643,22 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_job_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_JOB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_JOB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid_job</span><span class="p">():</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_JOB_DETAILS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;JOB_DETAILS&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_SUSPEND</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUSPEND_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_RESUME</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESUME_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_KILL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;KILL_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_JOB_DETAILS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;JOB_DETAILS&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SUSPEND</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUSPEND_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RESUME</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESUME_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_KILL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;KILL_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_client_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_agent_name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -156,9 +672,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_delay_reason</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pending_reason</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_details</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_job_properties</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.</span>
@@ -202,7 +720,7 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_JOB</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_JOB</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -215,7 +733,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_job_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -234,9 +752,7 @@
             <span class="s2">&quot;jobId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
         <span class="p">}</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_JOB_DETAILS</span><span class="p">,</span> <span class="n">payload</span>
-        <span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_JOB_DETAILS</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;job&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -244,49 +760,21 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_initialize_job_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes the common properties for the job.</span>
 <span class="sd">            Adds the client, agent, backupset, subclient name to the job object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">job_summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_summary</span><span class="p">()</span>
-        <span class="n">job_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_details</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_summary</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_details</span><span class="p">()</span>
 
-        <span class="n">subclient_properties</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="s1">&#39;clientName&#39;</span> <span class="ow">in</span> <span class="n">subclient_properties</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_client_name</span> <span class="o">=</span> <span class="n">subclient_properties</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="s1">&#39;appName&#39;</span> <span class="ow">in</span> <span class="n">subclient_properties</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_name</span> <span class="o">=</span> <span class="n">subclient_properties</span><span class="p">[</span><span class="s1">&#39;appName&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="s1">&#39;instanceName&#39;</span> <span class="ow">in</span> <span class="n">subclient_properties</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_instance_name</span> <span class="o">=</span> <span class="n">subclient_properties</span><span class="p">[</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="s1">&#39;backupsetName&#39;</span> <span class="ow">in</span> <span class="n">subclient_properties</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_name</span> <span class="o">=</span> <span class="n">subclient_properties</span><span class="p">[</span><span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="s1">&#39;subclientName&#39;</span> <span class="ow">in</span> <span class="n">subclient_properties</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_name</span> <span class="o">=</span> <span class="n">subclient_properties</span><span class="p">[</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_job_type</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;jobType&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_type</span> <span class="o">==</span> <span class="s1">&#39;Backup&#39;</span> <span class="ow">and</span> <span class="s1">&#39;backupLevelName&#39;</span> <span class="ow">in</span> <span class="n">job_summary</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_backup_level</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;backupLevelName&#39;</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;jobStartTime&#39;</span><span class="p">])</span>
-
-        <span class="k">if</span> <span class="s1">&#39;pendingReason&#39;</span> <span class="ow">in</span> <span class="n">job_summary</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;pendingReason&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_pending_reason</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;pendingReason&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="s1">&#39;reasonForJobDelay&#39;</span> <span class="ow">in</span> <span class="n">job_details</span><span class="p">[</span><span class="s1">&#39;jobDetail&#39;</span><span class="p">][</span><span class="s1">&#39;progressInfo&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">job_details</span><span class="p">[</span><span class="s1">&#39;jobDetail&#39;</span><span class="p">][</span><span class="s1">&#39;progressInfo&#39;</span><span class="p">][</span><span class="s1">&#39;reasonForJobDelay&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_delay_reason</span> <span class="o">=</span> <span class="n">job_details</span><span class="p">[</span><span class="s1">&#39;jobDetail&#39;</span><span class="p">][</span><span class="s1">&#39;progressInfo&#39;</span><span class="p">][</span><span class="s1">&#39;reasonForJobDelay&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+            <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;jobStartTime&#39;</span><span class="p">])</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_wait_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Waits for 2 minutes or till the job status is changed to given status,</span>
@@ -311,6 +799,9 @@
 <span class="sd">            Kills the job and exits, if the job has been in Pending / Waiting state for more than</span>
 <span class="sd">            the timeout value.</span>
 
+<span class="sd">            In case of job failure job status and failure reason can be obtained</span>
+<span class="sd">                using status and delay_reason property</span>
+
 <span class="sd">            Args:</span>
 <span class="sd">                timeout     (int)   --  minutes after which the job should be killed and exited,</span>
 <span class="sd">                        if the job has been in Pending / Waiting state</span>
@@ -320,7 +811,7 @@
 <span class="sd">                bool    -   boolean specifying whether the job had finished or not</span>
 <span class="sd">                    True    -   if the job had finished successfully</span>
 
-<span class="sd">                    False   -   if the job was killed</span>
+<span class="sd">                    False   -   if the job was killed/failed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">pending_time</span> <span class="o">=</span> <span class="mi">0</span>
@@ -359,9 +850,9 @@
             <span class="c1"># set the value of previous status as the value of current status</span>
             <span class="n">previous_status</span> <span class="o">=</span> <span class="n">status</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
-
-        <span class="k">return</span> <span class="kc">False</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;killed&quot;</span><span class="p">]</span>
+</div>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -370,21 +861,15 @@
 <span class="sd">            Returns:</span>
 <span class="sd">                bool - boolean that represents whether the job has finished or not</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">job_summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_summary</span><span class="p">()</span>
-        <span class="n">job_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_details</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_summary</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_details</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;lastUpdateTime&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;lastUpdateTime&#39;</span><span class="p">])</span>
-
-        <span class="k">if</span> <span class="s1">&#39;pendingReason&#39;</span> <span class="ow">in</span> <span class="n">job_summary</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;pendingReason&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_pending_reason</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;pendingReason&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="s1">&#39;reasonForJobDelay&#39;</span> <span class="ow">in</span> <span class="n">job_details</span><span class="p">[</span><span class="s1">&#39;jobDetail&#39;</span><span class="p">][</span><span class="s1">&#39;progressInfo&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">job_details</span><span class="p">[</span><span class="s1">&#39;jobDetail&#39;</span><span class="p">][</span><span class="s1">&#39;progressInfo&#39;</span><span class="p">][</span><span class="s1">&#39;reasonForJobDelay&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_delay_reason</span> <span class="o">=</span> <span class="n">job_details</span><span class="p">[</span><span class="s1">&#39;jobDetail&#39;</span><span class="p">][</span><span class="s1">&#39;progressInfo&#39;</span><span class="p">][</span><span class="s1">&#39;reasonForJobDelay&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;lastUpdateTime&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+                <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;lastUpdateTime&#39;</span><span class="p">])</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;completed&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span>
                 <span class="s1">&#39;killed&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span>
@@ -393,27 +878,32 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">client_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the client name as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_name</span>
+        <span class="k">if</span> <span class="s1">&#39;clientName&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">agent_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the agent name as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_name</span>
+        <span class="k">if</span> <span class="s1">&#39;appName&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">][</span><span class="s1">&#39;appName&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">instance_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the instance name as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_name</span>
+        <span class="k">if</span> <span class="s1">&#39;instanceName&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">backupset_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the backupset name as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_name</span>
+        <span class="k">if</span> <span class="s1">&#39;backupsetName&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">subclient_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the subclient name as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_name</span>
+        <span class="k">if</span> <span class="s1">&#39;subclientName&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;subclient&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -429,12 +919,13 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">job_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the job type as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_type</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;jobType&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">backup_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the backup level as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_level</span>
+        <span class="k">if</span> <span class="s1">&#39;backupLevelName&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;backupLevelName&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -450,13 +941,35 @@
     <span class="k">def</span> <span class="nf">delay_reason</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the job delay reason as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delay_reason</span>
+        <span class="n">progress_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_details</span><span class="p">[</span><span class="s1">&#39;jobDetail&#39;</span><span class="p">][</span><span class="s1">&#39;progressInfo&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;reasonForJobDelay&#39;</span> <span class="ow">in</span> <span class="n">progress_info</span> <span class="ow">and</span> <span class="n">progress_info</span><span class="p">[</span><span class="s1">&#39;reasonForJobDelay&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">progress_info</span><span class="p">[</span><span class="s1">&#39;reasonForJobDelay&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">pending_reason</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the job pending reason as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_reason</span>
+        <span class="k">if</span> <span class="s1">&#39;pendingReason&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;pendingReason&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;pendingReason&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the job current phase as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
+        <span class="k">if</span> <span class="s1">&#39;currentPhaseName&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;currentPhaseName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the job full summary as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the job full details as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_details</span>
 
 <div class="viewcode-block" id="Job.pause"><a class="viewcode-back" href="../../job.html#cvpysdk.job.Job.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_for_job_to_pause</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Suspends the job.</span>
@@ -471,7 +984,7 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUSPEND</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUSPEND</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
 
@@ -486,11 +999,11 @@
                         <span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Job suspend failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
                     <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">wait_for_job_to_pause</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_status</span><span class="p">(</span><span class="s2">&quot;SUSPENDED&quot;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">wait_for_job_to_pause</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_status</span><span class="p">(</span><span class="s2">&quot;SUSPENDED&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Job.resume"><a class="viewcode-back" href="../../job.html#cvpysdk.job.Job.resume">[docs]</a>    <span class="k">def</span> <span class="nf">resume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_for_job_to_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Resumes the job.</span>
@@ -505,7 +1018,7 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RESUME</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RESUME</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
 
@@ -520,11 +1033,11 @@
                         <span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Job resume failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
                     <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">wait_for_job_to_resume</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_status</span><span class="p">(</span><span class="s2">&quot;RUNNING&quot;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">wait_for_job_to_resume</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_status</span><span class="p">(</span><span class="s2">&quot;RUNNING&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Job.kill"><a class="viewcode-back" href="../../job.html#cvpysdk.job.Job.kill">[docs]</a>    <span class="k">def</span> <span class="nf">kill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_for_job_to_kill</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Kills the job.</span>
@@ -539,7 +1052,7 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_KILL</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_KILL</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
 
@@ -554,11 +1067,16 @@
                         <span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Job kill failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
                     <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">wait_for_job_to_kill</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_status</span><span class="p">(</span><span class="s2">&quot;KILLED&quot;</span><span class="p">)</span></div></div>
+        <span class="k">if</span> <span class="n">wait_for_job_to_kill</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_status</span><span class="p">(</span><span class="s2">&quot;KILLED&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Job.refresh"><a class="viewcode-back" href="../../job.html#cvpysdk.job.Job.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of the Job.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_job_properties</span><span class="p">()</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
 </pre></div>
 
           </div>
@@ -576,12 +1094,14 @@
 </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -589,11 +1109,11 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2017, Commvault Systems Inc..
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>
 

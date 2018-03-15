@@ -1,0 +1,582 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Security &#8212; Developer SDK - Python v11 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Subclients" href="../subclients/subclients.html" />
+    <link rel="prev" title="Virtual Server Instances" href="../instances/virtualserver/virtualserver.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="security">
+<h1>Security<a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-cvpysdk.security.security_association">
+<span id="security-association"></span><h2>Security Association<a class="headerlink" href="#module-cvpysdk.security.security_association" title="Permalink to this headline">¶</a></h2>
+<p>Helper file to manage security associations on this commcell</p>
+<p>SecurityAssociation is the only class defined in this file</p>
+<dl class="docutils">
+<dt>SecurityAssociation:</dt>
+<dd><p class="first">__init__()                  –  initializes security class object</p>
+<p>__str__()                   –  returns all the users associated with the commcell</p>
+<p>__repr__()                  –  returns the string for the instance of the User class</p>
+<dl class="docutils">
+<dt>_get_security_roles()       –  gets the list of all the security roles applicable</dt>
+<dd>on this commcell</dd>
+</dl>
+<p>_add_security_association() –  adds the security association with client or clientgroup</p>
+<p class="last">has_role()                  –  checks if specified role exists on commcell</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.security.security_association.SecurityAssociation">
+<em class="property">class </em><code class="descclassname">cvpysdk.security.security_association.</code><code class="descname">SecurityAssociation</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>class_object</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/security_association.html#SecurityAssociation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.security_association.SecurityAssociation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for managing the security associations roles on the commcell</p>
+<dl class="method">
+<dt id="cvpysdk.security.security_association.SecurityAssociation.has_role">
+<code class="descname">has_role</code><span class="sig-paren">(</span><em>role_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/security_association.html#SecurityAssociation.has_role"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.security_association.SecurityAssociation.has_role" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if role with specified name exists</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>role_name     (str)     –     name of the role to be verified</dd>
+<dt>Returns:</dt>
+<dd>(bool)     -  True if role with specified name exists</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.security.user">
+<span id="user"></span><h2>User<a class="headerlink" href="#module-cvpysdk.security.user" title="Permalink to this headline">¶</a></h2>
+<p>Main file for managing users on this commcell</p>
+<p>Users and User are only the two classes defined in this commcell</p>
+<dl class="docutils">
+<dt>Users</dt>
+<dd><p class="first">__init__()                          –  initializes the users class object</p>
+<p>__str__()                           –  returns all the users associated with the commcell</p>
+<p>__repr__()                          –  returns the string for the instance of the Users class</p>
+<p>_get_users()                        –  gets all the users on this commcell</p>
+<p>_process_add_or_delete_response()   –  process the add or delete users response</p>
+<p>all_users()                         –  returns the dict of all the users on commcell</p>
+<p>add_local_user()                    –  adds the local user on this commcell</p>
+<p>add_external_user()                 –  adds the external user on this commcell</p>
+<p>has_user()                          –  checks if user with specified user exists
+on this commcell</p>
+<p>get()                               –  returns the user class object for the
+specified user name</p>
+<p>delete()                            –  deletes the user on this commcell</p>
+<p class="last">refresh()                           –  refreshes the list of users on this commcell</p>
+</dd>
+<dt>User</dt>
+<dd><p class="first">__init__()                          –  initiaizes the user class object</p>
+<p>__repr__()                          –  returns the string for the instance of the User class</p>
+<p>_get_user_id()                      –  returns the user id associated with this user</p>
+<p>_get_user_properties()              –  gets all the properties associated with this user</p>
+<p>_update_user_props()                –  updates the properties associated with this user</p>
+<p>_update_usergroup_request()         –  makes the request to update usergroups associated
+with this user</p>
+<p>user_name()                         –  returns the name of this user</p>
+<p>user_id()                           –  returns the id of this user</p>
+<p>description()                       –  returns the description of this user</p>
+<p>associated_usergroups()             –  returns the usergroups associated with this user</p>
+<p>add_usergroups()                    –  associates the usergroups with this user</p>
+<p>remove_usergroups()                 –  disassociated the usergroups with this user</p>
+<p>overwrite_usergroups()              –  reassociates the usergroups with new list of usergroups
+on this user</p>
+<p class="last">refresh()                           –  refreshes the properties of this user</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.security.user.User">
+<em class="property">class </em><code class="descclassname">cvpysdk.security.user.</code><code class="descname">User</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>user_name</em>, <em>user_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#User"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.User" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for representing a particular user configured on this commcell</p>
+<dl class="method">
+<dt id="cvpysdk.security.user.User.add_usergroups">
+<code class="descname">add_usergroups</code><span class="sig-paren">(</span><em>usergroups_list</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#User.add_usergroups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.User.add_usergroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the specified usergroups to this commcell user</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>usergroups_list     (list)     –     list of usergroups to be added</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p class="last">if failed to add usergroups</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.user.User.associated_usergroups">
+<code class="descname">associated_usergroups</code><a class="headerlink" href="#cvpysdk.security.user.User.associated_usergroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of associated usergroups</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.user.User.description">
+<code class="descname">description</code><a class="headerlink" href="#cvpysdk.security.user.User.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the description associated with this commcell user</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.User.overwrite_usergroups">
+<code class="descname">overwrite_usergroups</code><span class="sig-paren">(</span><em>usergroups_list</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#User.overwrite_usergroups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.User.overwrite_usergroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overwrites the specified usergroups to this commcell user</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>usergroups_list     (list)     –     list of usergroups to be overwritten</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p class="last">if failed to overwrite usergroups</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.User.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#User.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.User.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties of the User.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.User.remove_usergroups">
+<code class="descname">remove_usergroups</code><span class="sig-paren">(</span><em>usergroups_list</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#User.remove_usergroups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.User.remove_usergroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the specified usergroups to this commcell user</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>usergroups_list     (list)     –     list of usergroups to be deleted</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p class="last">if failed to delete usergroups</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.user.User.user_id">
+<code class="descname">user_id</code><a class="headerlink" href="#cvpysdk.security.user.User.user_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the user id of this commcell user</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.user.User.user_name">
+<code class="descname">user_name</code><a class="headerlink" href="#cvpysdk.security.user.User.user_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the user name of this commcell user</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.security.user.Users">
+<em class="property">class </em><code class="descclassname">cvpysdk.security.user.</code><code class="descname">Users</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#Users"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.Users" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for maintaining all the configured users on this commcell</p>
+<dl class="method">
+<dt id="cvpysdk.security.user.Users.add_external_user">
+<code class="descname">add_external_user</code><span class="sig-paren">(</span><em>domain</em>, <em>user_name</em>, <em>email</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#Users.add_external_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.Users.add_external_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an external user on the specified domain</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">domain      (str)   –  name of the domain to which the user is to be included</p>
+<p>user_name   (str)   –  name of the user as under domain</p>
+<p class="last">email       (str)   –  email id of the user</p>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p>if user with specified name already exists</p>
+<p>if password or system_generated_password are not set</p>
+<p class="last">if failed to add user to commcell</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.Users.add_local_user">
+<code class="descname">add_local_user</code><span class="sig-paren">(</span><em>user_name</em>, <em>full_name</em>, <em>email</em>, <em>password=None</em>, <em>system_generated_password=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#Users.add_local_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.Users.add_local_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a local user to this commcell</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">user_name                     (str)     –  name of the user to be created</p>
+<p>full_name                     (str)     –  full name of the user to be created</p>
+<p>email                         (str)     –  email of the user to be created</p>
+<dl class="last docutils">
+<dt>password                      (str)     –  password of the user to be created</dt>
+<dd>default: None</dd>
+<dt>system_generated_password     (bool)    –  if set to true system defined</dt>
+<dd><blockquote class="first">
+<div>password will be used</div></blockquote>
+<p class="last">default: False</p>
+</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if data type of input is invalid</p>
+<p>if user with specified name already exists</p>
+<p>if password or system_generated_password are not set</p>
+<p class="last">if failed to add user to commcell</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.user.Users.all_users">
+<code class="descname">all_users</code><a class="headerlink" href="#cvpysdk.security.user.Users.all_users" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dict of all the users on the commcell</p>
+<dl class="docutils">
+<dt>dict of all the users on commcell</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd>‘user_name_1’: user_id_1</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.Users.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>user_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#Users.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.Users.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the specified user from the existing commcell users</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>user_name     (str)     –     name of the user which has to be deleted</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if user doesn’t exist</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.Users.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>user_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#Users.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.Users.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the user object for the specified user name</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>user_name  (str)  –  name of the user for which the object has to be created</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if user doesn’t exist with specified name</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.Users.has_user">
+<code class="descname">has_user</code><span class="sig-paren">(</span><em>user_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#Users.has_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.Users.has_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if any user with specified name exists on this commcell</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>user_name         (str)     –     name of the user which has to be checked if exists</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if data type of input is invalid</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.user.Users.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/user.html#Users.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.user.Users.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the list of Users on this commcell.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.security.usergroup">
+<span id="usergroup"></span><h2>Usergroup<a class="headerlink" href="#module-cvpysdk.security.usergroup" title="Permalink to this headline">¶</a></h2>
+<p>Main file for performing user group operations.</p>
+<p>UserGroups and UserGroup are the classes defined in this file.</p>
+<p>UserGroups: Class for representing all the user groups associated with a commcell</p>
+<p>UserGroup:  Class for representing a single User Group of the commcell</p>
+<dl class="docutils">
+<dt>UserGroups:</dt>
+<dd><p class="first">__init__(commcell_object)  –  initialise instance of the UserGroups associated with
+the specified commcell</p>
+<p>__str__()                  –  returns all the user groups associated with the commcell</p>
+<p>__repr__()                 –  returns the string for the instance of the UserGroups class</p>
+<p>_get_usergroups()          –  gets all the usergroups associated with the commcell specified</p>
+<p>all_user_groups()          – returns the dict of all the usergroups on commcell</p>
+<p>has_user_group()           –  checks if a user group exists with the given name or not</p>
+<p>get(user_group_name)       –  returns the instance of the UserGroup class,
+for the the input user group name</p>
+<p>delete(user_group_name)    –  deletes the user group from the commcell</p>
+<p class="last">refresh()                  –  refresh the user groups associated with the commcell</p>
+</dd>
+<dt>UserGroup:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(commcell_object,</dt>
+<dd>usergroup_name,
+usergroup_id=None)  – initialise instance of the UserGroup for the commcell</dd>
+</dl>
+<p>__repr__()                   – return the usergroup name, the instance is associated with</p>
+<p>_get_usergroup_id()          – method to get the usergroup id, if not specified in __init__</p>
+<p>_get_usergroup_properties()  – get the properties of this usergroup</p>
+<p class="last">refresh()                    – refresh the properties of the user group</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.security.usergroup.UserGroup">
+<em class="property">class </em><code class="descclassname">cvpysdk.security.usergroup.</code><code class="descname">UserGroup</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>user_group_name</em>, <em>user_group_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/usergroup.html#UserGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for performing operations for a specific User Group.</p>
+<dl class="attribute">
+<dt id="cvpysdk.security.usergroup.UserGroup.associations">
+<code class="descname">associations</code><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup.associations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the usergroup security associations as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.usergroup.UserGroup.description">
+<code class="descname">description</code><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the usergroup description as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.usergroup.UserGroup.email">
+<code class="descname">email</code><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup.email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the usergroup email as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.usergroup.UserGroup.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/usergroup.html#UserGroup.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties of the UserGroup.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.usergroup.UserGroup.user_group_id">
+<code class="descname">user_group_id</code><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup.user_group_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the usergroup id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.usergroup.UserGroup.user_group_name">
+<code class="descname">user_group_name</code><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup.user_group_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the usergroup name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.security.usergroup.UserGroup.users">
+<code class="descname">users</code><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroup.users" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the usergroup users as a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.security.usergroup.UserGroups">
+<em class="property">class </em><code class="descclassname">cvpysdk.security.usergroup.</code><code class="descname">UserGroups</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/usergroup.html#UserGroups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the usergroups associated with a commcell.</p>
+<dl class="attribute">
+<dt id="cvpysdk.security.usergroup.UserGroups.all_user_groups">
+<code class="descname">all_user_groups</code><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroups.all_user_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of all the user groups associated with this commcell</p>
+<dl class="docutils">
+<dt>dict - consists of all user group in the commcell</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd>“user_group1_name”: user_group1_id,
+“user_group2_name”: user_group2_id</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.usergroup.UserGroups.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>user_group_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/usergroup.html#UserGroups.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroups.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the usergroup from the commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>user_group_name (str)  –  name of the usergroup to remove from the commcell</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the usergroup name argument is not string</p>
+<p>if failed to delete usergroup</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if no usergroup exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.usergroup.UserGroups.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>user_group_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/usergroup.html#UserGroups.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroups.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a user group object of the specified user group name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>user_group_name (str)  –  name of the user group</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the UserGroup class for the given user group name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the user group name argument is not string</p>
+<p class="last">if no user group exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.usergroup.UserGroups.has_user_group">
+<code class="descname">has_user_group</code><span class="sig-paren">(</span><em>user_group_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/usergroup.html#UserGroups.has_user_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroups.has_user_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a user group exists in the commcell with the input user group name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>user_group_name (str)  –  name of the user group</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the user group exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the user group name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.security.usergroup.UserGroups.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/security/usergroup.html#UserGroups.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.security.usergroup.UserGroups.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the user groups associated with the Commcell.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.security">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cvpysdk.security" title="Permalink to this headline">¶</a></h2>
+<p>Initialize Security Objects for the SDK.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Security</a><ul>
+<li><a class="reference internal" href="#module-cvpysdk.security.security_association">Security Association</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.security.user">User</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.security.usergroup">Usergroup</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.security">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="../instances/virtualserver/virtualserver.html" title="previous chapter">Virtual Server Instances</a></li>
+      <li>Next: <a href="../subclients/subclients.html" title="next chapter">Subclients</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/security/security.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/security/security.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
