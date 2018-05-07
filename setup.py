@@ -29,15 +29,13 @@ def get_version():
 
 def readme():
     """Reads the README.rst file and returns its contents."""
-    read_me_file = os.path.join(ROOT, 'README.rst')
-    with open(read_me_file) as file_object:
+    with open(os.path.join(ROOT, 'README.rst')) as file_object:
         return file_object.read()
 
 
 def get_license():
     """Reads the LICENSE.txt file and returns its contents."""
-    license_file = os.path.join(ROOT, 'LICENSE.txt')
-    with open(license_file) as file_object:
+    with open(os.path.join(ROOT, 'LICENSE.txt')) as file_object:
         return file_object.read()
 
 
@@ -55,5 +53,10 @@ setup(
     keywords='commvault, python, sdk, cv, simpana, commcell, cvlt, webconsole',
     include_package_data=True,
     install_requires=['requests', 'future', 'xmltodict'],
-    zip_safe=False
+    zip_safe=False,
+    project_urls={
+        'Bug Tracker': 'https://github.com/CommvaultEngg/cvpysdk/issues',
+        'Documentation': 'https://commvaultengg.github.io/cvpysdk/',
+        'Source Code': 'https://github.com/CommvaultEngg/cvpysdk/tree/SP12'
+    }
 )

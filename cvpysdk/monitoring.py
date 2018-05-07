@@ -218,8 +218,14 @@ class MonitoringPolicies(object):
 
             dict - consists of all templates in the commcell
                 {
-                    "template_name1":template_id1,
-                    "template_name2":template_id2
+                     "template_name1":{
+                         "id":template_id1,
+                         "type":template_type
+                    },
+                    "template_name2":{
+                        "id":template_id2,
+                        "type":template_type
+                    }
                 }
         """
         return self._templates
@@ -258,7 +264,7 @@ class MonitoringPolicies(object):
             raise SDKException('Monitoring', '101')
 
         return self.all_monitoring_policies and monitoring_policy_name.lower() in \
-               self.all_monitoring_policies
+            self.all_monitoring_policies
 
     def _get_analytics_servers(self):
         """Gets all the analytics servers associated to the commcell
@@ -317,7 +323,7 @@ class MonitoringPolicies(object):
             raise SDKException('Monitoring', '101')
 
         return self.all_analytics_servers and analytics_server_name.lower() in \
-               self.all_analytics_servers
+            self.all_analytics_servers
 
     def _get_templates(self):
         """Gets all the templates associated to the commcell
@@ -326,8 +332,14 @@ class MonitoringPolicies(object):
                 Returns:
                     dict- consists of all templates of the commcell
                         {
-                             "template_name1":template_id1,
-                             "template_name2":template_id2
+                             "template_name1": {
+                                 "id":template_id1,
+                                 "type":template_type
+                            },
+                            "template_name2": {
+                                "id":template_id2,
+                                "type":template_type
+                            }
                         }
                 Raises:
                     SDKException:
@@ -350,7 +362,11 @@ class MonitoringPolicies(object):
                 for dictionary in response.json()['LMTemplates']:
                     temp_name = dictionary['LMTemplateEntity']['templateName'].lower()
                     temp_id = int(dictionary['LMTemplateEntity']['templateId'])
-                    templates_dict[temp_name] = temp_id
+                    temp_type = int(dictionary['templateForMonitoringType'])
+                    templates_dict[temp_name] = {
+                        'id' : temp_id,
+                        'type' : temp_type
+                    }
 
                 return templates_dict
 
@@ -412,13 +428,13 @@ class MonitoringPolicies(object):
             self.all_monitoring_policies[monitoring_policy_name]
         )
 
-    def add(
-            self,
+    def add(self,
             monitoring_policy_name,
             template_name,
             analytics_server_name,
             client_name,
-            content):
+            content=None,
+            win_flag=False):
         """Adds a new Monitoring Policy to the Commcell.
 
             Args:
@@ -433,6 +449,12 @@ class MonitoringPolicies(object):
 
                 client_name (str)            -- client from which data
                                                     has to be picked
+
+                content                      -- content to be used for
+                                                    running the policy
+
+                win_flag                     -- For executing Text based
+                                                    WindowsEvents Policy
 
             Raises:
                 SDKException:
@@ -451,12 +473,25 @@ class MonitoringPolicies(object):
         template_name = template_name.lower()
         analytics_server_name = analytics_server_name.lower()
         client_name = client_name.lower()
+        template_dict = {}
 
-        if self.has_template(template_name):
-            template_id = self.all_templates[template_name]
+        if template_name == "ondemand":
+            template_id = 1
+            template_type = 4
+        elif win_flag:
+            template_id = 2
+            template_type = 0
         else:
-            err_msg = 'Template "{0}" doesn\'t exist'.format(template_name)
-            raise SDKException('Monitoring', '102', err_msg)
+            if self.has_template(template_name):
+                # template_dict = self.all_templates
+                template_id = int(self.all_templates[template_name]['id'])
+                template_type = int(self.all_templates[template_name]['type'])
+            else:
+                err_msg = 'Template "{0}" doesn\'t exist'.format(template_name)
+                raise SDKException('Monitoring', '102', err_msg)
+
+        if content is None:
+            content = ""
 
         if self.has_analytics_server(analytics_server_name):
             cloud_id = self.all_analytics_servers[analytics_server_name]
@@ -486,7 +521,9 @@ class MonitoringPolicies(object):
                     "clientId": client_id,
                     "_type_": 3
                 }],
-                "monitoringTypes": [0],
+                "monitoringTypes": [
+                    template_type
+                ],
                 "LMTemplates": [{
                     "templateName": template_name,
                     "templateId": template_id
@@ -638,7 +675,6 @@ class MonitoringPolicy(object):
     def monitoring_policy_id(self):
         """Treats the monitoring policy id as read only attribute."""
         return self._monitoring_policy_id
-
 
     def run(self):
         """Runs the Monitoring Policy job"""

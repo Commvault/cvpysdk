@@ -28,8 +28,8 @@ Backupsets:
 
     default_backup_set()            -- returns the name of the default backup set
 
-    all_backupsets()              -- returns the dict of all the backupsets for the Agent / Instance
-    of the selected Client
+    all_backupsets()                -- returns the dict of all the backupsets for the Agent /
+    Instance of the selected Client
 
     has_backupset(backupset_name)   -- checks if a backupset exists with the given name or not
 
@@ -108,10 +108,15 @@ class Backupsets(object):
         """Initialize object of the Backupsets class.
 
             Args:
-                class_object (object)  --  instance of the Agent/Instance class
+                class_object    (object)    --  instance of the Agent / Instance class
 
             Returns:
-                object - instance of the Backupsets class
+                object  -   instance of the Backupsets class
+
+            Raises:
+                SDKException:
+                    if class object is not an instance of the Agent / Instance class
+
         """
         from .agent import Agent
         from .instance import Instance
@@ -123,12 +128,18 @@ class Backupsets(object):
         elif isinstance(class_object, Instance):
             self._instance_object = class_object
             self._agent_object = class_object._agent_object
+        else:
+            raise SDKException('Backupset', '103')
+
+        self._client_object = self._agent_object._client_object
 
         self._commcell_object = self._agent_object._commcell_object
 
-        self._BACKUPSETS = (self._commcell_object._services['GET_ALL_BACKUPSETS']) % (
-            self._agent_object._client_object.client_id
-        )
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._BACKUPSETS = self._services['GET_ALL_BACKUPSETS'] % (self._client_object.client_id)
 
         from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
@@ -165,7 +176,7 @@ class Backupsets(object):
                 backupset.split('\\')[-1],
                 self._backupsets[backupset]['instance'],
                 self._agent_object.agent_name,
-                self._agent_object._client_object.client_name
+                self._client_object.client_name
             )
             representation_string += sub_str
 
@@ -197,9 +208,7 @@ class Backupsets(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._BACKUPSETS
-        )
+        flag, response = self._cvpysdk_object.make_request('GET', self._BACKUPSETS)
 
         if flag:
             if response.json() and 'backupsetProperties' in response.json():
@@ -226,7 +235,7 @@ class Backupsets(object):
                         temp_name = dictionary['backupSetEntity']['backupsetName'].lower()
                         temp_id = str(dictionary['backupSetEntity']['backupsetId']).lower()
 
-                        if len(self._agent_object.instances._instances) > 1:
+                        if len(self._agent_object.instances.all_instances) > 1:
                             return_dict["{0}\\{1}".format(instance, temp_name)] = {
                                 "id": temp_id,
                                 "instance": instance
@@ -247,8 +256,7 @@ class Backupsets(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def all_backupsets(self):
@@ -321,20 +329,18 @@ class Backupsets(object):
                 'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name)
             )
 
-        add_backupset_service = self._commcell_object._services['ADD_BACKUPSET']
-
         if self._instance_object is None:
             if self._agent_object.instances.has_instance('DefaultInstanceName'):
                 self._instance_object = self._agent_object.instances.get('DefaultInstanceName')
             else:
                 self._instance_object = self._agent_object.instances.get(
-                    sorted(self._agent_object.instances._instances)[0]
+                    sorted(self._agent_object.instances.all_instances)[0]
                 )
 
         request_json = {
             "association": {
                 "entity": [{
-                    "clientName": self._agent_object._client_object.client_name,
+                    "clientName": self._client_object.client_name,
                     "appName": self._agent_object.agent_name,
                     "instanceName": self._instance_object.instance_name,
                     "backupsetName": backupset_name
@@ -347,8 +353,8 @@ class Backupsets(object):
             }
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', add_backupset_service, request_json
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_BACKUPSET'], request_json
         )
 
         if flag:
@@ -390,8 +396,7 @@ class Backupsets(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get(self, backupset_name):
         """Returns a backupset object of the specified backupset name.
@@ -460,13 +465,11 @@ class Backupsets(object):
             backupset_name = backupset_name.lower()
 
         if self.has_backupset(backupset_name):
-            delete_backupset_service = self._commcell_object._services['BACKUPSET'] % (
+            delete_backupset_service = self._services['BACKUPSET'] % (
                 self._backupsets[backupset_name]['id']
             )
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'DELETE', delete_backupset_service
-            )
+            flag, response = self._cvpysdk_object.make_request('DELETE', delete_backupset_service)
 
             if flag:
                 if response.json():
@@ -499,8 +502,7 @@ class Backupsets(object):
                 else:
                     raise SDKException('Response', '102')
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('Response', '101', self._update_response_(response.text))
         else:
             raise SDKException(
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
@@ -535,7 +537,13 @@ class Backupset(object):
         """
         self._instance_object = instance_object
         self._agent_object = self._instance_object._agent_object
-        self._commcell_object = self._instance_object._agent_object._commcell_object
+        self._client_object = self._agent_object._client_object
+
+        self._commcell_object = self._agent_object._commcell_object
+
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
 
         self._restore_methods = ['_process_restore_response', '_filter_paths', '_restore_json']
 
@@ -549,14 +557,15 @@ class Backupset(object):
             # Get the id associated with this backupset
             self._backupset_id = self._get_backupset_id()
 
-        self._BACKUPSET = self._commcell_object._services['BACKUPSET'] % (self.backupset_id)
-        self._BROWSE = self._commcell_object._services['BROWSE']
-        self._RESTORE = self._commcell_object._services['RESTORE']
+        self._BACKUPSET = self._services['BACKUPSET'] % (self.backupset_id)
+        self._BROWSE = self._services['BROWSE']
+        self._RESTORE = self._services['RESTORE']
 
         self._is_default = False
         self._is_on_demand_backupset = False
         self._properties = None
         self._backupset_association = {}
+        self._plan = None
 
         self.subclients = None
         self.schedules = None
@@ -590,7 +599,7 @@ class Backupset(object):
         return representation_string.format(
             self.backupset_name,
             self._instance_object.instance_name,
-            self._instance_object._agent_object.agent_name
+            self._agent_object.agent_name
         )
 
     def _get_backupset_id(self):
@@ -611,7 +620,7 @@ class Backupset(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._BACKUPSET)
+        flag, response = self._cvpysdk_object.make_request('GET', self._BACKUPSET)
 
         if flag:
             if response.json() and "backupsetProperties" in response.json():
@@ -632,11 +641,15 @@ class Backupset(object):
 
                 if "userDescription" in self._properties["commonBackupSet"]:
                     self._description = self._properties["commonBackupSet"]["userDescription"]
+
+                if "planName" in self._properties["planEntity"]:
+                    self._plan = self._commcell_object.plans.get(
+                        self._properties["planEntity"]["planName"]
+                    )
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _run_backup(self, subclient_name, return_list):
         """Triggers incremental backup job for the given subclient,
@@ -678,9 +691,7 @@ class Backupset(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._BACKUPSET, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._BACKUPSET, request_json)
 
         self._get_backupset_properties()
 
@@ -703,8 +714,7 @@ class Backupset(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _update(self, backupset_name, backupset_description, default_backupset):
         """Updates the properties of the backupset.
@@ -734,8 +744,8 @@ class Backupset(object):
         request_json = {
             "association": {
                 "entity": [{
-                    "clientName": self._instance_object._agent_object._client_object.client_name,
-                    "appName": self._instance_object._agent_object.agent_name,
+                    "clientName": self._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
                     "instanceName": self._instance_object.instance_name,
                     "backupsetName": self.backupset_name
                 }]
@@ -862,8 +872,8 @@ class Backupset(object):
                 "vsDiskBrowse": options['vm_disk_browse']
             },
             "entity": {
-                "clientName": self._agent_object._client_object.client_name,
-                "clientId": int(self._agent_object._client_object.client_id),
+                "clientName": self._client_object.client_name,
+                "clientId": int(self._client_object.client_id),
                 "applicationId": int(self._agent_object.agent_id),
                 "instanceId": int(self._instance_object.instance_id),
                 "backupsetId": int(self.backupset_id),
@@ -1089,8 +1099,7 @@ class Backupset(object):
                 raise SDKException('Response', '102')
 
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _do_browse(self, options=None):
         """Performs a browse operation with the given options.
@@ -1109,9 +1118,7 @@ class Backupset(object):
         options = self._prepare_browse_options(options)
         request_json = self._prepare_browse_json(options)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._BROWSE, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
 
         return self._process_browse_response(flag, response, options)
 
@@ -1139,6 +1146,11 @@ class Backupset(object):
     def is_on_demand_backupset(self):
         """Treats the is on demand backupset as a read-only attribute."""
         return self._is_on_demand_backupset
+
+    @property
+    def plan(self):
+        """Treats the backupset plan as a property of the Backupset class."""
+        return self._plan
 
     @backupset_name.setter
     def backupset_name(self, value):
@@ -1197,6 +1209,64 @@ class Backupset(object):
         else:
             raise SDKException('Backupset', '102', 'Description cannot be modified')
 
+    @plan.setter
+    def plan(self, value):
+        """Associates the plan to the backupset
+
+            Raises:
+                SDKException:
+
+                    if input value is not an instance of Plan class
+
+                    if plan does not exist
+
+                    if plan associateion fails
+
+                    if plan is not eligible to be associated
+        """
+        from .plan import Plan
+        if isinstance(value, Plan):
+            plan_obj = value
+        elif isinstance(value, basestring):
+            plan_obj = self._commcell_object.plans.get(value)
+        else:
+            raise SDKException('Backupset', '102', 'Input value is not of supported type')
+
+        plans_obj = self._commcell_object.plans
+        entity_dict = {
+            'clientId': int(self._client_object.client_id),
+            'appId': int(self._agent_object.agent_id),
+            'backupsetId': int(self.backupset_id)
+        }
+        if plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
+            request_json = {
+                'backupsetProperties': {
+                    'planEntity': {
+                        'planSubtype': int(plan_obj.subtype),
+                        '_type_': 158,
+                        'planType': int(plan_obj.plan_type),
+                        'planName': plan_obj.plan_name,
+                        'planId': int(plan_obj.plan_id)
+                    }
+                }
+            }
+
+            response = self._process_update_reponse(
+                request_json
+            )
+
+            if response[0]:
+                return
+            else:
+                o_str = 'Failed to asspciate plan to the backupset\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(response[2]))
+        else:
+            raise SDKException(
+                'Backupset',
+                '102',
+                'Plan not eligible to be associated with the backupset'
+            )
+
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset
             if it is not the default backupset.
@@ -1220,19 +1290,19 @@ class Backupset(object):
 
     def backup(self):
         """Runs Incremental backup job for all subclients in this backupset.
+
             Runs Full Backup job for a subclient, if no job had been ran earlier for it.
 
             Returns:
                 list    -   list consisting of the job objects for the backup jobs started for
-                                the subclients in the backupset
+                the subclients in the backupset
+
         """
         return_list = []
         thread_list = []
 
-        all_subclients = self.subclients._subclients
-
-        if all_subclients:
-            for subclient in all_subclients:
+        if self.subclients.all_subclients:
+            for subclient in self.subclients.all_subclients:
                 thread = threading.Thread(
                     target=self._run_backup, args=(subclient, return_list)
                 )
@@ -1245,34 +1315,48 @@ class Backupset(object):
         return return_list
 
     def browse(self, *args, **kwargs):
-        """Browses the content of a Backupset.
+        """Browses the content of the Backupset.
 
             Args:
                 Dictionary of browse options:
                     Example:
+
                         browse({
-                            'path': 'c:\\hello',
+                            'path': 'c:\\\\hello',
+
                             'show_deleted': True,
+
                             'from_time': '2014-04-20 12:00:00',
-                            'to_time': '2016-04-31 12:00:00'
+
+                            'to_time': '2016-04-21 12:00:00'
                         })
 
-                    (OR)
-
+            Kwargs:
                 Keyword argument of browse options:
                     Example:
+
                         browse(
                             path='c:\\hello',
+
                             show_deleted=True,
-                            to_time='2016-04-31 12:00:00'
+
+                            from_time='2014-04-20 12:00:00',
+
+                            to_time='2016-04-21 12:00:00'
                         )
 
-                Refer self._default_browse_options for all the supported options
+            Returns:
+                (list, dict)
+                    list    -   List of only the file, folder paths from the browse response
 
-        Returns:
-            list - List of only the file, folder paths from the browse response
+                    dict    -   Dictionary of all the paths with additional metadata retrieved
+                    from browse operation
 
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
+
+            Refer `default_browse_options`_ for all the supported options.
+
+            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
+
         """
         if args and isinstance(args[0], dict):
             options = args[0]
@@ -1284,44 +1368,58 @@ class Backupset(object):
         return self._do_browse(options)
 
     def find(self, *args, **kwargs):
-        """Searches a file/folder in the backupset backup content,
+        """Searches a file/folder in the backed up content of the backupset,
             and returns all the files matching the filters given.
 
-         Args:
-            Dictionary of find options:
-                Example:
-                    find({
-                        'file_name': '*.txt',
-                        'show_deleted': True,
-                        'from_time': '2014-04-20 12:00:00',
-                        'to_time': '2016-04-31 12:00:00'
-                    })
+            Args:
+                Dictionary of browse options:
+                    Example:
 
-                (OR)
+                        find({
+                            'file_name': '*.txt',
 
-            Keyword argument of find options:
-                Example:
-                    find(
-                        file_name='*.txt',
-                        show_deleted=True,
-                        to_time='2016-04-31 12:00:00'
-                    )
+                            'show_deleted': True,
 
-            Refer self._default_browse_options for all the supported options
+                            'from_time': '2014-04-20 12:00:00',
+
+                            'to_time': '2016-04-31 12:00:00'
+                        })
+
+            Kwargs:
+                Keyword argument of browse options:
+                    Example:
+
+                        find(
+                            file_name='*.txt',
+
+                            show_deleted=True,
+
+                            'from_time': '2014-04-20 12:00:00',
+
+                            to_time='2016-04-31 12:00:00'
+                        )
+
+            Returns:
+                (list, dict)
+                    list    -   List of only the file, folder paths from the browse response
+
+                    dict    -   Dictionary of all the paths with additional metadata retrieved
+                    from browse operation
+
+
+            Refer `default_browse_options`_ for all the supported options.
 
             Additional options supported:
-                file_name       (str)   --   Find files with name
+                file_name       (str)   --  Find files with name
 
-                file_size_gt    (int)   --   Find files with size greater than size
+                file_size_gt    (int)   --  Find files with size greater than size
 
-                file_size_lt    (int)   --   Find files with size lesser than size
+                file_size_lt    (int)   --  Find files with size lesser than size
 
-                file_size_et    (int)   --   Find files with size equal to size
+                file_size_et    (int)   --  Find files with size equal to size
 
-        Returns:
-            list - List of only the file, folder paths from the browse response
+            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
 
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
         """
         if args and isinstance(args[0], dict):
             options = args[0]

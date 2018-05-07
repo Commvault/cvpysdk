@@ -86,6 +86,8 @@ DiskLibraries:
 
     add()                       --  adds a new disk library to the commcell
 
+    delete()                    --  Deletes a disk library from commcell
+
     get(library_name)           --  returns the instance of the DiskLibrary class
     for the library specified
 
@@ -102,6 +104,7 @@ DiskLibrary:
 
     _get_library_id()           --  gets the id of the DiskLibrary instance from commcell
 
+    add_mount_path()            --  adds the mount path on the local/ remote machine
 
 StoragePolicies:
     __init__(commcell_object)    --  initialize the StoragePolicies instance for the commcell
@@ -137,9 +140,9 @@ StoragePolicy:
 
     _get_storage_policy_id()                --  gets the id of the StoragePolicy instance
 
-    _get_storage_policy_propeerties()       --  returns the properties of this storage policy
+    _get_storage_policy_properties()        --  returns the properties of this storage policy
 
-    _initialize_storage_policy_properties() --  initializes storage policy prperties
+    _initialize_storage_policy_properties() --  initializes storage policy properties
 
     has_copy()                              --  checks if copy with given name exists
 
@@ -151,6 +154,10 @@ StoragePolicy:
 
     copies()                                --  returns the storage policy copies associated with
     this storage policy
+
+    run_backup_copy()                       --  Runs the backup copy job from Commcell
+
+    run_snapshot_cataloging()               --  Runs the deferred catalog job from Commcell
 
     run_aux_copy()                          --  starts a aux copy job for this storage policy and
     returns the job object
@@ -185,10 +192,10 @@ SchedulePolicies:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from base64 import b64encode
+
 from past.builtins import basestring
 from future.standard_library import install_aliases
-
-from base64 import b64encode
 
 from .exception import SDKException
 from .job import Job
@@ -239,8 +246,22 @@ class MediaAgents(object):
             Returns:
                 dict - consists of all media agents of the commcell
                     {
-                         "media_agent1_name": media_agent1_id,
-                         "media_agent2_name": media_agent2_id
+                         "media_agent1_name": {
+
+                                 'id': media_agent1_id,
+
+                                 'os_info': media_agent1_os,
+
+                                 'is_online': media_agent1_status
+                         },
+                         "media_agent2_name": {
+
+                                 'id': media_agent2_id,
+
+                                 'os_info': media_agent2_os,
+
+                                 'is_online': media_agent2_status
+                         }
                     }
 
             Raises:
@@ -254,14 +275,20 @@ class MediaAgents(object):
         )
 
         if flag:
-            if response.json() and 'response' in response.json():
-                media_agents = response.json()['response']
+            if response.json() and 'mediaAgentList' in response.json():
+                media_agents = response.json()['mediaAgentList']
                 media_agents_dict = {}
 
                 for media_agent in media_agents:
-                    temp_name = media_agent['entityInfo']['name'].lower()
-                    temp_id = str(media_agent['entityInfo']['id']).lower()
-                    media_agents_dict[temp_name] = temp_id
+                    temp_name = media_agent['mediaAgent']['mediaAgentName'].lower()
+                    temp_id = str(media_agent['mediaAgent']['mediaAgentId']).lower()
+                    temp_os = media_agent['osInfo']['OsDisplayInfo']['OSName']
+                    temp_status = bool(media_agent['status'])
+                    media_agents_dict[temp_name] = {
+                        'id': temp_id,
+                        'os_info': temp_os,
+                        'is_online': temp_status
+                    }
 
                 return media_agents_dict
             else:
@@ -276,8 +303,22 @@ class MediaAgents(object):
 
             dict - consists of all media agents of the commcell
                     {
-                         "media_agent1_name": media_agent1_id,
-                         "media_agent2_name": media_agent2_id
+                         "media_agent1_name": {
+
+                                 'id': media_agent1_id,
+
+                                 'os_info': media_agent1_os,
+
+                                 'is_online': media_agent1_status
+                         },
+                         "media_agent2_name": {
+
+                                 'id': media_agent2_id,
+
+                                 'os_info': media_agent2_os,
+
+                                 'is_online': media_agent2_status
+                         }
                     }
         """
         return self._media_agents
@@ -323,7 +364,7 @@ class MediaAgents(object):
             if self.has_media_agent(media_agent_name):
                 return MediaAgent(self._commcell_object,
                                   media_agent_name,
-                                  self._media_agents[media_agent_name])
+                                  self._media_agents[media_agent_name]['id'])
 
             raise SDKException(
                 'Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)
@@ -645,6 +686,68 @@ class DiskLibraries(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def delete(self, library_name):
+        """deletes the specified library.
+
+            Args:
+                library_name (str)  --  name of the disk library to delete
+
+            Raises:
+                SDKException:
+                    if type of the library name argument is not string
+                    if no library exists with the given name
+                    if response is incorrect
+        """
+        if not isinstance(library_name, basestring):
+            raise SDKException('Storage', '101')
+
+        library_name = library_name.lower()
+
+        if not self.has_library(library_name):
+            raise SDKException('Storage',
+                               '102',
+                               'No library exists with name: {0}'.\
+                                    format(library_name))
+
+        request_json = {
+            "EVGui_ConfigureStorageLibraryReq":
+                {
+                    "isDeconfigLibrary":1,
+                    "library":
+                        {
+                            "opType":2,
+                            "libraryName":library_name
+                        }
+                }
+        }
+
+        exec_command = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            exec_command,
+                                                                            request_json)
+
+        if flag:
+            if response.json():
+                if 'library' in response.json():
+                    _response = response.json()['library']
+
+                    if 'errorCode' in _response:
+                        if _response['errorCode'] == 0:
+                            self.refresh()
+                        else:
+                            raise SDKException('Storage',
+                                               '102',
+                                               _response['errorMessage'])
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            _stdout = 'Failed to delete library {0} with error: \n [{1}]'
+            _stderr = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', _stdout.format(library_name, _stderr))
+
     def get(self, library_name):
         """Returns a DiskLibrary object of the specified disk library name.
 
@@ -719,6 +822,75 @@ class DiskLibrary(object):
         """
         libraries = DiskLibraries(self._commcell_object)
         return libraries.get(self.library_name).library_id
+
+    def add_mount_path(self, mount_path, media_agent, username='', password=''):
+        """ Adds a mount path [local/remote] to the disk library
+
+        Args:
+            mount_path  (str)   -- Mount path which needs to be added to disklibrary.
+                                  This could be a local or remote mount path on mediaagent
+
+            media_agent (str)   -- MediaAgent on which mountpath exists
+
+            username    (str)   -- Username to access the mount path
+
+            password    (str)   -- Password to access the mount path
+
+        Returns:
+            None
+
+        Raises
+            Exception:
+                - if mountpath and mediaagent datatype is invalid
+
+                - if API response error code is not 0
+
+                - if response is empty
+
+                - if response code is not as expected
+            """
+
+        if not isinstance(mount_path, basestring) or not isinstance(media_agent, basestring):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "EVGui_ConfigureStorageLibraryReq":
+            {
+                "isConfigRequired":1,
+                "library":{
+                    "opType":4,
+                    "mediaAgentName": media_agent,
+                    "libraryName": self._library_name,
+                    "mountPath": mount_path,
+                    "loginName": username,
+                    "password": b64encode(password.encode()).decode(),
+                }
+            }
+        }
+
+        exec_command = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
+                                                                            exec_command,
+                                                                            request_json)
+        if flag:
+            if response.json():
+                if 'library' in response.json():
+                    _response = response.json()['library']
+
+                    if 'errorCode' in _response:
+                        if _response['errorCode'] != 0:
+                            raise SDKException('Storage', '102', _response['errorMessage'])
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            _stdout =  'Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]'
+            _stderr = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', _stdout.format(mount_path,
+                                                                 self._library_name,
+                                                                 _stderr))
 
     @property
     def library_name(self):
@@ -873,28 +1045,32 @@ class StoragePolicies(object):
             media_agent,
             dedup_path=None,
             incremental_sp=None,
-            retention_period=5):
+            retention_period=5,
+            number_of_streams=None):
         """Adds a new Storage Policy to the Commcell.
 
             Args:
                 storage_policy_name (str)         --  name of the new storage policy to add
 
                 library             (str/object)  --  name or instance of the library
-                                                        to add the policy to
+                to add the policy to
 
                 media_agent         (str/object)  --  name or instance of media agent
-                                                        to add the policy to
+                to add the policy to
 
                 dedup_path          (str)         --  the path of the deduplication database
-                    default: None
+                default: None
 
                 incremental_sp      (str)         --  the name of the incremental storage policy
-                                                        associated with the storage policy
-                    default: None
+                associated with the storage policy
+                default: None
 
                 retention_period    (int)         --  time period in days to retain
-                                                        the data backup for
-                    default: 5
+                the data backup for
+                default: 5
+                    
+                number_of_streams   (int)         --  the number of streams for the storage policy
+                default: None
 
             Raises:
                 SDKException:
@@ -916,7 +1092,7 @@ class StoragePolicies(object):
 
         if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
                 (not (isinstance(storage_policy_name, basestring) and
-                          isinstance(retention_period, int))) or
+                      isinstance(retention_period, int))) or
                 (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
             raise SDKException('Storage', '101')
 
@@ -984,6 +1160,12 @@ class StoragePolicies(object):
                 },
                 "storagePolicyName": storage_policy_name
             }
+
+            if number_of_streams is not None:
+                number_of_streams_dict = {
+                    "numberOfStreams": number_of_streams
+                }
+                request_json.update(number_of_streams_dict)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'POST', self._POLICY, request_json
@@ -1122,7 +1304,8 @@ class StoragePolicy(object):
         self._STORAGE_POLICY = self._commcell_object._services['GET_STORAGE_POLICY'] % (
             self.storage_policy_id
         )
-
+        self._storage_policy_properties = None
+        self._copies = {}
         self.refresh()
 
     def __repr__(self):
@@ -1208,7 +1391,8 @@ class StoragePolicy(object):
                               spare_pool=None,
                               tape_library_id=None,
                               drive_pool_id=None,
-                              spare_pool_id=None):
+                              spare_pool_id=None,
+                              snap_copy=False):
         """Creates Synchronous copy for this storage policy
 
             Args:
@@ -1217,6 +1401,9 @@ class StoragePolicy(object):
                 library_name        (str)   --  library name to be assigned
 
                 media_agent_name    (str)   --  media_agent to be assigned
+                
+                snap_copy           (bool)  --  boolean on whether copy should be a snap copy
+                default: False
 
             Raises:
                 SDKException:
@@ -1239,12 +1426,14 @@ class StoragePolicy(object):
             err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
             raise SDKException('Storage', '102', err_msg)
 
-        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]
+        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()]['id']
+
+        snap_copy = int(snap_copy == True)
 
         if drive_pool is not None:
             request_xml = """
                         <App_CreateStoragePolicyCopyReq copyName="{0}">
-                            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
+                            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{11}" numberOfStreamsToCombine="1">
                                 <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
                                 <library _type_="9" libraryId="{3}" libraryName="{4}" />
                                 <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
@@ -1255,13 +1444,13 @@ class StoragePolicy(object):
                         </App_CreateStoragePolicyCopyReq>
                         """.format(copy_name, self.storage_policy_id, self.storage_policy_name, tape_library_id,
                                    library_name, media_agent_id, media_agent_name, drive_pool_id, drive_pool,
-                                   spare_pool_id, spare_pool)
+                                   spare_pool_id, spare_pool, snap_copy)
 
         else:
-            library_id = self._commcell_object.disk_libraries._libraries[library_name]
+            library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
             request_xml = """
             <App_CreateStoragePolicyCopyReq copyName="{0}">
-                <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
+                <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{7}" numberOfStreamsToCombine="1">
                     <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
                     <library _type_="9" libraryId="{3}" libraryName="{4}" />
                     <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
@@ -1269,7 +1458,7 @@ class StoragePolicy(object):
                 </storagePolicyCopyInfo>
             </App_CreateStoragePolicyCopyReq>
             """.format(copy_name, self.storage_policy_id, self.storage_policy_name, library_id,
-                       library_name, media_agent_id, media_agent_name)
+                       library_name, media_agent_id, media_agent_name, snap_copy)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -1374,6 +1563,184 @@ class StoragePolicy(object):
     def storage_policy_name(self):
         """Treats the storage policy name as a read-only attribute."""
         return self._storage_policy_name
+
+    def run_backup_copy(self):
+        """
+        Runs the backup copy from Commcell for the given storage policy
+
+        Args:
+                None
+
+        Returns:
+                object - instance of the Job class for this backup copy job
+        Raises:
+            SDKException:
+
+                    if backup copy job failed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "storagePolicyName": self.storage_policy_name
+                    }
+                ],
+                "task": {
+                    "initiatedFrom": 2,
+                    "taskType": 1,
+                    "policyType": 3,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4028
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "snapToTapeOption": {
+                                    "allowMaximum": True,
+                                    "noofJobsToRun": 1
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+
+
+        backup_copy = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', backup_copy, request_json)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Backup copy job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '106', o_str)
+                else:
+                    raise SDKException('Storage', '106', 'Failed to run the backup copy job')
+            else:
+                raise SDKException('Response', '106')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def run_snapshot_cataloging(self):
+        """
+        Runs the deferred catalog job from Commcell for the given storage policy
+
+        Args:
+                None
+
+        Returns:
+                object - instance of the Job class for this snapshot cataloging job
+
+        Raises:
+            SDKException:
+
+                    if snapshot cataloging job failed
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "storagePolicyName": self.storage_policy_name
+                    }
+                ],
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 2,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "isEdgeDrive": False,
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4043
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "backupLevel": 2,
+                                "dataOpt": {
+                                    "useCatalogServer": True,
+                                    "enforceTransactionLogUsage": False
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        snapshot_catalog = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', snapshot_catalog, request_json)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Deferred catalog job failed\nError: "{0}"'.format(
+                        error_message)
+                    raise SDKException('Storage', '107', o_str)
+                else:
+                    raise SDKException('Storage', '107', 'Failed to run the deferred catalog job')
+            else:
+                raise SDKException('Response', '107')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def storage_policy_properties(self):
+        """Returns the storage policy properties
+
+            dict - consists of storage policy properties
+        """
+        return self._storage_policy_properties
+
+    @property
+    def library_name(self):
+        """Treats the library name as a read-only attribute."""
+        primary_copy = self._storage_policy_properties.get('copy')
+        if 'library' in primary_copy[0]:
+            library = primary_copy[0].get('library', {})
+            return library.get('libraryName')
+
+    @property
+    def library_id(self):
+        """Treats the library id as a read-only attribute."""
+        primary_copy = self._storage_policy_properties.get('copy')
+        if 'library' in primary_copy[0]:
+            library = primary_copy[0].get('library', {})
+            return library.get('libraryId')
 
     def run_aux_copy(self, storage_policy_copy_name, media_agent, use_scale=False, streams=0):
         """Runs the aux copy job from the commcell.
@@ -1491,7 +1858,7 @@ class StoragePolicy(object):
                 isinstance(copy_name, basestring) and isinstance(jobID, basestring)):
             raise SDKException('Storage', '101')
 
-        request_xml = """       
+        request_xml = """
         <App_JobOperationCopyReq operationType="2">
         <jobList appType="" commCellId="2" jobId="{0}"><copyInfo copyName="{1}" storagePolicyName="{2}"/></jobList>
         <commCellInfo commCellId="2"/></App_JobOperationCopyReq>
@@ -1539,19 +1906,19 @@ class StoragePolicy(object):
         <App_UpdateStoragePolicyCopyReq >
             <storagePolicyCopyInfo >
                 <StoragePolicyCopy>
-                    <copyName>{0}</copyName> 
+                    <copyName>{0}</copyName>
                     <storagePolicyName>{1}</storagePolicyName>
-                </StoragePolicyCopy>		
+                </StoragePolicyCopy>
                 <DDBPartitionInfo>
                     <maInfoList>
-                        <mediaAgent>  
+                        <mediaAgent>
                             <mediaAgentName>{2}</mediaAgentName>
                         </mediaAgent>
-                            </maInfoList>			
+                            </maInfoList>
                             <sidbStoreInfo>
-                                <sidbStoreFlags> 
+                                <sidbStoreFlags>
                             <enableTransactionalDDB>{3}</enableTransactionalDDB>
-                        </sidbStoreFlags> 
+                        </sidbStoreFlags>
                             </sidbStoreInfo>
                     </DDBPartitionInfo>
            </storagePolicyCopyInfo>
@@ -1600,7 +1967,7 @@ class StoragePolicy(object):
             raise SDKException('Storage', '102', err_msg)
 
         library_id = self._commcell_object.disk_libraries._libraries[library_name]
-        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]
+        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]['id']
 
         request_xml = """
         <App_CreateStoragePolicyCopyReq copyName="{0}">

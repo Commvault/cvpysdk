@@ -22,6 +22,9 @@ SecurityAssociation:
 
     _add_security_association() --  adds the security association with client or clientgroup
 
+    _security_association_json()--  generates security association blob with all
+                                    user-entity-role association
+
     has_role()                  --  checks if specified role exists on commcell
 
 """
@@ -55,6 +58,67 @@ class SecurityAssociation(object):
             }
 
         self._roles = self._get_security_roles()
+
+    @staticmethod
+    def _security_association_json(entity_dictionary):
+        """handles three way associations (role-user-entities)
+
+            Args:
+                entity_dictionary   --      combination of entity_type, entity names
+                                            and role
+                e.g.: entity_dict={
+                                'assoc1':
+                                    {
+                                        'entity_type':['entity_name'],
+                                        'entity_type':['entity_name', 'entity_name'],
+                                        'role': ['role1']
+                                    },
+                                'assoc2':
+                                    {
+                                        'mediaAgentName': ['networktestcs', 'standbycs'],
+                                        'clientName': ['Linux1'],
+                                        'role': ['New1']
+                                        }
+                                    }
+                entity_type         --      key for the entity present in dictionary
+                                            on which user will have access
+
+                entity_name         --      Value of the key
+
+                role                --      role will remain role in dictionary
+                e.g.: {"clientName":"Linux1"}
+                entity_type:    clientName, mediaAgentName, libraryName, userName,
+                                userGroupName, storagePolicyName, clientGroupName,
+                                schedulePolicyName, locationName, providerDomainName,
+                                alertName, workflowName, policyName, roleName
+
+                entity_name:    client name for entity_type 'clientName'
+                                Media agent name for entitytype 'mediaAgentName'
+                                similar for other entity_typees
+
+                request_type        --      decides whether to ADD, DELETE or
+                                            OVERWRITE user security association.
+
+        """
+        complete_association = []
+        for entity_key, entity_value in entity_dictionary.items():
+            for each_entity_key in entity_value:
+                for element in entity_value[each_entity_key]:
+                    if each_entity_key is not "role":
+                        association_blob = {
+                            "entities": {
+                                "entity": [{
+                                    each_entity_key: element
+                                }]
+                            },
+                            "properties": {
+                                "role": {
+                                    "roleName": entity_value['role'][0]
+                                }
+                            }
+                        }
+                        complete_association.append(association_blob)
+        return complete_association
 
     def __str__(self):
         """Representation string consisting of all available security roles on this commcell.

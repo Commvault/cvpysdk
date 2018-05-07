@@ -30,6 +30,8 @@ SAPOracleSubclient:
 from __future__ import unicode_literals
 
 from ..subclient import Subclient
+from past.builtins import basestring
+from ..exception import SDKException
 
 
 
@@ -82,13 +84,20 @@ class SAPOracleSubclient(Subclient):
         """Gets the subclient  related properties of SAP Oracle subclient.
 
         """
-
+        #subclient_options={}
+        #saporaclesubclient_options={}
+        
         if not bool(self._subclient_properties):
             super(SAPOracleSubclient, self)._get_subclient_properties()
 
         if 'sapForOracleSubclientProp' in self._subclient_properties:
             self._sapForOracleSubclientProp = self._subclient_properties\
                     ['sapForOracleSubclientProp']
+        self._sapForOracleSubclientProp["sapSelectiveOnlineFull"]=False
+        self._sapForOracleSubclientProp["sapData"]=True
+        self._sapForOracleSubclientProp["sapBackupArchiveLog"]=True
+        self._sapForOracleSubclientProp["sapArchiveDelete"]=True
+        
 
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.
@@ -103,4 +112,17 @@ class SAPOracleSubclient(Subclient):
                     "sapForOracleSubclientProp":self._sapForOracleSubclientProp
                 }
         }
+        #print (subclient_json)
         return subclient_json
+    
+    def _update_subclient_properties(self):
+        """Gets the subclient  related properties of SAP Oracle subclient.
+
+        """
+
+        if not bool(self._subclient_properties):
+            super(SAPOracleSubclient, self)._get_subclient_properties()
+
+        if 'sapForOracleSubclientProp' in self._subclient_properties:
+            self._sapForOracleSubclientProp = self._subclient_properties\
+                    ['sapForOracleSubclientProp']

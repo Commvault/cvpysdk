@@ -35,6 +35,7 @@ SERVICES_DICT_TEMPLATE = {
     'LOGOUT': '{0}Logout',
     'RENEW_LOGIN_TOKEN': '{0}RenewLoginToken',
     'COMMSERV': '{0}CommServ',
+    'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
 
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
@@ -67,7 +68,7 @@ SERVICES_DICT_TEMPLATE = {
     'KILL_JOB': '{0}Job/%s/action/kill',
     'ALL_JOBS': '{0}Jobs',
 
-    'GET_MEDIA_AGENTS': '{0}MediaAgent',
+    'GET_MEDIA_AGENTS': '{0}V2/MediaAgents',
     'LIBRARY': '{0}Library',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
@@ -90,6 +91,8 @@ SERVICES_DICT_TEMPLATE = {
     'BACKUPSET_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s',
     'SUBCLIENT_SCHEDULES': ('{0}Schedules?clientId=%s&apptypeId=%s&'
                             'backupsetId=%s&subclientId=%s'),
+    'REPORT_SCHEDULES': '{0}/ScheduleReports',
+    'OPTYPE_SCHEDULES': '{0}/Schedules?operationType=%s',
     'SCHEDULE': '{0}Schedules/%s',
     'ENABLE_SCHEDULE': '{0}Schedules/task/Action/Enable',
     'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
@@ -99,6 +102,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'USERGROUPS': '{0}UserGroup',
     'USERGROUP': '{0}UserGroup/%s',
+    'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
@@ -149,6 +153,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
     'ADD_USERS_TO_PLAN': '{0}V2/Plan/%s/Users',
     'GET_PLAN_TEMPLATE': '{0}V2/Plan/template?type=%s&subType=%s',
+    'ELIGIBLE_PLANS': '{0}V2/Plan/Eligible?%s',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -160,11 +165,16 @@ SERVICES_DICT_TEMPLATE = {
 
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
-    'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
+    'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
+    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
 
     'USERS': '{0}User',
-    'USER': '{0}User/%s',
+    'USER': '{0}User/%s?Level=50',
+    'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
+
+    'ROLES': '{0}Role',
+    'ROLE': '{0}Role/%s',
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
@@ -187,14 +197,35 @@ SERVICES_DICT_TEMPLATE = {
 
     'STORAGE_POOL': '{0}StoragePool',
 
+    'GET_ALL_MONITORING_POLICIES': '{0}getLMCloudAndMonitoringPolicyList',
+    'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
+    'GET_ALL_TEMPLATES': '{0}logmonitoring/search/getListOfTemplate',
+    'CREATE_DELETE_EDIT_OPERATIONS': '{0}logmonitoring/policy/operations',
+    'GET_MONITORING_POLICY_PROP': '{0}logmonitoring/Policy/%s',
+    'RUN_MONITORING_POLICY': '{0}logmonitoring/Policy/%s/Action/Run',
+
     'LICENSE': '{0}CommcellRegistrationInformation',
-    
-    'GET_ALL_MONITORING_POLICIES' : '{0}getLMCloudAndMonitoringPolicyList',
-    'GET_ALL_ANALYTICS_SERVERS' : '{0}AnalyticsServers',
-    'GET_ALL_TEMPLATES' : '{0}logmonitoring/search/getListOfTemplate',
-    'CREATE_DELETE_EDIT_OPERATIONS' : '{0}logmonitoring/policy/operations',
-    'GET_MONITORING_POLICY_PROP' : '{0}logmonitoring/Policy/%s',
-    'RUN_MONITORING_POLICY' : '{0}logmonitoring/Policy/%s/Action/Run'
+
+    'DR_GROUPS': '{0}DRGroups',
+    'GET_DR_GROUP': '{0}DRGroups/%s',
+    'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
+    'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
+
+    'ADD_EXCHANGE': '{0}pseudoClient',
+    'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
+    'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',
+    'GET_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
+    'DELETE_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
+    'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
+    'GET_EMAIL_POLICY_ASSOCIATIONS': '{0}Subclient/%s/EmailPolicyAssociation?discoveryType=%s',
+    'SET_EMAIL_POLICY_ASSOCIATIONS': '{0}/Subclient/EmailPolicyAssociation',
+
+    'GET_EVENTS': '{0}Events',
+    'GET_EVENT': '{0}Events/%s',
+
+    'GET_ACTIVITY_CONTROL': '{0}CommCell/ActivityControl',
+    'SET_ACTIVITY_CONTROL': '{0}CommCell/ActivityControl/%s/Action/%s',
+    'SET_COMMCELL_PROPERTIES': '{0}Commcell/properties'
 }
 
 

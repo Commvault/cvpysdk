@@ -54,7 +54,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                      destination_client=None,
                      destination_path=None,
                      overwrite=False,
-                     copy_preceedence=0,
+                     copy_precedence=0,
                      disk_name=None,
                      convert_to=None):
         """Restores the disk specified in the input paths list to the same location
@@ -68,7 +68,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
                 destinationpath     (str)   --path where the disk needs to be restored
 
-                copy_preceedence    (int)   -- SP copy precedence from which browse
+                copy_precedence    (int)   -- SP copy precedence from which browse
                                                     has to be performed
 
                 disk_Name           (str)   -- name of the disk which has to be restored
@@ -106,6 +106,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             raise SDKException('Subclient', '101')
 
         _disk_restore_option["unconditional_overwrite"] = overwrite
+        _disk_restore_option["copy_precedence"] = copy_precedence
 
         if destination_client is None:
             _disk_restore_option[
@@ -202,9 +203,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             destination_disktype    (str)   - type of disk needs to be restored like VHDX,VHD,VMDK
             source_item              (str)   - GUID of VM from which disk needs to be restored
                                             eg:\\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
-            copy_precedence_applicable (str) - True if needs copy_preceedence to be honoured
+            copy_precedence_applicable (str) - True if needs copy_precedence to be honoured
                                                                                         else False
-            copy_preceedence           (int) - the copy id from which browse and
+            copy_precedence           (int) - the copy id from which browse and
                                                             restore needs to be performed
 
             power_on                   (bool) - power on the VM after restore
@@ -259,7 +260,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             unconditional_overwrite=overwrite,
             power_on=power_on,
-            copy_preceedence=copy_precedence,
+            copy_precedence=copy_precedence,
             volume_level_restore=1,
             vcenter_client=destination_client,
             client_name=proxy_client,
@@ -322,7 +323,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             unconditional_overwrite=overwrite,
             power_on=power_on,
-            copy_preceedence=copy_precedence,
+            copy_precedence=copy_precedence,
             volume_level_restore=1,
             add_to_failover=add_to_failover,
             out_place=False

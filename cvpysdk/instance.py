@@ -10,14 +10,14 @@
 
 Instances and Instance are 2 classes defined in this file.
 
-Instances: Class for representing all the instances associated with a specific agent
+Instances:  Class for representing all the instances associated with a specific agent
 
-Instance:  Class for a single instance selected for an agent,
-                and to perform operations on that instance
+Instance:   Class for a single instance selected for an agent,
+and to perform operations on that instance
 
 
 Instances:
-    __init__(agent_object)          --  initialize object of Instances class associated with
+    __init__(agent_object)          --  initialise object of Instances class associated with
     the specified agent
 
     __str__()                       --  returns all the instances associated with the agent
@@ -33,17 +33,13 @@ Instances:
     get(instance_name)              --  returns the Instance class object
     of the input backup set name
 
-    add_sybase_instance(
-        sybase_options
-    )                               --  To add sybase server instance
+    add_sybase_instance()           --  To add sybase server instance
 
     refresh()                       --  refresh the instances associated with the agent
 
 
 Instance:
-    __init__(agent_object,
-             instance_name,
-             instance_id=None)      --  initialise object of Instance with the specified instance
+    __init__()                      --  initialise object of Instance with the specified instance
     name and id, and associated to the specified agent
 
     __repr__()                      --  return the instance name, the object is associated with
@@ -67,9 +63,9 @@ Instance:
 
     _restore_destination_json()     --  setter for destination options property in restore
 
-    _restore_fileoption_json()      -- setter for file option property in restore
+    _restore_fileoption_json()      --  setter for file option property in restore
 
-    _restore_destination_json()     -- setter for destination property in restore
+    _restore_destination_json()     --  setter for destination property in restore
 
 
     _restore_json()                 --  returns the apppropriate JSON request to pass for either
@@ -123,10 +119,16 @@ class Instances(object):
                 object - instance of the Instances class
         """
         self._agent_object = agent_object
+        self._client_object = self._agent_object._client_object
+
         self._commcell_object = self._agent_object._commcell_object
 
-        self._INSTANCES = self._commcell_object._services['GET_ALL_INSTANCES'] % (
-            self._agent_object._client_object.client_id
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._INSTANCES = self._services['GET_ALL_INSTANCES'] % (
+            self._client_object.client_id
         )
 
         self._instances = None
@@ -139,6 +141,9 @@ class Instances(object):
         from .instances.oracleinstance import OracleInstance
         from .instances.sybaseinstance import SybaseInstance
         from .instances.saporacleinstance import SAPOracleInstance
+        from .instances.mysqlinstance import MYSQLInstance
+        from .instances.lndbinstance import LNDBInstance
+        from .instances.postgresinstance import PostgreSQLInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -149,7 +154,10 @@ class Instances(object):
             'sap hana': SAPHANAInstance,
             'oracle': OracleInstance,
             'sybase': SybaseInstance,
-            'sap for oracle': SAPOracleInstance
+            'sap for oracle': SAPOracleInstance,
+            'mysql': MYSQLInstance,
+            'notes database': LNDBInstance,
+            'postgresql': PostgreSQLInstance
         }
 
     def __str__(self):
@@ -167,7 +175,7 @@ class Instances(object):
                 index + 1,
                 instance,
                 self._agent_object.agent_name,
-                self._agent_object._client_object.client_name
+                self._client_object.client_name
             )
             representation_string += sub_str
 
@@ -195,7 +203,7 @@ class Instances(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._INSTANCES)
+        flag, response = self._cvpysdk_object.make_request('GET', self._INSTANCES)
 
         if flag:
             if response.json():
@@ -221,8 +229,7 @@ class Instances(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def all_instances(self):
@@ -346,12 +353,12 @@ class Instances(object):
         sa_password = b64encode(sybase_options["sa_password"].encode()).decode()
         localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
 
-        enableAutoDiscovery = (sybase_options["enable_auto_discovery"])
+        enable_auto_discovery = sybase_options["enable_auto_discovery"]
 
         request_json = {
             "instanceProperties": {
                 "instance": {
-                    "clientName": self._agent_object._client_object.client_name,
+                    "clientName": self._client_object.client_name,
                     "appName": "Sybase",
                     "instanceName": sybase_options["instance_name"],
                     "_type_": 5,
@@ -363,7 +370,7 @@ class Instances(object):
                     "sybaseHome": sybase_options["sybase_home"],
                     "sybaseASE": sybase_options["sybase_ase"],
                     "configFile": sybase_options["config_file"],
-                    "enableAutoDiscovery": enableAutoDiscovery,
+                    "enableAutoDiscovery": enable_auto_discovery,
                     "sharedMemoryDirectory": sybase_options["shared_memory_directory"],
                     "defaultDatabaseStoragePolicy": {
                         "storagePolicyName": sybase_options["storage_policy"]
@@ -377,9 +384,8 @@ class Instances(object):
             }
         }
 
-        ADD_INSTANCE = self._commcell_object._services['ADD_SYBASE_INSTANCE']
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', ADD_INSTANCE, request_json
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_SYBASE_INSTANCE'], request_json
         )
         if flag:
             if response.json() and 'response' in response.json():
@@ -406,9 +412,7 @@ class Instances(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
@@ -435,6 +439,10 @@ class Instance(object):
         self._agent_object = agent_object
         self._commcell_object = self._agent_object._commcell_object
 
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
         if instance_id:
             # Use the instance id provided in the arguments
             self._instance_id = str(instance_id)
@@ -442,8 +450,8 @@ class Instance(object):
             # Get the id associated with this instance
             self._instance_id = self._get_instance_id()
 
-        self._INSTANCE = self._commcell_object._services['INSTANCE'] % (self._instance_id)
-        self._RESTORE = self._commcell_object._services['RESTORE']
+        self._INSTANCE = self._services['INSTANCE'] % (self._instance_id)
+        self._RESTORE = self._services['RESTORE']
 
         self._properties = None
         self._restore_association = None
@@ -477,7 +485,7 @@ class Instance(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._INSTANCE)
+        flag, response = self._cvpysdk_object.make_request('GET', self._INSTANCE)
 
         if flag:
             if response.json() and "instanceProperties" in response.json():
@@ -489,8 +497,7 @@ class Instance(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _set_instance_properties(self, attr_name, value):
         """sets the properties of this sub client.value is updated to instance once when post call
@@ -507,13 +514,14 @@ class Instance(object):
 
         """
         backup = None
-        exec("backup = self.%s" % (attr_name))  # Take backup of old value
-        exec("self.%s = %s" % (attr_name, 'value'))  # set new value
+        exec("backup = self.%s" % (attr_name))          # Take backup of old value
+        exec("self.%s = %s" % (attr_name, 'value'))     # set new value
 
+        # _get_instance_properties_json method must be added in all child classes
+        # not to be added for classes, which does not support updating properties
         request_json = self._get_instance_properties_json()
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._INSTANCE, request_json
-        )
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._INSTANCE, request_json)
 
         output = self._process_update_response(flag, response)
         if output[0]:
@@ -580,8 +588,7 @@ class Instance(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _process_restore_response(self, request_json):
         """Runs the CreateTask API with the request JSON provided for Restore,
@@ -601,9 +608,7 @@ class Instance(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._RESTORE, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._RESTORE, request_json)
 
         self._restore_association = None
 
@@ -621,8 +626,7 @@ class Instance(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _filter_paths(self, paths, is_single_path=False):
         """Filters the paths based on the Operating System, and Agent.
@@ -690,16 +694,16 @@ class Instance(object):
         if restore_option.get('overwrite') is not None:
             restore_option['unconditional_overwrite'] = restore_option['overwrite']
 
-        # set client details
-        client = restore_option.get("client",
-                                    self._agent_object._client_object)
+        # restore_option should use client key for destination client info
+        client = restore_option.get("client", self._agent_object._client_object)
 
         if isinstance(client, basestring):
             client = self._commcell_object.clients.get(client)
+
         restore_option["client_name"] = client.client_name
         restore_option["client_id"] = int(client.client_id)
 
-        #set time zone
+        # set time zone
         from_time = restore_option.get("from_time", None)
         to_time = restore_option.get("to_time", None)
         time_list = ['01/01/1970 00:00:00', '1/1/1970 00:00:00']
@@ -978,104 +982,126 @@ class Instance(object):
         return self._instance_name
 
     def browse(self, *args, **kwargs):
-        """Browses the content of a Backupset.
+        """Browses the content of the Instance.
 
             Args:
                 Dictionary of browse options:
                     Example:
+
                         browse({
-                            'path': 'c:\\hello',
+                            'path': 'c:\\\\hello',
+
                             'show_deleted': True,
+
                             'from_time': '2014-04-20 12:00:00',
+
                             'to_time': '2016-04-21 12:00:00'
                         })
 
-                    (OR)
-
+            Kwargs:
                 Keyword argument of browse options:
                     Example:
+
                         browse(
                             path='c:\\hello',
+
                             show_deleted=True,
+
                             from_time='2014-04-20 12:00:00',
+
                             to_time='2016-04-21 12:00:00'
                         )
 
-                Refer self._default_browse_options for all the supported options
+            Returns:
+                (list, dict)
+                    list    -   List of only the file, folder paths from the browse response
 
-        Returns:
-            list - List of only the file, folder paths from the browse response
+                    dict    -   Dictionary of all the paths with additional metadata retrieved
+                    from browse operation
 
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
+            Raises:
+                SDKException:
+                    if there are more than one backupsets in the instance
 
-        Raises:
-            SDKException:
-                if there are more than one backupsets in the instance
+
+            Refer `default_browse_options`_ for all the supported options.
+
+            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
+
         """
-        all_backupsets = self.backupsets._backupsets
-
         # do browse operation if there is only one backupset in the instance
         # raise `SDKException` if there is more than one backupset in the instance
 
-        if len(all_backupsets) == 1:
-            backupset_name = all_backupsets.keys()[0]
+        if len(self.backupsets.all_backupsets) == 1:
+            backupset_name = list(self.backupsets.all_backupsets.keys())[0]
             temp_backupset_obj = self.backupsets.get(backupset_name)
             return temp_backupset_obj.browse(*args, **kwargs)
         else:
             raise SDKException('Instance', '104')
 
     def find(self, *args, **kwargs):
-        """Searches a file/folder in the backupset backup content,
+        """Searches a file/folder in the backed up content of the instance,
             and returns all the files matching the filters given.
 
-         Args:
-            Dictionary of find options:
-                Example:
-                    find({
-                        'file_name': '*.txt',
-                        'show_deleted': True,
-                        'from_time': '2014-04-20 12:00:00',
-                        'to_time': '2016-04-21 12:00:00'
-                    })
+            Args:
+                Dictionary of browse options:
+                    Example:
 
-                (OR)
+                        find({
+                            'file_name': '*.txt',
 
-            Keyword argument of find options:
-                Example:
-                    find(
-                        file_name='*.txt',
-                        show_deleted=True,
-                        from_time=2014-04-20 12:00:00,
-                        to_time='2016-04-21 12:00:00'
-                    )
+                            'show_deleted': True,
 
-            Refer self._default_browse_options for all the supported options
+                            'from_time': '2014-04-20 12:00:00',
+
+                            'to_time': '2016-04-31 12:00:00'
+                        })
+
+            Kwargs:
+                Keyword argument of browse options:
+                    Example:
+
+                        find(
+                            file_name='*.txt',
+
+                            show_deleted=True,
+
+                            'from_time': '2014-04-20 12:00:00',
+
+                            to_time='2016-04-31 12:00:00'
+                        )
+
+            Returns:
+                (list, dict)
+                    list    -   List of only the file, folder paths from the browse response
+
+                    dict    -   Dictionary of all the paths with additional metadata retrieved
+                    from browse operation
+
+            Raises:
+                SDKException:
+                    if there are more than one backupsets in the instance
+
+
+            Refer `default_browse_options`_ for all the supported options.
 
             Additional options supported:
-                file_name       (str)   --   Find files with name
+                file_name       (str)   --  Find files with name
 
-                file_size_gt    (int)   --   Find files with size greater than size
+                file_size_gt    (int)   --  Find files with size greater than size
 
-                file_size_lt    (int)   --   Find files with size lesser than size
+                file_size_lt    (int)   --  Find files with size lesser than size
 
-                file_size_et    (int)   --   Find files with size equal to size
+                file_size_et    (int)   --  Find files with size equal to size
 
-        Returns:
-            list - List of only the file, folder paths from the browse response
+            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
 
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
-
-        Raises:
-            SDKException:
-                if there are more than one backupsets in the instance
         """
-        all_backupsets = self.backupsets._get_backupsets()
-
         # do find operation if there is only one backupset in the instance
         # raise `SDKException` if there is more than one backupset in the instance
 
-        if len(all_backupsets) == 1:
-            backupset_name = all_backupsets.keys()[0]
+        if len(self.backupsets.all_backupsets) == 1:
+            backupset_name = list(self.backupsets.all_backupsets.keys())[0]
             temp_backupset_obj = self.backupsets.get(backupset_name)
             return temp_backupset_obj.find(*args, **kwargs)
         else:
@@ -1087,11 +1113,7 @@ class Instance(object):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
-        if value.get("impersonate_user"):
-            use_impersonate = True
-
-        else:
-            use_impersonate = False
+        use_impersonate = bool(value.get("impersonate_user"))
 
         self._impersonation_json_ = {
             "useImpersonation": use_impersonate,
@@ -1174,13 +1196,13 @@ class Instance(object):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
+        # removed clientId from destClient as VSA Restores fail with it
         self._destination_restore_json = {
             "isLegalHold": False,
             "inPlace": value.get("in_place", True),
             "destPath": [value.get("destination_path", "")],
             "destClient": {
                 "clientName": value.get("client_name", ""),
-                "clientId": value.get("client_id", "")
             }
         }
 

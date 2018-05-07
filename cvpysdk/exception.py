@@ -80,7 +80,9 @@ EXCEPTION_DICT = {
         '101': 'Commcell is not reachable. Please check the commcell name and services again',
         '102': 'Authtoken not received. Please try again.',
         '103': 'Failed to get the CommServ details',
-        '104': 'Failed to send an email to specified user'
+        '104': 'Failed to send an email to specified user',
+        '105': 'Failed to run the Data Aging job',
+        '106': 'Failed to get the SAML token'
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
@@ -96,7 +98,9 @@ EXCEPTION_DICT = {
         '104': 'Time Value entered is not of correct format',
         '105': 'Script Type is not supported',
         '106': 'Failed to get the instance',
-        '107': 'Service Restart timed out'
+        '107': 'Service Restart timed out',
+        '108': 'Failed to get the log directory',
+        '109': 'Operation not supported for this Client'
     },
     'Agent': {
         '101': 'Data type of the input(s) is not valid',
@@ -107,6 +111,7 @@ EXCEPTION_DICT = {
     'Backupset': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
+        '103': 'Class object should be an instance of Agent / Instance class'
     },
     'Instance': {
         '101': 'Data type of the input(s) is not valid',
@@ -128,24 +133,30 @@ EXCEPTION_DICT = {
         '111': 'No File/Folder matched the input value',
         '112': 'Method Not Implemented',
         '113': 'Type of instance should either be the Instance class instance or string',
-        '114': 'Type of backupset should either be the Backupset class instance or string'
+        '114': 'Type of backupset should either be the Backupset class instance or string',
+        '115': 'Class object should be an instance of Agent / Instance / Backupset class'
     },
     'Job': {
         '101': 'Incorrect JobId',
         '102': '',
         '103': 'No job exists with the specified Job ID',
-        '104': 'No records found for this Job'
+        '104': 'No records found for this Job',
+        '105': 'Failed to get the Job Details',
+        '106': 'Unexpected response received from server'
     },
     'Storage': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Type of media agent should either be the MediaAgent class instance or string',
         '104': 'Type of library should either be the DiskLibrary class instance or string',
-        '105': 'No storage policies exist for this user'
+        '105': 'No storage policies exist for this user',
+        '106': 'Failed to run the backup copy job',
+        '107': 'Failed to run the deferred catalog job'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',
-        '102': 'Data type of the input(s) is not valid'
+        '102': 'Data type of the input(s) is not valid',
+        '103': 'Invalid operation type passed to Schedules class'
     },
     'ClientGroup': {
         '101': 'Data type of the input(s) is not valid',
@@ -203,6 +214,10 @@ EXCEPTION_DICT = {
         '101': 'Data type of input(s) is not valid',
         '102': ''
     },
+    'Role': {
+        '101': 'Data type of input(s) is not valid',
+        '102': ''
+    },
     'Security': {
         '101': 'Data type of input(s) is not valid',
         '102': ''
@@ -251,6 +266,19 @@ EXCEPTION_DICT = {
     'Monitoring': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
+    },
+
+    'FailoverGroup': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
+    'ConfigurationPolicies': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
+    'Snap': {
+        '101': 'Volume id is not set, Failed to perform Snap Operation',
+        '102': 'Failed to run the job for Snap Operation',
     }
 }
 

@@ -16,7 +16,7 @@ Agent:      Class for a single agent selected for a client, and to perform opera
 
 
 Agents:
-    __init__(client_object)     --  initialise object of Agents class associated with
+    __init__(client_object)     --  initialize object of Agents class associated with
     the specified client
 
     __str__()                   --  returns all the agents associated with the client
@@ -37,7 +37,7 @@ Agents:
 Agent:
     __init__(client_object,
              agent_name,
-             agent_id=None)     --   initialise object of Agent with the specified agent name
+             agent_id=None)     --   initialize object of Agent with the specified agent name
     and id, and associated to the specified client
 
     __repr__()                  --   return the agent name, the instance is associated with
@@ -74,8 +74,8 @@ import time
 
 from past.builtins import basestring
 
-from .backupset import Backupsets
 from .instance import Instances
+from .backupset import Backupsets
 from .schedules import Schedules
 from .exception import SDKException
 
@@ -95,18 +95,29 @@ class Agents(object):
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
 
-        self._AGENTS = self._commcell_object._services['GET_ALL_AGENTS'] % (
-            self._client_object.client_id
-        )
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._AGENTS = self._services['GET_ALL_AGENTS'] % (self._client_object.client_id)
 
         self._agents = None
         self.refresh()
+
+        from .agents.exchange_database_agent import ExchangeDatabaseAgent
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        self._agents_dict = {
+            'exchange database': ExchangeDatabaseAgent
+        }
 
     def __str__(self):
         """Representation string consisting of all agents of the client.
 
             Returns:
-                str - string of all the agents of a client
+                str     -   string of all the agents of a client
+
         """
         representation_string = '{:^5}\t{:^20}\t{:^20}\n\n'.format('S. No.', 'Agent', 'Client')
 
@@ -140,7 +151,7 @@ class Agents(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._AGENTS)
+        flag, response = self._cvpysdk_object.make_request('GET', self._AGENTS)
 
         if flag:
             if response.json() and 'agentProperties' in response.json():
@@ -156,19 +167,20 @@ class Agents(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def all_agents(self):
-        """Returns dict of all the agents installed on client
-        
-            dict - consists of all agents in the client
-                    {
-                         "agent1_name": agent1_id,
-                         "agent2_name": agent2_id
-                    }
-                    
+        """Returns dict of all the agents installed on client.
+
+            dict    -   consists of all agents in the client
+
+                {
+                    "agent1_name": agent1_id,
+
+                    "agent2_name": agent2_id
+                }
+
         """
         return self._agents
 
@@ -211,7 +223,9 @@ class Agents(object):
             agent_name = agent_name.lower()
 
             if self.has_agent(agent_name):
-                return Agent(self._client_object, agent_name, self._agents[agent_name])
+                return self._agents_dict.get(agent_name, Agent)(
+                    self._client_object, agent_name, self._agents[agent_name]
+                )
 
             raise SDKException('Agent', '102', 'No agent exists with name: {0}'.format(agent_name))
 
@@ -224,24 +238,32 @@ class Agent(object):
     """Class for performing agent operations of an agent for a specific client."""
 
     def __init__(self, client_object, agent_name, agent_id=None):
-        """Initialise the agent object.
+        """Initialize the instance of the Agent class.
 
             Args:
-                client_object (object)  --  instance of the Client class to which the agent belongs
+                client_object   (object)    --  instance of the Client class
 
-                agent_name    (str)     --  name of the agent (File System, Virtual Server, etc.)
+                agent_name      (str)       --  name of the agent
 
-                agent_id      (str)     --  id of the associated agent
+                    (File System, Virtual Server, etc.)
+
+                agent_id        (str)       --  id of the agent
+
                     default: None
 
             Returns:
-                object - instance of the Agent class
+                object  -   instance of the Agent class
+
         """
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
         self._agent_name = agent_name.lower()
 
-        self._AGENT = self._commcell_object._services['AGENT']
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._AGENT = self._services['AGENT']
 
         if agent_id:
             # Use the agent id mentioned in the arguments
@@ -250,14 +272,13 @@ class Agent(object):
             # Get the agent id if agent id is not provided
             self._agent_id = self._get_agent_id()
 
-        self.GET_AGENT = self._commcell_object._services['GET_AGENT'] % (
-            self._client_object.client_id, agent_id
-        )
+        self.GET_AGENT = self._services['GET_AGENT'] % (self._client_object.client_id, agent_id)
 
         self._agent_properties = None
-        self.instances = None
-        self.backupsets = None
-        self.schedules = None
+
+        self._instances = None
+        self._backupsets = None
+        self._schedules = None
 
         self.refresh()
 
@@ -288,7 +309,7 @@ class Agent(object):
                     if response is not success
 
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self.GET_AGENT)
+        flag, response = self._cvpysdk_object.make_request('GET', self.GET_AGENT)
 
         if flag:
             if response.json() and 'agentProperties' in response.json():
@@ -296,18 +317,19 @@ class Agent(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _request_json_(self, option, enable=True, enable_time=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
-                option (str)  --  string option for which to run the API for
+                option  (str)   --  string option for which to run the API for
+
                     e.g.; Backup / Restore
 
             Returns:
-                dict - JSON request to pass to the API
+                dict    -   JSON request to pass to the API
+
         """
         options_dict = {
             "Backup": 1,
@@ -361,13 +383,61 @@ class Agent(object):
 
     @property
     def agent_id(self):
-        """Treats the agent id as a read-only attribute."""
+        """Returns the id of the Agent."""
         return self._agent_id
 
     @property
     def agent_name(self):
-        """Treats the agent name as a read-only attribute."""
+        """Returns the name of the Agent."""
         return self._agent_name
+
+    @property
+    def is_backup_enabled(self):
+        """Returns boolean specifying whether backup is enabled for this agent or not."""
+        for activitytype in self._agent_properties['idaActivityControl']['activityControlOptions']:
+            if activitytype['activityType'] == 1:
+                return activitytype['enableActivityType']
+
+        return False
+
+    @property
+    def is_restore_enabled(self):
+        """Returns boolean specifying whether restore is enabled for this agent or not."""
+        for activitytype in self._agent_properties['idaActivityControl']['activityControlOptions']:
+            if activitytype['activityType'] == 2:
+                return activitytype['enableActivityType']
+
+        return False
+
+    @property
+    def instances(self):
+        """Returns the instance of the Instances class representing the list of Instances
+        installed / configured on the Client for the selected Agent.
+        """
+        if self._instances is None:
+            self._instances = Instances(self)
+
+        return self._instances
+
+    @property
+    def backupsets(self):
+        """Returns the instance of the Backupsets class representing the list of Backupsets
+        installed / configured on the Client for the selected Agent.
+        """
+        if self._backupsets is None:
+            self._backupsets = Backupsets(self)
+
+        return self._backupsets
+
+    @property
+    def schedules(self):
+        """Returns the instance of the Schedules class representing the list of Schedules
+        installed / configured on the Client for the selected Agent.
+        """
+        if self._schedules is None:
+            self._schedules = Schedules(self)
+
+        return self._schedules
 
     def enable_backup(self):
         """Enable Backup for this Agent.
@@ -382,9 +452,7 @@ class Agent(object):
         """
         request_json = self._request_json_('Backup')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._AGENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -400,8 +468,7 @@ class Agent(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_backup_at_time(self, enable_time):
         """Disables Backup if not already disabled, and enables at the time specified.
@@ -431,9 +498,7 @@ class Agent(object):
 
         request_json = self._request_json_('Backup', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._AGENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -449,8 +514,7 @@ class Agent(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def disable_backup(self):
         """Disables Backup for this Agent.
@@ -465,9 +529,7 @@ class Agent(object):
         """
         request_json = self._request_json_('Backup', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._AGENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -483,8 +545,7 @@ class Agent(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_restore(self):
         """Enable Restore for this Agent.
@@ -499,9 +560,7 @@ class Agent(object):
         """
         request_json = self._request_json_('Restore')
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._AGENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -517,8 +576,7 @@ class Agent(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_restore_at_time(self, enable_time):
         """Disables Restore if not already disabled, and enables at the time specified.
@@ -548,9 +606,7 @@ class Agent(object):
 
         request_json = self._request_json_('Restore', False, enable_time)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._AGENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -566,8 +622,7 @@ class Agent(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def disable_restore(self):
         """Disables Restore for this Agent.
@@ -582,9 +637,7 @@ class Agent(object):
         """
         request_json = self._request_json_('Restore', False)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._AGENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
 
         if flag:
             if response.json() and 'response' in response.json():
@@ -599,31 +652,12 @@ class Agent(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    @property
-    def is_backup_enabled(self):
-        """Returns boolean specifying whether backup is enabled for this agent or not."""
-        for activitytype in self._agent_properties['idaActivityControl']['activityControlOptions']:
-            if activitytype['activityType'] == 1:
-                return activitytype['enableActivityType']
-
-        return False
-
-    @property
-    def is_restore_enabled(self):
-        """Returns boolean specifying whether restore is enabled for this agent or not."""
-        for activitytype in self._agent_properties['idaActivityControl']['activityControlOptions']:
-            if activitytype['activityType'] == 2:
-                return activitytype['enableActivityType']
-
-        return False
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def refresh(self):
         """Refresh the properties of the Agent."""
         self._get_agent_properties()
 
-        self.instances = Instances(self)
-        self.backupsets = Backupsets(self)
-        self.schedules = Schedules(self)
+        self._instances = None
+        self._backupsets = None
+        self._schedules = None

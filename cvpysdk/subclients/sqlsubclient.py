@@ -38,8 +38,44 @@ from ..exception import SDKException
 
 
 class SQLServerSubclient(DatabaseSubclient):
-    """Derived class from Subclient Base class, representing a file system subclient,
+    """Derived class from Subclient Base class, representing a sql server subclient,
         and to perform operations on that subclient."""
+
+    def _get_subclient_properties(self):
+        """Gets the subclient  related properties of SQL Server subclient.           
+           
+        """
+        super(DatabaseSubclient,self)._get_subclient_properties()
+
+        if 'mssqlSubClientProp' in self._subclient_properties:
+            self._mssql_subclient_prop = self._subclient_properties['mssqlSubClientProp']
+
+        if 'content' in self._subclient_properties:
+            self._content = self._subclient_properties['content']
+            
+        self._is_file_group_subclient = False   
+        if 'sqlSubclientType' in self._mssql_subclient_prop:
+            self._is_file_group_subclient = self._mssql_subclient_prop['sqlSubclientType'] == 2
+    
+    def _get_subclient_properties_json(self):
+        """get the all subclient related properties of this subclient.        
+           
+           Returns:
+                dict - all subclient properties put inside a dict
+           
+        """
+        subclient_json = {
+            "subClientProperties":
+                {
+                    "proxyClient": self._proxyClient,
+                    "subClientEntity": self._subClientEntity,
+                    "mssqlSubClientProp": self._mssql_subclient_prop,
+                    "content": self._content,
+                    "commonProperties": self._commonProperties,
+                    "contentOperationType": 1
+                }
+        }
+        return subclient_json
 
     @property
     def content(self):
@@ -57,7 +93,7 @@ class SQLServerSubclient(DatabaseSubclient):
         if 'content' in self._subclient_properties:
             subclient_content = self._subclient_properties['content']
         else:
-            subclient_content = []
+            return []
 
         database_name = None
         content_list = []
@@ -69,7 +105,6 @@ class SQLServerSubclient(DatabaseSubclient):
             if 'mssqlDbContent' in content:
                 content_list.append(content["mssqlDbContent"]["databaseName"])
             elif 'mssqlFGContent' in content:
-                self._is_file_group_subclient = True
                 content_list.append(content['mssqlFGContent']['databaseName'])
 
         if self._is_file_group_subclient:
@@ -82,7 +117,7 @@ class SQLServerSubclient(DatabaseSubclient):
 
     @content.setter
     def content(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to add a new File System Subclient
+        """Creates the list of content JSON to pass to the API to add a new sql server Subclient
             with the content passed in subclient content.
 
             Args:
@@ -94,13 +129,9 @@ class SQLServerSubclient(DatabaseSubclient):
         content = []
 
         if self._is_file_group_subclient:
-            for file_group in subclient_content[1]:
-                sql_server_dict = {
-                    "mssqlFGContent": {
-                        "databaseName": file_group
-                    }
-                }
-                content.append(sql_server_dict)
+            err_message = 'Content addition is not supported for FILE/ FILE GROUP subclient.'
+            'Please use Commcell Console to update the content.'
+            raise SDKException('Subclient', '102', err_message)
         else:
             for database_name in subclient_content:
                 sql_server_dict = {
@@ -110,40 +141,7 @@ class SQLServerSubclient(DatabaseSubclient):
                 }
                 content.append(sql_server_dict)
 
-        self._set_subclient_properties("_content",content)
-
-    def _get_subclient_properties(self):
-        """Gets the subclient  related properties of File System subclient.           
-           
-        """
-        super(DatabaseSubclient,self)._get_subclient_properties()
-        if 'impersonateUser' in self._subclient_properties:
-            self._impersonateUser = self._subclient_properties['impersonateUser']
-        if 'fsSubClientProp' in self._subclient_properties:
-            self._fsSubClientProp = self._subclient_properties['fsSubClientProp']
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
-    
-    def _get_subclient_properties_json(self):
-        """get the all subclient related properties of this subclient.        
-           
-           Returns:
-                dict - all subclient properties put inside a dict
-           
-        """
-        subclient_json = {
-            "subClientProperties":
-                {
-                    "impersonateUser": self._impersonateUser,
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
-                }
-        }
-        return subclient_json
-    
+        self._set_subclient_properties("_content", content)
     
     @property
     def browse(self):
@@ -216,3 +214,73 @@ class SQLServerSubclient(DatabaseSubclient):
         )
 
         return self._process_backup_response(flag, response)
+
+    @property
+    def mssql_subclient_prop(self):
+        """ getter for sql server subclient properties """
+        return self._mssql_subclient_prop
+
+    @mssql_subclient_prop.setter
+    def mssql_subclient_prop(self, value):
+        """
+
+            Args:
+                value (list)  --  list of the category and properties to update on the subclient
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        """
+        category, prop = value
+
+        if self._is_file_group_subclient:
+            err_message = 'Updating properties is not supported for FILE/ FILE GROUP subclient.'
+            'Please use Commcell Console to update the subclient.'
+            raise SDKException('Subclient', '102', err_message)
+
+        self._set_subclient_properties(category, prop)
+
+    def update_content(self, subclient_content, action):
+        """Updates the sql server subclient contents with supplied content list.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+                
+                action (int)  --   action to perform on subclient
+                1: OVERWRITE, 2: ADD, 3: DELETE
+
+            Returns:
+                list - list of the appropriate JSON to send to the POST Subclient API
+        """
+        request_json = self._get_subclient_properties_json()
+        content_list = []
+
+        if self._is_file_group_subclient:
+            err_message = 'Content modification is not supported for FILE/ FILE GROUP subclient.'
+            'Please use Commcell Console to update the content.'
+            raise SDKException('Subclient', '102', err_message)
+        else:
+            for database_name in subclient_content:
+                sql_server_dict = {
+                    "mssqlDbContent": {
+                        "databaseName": database_name
+                    }
+                }
+                content_list.append(sql_server_dict)
+        request_json['subClientProperties']['content'] = content_list
+
+        content_op_dict = {
+            "contentOperationType": action
+        }
+        request_json['subClientProperties'].update(content_op_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._SUBCLIENT, request_json
+        )
+
+        output = self._process_update_response(flag, response)
+
+        if output[0]:
+            return
+        else:
+            o_str = 'Failed to update content of subclient\nError: "{0}"'
+            raise SDKException('Subclient', '102', o_str.format(output[2]))

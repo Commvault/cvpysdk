@@ -49,6 +49,7 @@ import threading
 from ..instance import Instance
 from ..exception import SDKException
 from ..job import Job
+from ..constants import SQLDefines
 
 
 class SQLServerInstance(Instance):
@@ -61,12 +62,38 @@ class SQLServerInstance(Instance):
             restore_path=None,
             drop_connections_to_databse=False,
             overwrite=True,
-            destination_instance=None):
+            destination_instance=None,
+            to_time=None,
+            sql_restore_type=SQLDefines.DATABASE_RESTORE,
+            sql_recover_type=SQLDefines.STATE_RECOVER,
+            undo_path=None,
+            restricted_user=None
+    ):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
-                content_to_restore   (list)  --  databases list to restore
-
+                content_to_restore (list): databases list to restore
+                
+                restore_path (list, optional): list of dicts for restore paths of database files
+                
+                drop_connections_to_databse (bool, optional): drop connections to database during restore
+                
+                overwrite (bool, optional): overwrite database on restore
+                
+                destination_instance (str): restore databases to this sql instance
+                
+                to_time (str, optional): restore to time
+                
+                sql_restore_type (str, optional): type of sql restore state 
+                (DATABASE_RESTORE, STEP_RESTORE, RECOVER_ONLY)
+                
+                sql_recover_type (str, optional): type of sql restore state 
+                (STATE_RECOVER, STATE_NORECOVER, STATE_STANDBY)
+                
+                undo_path (str, optional): file path for undo path for sql server standby restore
+                
+                restricted_user (bool, optional): Restore database in restricted user mode
+                
             Returns:
                 dict - JSON request to pass to the API
         """
@@ -74,7 +101,7 @@ class SQLServerInstance(Instance):
         self._get_sql_restore_options(content_to_restore)
 
         if destination_instance is None:
-            destination_instance = self.instance_name
+            destination_instance = (self.instance_name).lower()
         else:
             if destination_instance not in self.destination_instances_dict:
                 raise SDKException(
@@ -110,10 +137,10 @@ class SQLServerInstance(Instance):
                     "options": {
                         "restoreOptions": {
                             "sqlServerRstOption": {
-                                "sqlRecoverType": 0,
+                                "sqlRecoverType": sql_recover_type,
                                 "dropConnectionsToDatabase": drop_connections_to_databse,
                                 "overWrite": overwrite,
-                                "sqlRestoreType": 0,
+                                "sqlRestoreType": sql_restore_type,
                                 "database": content_to_restore,
                                 "restoreSource": content_to_restore
                             },
@@ -135,14 +162,44 @@ class SQLServerInstance(Instance):
             }
         }
 
+        if sql_recover_type == SQLDefines.STATE_STANDBY:
+            if undo_path is not None:
+                undo_path_dict = {
+                    "fileOption": {
+                        "mapFiles": {
+                            "renameFilesSuffix": undo_path
+                        }
+                    }
+                }
+                request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(undo_path_dict)
+            else:
+                raise SDKException('Instance', '102', 'Failed to set Undo Path for Standby Restore.')
+
         if restore_path is not None:
             restore_path_dict = {
-                "restoreToDiskPath": restore_path,
-                "restoreToDisk": True
+                "device":
+                    restore_path
             }
-
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
                 'sqlServerRstOption'].update(restore_path_dict)
+
+        if restricted_user is not None:
+            restricted_user_dict = {
+                "dbOnly":
+                    restricted_user
+            }
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'sqlServerRstOption'].update(restricted_user_dict)
+
+        if to_time is not None:
+            to_time_dict = {
+                "browseOption": {
+                    "timeRange": {
+                        "toTimeValue": to_time
+                    }
+                }
+            }
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(to_time_dict)
 
         return request_json
 
@@ -151,7 +208,7 @@ class SQLServerInstance(Instance):
             and returns the contents after parsing the response.
 
             Args:
-                request_json    (dict)  --  JSON request to run for the API
+                request_json (dict):  JSON request to run for the API
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -190,7 +247,7 @@ class SQLServerInstance(Instance):
             and returns the contents after parsing the response.
 
             Args:
-                content_to_restore   (list)  --  databases list to restore
+                content_to_restore (list):  Databases list to restore
 
             Returns:
                 dict - dictionary consisting of the sql destination server options
@@ -214,7 +271,7 @@ class SQLServerInstance(Instance):
             contents_dict.append(database_dict)
 
         request_json = {
-            "restoreDbType": 2,
+            "restoreDbType": 0,
             "sourceInstanceId": int(self.instance_id),
             "selectedDatabases": contents_dict
         }
@@ -256,9 +313,9 @@ class SQLServerInstance(Instance):
             if any exception is raised while running the backup job for the Subclient.
 
             Args:
-                subclient_name (str)   --  name of the subclient to trigger the backup for
+                subclient_name (str):  Name of the subclient to trigger the backup for
 
-                return_list    (list)  --  list to append the job object to
+                return_list (list):  List to append the job object to
         """
         try:
             job = self.subclients.get(subclient_name).backup('Full')
@@ -272,7 +329,7 @@ class SQLServerInstance(Instance):
             specified, and returns the contents after parsing the response.
 
             Args:
-                browse_request    (dict)  --  JSON request to be sent to Server
+                browse_request (dict):  JSON request to be sent to Server
 
             Returns:
                 list - list of all databases
@@ -368,15 +425,11 @@ class SQLServerInstance(Instance):
         """Gets the list of the backed up databases for this instance in the given time frame.
 
             Args:
-                from_date           (str)   --  date to get the contents after
-                        format: dd/MM/YYYY
-                        gets contents from 01/01/1970 if not specified
-                    default: None
+                from_date (str): date to get the contents after.  Format: dd/MM/YYYY
+                Gets contents from 01/01/1970 if not specified.  Defaults to None.
 
-                to_date             (str)  --  date to get the contents before
-                        format: dd/MM/YYYY
-                        gets contents till current day if not specified
-                    default: None
+                to_date (str): date to get the contents before.  Format: dd/MM/YYYY
+                Gets contents till current day if not specified.  Defaults to None.
 
             Returns:
                 list - list of all databases
@@ -436,21 +489,38 @@ class SQLServerInstance(Instance):
             content_to_restore,
             drop_connections_to_databse=False,
             overwrite=True,
-            restore_path=None):
+            restore_path=None,
+            to_time=None,
+            sql_restore_type=SQLDefines.DATABASE_RESTORE,
+            sql_recover_type=SQLDefines.STATE_RECOVER,
+            undo_path=None,
+            restricted_user=None,
+            destination_instance=None
+    ):
         """Restores the databases specified in the input paths list.
 
             Args:
-                content_to_restore             (list)  --  list of databases to restore
+                content_to_restore (list):  List of databases to restore.
 
-                drop_connections_to_databse    (bool)  --  Drop connections to database
-                    default: False
+                drop_connections_to_databse (bool):  Drop connections to database.  Defaults to False.
 
-                overwrite                      (bool)  --  unconditional overwrite files during
-                                                               restore
-                    default: True
+                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.
 
-                restore_path                   (str)   --  existing path on disk to restore
-                    default: None
+                restore_path (str):  Existing path on disk to restore.  Defaults to None.
+
+                to_time (str):  Restore to time.  Defaults to None.
+
+                sql_recover_type (str):  Type of sql recovery state. (STATE_RECOVER, STATE_NORECOVER, STATE_STANDBY)
+                Defaults to STATE_RECOVER.
+
+                sql_restore_type (str):  Type of sql restore state.  (DATABASE_RESTORE, STEP_RESTORE, RECOVER_ONLY)
+                Defaults to DATABASE_RESTORE.
+                
+                undo_path (str):  File path for undo path for sql standby restores.  Defaults to None.
+
+                restricted_user (bool):  Restore database in restricted user mode.  Defaults to None.
+
+                destination_instance (str):  Destination instance to restore too.  Defaults to None.
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -466,11 +536,20 @@ class SQLServerInstance(Instance):
         if not isinstance(content_to_restore, list):
             raise SDKException('Instance', '101')
 
+        if destination_instance is not None:
+            destination_instance = destination_instance.lower()
+
         request_json = self._restore_request_json(
             content_to_restore,
             drop_connections_to_databse=drop_connections_to_databse,
             overwrite=overwrite,
-            restore_path=restore_path
+            restore_path=restore_path,
+            to_time=to_time,
+            sql_restore_type=sql_restore_type,
+            sql_recover_type=sql_recover_type,
+            undo_path=undo_path,
+            restricted_user=restricted_user,
+            destination_instance=destination_instance
         )
 
         return self._process_restore_response(request_json)
@@ -485,19 +564,15 @@ class SQLServerInstance(Instance):
         """Restores the databases specified in the input paths list.
 
             Args:
-                content_to_restore             (list)  --  list of databases to restore
+                content_to_restore (list):  List of databases to restore.
 
-                destination_server             (str)   --  Destination server(instance) name
+                destination_server (str):  Destination server(instance) name.
 
-                drop_connections_to_databse    (bool)  --  Drop connections to database
-                    default: False
+                drop_connections_to_databse (bool): Drop connections to database.  Defaults to False.
 
-                overwrite                      (bool)  --  unconditional overwrite files during
-                                                               restore
-                    default: True
+                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.
 
-                restore_path                   (str)   --  existing path on disk to restore
-                    default: None
+                restore_path (str):  Existing path on disk to restore.  Default to None.
 
             Returns:
                 object - instance of the Job class for this restore job

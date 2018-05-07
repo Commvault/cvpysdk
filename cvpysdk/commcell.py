@@ -42,8 +42,10 @@ Commcell:
 
     refresh()                   --  refresh the properties associated with the Commcell
     class instance
+    run_data_aging()            --  triggers data aging job from the commcell level
 
-    run_data_aging()             --  run data ageing from comcell level
+    get_saml_token()            --  returns the SAML token for the currently logged-in user
+
 
 Commcell instance Attributes
 ============================
@@ -66,6 +68,8 @@ Commcell instance Attributes
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
     class instance is connected to
+
+    **auth_token**              --  returns the `Authtoken` for the current session to the commcell
 
     **device_id**               --  returns the id associated with the calling machine
 
@@ -99,33 +103,44 @@ Commcell instance Attributes
     **client_groups**           --  returns the instance of the `ClientGroups` class,
     to interact with the client groups added to the Commcell
 
-    **global_filters**       --  returns the instance of the `GlobalFilters` class,
+    **global_filters**          --  returns the instance of the `GlobalFilters` class,
     to interact with the global filters available on the Commcell
 
-    **datacube**            --  returns the instance of the `Datacube` class,
+    **datacube**                --  returns the instance of the `Datacube` class,
     to interact with the datacube engine deployed on the Commcell
 
-    **plans**               --  returns the instance of the `Plans` class,
+    **plans**                   --  returns the instance of the `Plans` class,
     to interact with the plans associated with the Commcell
 
-    **job_controller**      --  returns the instance of the `JobController` class,
+    **job_controller**          --  returns the instance of the `JobController` class,
     to interact with all the jobs finished / running on the Commcell
 
-    **users**               --  returns the instance of the `Users` class,
+    **users**                   --  returns the instance of the `Users` class,
     to interact with the users added to the Commcell
 
-    **download_center**     --  returns the instance of the `DownloadCenter` class,
+    **roles**                   --  returns the instance of the `Roles` class,
+    to interact with the roles added to the Commcell
+
+    **download_center**         --  returns the instance of the `DownloadCenter` class,
     to interact with the download center repositories deployed on the Commcell WebConsole
 
-    **organizations**       --  returns the instance of the `Organizations` class,
+    **organizations**           --  returns the instance of the `Organizations` class,
     to interact with the organizations/companies added on the Commcell
 
-    **storage_pools**       --  returns the instance of the `StoragePools` class,
+    **storage_pools**           --  returns the instance of the `StoragePools` class,
     to interact with the storage pools added to the Commcell Admin Console
-    
-    **monitoring_policies**       --  returns the instance of the `MonitoringPolicies` class,
-    to interact with the MonitoringPolicies added to the Commcell 
 
+    **monitoring_policies**     --  returns the instance of the `MonitoringPolicies` class,
+    to interact with the MonitoringPolicies added to the Commcell
+
+    **array_management**        --  returns the instance of the `ArrayManagement` class,
+    to perform SNAP related operations on the Commcell
+
+    **activity_control**        --  returns the instance of the `ActivityControl` class,
+    to interact with the Activity Control on the Commcell
+
+    **event_viewer**            --  returns the instance of the `Events` class,
+    to interact with the Events associated on the Commcell
 
 """
 
@@ -162,10 +177,16 @@ from .datacube.datacube import Datacube
 from .plan import Plans
 from .job import JobController
 from .security.user import Users
+from .security.role import Roles
 from .download_center import DownloadCenter
 from .organization import Organizations
 from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
+from .policy import Policies
+from .schedules import SchedulePattern
+from .activitycontrol import ActivityControl
+from .eventviewer import Events
+from .array_management import ArrayManagement
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -268,6 +289,7 @@ class Commcell(object):
         self._disk_libraries = None
         self._storage_policies = None
         self._schedule_policies = None
+        self._policies = None
         self._user_groups = None
         self._domains = None
         self._client_groups = None
@@ -276,10 +298,14 @@ class Commcell(object):
         self._plans = None
         self._job_controller = None
         self._users = None
+        self._roles = None
         self._download_center = None
         self._organizations = None
         self._storage_pools = None
+        self._activity_control = None
+        self._events = None
         self._monitoring_policies = None
+        self._array_management = None
 
         self.refresh()
 
@@ -337,7 +363,9 @@ class Commcell(object):
         del self._storage_policies
         del self._schedule_policies
         del self._user_groups
+        del self._policies
         del self._domains
+        del self._roles
         del self._client_groups
         del self._global_filters
         del self._datacube
@@ -347,7 +375,10 @@ class Commcell(object):
         del self._download_center
         del self._organizations
         del self._storage_pools
+        del self._activity_control
+        del self._events
         del self._monitoring_policies
+        del self._array_management
 
         del self._web_service
         del self._cvpysdk_object
@@ -392,8 +423,7 @@ class Commcell(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _qoperation_execute(self, request_xml):
         """Makes a qoperation execute rest api call
@@ -421,8 +451,7 @@ class Commcell(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def commserv_guid(self):
@@ -458,6 +487,11 @@ class Commcell(object):
     def webconsole_hostname(self):
         """Returns the value of the host name of the webconsole used to connect to the Commcell."""
         return self._headers['Host']
+
+    @property
+    def auth_token(self):
+        """Returns the Authtoken for the current session to the Commcell."""
+        return self._headers['Authtoken']
 
     @property
     def device_id(self):
@@ -553,6 +587,19 @@ class Commcell(object):
                 self._schedule_policies = SchedulePolicies(self)
 
             return self._schedule_policies
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def policies(self):
+        """Returns the instance of the Policies class."""
+        try:
+            if self._policies is None:
+                self._policies = Policies(self)
+
+            return self._policies
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
         except SDKException:
@@ -663,6 +710,19 @@ class Commcell(object):
             return None
 
     @property
+    def roles(self):
+        """Returns the instance of the Roles class."""
+        try:
+            if self._roles is None:
+                self._roles = Roles(self)
+
+            return self._roles
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
     def download_center(self):
         """Returns the instance of the DownloadCenter class."""
         try:
@@ -700,15 +760,54 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
         except SDKException:
             return None
-            
+
     @property
     def monitoring_policies(self):
         """Returns the instance of the MonitoringPolicies class."""
         try:
             if self._monitoring_policies is None:
                 self._monitoring_policies = MonitoringPolicies(self)
-                
+
             return self._monitoring_policies
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def activity_control(self):
+        """Returns the instance of the ActivityControl class."""
+        try:
+            if self._activity_control is None:
+                self._activity_control = ActivityControl(self)
+
+            return self._activity_control
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def event_viewer(self):
+        """Returns the instance of the Event Viewer class."""
+        try:
+            if self._events is None:
+                self._events = Events(self)
+
+            return self._events
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+        except SDKException:
+            return None
+
+    @property
+    def array_management(self):
+        """Returns the instance of the ArrayManagement class."""
+        try:
+            if self._array_management is None:
+                self._array_management = ArrayManagement(self)
+
+            return self._array_management
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
         except SDKException:
@@ -772,15 +871,24 @@ class Commcell(object):
 
         return response
 
-    def send_mail(self, to_address, subject, body=''):
+    def send_mail(self, receivers, subject, body=None, copy_sender=False, is_html_content=True):
         """Sends a mail to the specified email address from the email asscoiated to this user
 
             Args:
-                to_address      (str)   --  to address to whom the mail is to be sent
+                receivers       (list)  --  list of email addresses to whom the email is to
+                be sent
 
                 subject         (str)   --  subject of the email that is to be sent to the user
 
-                body            (str)   --  email body that is to be sent to the user
+                body            (str)   --  email body that is to be included in the email
+
+                copy_sender     (bool)  --  copies the sender in the html report that is sent
+
+                is_html_content (bool)  --  determines if the email body has html content
+
+                    True    -   the email body has html content
+
+                    False   -   the email content is plain text
 
             Raises:
                 SDKException:
@@ -791,21 +899,33 @@ class Commcell(object):
                     if response is not success
 
         """
-        # encode the body if that contains special characters
-        import html
-        body = html.escape(body)
+        if body is None:
+            body = ''
 
-        send_email_request = """
-        <App_SendEmailReq>
-            <toEmail>{0}</toEmail>
-            <subject>{1}</subject>
-            <body>{2}</body>
-        </App_SendEmailReq>""".format(to_address, subject, body)
+        send_email_request = {
+            "App_SendEmailReq": {
+                "emailInfo": {
+                    "subject": subject,
+                    "body": body,
+                    "copySender": copy_sender,
+                    "isHTML": is_html_content,
+                    "toEmail": [
+                        {
+                            "emailAddress": email
+                        } for email in receivers
+                    ]
+                }
+            }
+        }
 
         response_json = self._qoperation_execute(send_email_request)
 
-        if 'errorCode' in response_json and response_json['errorCode'] != 0:
-            raise SDKException('Commcell', '104')
+        if response_json.get('errorCode', 0) != 0:
+            raise SDKException(
+                'Commcell',
+                '104',
+                'Error: "{}"'.format(response_json['errorMessage'])
+            )
 
     def refresh(self):
         """Refresh the properties of the Commcell."""
@@ -824,27 +944,34 @@ class Commcell(object):
         self._plans = None
         self._job_controller = None
         self._users = None
+        self._roles = None
         self._download_center = None
         self._organizations = None
+        self._policies = None
         self._storage_pools = None
+        self._activity_control = None
+        self._events = None
         self._monitoring_policies = None
+        self._array_management = None
 
         self._get_commserv_details()
 
-    def run_data_aging(self,
-                       copy_name=None,
-                       storage_policy_name=None,
-                       is_granular=False,
-                       include_all=True,
-                       include_all_clients=False,
-                       select_copies=False,
-                       prune_selected_copies=False):
+
+    def run_data_aging(
+            self,
+            copy_name=None,
+            storage_policy_name=None,
+            is_granular=False,
+            include_all=True,
+            include_all_clients=False,
+            select_copies=False,
+            prune_selected_copies=False,
+            schedule_pattern=None):
         """
         Runs the Data Aging from Commcell,SP and copy level
 
 
         """
-
         if storage_policy_name is None:
             copy_name = ""
             storage_policy_name = ""
@@ -854,8 +981,7 @@ class Commcell(object):
 
         request_json = {
             "taskInfo": {
-                "associations": [
-                ],
+                "associations": [],
                 "task": {
                     "taskType": 1,
                     "initiatedFrom": 2,
@@ -872,9 +998,11 @@ class Commcell(object):
                     {
                         "subTaskOperation": 1,
                         "subTask": {
+
                             "subTaskType": 1,
                             "operationType": 4018
                         },
+
                         "options": {
                             "adminOpts": {
                                 "dataAgingOption": {
@@ -891,15 +1019,18 @@ class Commcell(object):
                                     ]
                                 }
                             }
-
                         }
                     }
                 ]
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json,schedule_pattern)
+
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CREATE_TASK'], request_json)
+            'POST', self._services['CREATE_TASK'], request_json
+        )
 
         if flag:
             if response.json():
@@ -909,13 +1040,54 @@ class Commcell(object):
 
                 elif "errorCode" in response.json():
                     error_message = response.json()['errorMessage']
+                    o_str = 'Error: "{0}"'.format(error_message)
+                    raise SDKException('Commcell', '105', o_str)
 
-                    o_str = 'Data Aging job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                elif "taskId" in response.json():
+                    pass
+
                 else:
-                    raise SDKException('Storage', '102', 'Failed to run the Data Aging job')
+                    raise SDKException('Commcell', '105')
+
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_saml_token(self, validity=30):
+        """Returns the SAML token for the currently logged-in user.
+
+            Args:
+                validity    (int)   --  validity of the SAML token, **in minutes**
+
+                    default: 30
+
+            Returns:
+                str     -   SAML token string received from the server
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET',
+            self._services['GET_SAML_TOKEN'] % validity
+        )
+
+        if flag:
+            if response.json():
+                response = response.json()
+                token = response.get('token')
+
+                if token:
+                    return token
+                else:
+                    error_message = response['errList'][0]['errLogMessage']
+                    error_code = response['errList'][0]['errorCode']
+
+                    raise SDKException(
+                        'Commcell',
+                        '106',
+                        'Error Code: {0}\nError Message: {1}'.format(error_code, error_message)
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

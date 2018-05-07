@@ -45,6 +45,8 @@ Plan:
 
     _get_plan_properties()      -- get the properties of this plan
 
+    derive_and_add()            -- add new plan by deriving from the parent Plan object
+
     plan_name                   --  returns the name of the plan
 
     plan_id                     --  returns the ID of the plan
@@ -61,8 +63,6 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 
 from .exception import SDKException
-from .clientgroup import ClientGroup
-from .usergroup import UserGroup
 
 
 class Plans(object):
@@ -146,7 +146,7 @@ class Plans(object):
         """Gets the Plan subtype's JSON template.
 
             Args:
-                plan_subType    (str)   --  Sub-type of plan to add
+                plan_sub_type    (str)   --  Sub-type of plan to add
 
                     "Server"    -   Server Plans
 
@@ -165,6 +165,8 @@ class Plans(object):
             Raises:
                 SDKException:
                     if type or subtype of the plan does not exist
+
+                    if there is a failure in getting the template
 
         """
         if not (isinstance(plan_sub_type, basestring) and
@@ -321,17 +323,31 @@ class Plans(object):
                 default: None
 
                     {
-                        'private': [1, 4, 256, 512, 1024],
+                        'privateEntities': [1, 4],
 
-                        'enforced': []
+                        'enforcedEntities': [256, 512, 1024]
                     }
+                    - where,
+                            privateEntities are set when respective entity overriding is must
+                            enforcedEntities are set when respective entity overriding is not
+                            allowed
+                            left blank if overriding is optional
 
+                    - entity IDs,
+                            1    - Storage
+                            4    - SLA/Schedules
+                            256  - Windows content
+                            512  - Unix content
+                            1024 - Mac content
 
         Returns:
             object  -   instance of the Plan class created by this method
 
         Raises:
             SDKException:
+                if input parameters are incorrect
+
+                if Plan already exists
 
         """
         if not (isinstance(plan_name, basestring) and
@@ -413,9 +429,51 @@ class Plans(object):
                              'Please check the documentation for '
                              'more details on the error').format(error_code)
 
-                    raise SDKException('Backupset', '102', o_str)
+                    raise SDKException('Plan', '102', o_str)
             else:
                 raise SDKException('Response', 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_eligible_plans(self, entities):
+        """Returns dict of plans that are eligible for the specified entities
+
+            Args:
+                entities    (dict)  - dictionary containing entities as keys and
+                                        their respective IDs as values
+                    {
+                        'clientId': id,
+                        'appId': id,
+                        'backupsetId': id
+                    }
+
+            Returns:
+                dict                - dict of eligible plans
+
+            Raises:
+                SDKException:
+                    if there is an error in the response
+        """
+        query = ''
+        for i in entities:
+            query += '{0}={1}&'.format(i, entities[i])
+        requset_url = self._services['ELIGIBLE_PLANS'] % query[0:-1]
+        flag, response = self._cvpysdk_object.make_request('GET', requset_url)
+        del query
+
+        if flag:
+            plans = {}
+
+            if response.json() and 'plans' in response.json():
+                response_value = response.json()['plans']
+
+                for temp in response_value:
+                    temp_name = temp['plan']['planName'].lower()
+                    temp_id = str(temp['plan']['planId']).lower()
+                    plans[temp_name] = temp_id
+
+            return plans
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -466,8 +524,8 @@ class Plan(object):
         self._permissions = []
         self._storage_pool = None
         self._child_policies = {
-            'storagePolicyId': None,
-            'schedulePolicyId': None,
+            'storagePolicy': None,
+            'schedulePolicy': None,
             'subclientPolicyIds': []
         }
         self._user_group = None
@@ -528,26 +586,26 @@ class Plan(object):
 
                 if self._subtype == 33554439:
                     if 'clientGroup' in plan_properties['autoCreatedEntities']:
-                        self._client_group = ClientGroup(
-                            self._commcell_object,
+                        self._commcell_object.client_groups.refresh()
+                        self._client_group = self._commcell_object.client_groups.get(
                             plan_properties['autoCreatedEntities']['clientGroup'][
                                 'clientGroupName']
                         )
 
                     if 'localUserGroup' in plan_properties['autoCreatedEntities']:
-                        self._user_group = UserGroup(
-                            self._commcell_object,
+                        self._commcell_object.user_groups.refresh()
+                        self._user_group = self._commcell_object.user_groups.get(
                             plan_properties['autoCreatedEntities']['localUserGroup'][
                                 'userGroupName']
                         )
 
                 if 'storagePolicy' in plan_properties['storage']:
-                    self._child_policies['storagePolicyId'] = plan_properties['storage'][
-                        'storagePolicy']['storagePolicyId']
+                    self._child_policies['storagePolicy'] = plan_properties['storage'][
+                        'storagePolicy']['storagePolicyName']
 
                 if 'task' in plan_properties['schedule']:
-                    self._child_policies['schedulePolicyId'] = plan_properties['schedule'][
-                        'task']['taskId']
+                    self._child_policies['schedulePolicy'] = plan_properties['schedule'][
+                        'task']['taskName']
 
                 if self._subtype != 33554437:
                     if 'backupContent' in plan_properties['laptop']['content']:
@@ -560,6 +618,10 @@ class Plan(object):
                         not plan_properties['inheritance']['isSealed']):
                     temp_dict = plan_properties['inheritance']
                     del temp_dict['isSealed']
+                    if 'enforcedEntities' not in temp_dict:
+                        temp_dict['enforcedEntities'] = []
+                    if 'privateEntities' not in temp_dict:
+                        temp_dict['privateEntities'] = []
                     self._override_entities = temp_dict
 
                 if 'parent' in plan_properties['summary']:
@@ -571,6 +633,257 @@ class Plan(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def derive_and_add(self,
+                       plan_name,
+                       storage_pool_name=None,
+                       sla_in_minutes=None,
+                       override_entities=None):
+        """Derives the base plan based on the the inheritance properties to created a derived plan
+
+            Args:
+                plan_name           (str)        --  name of the new plan to add
+
+                storage_pool_name   (str)   --  name of the storage pool to be used for the plan
+                    default: None   :   when the name is left to default, it inherits the base plan
+                                        storage pool if overriding is optional/not allowed
+
+                sla_in_minutes        (int)        --  Backup SLA in hours
+                    default: None   :   when the SLA is left to default, it inherits the base plan
+                                        SLA if overriding is optional/not allowed
+
+                override_entities   (dict)  --  Specify the entities with respective overriding.
+
+                    default: None
+
+                        {
+                            'privateEntities': [1, 4],
+
+                            'enforcedEntities': [256, 512, 1024]
+                        }
+                        - where,
+                                privateEntities are set when respective entity overriding is must
+                                enforcedEntities are set when respective entity overriding is
+                                not allowed
+                                left blank if overriding is optional
+
+                        - entity IDs,
+                                1    - Storage
+                                4    - SLA/Schedules
+                                256  - Windows content
+                                512  - Unix content
+                                1024 - Mac content
+
+
+        Returns:
+            object - instance of the Plan class created by this method
+
+        Raises:
+            SDKException:
+                if plan name is in incorrect format
+
+                if plan already exists
+
+                if neccessary arguments are not passed
+
+                if inheritance rules are not followed
+
+        """
+        if not isinstance(plan_name, basestring):
+            raise SDKException('Plan', '101', 'Plan name must be string value')
+        else:
+            if self._commcell_object.plans.has_plan(plan_name):
+                raise SDKException(
+                    'Plan', '102', 'Plan "{0}" already exists'.format(
+                        plan_name)
+                )
+        if self._override_entities is not None:
+            request_json = self._commcell_object.plans._get_plan_template(
+                str(self._subtype), "MSP")
+
+            request_json['plan']['summary']['description'] = "Created from CvPySDK."
+            request_json['plan']['summary']['plan']['planName'] = plan_name
+            request_json['plan']['summary']['parent'] = {
+                'planId': int(self._plan_id)
+            }
+            request_json['plan']['storage']['copy'][0]['dedupeFlags']['useGlobalDedupStore'] = 1
+
+            if storage_pool_name is not None:
+                storage_pool_id = int(
+                    self._commcell_object.storage_pools.get(storage_pool_name))
+            else:
+                storage_pool_id = None
+
+            if 1 in self._override_entities['enforcedEntities']:
+                if storage_pool_id is None:
+                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+                        "storagePolicyId": self._storage_pool['storagePolicyId']
+                    }
+                else:
+                    raise SDKException(
+                        'Plan', '102', 'Storage is enforced by base plan, cannot be overridden')
+            elif 1 in self._override_entities['privateEntities']:
+                if storage_pool_id is not None:
+                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+                        "storagePolicyId": storage_pool_id
+                    }
+                else:
+                    raise SDKException('Plan', '102', 'Storage must be input')
+            else:
+                if storage_pool_id is not None:
+                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+                        "storagePolicyId": storage_pool_id
+                    }
+                else:
+                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+                        "storagePolicyId": self._storage_pool['storagePolicyId']
+                    }
+
+            if 4 in self._override_entities['enforcedEntities']:
+                if sla_in_minutes is None:
+                    request_json['plan']['summary']['slaInMinutes'] = self._sla_in_minutes
+                else:
+                    raise SDKException(
+                        'Plan', '102', 'SLA is enforced by base plan, cannot be overridden')
+            elif 4 in self._override_entities['privateEntities']:
+                if sla_in_minutes is not None:
+                    request_json['plan']['summary']['slaInMinutes'] = sla_in_minutes
+                else:
+                    raise SDKException('Plan', '102', 'SLA must be input')
+            else:
+                if sla_in_minutes is not None:
+                    request_json['plan']['summary']['slaInMinutes'] = sla_in_minutes
+                else:
+                    request_json['plan']['summary']['slaInMinutes'] = self._sla_in_minutes
+
+            if isinstance(override_entities, dict):
+                request_json['plan']['summary']['restrictions'] = 0
+                request_json['plan']['inheritance'] = {
+                    'isSealed': False
+                }
+                for entity in self._override_entities['enforcedEntities']:
+                    from functools import reduce
+                    if len(override_entities) > 0 and entity in reduce(
+                            lambda i, j: i + j, override_entities.values()):
+                        raise SDKException(
+                            'Plan', '102', 'Override not allowed')
+                if 'enforcedEntities' in override_entities:
+                    request_json['plan']['inheritance']['enforcedEntities'] = (
+                        override_entities['enforcedEntities']
+                    )
+                if 'privateEntities' in override_entities:
+                    request_json['plan']['inheritance']['privateEntities'] = (
+                        override_entities['privateEntities']
+                    )
+            else:
+                request_json['plan']['summary']['restrictions'] = 1
+                request_json['plan']['inheritance'] = {
+                    'isSealed': True
+                }
+
+            if sla_in_minutes is not None:
+                request_json['plan']['definesSchedule'] = {
+                    'definesEntity': True
+                }
+            else:
+                request_json['plan']['definesSchedule'] = {
+                    'definesEntity': False
+                }
+
+            if isinstance(self._override_entities, dict):
+                if (4 not in
+                        self._override_entities['enforcedEntities'] +
+                        self._override_entities['privateEntities']):
+                    request_json['plan']['definesSchedule']['overrideEntity'] = 0
+                elif 4 in self._override_entities['enforcedEntities']:
+                    request_json['plan']['definesSchedule']['overrideEntity'] = 2
+                elif 4 in self._override_entities['privateEntities']:
+                    request_json['plan']['definesSchedule']['overrideEntity'] = 1
+
+            if storage_pool_id is not None:
+                request_json['plan']['definesStorage'] = {
+                    'definesEntity': True
+                }
+            else:
+                request_json['plan']['definesStorage'] = {
+                    'definesEntity': False
+                }
+
+            if isinstance(self._override_entities, dict):
+                if (1 not in
+                        self._override_entities['enforcedEntities'] +
+                        self._override_entities['privateEntities']):
+                    request_json['plan']['definesStorage']['overrideEntity'] = 0
+                elif 1 in self._override_entities['enforcedEntities']:
+                    request_json['plan']['definesStorage']['overrideEntity'] = 2
+                elif 1 in self._override_entities['privateEntities']:
+                    request_json['plan']['definesStorage']['overrideEntity'] = 1
+
+            if self._subtype != 33554437:
+                temp_defines_key = {
+                    'definesEntity': False
+                }
+                if isinstance(self._override_entities, dict):
+                    if (not all(entity in
+                                self._override_entities['enforcedEntities'] +
+                                self._override_entities['privateEntities']
+                                for entity in [256, 512, 1024])):
+                        temp_defines_key['overrideEntity'] = 0
+                    elif all(entity in self._override_entities['enforcedEntities']
+                             for entity in [256, 512, 1024]):
+                        temp_defines_key['overrideEntity'] = 2
+                    elif all(entity in self._override_entities['privateEntities']
+                             for entity in [256, 512, 1024]):
+                        temp_defines_key['overrideEntity'] = 1
+                request_json['plan']['laptop']['content']['definesSubclientLin'] = temp_defines_key
+                request_json['plan']['laptop']['content']['definesSubclientMac'] = temp_defines_key
+                request_json['plan']['laptop']['content']['definesSubclientWin'] = temp_defines_key
+
+            add_plan_service = self._commcell_object.plans._PLANS
+            headers = self._commcell_object._headers.copy()
+            headers['LookupNames'] = 'False'
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', add_plan_service, request_json, headers=headers
+            )
+
+            if flag:
+                if response.json():
+                    response_value = response.json()
+                    error_message = None
+
+                    if 'errorMessage' in response_value:
+                        error_message = response_value['error_message']
+                        error_code = response_value['error_code']
+
+                    if error_message:
+                        o_str = 'Failed to create new Plan\nError: "{0}"'.format(
+                            error_message
+                        )
+                        raise SDKException('Plan', '102', o_str)
+
+                    if 'plan' in response_value:
+                        plan_name = response_value['plan']['summary']['plan']['planName']
+
+                        # initialize the plans again
+                        # so that the plans object has all the plans
+                        self._commcell_object.plans.refresh()
+
+                        return self._commcell_object.plans.get(plan_name)
+                    else:
+                        o_str = ('Failed to create new plan due to error code: "{0}"\n'
+                                 'Please check the documentation for '
+                                 'more details on the error').format(error_code)
+
+                        raise SDKException('Plan', '102', o_str)
+                else:
+                    raise SDKException('Response', 102)
+            else:
+                response_string = self._commcell_object._update_response_(
+                    response.text)
+                raise SDKException('Response', '101', response_string)
+        else:
+            raise SDKException('Plan', '102', 'Inheritance disabled for plan')
 
     @property
     def plan_id(self):

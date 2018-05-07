@@ -38,6 +38,8 @@ SybaseInstance:
 
     localadmin_user()               -- returns string of localadmin_user of given sybase instance
 
+    sa_user()                       -- returns string of sa_username of given sybase instance
+
     version()                       -- returns string of given sybase server version
 
     backup_server()                 -- returns string of backup_server for given sybase instance
@@ -121,6 +123,18 @@ class SybaseInstance(Instance):
 
         """
         return self._properties['sybaseInstance']['localAdministrator']['userName']
+
+    @property
+    def sa_user(self):
+        """
+        Getter for sa username
+
+        Returns:
+            string - string of sa username
+
+        """
+        return self._properties['sybaseInstance']['saUser']['userName']
+
 
     @property
     def version(self):

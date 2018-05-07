@@ -29,11 +29,11 @@ FileSystemSubclient:
     filter_content()                     --  update the filter of the subclient
 
     exception_content()                  --  update the exception of the subclient
-	
+
     scan_type()                          --  update the scan type of the subclient
-    
+
     trueup_option()                      --  enable/disable trueup option of the subclient
-    
+
     trueup_days()                        --  update trueup after n days value of the subclient.
 
     find_all_versions()                  --  returns the dict containing list of all the backuped up
@@ -89,9 +89,9 @@ class FileSystemSubclient(Subclient):
         }
         return subclient_json
 
-    def _set_content(self, 
-                     content=None, 
-                     filter_content=None, 
+    def _set_content(self,
+                     content=None,
+                     filter_content=None,
                      exception_content=None):
         """Sets the subclient content / filter / exception content
 
@@ -99,7 +99,7 @@ class FileSystemSubclient(Subclient):
                 content         	(list)      --  list of subclient content
 
                 filter_content  	(list)      --  list of filter content
-				
+
                 exception_content	(list)		--	list of exception content
         """
         if content is None:
@@ -107,7 +107,7 @@ class FileSystemSubclient(Subclient):
 
         if filter_content is None:
             filter_content = self.filter_content
-        
+
         if exception_content is None:
             exception_content = self.exception_content
 
@@ -123,7 +123,7 @@ class FileSystemSubclient(Subclient):
                 "excludePath": path
             }
             update_content.append(filter_dict)
-        
+
         for path in exception_content:
             exception_dict = {
                 "includePath": path
@@ -152,6 +152,12 @@ class FileSystemSubclient(Subclient):
 
         if 'adhoc_backup' in options and options['adhoc_backup'] is not None:
             final_dict['adHocBackup'] = options['adhoc_backup']
+
+        if 'inline_bkp_cpy' in options or 'skip_catalog' in options:
+            final_dict['dataOpt'] = {
+                'createBackupCopyImmediately': options.get('inline_bkp_cpy', False),
+                'skipCatalogPhaseForSnapBackup': options.get('skip_catalog', False)
+            }
 
         if 'adhoc_backup_contents' in options and options['adhoc_backup_contents'] is not None:
             if not isinstance(options['adhoc_backup_contents'], list):
@@ -269,12 +275,12 @@ class FileSystemSubclient(Subclient):
                 2 - Optimized Scan
                 3 - Change Journal Scan
         """
-    
+
         return self._fsSubClientProp['scanOption']
 
     @scan_type.setter
     def scan_type(self, scan_type_value):
-        """Creates the JSON with the specified scan type to pass to the API to update the scan type of this  
+        """Creates the JSON with the specified scan type to pass to the API to update the scan type of this
             File System Subclient.
 
             Args:
@@ -298,43 +304,43 @@ class FileSystemSubclient(Subclient):
 
     @property
     def trueup_option(self):
-        """Gets the value of TrueUp Option 
+        """Gets the value of TrueUp Option
 
             Returns:
                 true - if trueup is enabled on the subclient
                 false - if trueup is not enabled on the subclient
         """
-    
+
         return self._fsSubClientProp['isTrueUpOptionEnabledForFS']
 
     @trueup_option.setter
     def trueup_option(self, trueup_option_value):
-        """Creates the JSON with the specified scan type to pass to the API to update the scan type of this  
+        """Creates the JSON with the specified scan type to pass to the API to update the scan type of this
             File System Subclient.
 
             Args:
-                trueup_option_value (bool)  --  Specifies to enable or disable trueup                
+                trueup_option_value (bool)  --  Specifies to enable or disable trueup
         """
-       
+
         self._set_subclient_properties("_fsSubClientProp['isTrueUpOptionEnabledForFS']", trueup_option_value)
- 
+
     @property
     def trueup_days(self):
         """Gets the trueup after n days value for this Subclient
 
-            Returns: int                
+            Returns: int
         """
-    
+
         return self._fsSubClientProp['runTrueUpJobAfterDaysForFS']
 
     @trueup_days.setter
     def trueup_days(self, trueup_days_value):
-        """Creates the JSON with the specified trueup days to pass to the API to update the trueup after n days value of this  
+        """Creates the JSON with the specified trueup days to pass to the API to update the trueup after n days value of this
             File System Subclient.
 
             Args:
                 trueup_days_value (int)  --  run trueup after days
-              
+
             Raises:
                 SDKException:
                     if failed to update trueup after n days of subclient
@@ -347,7 +353,7 @@ class FileSystemSubclient(Subclient):
             raise SDKException(
                 'Subclient', '102', 'Invalid trueup days'
             )
-            
+
     def find_all_versions(self, *args, **kwargs):
         """Searches the content of a Subclient.
 
@@ -392,7 +398,8 @@ class FileSystemSubclient(Subclient):
                incremental_level='BEFORE_SYNTH',
                collect_metadata=False,
                on_demand_input=None,
-               advanced_options=None):
+               advanced_options=None,
+               schedule_pattern=None):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -424,6 +431,8 @@ class FileSystemSubclient(Subclient):
                             directive_file          :   path to the directive file
                             adhoc_backup            :   if set triggers the adhoc backup job
                             adhoc_backup_contents   :   sets the contents for adhoc backup
+                            inline_backup_copy      :   to run backup copy immediately(inline)
+                            skip_catalog            :   skip catalog for intellisnap operation
 
             Returns:
                 object - instance of the Job class for this backup job
@@ -450,8 +459,8 @@ class FileSystemSubclient(Subclient):
 
             advanced_options['on_demand_input'] = on_demand_input
 
-        if advanced_options:
-            request_json = self._backup_json(backup_level, incremental_backup, incremental_level, advanced_options)
+        if advanced_options or schedule_pattern:
+            request_json = self._backup_json(backup_level, incremental_backup, incremental_level, advanced_options,schedule_pattern)
 
             backup_service = self._commcell_object._services['CREATE_TASK']
 

@@ -51,6 +51,8 @@ Clients:
     add_vmware_client()                   --  adds a new VMWare Virtualization Client to the
     Commcell
 
+    add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -83,6 +85,8 @@ Client:
     _get_client_properties()     --  get the properties of this client
 
     _get_instance_of_client()    --  get the instance associated with the client
+
+    _get_log_directory()         --  get the log directory path on the client
 
     _make_request()              --  makes the upload request to the server
 
@@ -167,6 +171,12 @@ Attributes
 
     **service_pack**                --  returns the service pack installed on the client
 
+    **job_results_directory**       --  returns the path of the job results directory on the client
+
+    **instance**                    --  returns the Instance of the client
+
+    **log_directory**               --  returns the path of the log directory on the client
+
     **agents**                      --  returns the instance of the Agents class representing
     the list of agents installed on the Client
 
@@ -178,8 +188,6 @@ Attributes
 
     **network**                     --  returns object of the Network class corresponding to the
     selected client
-
-    **instance**                    --  returns the Instance of the client
 
     **is_ready**                    --  returns boolean value specifying whether services on the
     client are running or not, and whether the CommServ is able to communicate with the client
@@ -236,6 +244,7 @@ class Clients(object):
         self._CLIENTS = self._ADD_CLIENT = self._services['GET_ALL_CLIENTS']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
+        self._ADD_EXCHANGE_CLIENT = self._services['ADD_EXCHANGE']
 
         self._clients = None
         self._hidden_clients = None
@@ -304,8 +313,7 @@ class Clients(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _get_hidden_clients(self):
         """Gets all the clients associated with the commcell, including all VM's and hidden clients
@@ -356,8 +364,7 @@ class Clients(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _get_virtualization_clients(self):
         """REST API call to get all virtualization clients in the commcell
@@ -404,8 +411,7 @@ class Clients(object):
 
             return {}
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @staticmethod
     def _get_client_dict(client_object):
@@ -471,16 +477,15 @@ class Clients(object):
             Args:
                 hostname    (str)   --  host name of the client on this commcell
 
-            Return:
-                str  -  name of the client associated with this hostname. Returns the input
-                        hostname if no client matches the criteria
+            Returns:
+                str     -   name of the client associated with this hostname
+
+                None    -   if no client has the same hostname as the given input
 
         """
         for client in self.all_clients:
             if hostname.lower() == self.all_clients[client]['hostname']:
                 return client
-
-        return hostname
 
     def _get_hidden_client_from_hostname(self, hostname):
         """Checks if hidden client associated given hostname exists and returns the hidden client
@@ -489,16 +494,15 @@ class Clients(object):
             Args:
                 hostname    (str)   --  host name of the client on this commcell
 
-            Return:
-                str  -  name of the client associated with this hostname. Returns the input
-                        hostname if no client matches the criteria
+            Returns:
+                str     -   name of the client associated with this hostname
+
+                None    -   if no client has the same hostname as the given input
 
         """
         for hidden_client in self.hidden_clients:
             if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
                 return hidden_client
-
-        return hostname
 
     @property
     def all_clients(self):
@@ -679,8 +683,190 @@ class Clients(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_exchange_client(
+            self,
+            client_name,
+            index_server,
+            clients_list,
+            storage_policy,
+            recall_service_url,
+            job_result_dir,
+            exchange_servers,
+            service_accounts,
+            azure_app_key_secret,
+            azure_tenant_name,
+            azure_app_key_id,
+            environment_type):
+        """Adds a new Exchange Mailbox Client to the Commcell.
+
+            Args:
+                client_name             (str)   --  name of the new Exchange Mailbox Client
+
+                index_server            (str)   --  index server for virtual cleint
+
+                clients_list            (list)  --  list cotaining client names / client objects,
+                to associate with the Virtual Client
+
+                storage_policy          (str)   --  storage policy to associate with the client
+
+                recall_service_url      (str)   --  recall service for client
+
+                job_result_dir          (str)   --  job reult directory path
+
+                exchange_servers        (list)  --  list of exchange servers
+
+                azure_app_key_secret    (str)   --  app secret for the Exchange online
+
+                azure_tenant_name       (str)   --  tenant for exchange online
+
+                azure_app_key_id        (str)   --  app key for exchange online
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        if not isinstance(exchange_servers, list):
+            raise SDKException('Client', '101')
+
+        index_server_dict = {}
+        storage_policy_dict = {}
+
+        if self.has_client(index_server):
+            index_server_cloud = self.get(index_server)
+
+            if index_server_cloud.agents.has_agent('distributed apps'):
+                index_server_dict = {
+                    "mediaAgentId": int(index_server_cloud.client_id),
+                    "_type_": 11,
+                    "mediaAgentName": index_server_cloud.client_name
+                }
+
+        if self._commcell_object.storage_policies.has_policy(storage_policy):
+            storage_policy_object = self._commcell_object.storage_policies.get(storage_policy)
+
+            storage_policy_dict = {
+                "storagePolicyName": storage_policy_object.storage_policy_name,
+                "storagePolicyId": int(storage_policy_object.storage_policy_id)
+            }
+
+        account_list = []
+        member_servers = []
+
+        for client in clients_list:
+            if isinstance(client, basestring):
+                client = client.strip().lower()
+
+                if self.has_client(client):
+                    temp_client = self.get(client)
+
+                    if temp_client.agents.has_agent('exchange mailbox (classic)'):
+                        client_dict = self._get_client_dict(temp_client)
+                        member_servers.append(client_dict)
+
+                    del temp_client
+            elif isinstance(client, Client):
+                if client.agents.has_agent('exchange mailbox (classic)'):
+                    client_dict = self._get_client_dict(client)
+                    member_servers.append(client_dict)
+
+        for account in service_accounts:
+            account_dict = {}
+            account_dict['serviceType'] = account['ServiceType']
+
+            user_account_dict = {}
+
+            if account['ServiceType'] == 2:
+                account_dict['exchangeAdminSmtpAddress'] = account['Username']
+                user_account_dict['userName'] = ""
+            else:
+                user_account_dict['userName'] = account['Username']
+            user_account_dict['password'] = b64encode(account['Password'].encode()).decode()
+            user_account_dict['confirmPassword'] = b64encode(account['Password'].encode()).decode()
+            account_dict['userAccount'] = user_account_dict
+
+            account_list.append(account_dict)
+
+        azure_app_key_secret = b64encode(azure_app_key_secret.encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 25,
+                "exchangeOnePassClientProperties": {
+                    "recallService": recall_service_url,
+                    "onePassProp": {
+                        "environmentType": environment_type,
+                        "azureDetails": {
+                            "azureAppKeySecret": azure_app_key_secret,
+                            "azureTenantName": azure_tenant_name,
+                            "azureAppKeyID": azure_app_key_id
+                        },
+                        "servers": exchange_servers,
+                        "accounts": {
+                            "adminAccounts": account_list
+                        }
+
+                    },
+                    "memberServers": {
+                        "memberServers": member_servers
+                    },
+                    "indexServer": index_server_dict,
+                    "dataArchiveGroup": storage_policy_dict,
+                    "jobResulsDir": {
+                        "path": job_result_dir
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_EXCHANGE_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get(self, name):
         """Returns a client object if client name or host name matches specified name
@@ -789,8 +975,7 @@ class Clients(object):
                     else:
                         raise SDKException('Response', '102')
                 else:
-                    response_string = self._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException('Response', '101', self._update_response_(response.text))
             else:
                 raise SDKException(
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
@@ -868,6 +1053,8 @@ class Client(object):
         self._is_intelli_snap_enabled = None
         self._is_restore_enabled = None
         self._client_hostname = None
+        self._job_results_directory = None
+        self._log_directory = None
 
         self.refresh()
 
@@ -941,7 +1128,8 @@ class Client(object):
                     self._install_directory = self._properties['client']['installDirectory']
 
                 if 'jobResulsDir' in self._properties['client']:
-                    self._job_results_directory = self._properties['client']['jobResulsDir']['path']
+                    self._job_results_directory = self._properties['client'][
+                        'jobResulsDir']['path']
 
                 if 'GalaxyRelease' in self._properties['client']['versionInfo']:
                     self._version = self._properties['client'][
@@ -958,8 +1146,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _request_json(self, option, enable=True, enable_time=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
@@ -1122,11 +1309,23 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _get_instance_of_client(self):
-        """Gets the instance associated with this client."""
+        """Gets the instance associated with this client.
+
+            Returns:
+                str     -   instance on which the client is installed
+
+                    e.g.;   Instance001
+
+            Raises:
+                SDKException:
+                    if failed to get the value of instance
+
+                    if operation is not supported for the client OS
+
+        """
         if 'windows' in self.os_info.lower():
             command = 'powershell.exe Get-Content "{0}"'.format(
                 os.path.join(self.install_directory, 'Base', 'QinetixVM').replace(" ", "' '")
@@ -1155,7 +1354,69 @@ class Client(object):
                     raise SDKException('Client', '106')
 
         else:
-            raise SDKException('Client', '102', 'Operation not supported for this Client')
+            raise SDKException('Client', '109')
+
+    def _get_log_directory(self):
+        """Gets the path of the log directory on the client.
+
+            Returns:
+                str     -   path of the log directory on the client
+
+                    e.g.;
+
+                        -   ..\\\\ContentStore\\\\Log Files
+
+                        -   ../commvault/Log_Files
+
+            Raises:
+                SDKException:
+                    if failed to get the value of log directory path
+
+                    if operation is not supported for the client OS
+
+        """
+        if 'windows' in self.os_info.lower():
+            key = r'HKLM:\SOFTWARE\CommVault Systems\Galaxy\{0}\EventManager'.format(self.instance)
+
+            exit_code, output, __ = self.execute_script(
+                'PowerShell',
+                '(Get-ItemProperty -Path {0}).dEVLOGDIR'.format(key.replace(" ", "' '"))
+            )
+
+            if exit_code == 0:
+                return output.strip()
+            else:
+                raise SDKException('Client', '108', 'Error: {0}'.format(output.strip()))
+
+        elif 'unix' in self.os_info.lower():
+            script = r"""
+            FILE=/etc/CommVaultRegistry/Galaxy/%s/EventManager/.properties
+            KEY=dEVLOGDIR
+
+            get_registry_value()
+            {
+                cat $1 | while read line
+                do
+                    key=`echo $line | cut -d' ' -f1`
+                    if [ "$key" = "$2" ]; then
+                        echo $line | awk '{print $2}'
+                        break
+                    fi
+                done
+            }
+
+            echo `get_registry_value $FILE $KEY`
+            """ % self.instance
+
+            __, output, error = self.execute_script('UnixShell', script)
+
+            if error:
+                raise SDKException('Client', '106', 'Error: {0}'.format(error.strip()))
+            else:
+                return output.strip()
+
+        else:
+            raise SDKException('Client', '109')
 
     @property
     def _security_association(self):
@@ -1247,6 +1508,30 @@ class Client(object):
         return self._job_results_directory
 
     @property
+    def instance(self):
+        """Returns the value of the instance the client is installed on."""
+        if self._instance is None:
+            try:
+                self._instance = self._get_instance_of_client()
+            except SDKException:
+                # pass silently if failed to get the value of instance
+                pass
+
+        return self._instance
+
+    @property
+    def log_directory(self):
+        """Returns the path of the log directory on the client."""
+        if self._log_directory is None:
+            try:
+                self._log_directory = self._get_log_directory()
+            except SDKException:
+                # pass silently if failed to get the value of the log directory
+                pass
+
+        return self._log_directory
+
+    @property
     def agents(self):
         """Returns the instance of the Agents class representing the list of Agents
         installed / configured on the Client.
@@ -1284,18 +1569,6 @@ class Client(object):
 
         return self._network
 
-    @property
-    def instance(self):
-        """Returns the value of the instance the client is installed on."""
-        if self._instance is None:
-            try:
-                self._instance = self._get_instance_of_client()
-            except SDKException:
-                # pass silently if failed to get the value of instance
-                pass
-
-        return self._instance
-
     def enable_backup(self):
         """Enable Backup for this Client.
 
@@ -1327,8 +1600,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_backup_at_time(self, enable_time):
         """Disables Backup if not already disabled, and enables at the time specified.
@@ -1376,8 +1648,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def disable_backup(self):
         """Disables Backup for this Client.
@@ -1410,8 +1681,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_restore(self):
         """Enable Restore for this Client.
@@ -1444,8 +1714,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_restore_at_time(self, enable_time):
         """Disables Restore if not already disabled, and enables at the time specified.
@@ -1493,8 +1762,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def disable_restore(self):
         """Disables Restore for this Client.
@@ -1527,8 +1795,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_data_aging(self):
         """Enable Data Aging for this Client.
@@ -1561,8 +1828,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_data_aging_at_time(self, enable_time):
         """Disables Data Aging if not already disabled, and enables at the time specified.
@@ -1610,8 +1876,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def disable_data_aging(self):
         """Disables Data Aging for this Client.
@@ -1644,8 +1909,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True):
         """Executes the given script of the script type on this client.
@@ -1720,8 +1984,8 @@ class Client(object):
         import html
 
         if os.path.isfile(script):
-            with open(script, 'r') as temp_file:
-                script = html.escape(temp_file.read())
+            with open(script, 'rb') as temp_file:
+                script = html.escape(temp_file.read().decode())
         else:
             script = html.escape(script)
 
@@ -1771,8 +2035,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def execute_command(self, command, script_arguments=None, wait_for_completion=True):
         """Executes a command on this client.
@@ -1860,8 +2123,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def enable_intelli_snap(self):
         """Enables Intelli Snap for this Client.
@@ -1898,8 +2160,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def disable_intelli_snap(self):
         """Disables Intelli Snap for this Client.
@@ -1936,8 +2197,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def is_ready(self):
@@ -1964,8 +2224,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def upload_file(self, source_file_path, destination_folder):
         """Upload the specified source file to destination path on the client machine
@@ -2117,9 +2376,9 @@ class Client(object):
                         'Client', '102', 'Failed to restart services.\nError: {0}'.format(error)
                     )
             else:
-                raise SDKException('Client', '102', 'Operation not supported for this Client')
+                raise SDKException('Client', '109')
         else:
-            raise SDKException('Client', '102', 'Operation not supported for this Client')
+            raise SDKException('Client', '109')
 
         if wait_for_service_restart:
             start_time = time.time()
@@ -2181,8 +2440,7 @@ class Client(object):
                 raise SDKException('Response', '102')
 
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_user_associations(self, associations_list):
         """Adds the users to the owners list of this client
@@ -2278,8 +2536,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def set_dedup_property(self,
                            prop_name,
@@ -2373,5 +2630,4 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))

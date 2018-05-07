@@ -829,14 +829,7 @@ class ClientGroup(object):
     @property
     def associated_clients(self):
         """Treats the clients associated to the ClientGroup as a read-only attribute."""
-        if self._associated_clients == []:
-            return 'No clients are associated to this client group'
-
-        o_str = 'Associated Clients:\n'
-        for client in self._associated_clients:
-            o_str += '\t' + client + '\n'
-
-        return o_str.strip()
+        return self._associated_clients
 
     @property
     def is_backup_enabled(self):

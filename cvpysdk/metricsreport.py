@@ -77,12 +77,12 @@ PrivateMetrics:
     update_url(hostname)        --  Updates Metrics URL for download and upload
 
     enable_chargeback(daily, weekly, monthly)
-                                --  deletes the subclient (subclient name) from the backupset
+                                --  enables chargeback service
 
 PublicMetrics:
     __init__(Commcell_object)   --  initialise with object of CommCell
 
-    enable_chargeback()         --  deletes the subclient (subclient name) from the backupset
+    enable_chargeback()         --  enables chargeback service
 
     enable_upgrade_readiness()  -- Enables pre upgrade readiness service
 
@@ -101,6 +101,7 @@ PublicMetrics:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from time import sleep
+from urllib.parse import urlparse
 
 from cvpysdk.license import LicenseDetails
 from .exception import SDKException
@@ -298,16 +299,12 @@ class _Metrics(object):
         if clientgroup_name is None:
             self.set_all_clientgroups()
         else:
-            clientgroupid_list = []
-            for each_clientgroup in clientgroup_name:
-                cg_id = self._commcell_object.client_groups.get(each_clientgroup).clientgroup_id
-                clientgroupid_list.append(cg_id)
-
             self._metrics_config['config']['clientGroupList'] = []
             clientgroup = self._metrics_config['config']['clientGroupList']
-            for clientgroupid in clientgroupid_list:
+            for each_client_grp in clientgroup_name:
+                cg_id = self._commcell_object.client_groups.get(each_client_grp).clientgroup_id
                 clientgroup.append(
-                    {'_type_': 28, 'clientGroupId': clientgroupid, 'clientGroupName': ''}
+                    {'_type_': 28, 'clientGroupId': int(cg_id), 'clientGroupName': each_client_grp}
                 )
 
     def enable_metrics(self):
@@ -357,13 +354,13 @@ class _Metrics(object):
             timeout (int): maximum seconds to wait
         """
         self.refresh()
-        timelimit = timeout
-        while timelimit > 0:
+        time_limit = timeout
+        while time_limit > 0:
             if self.lastdownloadtime > 0:
                 return True
             else:
                 sleep(30)
-                timelimit -= 30
+                time_limit -= 30
                 self.refresh()
         raise TimeoutError(
             "Download process didn't complete after {0} seconds".format(timeout))
@@ -437,32 +434,26 @@ class _Metrics(object):
             commcellid = hex(ccid).split('x')[1].upper()
         return commcellid
 
-    def get_possible_uploaded_filenames(self, queryid=None):
+    def get_uploaded_filename(self, query_id=None):
         """
-        Gets the possible list of uploaded file names
+        Gets last uploaded file name
 
         Args:
-            queryid (int): optional argument to get file name specific to a query
+            query_id (int): optional argument to get file name specific to a query
 
-        Returns : list of possible file names
+        Returns : Last uploaded file name
         """
 
         commcellid = self._get_commcell_id()
-        cs_lastuploadtime = int(self.lastuploadtime)
-        if cs_lastuploadtime == 0:
-            raise Exception("last upload time is 0, Upload didn't complete or failed")
-        expected_files = []
-        i = 1
-        while i < 10:
-            if queryid is None:
-                file_name = "CSS" + "" + str(cs_lastuploadtime) + "_" + str(commcellid) + ".xml"
-            else:
-                file_name = "CSS" + "" + str(cs_lastuploadtime) + "_" + str(
-                    commcellid) + "_" + str(queryid) + ".xml"
-            cs_lastuploadtime += 1
-            expected_files.append(file_name)
-            i = i + 1
-        return expected_files
+        cs_lastcollectiontime = int(self.lastcollectiontime)
+        if cs_lastcollectiontime == 0:
+            raise Exception("last collection time is 0, Upload didn't complete or failed")
+        if query_id is None:
+            file_name = "CSS" + "" + str(cs_lastcollectiontime) + "_" + str(commcellid) + ".xml"
+        else:
+            file_name = "CSS" + "" + str(cs_lastcollectiontime) + "_" + str(
+                commcellid) + "_" + str(query_id) + ".xml"
+        return file_name
 
 
 class PrivateMetrics(_Metrics):
@@ -478,7 +469,7 @@ class PrivateMetrics(_Metrics):
                     Returns:
                         object - instance of the UserGroups class
         """
-        _Metrics.__init__(self, commcell_object, isprivate=1)
+        _Metrics.__init__(self, commcell_object, isprivate=True)
 
     def _update_private_download_url(self, hostname, port, protocol):
         self._cloud['downloadURL'] = '{0}://{1}:{2}/downloads/sqlscripts/'.format(protocol,
@@ -509,6 +500,10 @@ class PrivateMetrics(_Metrics):
     def uploadurl(self):
         """Returns Upload URL of private metrics"""
         return self._metrics_config['config']['cloud']['uploadURL']
+
+    @property
+    def private_metrics_server_name(self):
+        return urlparse(self.uploadurl).hostname
 
     def update_url(self, hostname, port=80, protocol='http'):
         """
@@ -549,7 +544,7 @@ class CloudMetrics(_Metrics):
                     Returns:
                         object - instance of the UserGroups class
         """
-        _Metrics.__init__(self, commcell_object, isprivate=0)
+        _Metrics.__init__(self, commcell_object, isprivate=False)
 
     @property
     def randomization_minutes(self):

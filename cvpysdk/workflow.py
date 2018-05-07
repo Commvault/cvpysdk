@@ -878,6 +878,70 @@ class WorkFlow(object):
         else:
             raise SDKException('Workflow', '104')
 
+    def export_workflow(self, export_location=None):
+        """Exports the workflow to the directory location specified by the user.
+
+            Args:
+                export_location     (str)  --  Directory where the workflow would be exported
+                    default: None
+
+            Returns:
+                Absolute path of the workflow xml file which is exported
+
+            Raises:
+                SDKException:
+                    if export_location does not exist
+                    if no workflow exists with the given name
+                    if response is empty
+                    if response is not success
+                    if failed to write to export file
+        """
+        workflow_name = self._workflow_name
+
+        if not self._commcell_object.workflows.has_workflow(workflow_name):
+            raise SDKException('Workflow', '104')
+
+        if export_location is None:
+            export_location = os.getcwd()
+        else:
+            if not isinstance(export_location, basestring):
+                raise SDKException('Workflow', '101')
+
+            if not os.path.exists(export_location):
+                os.makedirs(export_location)
+
+        request_xml = """
+            <Workflow_GetWorkflowRequest exportOnly="1">
+                <workflow workflowName="{0}"/>
+            </Workflow_GetWorkflowRequest>
+        """.format(workflow_name)
+
+        workflow_xml = os.path.join(export_location, workflow_name + '.xml')
+
+        headers = self._commcell_object._headers.copy()
+        headers['Accept'] = 'application/xml'
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST',
+            self._commcell_object._services['EXECUTE_QCOMMAND'],
+            request_xml,
+            headers=headers
+        )
+
+        if flag and xmltodict.parse(response.text).get('Workflow_WorkflowDefinition'):
+            try:
+                with open(workflow_xml, 'w') as export_file:
+                    export_file.write(response.text)
+                return workflow_xml
+            except Exception as excp:
+                raise SDKException('Workflow',
+                                   '102',
+                                   'Failed to write workflow definition to file {0}. {1}'.\
+                                    format(workflow_xml, excp))
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def workflow_name(self):
         """Treats the workflow name as a read-only attribute."""

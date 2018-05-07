@@ -591,18 +591,19 @@ class Job(object):
         """Initialise the Job class instance.
 
             Args:
-                commcell_object (object)     --  instance of the Commcell class
+                commcell_object     (object)        --  instance of the Commcell class
 
-                job_id          (str / int)  --  id of the job
+                job_id              (str / int)     --  id of the job
 
             Returns:
-                object - instance of the Job class
+                object  -   instance of the Job class
 
             Raises:
                 SDKException:
                     if job id is not an integer
 
                     if job is not a valid job, i.e., does not exist in the Commcell
+
         """
         try:
             int(job_id)
@@ -649,7 +650,8 @@ class Job(object):
         """String representation of the instance of this class.
 
             Returns:
-                str - string for instance of this class
+                str     -   string for instance of this class
+
         """
         representation_string = 'Job class instance for job id: "{0}"'
         return representation_string.format(self.job_id)
@@ -658,7 +660,8 @@ class Job(object):
         """Checks if the job submitted with the job id is a valid job or not.
 
             Returns:
-                bool - boolean that represents whether the job is valid or not
+                bool    -   boolean that represents whether the job is valid or not
+
         """
         for _ in range(10):
             try:
@@ -677,7 +680,7 @@ class Job(object):
         """Gets the properties of this job.
 
             Returns:
-                dict - dict that contains the summary of this job
+                dict    -   dict that contains the summary of this job
 
             Raises:
                 SDKException:
@@ -686,6 +689,7 @@ class Job(object):
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._JOB)
 
@@ -707,13 +711,16 @@ class Job(object):
         """Gets the detailed properties of this job.
 
             Returns:
-                dict - dict consisting of the detailed properties of the job
+                dict    -   dict consisting of the detailed properties of the job
 
             Raises:
                 SDKException:
+                    if failed to get the job details
+
                     if response is empty
 
                     if response is not success
+
         """
         payload = {
             "jobId": int(self.job_id)
@@ -722,8 +729,20 @@ class Job(object):
         flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
 
         if flag:
-            if response.json() and 'job' in response.json():
-                return response.json()['job']
+            if response.json():
+                if 'job' in response.json():
+                    return response.json()['job']
+                elif 'error' in response.json():
+                    error_code = response.json()['error']['errList'][0]['errorCode']
+                    error_message = response.json()['error']['errList'][0]['errLogMessage']
+
+                    raise SDKException(
+                        'Job',
+                        '105',
+                        'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                    )
+                else:
+                    raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
             else:
                 raise SDKException('Response', '102')
         else:
@@ -733,6 +752,7 @@ class Job(object):
     def _initialize_job_properties(self):
         """Initializes the common properties for the job.
             Adds the client, agent, backupset, subclient name to the job object.
+
         """
         self._summary = self._get_job_summary()
         self._details = self._get_job_details()
@@ -752,6 +772,7 @@ class Job(object):
 
             Returns:
                 None
+
         """
         start_time = time.time()
 
@@ -779,6 +800,7 @@ class Job(object):
                     True    -   if the job had finished successfully
 
                     False   -   if the job was killed/failed
+
         """
         start_time = time.time()
         pending_time = 0
@@ -826,7 +848,8 @@ class Job(object):
         """Checks whether the job has finished or not.
 
             Returns:
-                bool - boolean that represents whether the job has finished or not
+                bool    -   boolean that represents whether the job has finished or not
+
         """
         self._summary = self._get_job_summary()
         self._details = self._get_job_details()
@@ -943,6 +966,7 @@ class Job(object):
 
             Args:
                 wait_for_job_to_pause   (bool)  --  wait till job status is changed to Suspended
+
                     default: False
 
             Raises:
@@ -950,6 +974,7 @@ class Job(object):
                     if failed to suspend job
 
                     if response is not success
+
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._SUSPEND)
 
@@ -977,13 +1002,15 @@ class Job(object):
 
             Args:
                 wait_for_job_to_resume  (bool)  --  wait till job status is changed to Running
-                        default: False
+
+                    default: False
 
             Raises:
                 SDKException:
                     if failed to resume job
 
                     if response is not success
+
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._RESUME)
 
@@ -1011,13 +1038,15 @@ class Job(object):
 
             Args:
                 wait_for_job_to_kill    (bool)  --  wait till job status is changed to Killed
-                        default: False
+
+                    default: False
 
             Raises:
                 SDKException:
                     if failed to kill job
 
                     if response is not success
+
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._KILL)
 

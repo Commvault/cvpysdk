@@ -21,6 +21,7 @@ GoogleInstance:
 """
 
 from __future__ import unicode_literals
+from past.builtins import basestring
 
 from ..cainstance import CloudAppsInstance
 
@@ -111,3 +112,107 @@ class GoogleInstance(CloudAppsInstance):
     def proxy_client(self):
         """Treats the proxy client name to this instance as a read-only attribute."""
         return self._proxy_client
+
+    def restore_out_of_place(
+            self,
+            client,
+            destination_path,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None):
+        """Restores the files/folders specified in the input paths list to the input client,
+            at the specified destionation location.
+
+            Args:
+                client                (str/object) --  either the name of the client or
+                                                           the instance of the Client
+
+                destination_path      (str)        --  full path of the restore location on client
+
+                paths                 (list)       --  list of full paths of
+                                                           files/folders to restore
+
+                overwrite             (bool)       --  unconditional overwrite files during restore
+                    default: True
+
+                restore_data_and_acl  (bool)       --  restore data and ACL files
+                    default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if client is not a string or Client instance
+
+                    if destination_path is not a string
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+        """
+        from cvpysdk.client import Client
+
+        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
+                isinstance(destination_path, basestring) and
+                isinstance(paths, list) and
+                isinstance(overwrite, bool) and
+                isinstance(restore_data_and_acl, bool)):
+            raise SDKException('Subclient', '101')
+
+        if isinstance(client, Client):
+            client = client
+        elif isinstance(client, basestring):
+            client = Client(self._commcell_object, client)
+        else:
+            raise SDKException('Subclient', '105')
+
+        paths = self._filter_paths(paths)
+
+        destination_path = self._filter_paths([destination_path], True)
+
+        if paths == []:
+            raise SDKException('Subclient', '104')
+
+        request_json = self._restore_json(
+            paths=paths,
+            in_place=False,
+            client=client,
+            destination_path=destination_path,
+            overwrite=overwrite,
+            restore_data_and_acl=restore_data_and_acl,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+        )
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]['cloudAppsRestoreOptions'] = {
+            "instanceType": self._ca_instance_type,
+            "googleRestoreOptions": {
+                "strDestUserAccount": destination_path,
+                "folderGuid": "",
+                "restoreToDifferentAccount": True,
+                "restoreToGoogle": True
+            }
+        }
+        return self._process_restore_response(request_json)

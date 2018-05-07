@@ -14,6 +14,8 @@ AppIDAType              --  Enum which maintains the list of all the IDA type va
 
 InstanceBackupType      --  Enum for backup type for instance
 
+SQLDefines              --  Class which maintains the defines list for SQL Server
+
 """
 
 from enum import Enum
@@ -84,3 +86,17 @@ class InstanceBackupType(Enum):
     FULL = 'full'
     INCREMENTAL = 'incremental'
     CUMULATIVE = 'incremental'  # cumulative backups pull incremental backup JSON
+
+
+class SQLDefines:
+    """Class to maintain SQL Defines"""
+
+    # sql restore types
+    DATABASE_RESTORE = 'DATABASE_RESTORE'
+    STEP_RESTORE = 'STEP_RESTORE'
+    RECOVER_ONLY = 'RECOVER_ONLY'
+
+    # sql recovery types
+    STATE_RECOVER = 'STATE_RECOVER'
+    STATE_NORECOVER = 'STATE_NORECOVER'
+    STATE_STANDBY = 'STATE_STANDBY'

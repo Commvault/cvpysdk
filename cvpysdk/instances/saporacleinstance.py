@@ -196,7 +196,7 @@ class SAPOracleInstance(Instance):
                                 "archiveLog": value.get("archiveLog", True),
                                 "recover": value.get("recover", True),
                                 "switchDatabaseMode": value.get("switchDatabaseMode", True),
-                                "restoreStream": value.get("restoreStream", 2),
+                                "restoreStream": value.get("restoreStream", 1),
                                 "restoreControlFile": value.get("restoreControlFile", True),
                                 "partialRestore": value.get("partialRestore", False),
                                 "openDatabase": value.get("openDatabase", True),
@@ -212,7 +212,7 @@ class SAPOracleInstance(Instance):
                                     "instanceName": value.get("destination_instance")
                                 },
                                 "destClient": {
-                                    "clientName": value.get("destination_client")
+                                    "clientName":value.get("destination_client")
                                 }
                             },
                             "fileOption": {
@@ -360,15 +360,18 @@ class SAPOracleInstance(Instance):
         # check if client name is correct
         if destination_client is None:
             destination_client = self._agent_object._client_object.client_name
+            
 
         if isinstance(destination_client, Client):
             destination_client = destination_client
+            
         elif isinstance(destination_client, str):
             destination_client = Client(self._commcell_object, destination_client)
+            #print(destination_client)
         else:
-            raise SDKException('Subclient', '105')
+            raise SDKException('Instance', '101')
 
-        dest_agent = Agent(destination_client, 'sap for oracle')
+        dest_agent = Agent(destination_client, 'sap for oracle','61')
 
         # check if instance name is correct
         if destination_instance is None:
@@ -379,7 +382,7 @@ class SAPOracleInstance(Instance):
         elif isinstance(destination_instance, str):
             destination_instance = dest_agent.instances.get(destination_instance)
         else:
-            raise SDKException('Subclient', '113')
+            raise SDKException('Instance', '101')
         sap_options["destination_client"] = destination_client.client_name
         sap_options["destination_instance"] = destination_instance.instance_name
 
