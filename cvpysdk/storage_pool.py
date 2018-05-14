@@ -10,10 +10,11 @@
 
 This module has classes defined for doing operations for Storage Pools:
 
-    1. Get the Id for the given Storage Pool
+    #. Get the Id for the given Storage Pool
 
 
-StoragePools:
+StoragePools
+============
 
     __init__(commcell_object)   --  initializes object of the StoragePools class associated
     with the commcell
@@ -22,15 +23,24 @@ StoragePools:
 
     __repr__()                  --  returns the string representation of an instance of this class
 
-    _get_storage_pools()        --  returns all storage pools added to the commcell
+    __len__()                   --  returns the number of storage pools added to the Commcell
 
-    all_storage_pools()         --  returns dict of all the storage pools on commcell
+    __getitem__()               --  returns the name of the storage pool for the given storage
+    pool Id or the details for the given storage pool name
+
+    _get_storage_pools()        --  returns all storage pools added to the commcell
 
     has_storage_pool()          --  checks whether the storage pool  with given name exists or not
 
     get()                       --  returns id of the storage pool for the specified input name
 
-    refresh()                   --  refresh the list of organizations associated with the commcell
+    refresh()                   --  refresh the list of storage pools associated with the commcell
+
+
+Attributes
+----------
+
+    **all_storage_pools**   --  returns dict of all the storage pools on commcell
 
 
 # TODO: check with MM API team to get the response in JSON
@@ -88,6 +98,39 @@ class StoragePools:
             self._commcell_object.commserv_name
         )
 
+    def __len__(self):
+        """Returns the number of the storage pools added to the Commcell."""
+        return len(self.all_storage_pools)
+
+    def __getitem__(self, value):
+        """Returns the name of the storage pool for the given storage pool ID or
+            the details of the storage pool for given storage pool Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the storage pool
+
+            Returns:
+                str     -   name of the storage pool, if the storage pool id was given
+
+                dict    -   dict of details of the storage pool, if storage pool name was given
+
+            Raises:
+                IndexError:
+                    no storage pool exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_storage_pools:
+            return self.all_storage_pools[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1]['id'] == value, self.all_storage_pools.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError('No storage pool exists with the given Name / Id')
+
     def _get_storage_pools(self):
         """Gets all the storage pools associated with the Commcell environment.
 
@@ -142,11 +185,13 @@ class StoragePools:
 
             dict    -   consists of all storage pools added to the commcell
 
-                    {
-                        "storage_pool1_name": storage_pool1_id,
+                {
 
-                        "storage_pool2_name": storage_pool2_id
-                    }
+                    "storage_pool1_name": storage_pool1_id,
+
+                    "storage_pool2_name": storage_pool2_id
+                }
+
         """
         return self._storage_pools
 
@@ -169,11 +214,11 @@ class StoragePools:
                 name    (str)   --  name of the storage pool to get the id of
 
             Returns:
-                str     -   id of the storage pool for the given organization name
+                str     -   id of the storage pool for the given storage pool name
 
             Raises:
                 SDKException:
-                    if no organization exists with the given name
+                    if no storage pool exists with the given name
 
         """
         name = name.lower()

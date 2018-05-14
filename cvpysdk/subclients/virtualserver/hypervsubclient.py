@@ -42,6 +42,18 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient  Base class, representing a
     Hyper-V  virtual server subclient,and to perform operations on that subclient."""
 
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        """Initialize the Instance object for the given Virtual Server instance.
+        Args
+        class_object (backupset_object, subclient_name, subclient_id)  --  instance of the
+                                         backupset class, subclient name, subclient id
+
+        """
+
+        super(HyperVVirtualServerSubclient, self).__init__(
+            backupset_object, subclient_name, subclient_id)
+        self.diskExtension = [".vhd", ".avhd", ".avhdx", ".vhdx"]
+
     class disk_pattern(Enum):
         """
         stores the disk pattern of all hypervisors
@@ -50,19 +62,18 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         datastore = "DestinationPath"
 
     def disk_restore(self,
-                     vm_name=None,
-                     destination_client=None,
-                     destination_path=None,
-                     overwrite=False,
-                     copy_precedence=0,
+                     vm_name,
+                     destination_path,
+                     proxy_client=None,
                      disk_name=None,
+                     copy_precedence=0,
                      convert_to=None):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
                 vm_name             (str)   -- VM from which disk is to be restored
 
-                destination_client  (str)   -- Destination client to whihc disk is to be restored
+                proxy_client  (str)   -- Destination client to whihc disk is to be restored
 
                 client              (str)   --  name of the client to restore disk
 
@@ -72,9 +83,6 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                     has to be performed
 
                 disk_Name           (str)   -- name of the disk which has to be restored
-
-                overwrite           (bool)  --  unconditional overwrite files during restore
-                    default: True
 
                 convert_to          (str)   --  to convert the disk to the specified format
                     default: None
@@ -101,20 +109,15 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         # check if inputs are correct
         if not (isinstance(destination_path, basestring) and
-                isinstance(overwrite, bool)and
                 (isinstance(vm_name, basestring) or (isinstance(vm_name, list)))):
             raise SDKException('Subclient', '101')
 
-        _disk_restore_option["unconditional_overwrite"] = overwrite
-        _disk_restore_option["copy_precedence"] = copy_precedence
 
-        if destination_client is None:
+        if proxy_client is None:
             _disk_restore_option[
                 "client"] = self._backupset_object._instance_object.co_ordinator
         else:
-            _disk_restore_option["client"] = destination_client
-
-        _disk_restore_option["destination_path"] = destination_path
+            _disk_restore_option["client"] = proxy_client
 
         # if disk list is given
         disk_list, disk_info_dict = self.disk_level_browse(
@@ -150,7 +153,13 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             _src_item_list.append(
                 "\\" + _vm_ids[vm_name] + "\\" + each_disk.split("\\")[-1])
 
-        _disk_restore_option["paths"] = _src_item_list
+        self._set_restore_inputs(
+            _disk_restore_option,
+            in_place=False,
+            copy_precedence=copy_precedence,
+            destination_path=destination_path,
+            paths=_src_item_list
+        )
 
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
 
@@ -165,7 +174,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                      power_on=False,
                                      copy_precedence=0,
                                      add_to_failover=False,
-                                     restore_new_name=None,
+                                     restored_vm_name=None,
                                      restore_option=None):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -246,6 +255,24 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         if restore_option is None:
             restore_option = {}
 
+        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+            raise SDKException('Subclient', '101')
+
+        if not restored_vm_name and isinstance(vm_to_restore, basestring):
+            restored_vm_name = "Delete" + vm_to_restore
+
+        if copy_precedence:
+            restore_option["copy_precedence_applicable"] = True
+
+        if restored_vm_name:
+            if not (isinstance(vm_to_restore, basestring) or
+                        isinstance(restored_vm_name, basestring)):
+                raise SDKException('Subclient', '101')
+            restore_option['restore_new_name'] = restored_vm_name
+
+        if vm_to_restore:
+            vm_to_restore = [vm_to_restore]
+
         # check mandatory input parameters are correct
         if bool(restore_option):
             if not (isinstance(destination_path, basestring) and
@@ -268,8 +295,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             esx_host=proxy_client,
             add_to_failover=add_to_failover,
             datastore=destination_path,
-            out_place=True,
-            restore_new_name=restore_new_name
+            in_place=False
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -316,6 +342,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                 isinstance(add_to_failover, bool)):
             raise SDKException('Subclient', '101')
 
+        if copy_precedence:
+            restore_option["copy_precedence_applicable"] = True
+
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -326,7 +355,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             add_to_failover=add_to_failover,
-            out_place=False
+            in_place=True
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

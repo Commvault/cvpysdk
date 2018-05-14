@@ -22,6 +22,12 @@ WorkFlows:
 
     __repr__()                          --  returns all the workflows deployed in the commcell
 
+    __len__()                           --  returns the number of workflows associated with the
+    Commcell
+
+    __getitem__()                       --  returns the name of the workflow for the given WF ID
+    or the details for the given workflow name
+
     _get_workflows()                    --  gets all the workflows deployed on the commcell
 
     _get_activities()                   --  gets all the workflow activities deployed
@@ -186,6 +192,39 @@ class WorkFlows(object):
         return "WorkFlow class instance for Commcell: '{0}'".format(
             self._commcell_object.commserv_name
         )
+
+    def __len__(self):
+        """Returns the number of the workflows associated to the Commcell."""
+        return len(self.all_workflows)
+
+    def __getitem__(self, value):
+        """Returns the name of the workflow for the given workflow ID or
+            the details of the workflow for given workflow Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the workflow
+
+            Returns:
+                str     -   name of the workflow, if the workflow id was given
+
+                dict    -   dict of details of the workflow, if workflow name was given
+
+            Raises:
+                IndexError:
+                    no workflow exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_workflows:
+            return self.all_workflows[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1]['id'] == value, self.all_workflows.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError('No workflow exists with the given Name / Id')
 
     def _get_workflows(self):
         """Gets all the workflows associated to the commcell.
@@ -809,13 +848,25 @@ class WorkFlow(object):
                             }
 
             Returns:
-                when workflow is executed in API mode:
-                    str     -   when no job id / output was returned
+                **tuple**   -   (`dict`, `str` **/** `dict` **/** `object`)
 
-                    dict    -   when the workflow returns some output
+                    **dict**    -   returns the outputs dictionary received in the
+                    response of the API
 
-                when workflow is executed in JOB mode:
-                    object  -   instance of the Job class for this workflow job
+                    **str / dict / object**
+
+                        str     -   when workflow is executed in API mode
+
+                            when no job id was returned / job ID or error code is 0
+
+                        dict    -   complete response received from the server
+
+                            when the response did not had any expected values
+
+                        object  -   instance of the Job class for this workflow job
+
+                            object of the Job class is mainly returned when the Workflow being
+                            executed has User Sessions, OR the workflow is executed in JOB mode
 
             Raises:
                 SDKException:
@@ -830,7 +881,6 @@ class WorkFlow(object):
                     if no workflow exists with the given name
 
         """
-
         workflow_name = self._workflow_name.lower()
 
         if workflow_name in self._workflows:
@@ -855,21 +905,23 @@ class WorkFlow(object):
 
             if flag:
                 if response.json():
+                    output = response.json().get("outputs", {})
+
                     if "jobId" in response.json():
                         if response.json()["jobId"] == 0:
-                            return 'Workflow Execution Finished Successfully'
+                            return output, 'Workflow Execution Finished Successfully'
                         else:
-                            return Job(self._commcell_object, response.json()['jobId'])
+                            return output, Job(self._commcell_object, response.json()['jobId'])
                     elif "errorCode" in response.json():
                         if response.json()['errorCode'] == 0:
-                            return 'Workflow Execution Finished Successfully'
+                            return output, 'Workflow Execution Finished Successfully'
                         else:
                             error_message = response.json()['errorMessage']
                             o_str = 'Executing Workflow failed\nError: "{0}"'.format(error_message)
 
                             raise SDKException('Workflow', '102', o_str)
                     else:
-                        return response.json()
+                        return output, response.json()
                 else:
                     raise SDKException('Response', '102')
             else:
@@ -882,19 +934,25 @@ class WorkFlow(object):
         """Exports the workflow to the directory location specified by the user.
 
             Args:
-                export_location     (str)  --  Directory where the workflow would be exported
+                export_location     (str)   --  Directory where the workflow would be exported
+
                     default: None
 
             Returns:
-                Absolute path of the workflow xml file which is exported
+                str     -   absolute path of the exported workflow xml file
 
             Raises:
                 SDKException:
                     if export_location does not exist
+
                     if no workflow exists with the given name
+
                     if response is empty
+
                     if response is not success
+
                     if failed to write to export file
+
         """
         workflow_name = self._workflow_name
 
@@ -934,10 +992,13 @@ class WorkFlow(object):
                     export_file.write(response.text)
                 return workflow_xml
             except Exception as excp:
-                raise SDKException('Workflow',
-                                   '102',
-                                   'Failed to write workflow definition to file {0}. {1}'.\
-                                    format(workflow_xml, excp))
+                raise SDKException(
+                    'Workflow',
+                    '102',
+                    'Failed to write workflow definition: "{0}" to file.\nError: "{1}"'.format(
+                        workflow_xml, excp
+                    )
+                )
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

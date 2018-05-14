@@ -24,6 +24,11 @@ Instances:
 
     __repr__()                      --  returns the string for the object of the Instances class
 
+    __len__()                       --  returns the number of instances associated to the Agent
+
+    __getitem__()                   --  returns the name of the instance for the given instance ID
+    or the details for the given instance name
+
     _get_instances()                --  gets all the instances associated with the agent specified
 
     all_instances()                 --  returns the dict of all the instances
@@ -184,6 +189,39 @@ class Instances(object):
     def __repr__(self):
         """Representation string for the instance of the Instances class."""
         return "Instances class instance for Agent: '{0}'".format(self._agent_object.agent_name)
+
+    def __len__(self):
+        """Returns the number of the instances associated to the Agent."""
+        return len(self.all_instances)
+
+    def __getitem__(self, value):
+        """Returns the name of the instance for the given instance ID or
+            the details of the instance for given instance Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the instance
+
+            Returns:
+                str     -   name of the instance, if the instance id was given
+
+                dict    -   dict of details of the instance, if instance name was given
+
+            Raises:
+                IndexError:
+                    no instance exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_instances:
+            return self.all_instances[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1]['id'] == value, self.all_instances.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError('No instance exists with the given Name / Id')
 
     def _get_instances(self):
         """Gets all the instances associated to the agent specified by agent_object.

@@ -10,24 +10,25 @@
 
 This module has classes defined for doing operations for organizations:
 
-    1. Add a new organization
+    #. Add a new organization
 
-    2. Delete an organization
+    #. Delete an organization
 
-    3. Enabling Auth Code
+    #. Enabling Auth Code
 
-    4. Disabling Auth Code
+    #. Disabling Auth Code
 
-    5. Get Auth Code
+    #. Get Auth Code
 
-    6. Get the list of plans associated with the organization
+    #. Get the list of plans associated with the organization
 
-    7. Update the plans associated with the organization
+    #. Update the plans associated with the organization
 
-    8. Update the default plan of the organization
+    #. Update the default plan of the organization
 
 
-Organizations:
+Organizations
+=============
 
     __init__(commcell_object)   --  initializes object of the Organizations class associated
     with the commcell
@@ -35,6 +36,11 @@ Organizations:
     __str__()                   --  returns all the organizations associated with the commcell
 
     __repr__()                  --  returns the string representation of an instance of this class
+
+    __len__()                   --  returns the number of organizations configured on the Commcell
+
+    __getitem__()               --  returns the name of the organization for the organization Id
+    or the details for the given organization name
 
     _get_organizations()        --  returns all organizations added to the commcell
 
@@ -48,8 +54,14 @@ Organizations:
 
     refresh()                   --  refresh the list of organizations associated with the commcell
 
+Organizations Attributes
+------------------------
 
-Organization:
+    **all_organizations**   --  returns the dict consisting of organizations and their details
+
+
+Organization
+============
 
     __init__()                  --  initializes instance of the Organization class for doing
     operations on the selected Organization
@@ -72,7 +84,8 @@ Organization:
     disable_auth_code()         --  disable Auth Code generation for the organization
 
 
-Attributes:
+Organization Attributes
+-----------------------
 
     Following attributes are available for an instance of the Organization class:
 
@@ -163,6 +176,39 @@ class Organizations:
             self._commcell_object.commserv_name
         )
 
+    def __len__(self):
+        """Returns the number of the organizations configured on the Commcell."""
+        return len(self.all_organizations)
+
+    def __getitem__(self, value):
+        """Returns the name of the organization for the given organization ID or
+            the details of the organization for given organization Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the organization
+
+            Returns:
+                str     -   name of the organization, if the organization id was given
+
+                dict    -   dict of details of the organization, if organization name was given
+
+            Raises:
+                IndexError:
+                    no organization exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_organizations:
+            return self.all_organizations[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1]['id'] == value, self.all_organizations.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError('No organization exists with the given Name / Id')
+
     def _get_organizations(self):
         """Gets all the organizations associated with the Commcell environment.
 
@@ -198,6 +244,21 @@ class Organizations:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_organizations(self):
+        """Returns the dictionary consisting of all the organizations and their info.
+
+            dict - consists of all the organizations configured on the commcell
+
+                {
+                    "organization1_name": organization1_id,
+
+                    "organization2_name": organization2_id
+                }
+
+        """
+        return self._organizations
 
     def has_organization(self, name):
         """Checks if an organization exists in the Commcell with the input organization name.

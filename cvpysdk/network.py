@@ -521,13 +521,15 @@ class Network(object):
 
             Args:
                 outgoing_routes(list)  -- list of outgoing routes should be a list of dict containing
-                route type, entity name, entity type, streams, gateway host, gateway port and remote proxy based on route type.
+                route type, entity name, entity type, streams, gateway host, gateway port and remote proxy based on
+                route type.
 
                 For routeType: DIRECT
-                [{'routeType':'DIRECT', 'remoteEntity':val ,'streams':val, 'isClient':val}]
+                [{'routeType':'DIRECT', 'remoteEntity':val ,'streams':val, 'isClient':val, 'forceAllDataTraffic': True}]
 
                 For routeType: VIA_GATEWAY
-                [{'routeType':'VIA_GATEWAY', 'remoteEntity':val, 'streams':val, 'gatewayPort':val, 'gatewayHost': val, 'isClient':val}]
+                [{'routeType':'VIA_GATEWAY', 'remoteEntity':val, 'streams':val, 'gatewayPort':val, 'gatewayHost': val,
+                'isClient':val, 'forceAllDataTraffic': False}]
 
                 For routeType: VIA_PROXY
                 [{'routeType':'VIA_PROXY', 'remoteEntity':val, 'remoteProxy':val, 'isClient':val}]
@@ -538,7 +540,8 @@ class Network(object):
                 'routeType': 'DIRECT',
                 'remoteEntity':'Testcs' ,
                 'streams': 1,
-                'isClient': True
+                'isClient': True,
+                'forceAllDataTraffic' : True
                 },
                 {
                 'routeType': 'VIA_GATEWAY',
@@ -546,7 +549,8 @@ class Network(object):
                 'streams': 2,
                 'gatewayPort': 443,
                 'gatewayHost': '1.2.3.4',
-                'isClient': True
+                'isClient': True,
+                'forceAllDataTraffic' :False
                 },
                 {
                 'routeType': 'VIA_PROXY',
@@ -584,17 +588,20 @@ class Network(object):
                     gatewayhostname = ""
                     remote_proxy = {}
                     nstreams = outgoing_route['streams']
+                    force_all_data_traffic = outgoing_route['forceAllDataTraffic']
 
                 elif outgoing_route['routeType'] == self._firewall_outgoing_route_type[1]:
                     gatewayport = outgoing_route['gatewayPort']
                     gatewayhostname = outgoing_route['gatewayHost']
                     remote_proxy = {}
                     nstreams = outgoing_route['streams']
+                    force_all_data_traffic = outgoing_route['forceAllDataTraffic']
 
                 elif outgoing_route['routeType'] == self._firewall_outgoing_route_type[2]:
                     gatewayport = 0
                     gatewayhostname = ""
                     nstreams = 1
+                    force_all_data_traffic = False
                     remote_proxy = {
                         "clientName": outgoing_route['remoteProxy'],
 
@@ -610,7 +617,7 @@ class Network(object):
                         "numberOfStreams": nstreams,
                         "connectionProtocol": 2,
                         "gatewayTunnelPort": gatewayport,
-                        "forceAllBackupRestoreDataTraffic": False,
+                        "forceAllBackupRestoreDataTraffic": force_all_data_traffic,
                         "gatewayHostname": gatewayhostname,
                         "routeType": outgoing_route['routeType'],
                         "remoteProxy": remote_proxy
@@ -847,9 +854,7 @@ class Network(object):
 
                     else:
                         self._get_network_properties()
-                        raise SDKException('ClientGroup', '102','Client group properties were not updated')
-
-
+                        raise SDKException('ClientGroup', '102', 'Client group properties were not updated')
 
                 else:
                     self._get_network_properties()

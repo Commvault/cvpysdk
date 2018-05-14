@@ -100,7 +100,7 @@ EXCEPTION_DICT = {
         '106': 'Failed to get the instance',
         '107': 'Service Restart timed out',
         '108': 'Failed to get the log directory',
-        '109': 'Operation not supported for this Client'
+        '109': 'Operation is not supported for this Client'
     },
     'Agent': {
         '101': 'Data type of the input(s) is not valid',

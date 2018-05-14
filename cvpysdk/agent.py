@@ -23,6 +23,11 @@ Agents:
 
     __repr__()                  --  returns the string for the instance of the Agents class
 
+    __len__()                   -- returns the number of agents licensed for the selected Client
+
+    __getitem__()               -- returns the name of the agent for the given agent Id or the
+    details for the given agent name
+
     _get_agents()               --  gets all the agents associated with the client specified
 
     all_agents()                --  returns the dict of all the agents installed on client
@@ -134,6 +139,37 @@ class Agents(object):
     def __repr__(self):
         """Representation string for the instance of the Agents class."""
         return "Agents class instance for Client: '{0}'".format(self._client_object.client_name)
+
+    def __len__(self):
+        """Returns the number of the Agents licensed for the selected Client."""
+        return len(self.all_agents)
+
+    def __getitem__(self, value):
+        """Returns the name of the agent for the given agent ID or
+            the details of the agent for given agent Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the agent
+
+            Returns:
+                str     -   name of the agent, if the agent id was given
+
+                dict    -   dict of details of the agent, if agent name was given
+
+            Raises:
+                IndexError:
+                    no agent exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_agents:
+            return self.all_agents[value]
+        else:
+            try:
+                return list(filter(lambda x: x[1]['id'] == value, self.all_agents.items()))[0][0]
+            except IndexError:
+                raise IndexError('No agent exists with the given Name / Id')
 
     def _get_agents(self):
         """Gets all the agents associated to the client specified with this client object.

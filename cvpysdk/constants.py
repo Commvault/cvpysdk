@@ -85,7 +85,7 @@ class InstanceBackupType(Enum):
     """Class to maintain type of instance backup"""
     FULL = 'full'
     INCREMENTAL = 'incremental'
-    CUMULATIVE = 'incremental'  # cumulative backups pull incremental backup JSON
+    CUMULATIVE = 'incremental'      # cumulative backups pull incremental backup JSON
 
 
 class SQLDefines:

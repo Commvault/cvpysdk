@@ -24,6 +24,11 @@ Backupsets:
 
     __repr__()                      -- returns the string for the instance of the Backupsets class
 
+    __len__()                       -- returns the number of backupsets associated with the Agent
+
+    __getitem__()                   -- returns the name of the backupset for the given backupset Id
+    or the details for the given backupset name
+
     _get_backupsets()               -- gets all the backupsets associated with the agent specified
 
     default_backup_set()            -- returns the name of the default backup set
@@ -185,6 +190,39 @@ class Backupsets(object):
     def __repr__(self):
         """Representation string for the instance of the Backupsets class."""
         return "Backupsets class instance for Agent: '{0}'".format(self._agent_object.agent_name)
+
+    def __len__(self):
+        """Returns the number of the backupsets for the selected Agent."""
+        return len(self.all_backupsets)
+
+    def __getitem__(self, value):
+        """Returns the name of the backupset for the given backupset ID or
+            the details of the backupset for given backupset Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the backupset
+
+            Returns:
+                str     -   name of the backupset, if the backupset id was given
+
+                dict    -   dict of details of the backupset, if backupset name was given
+
+            Raises:
+                IndexError:
+                    no backupset exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_backupsets:
+            return self.all_backupsets[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1]['id'] == value, self.all_backupsets.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError('No backupset exists with the given Name / Id')
 
     def _get_backupsets(self):
         """Gets all the backupsets associated to the agent specified by agent_object.

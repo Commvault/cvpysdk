@@ -14,12 +14,19 @@ Plans: Class for representing all the plans in the commcell
 
 Plan: Class for representing a single plan of the commcell
 
-Plans:
+Plans
+=====
+
     __init__(commcell_object)   --  initialise object of plans class of the commcell
 
     __str__()                   --  returns all the plans associated with the commcell
 
     __repr__()                  --  returns the string for the instance of the plans class
+
+    __len__()                   --  returns the number of plans added to the Commcell
+
+    __getitem__()               --  returns the name of the plan for the given plan Id
+    or the details for the given plan name
 
     _get_plans()                --  gets all the plans associated with the commcell specified
 
@@ -35,8 +42,15 @@ Plans:
 
     refresh()                   --  refresh the plans associated with the commcell
 
+Attributes
+----------
 
-Plan:
+    **all_plans**   --  returns the dict consisting of plans and their details
+
+
+Plan
+====
+
     __init__()                  -- initialise instance of the plan for the commcell
 
     __repr__()                  -- return the plan name, the instance is associated with
@@ -107,6 +121,37 @@ class Plans(object):
         return "Plans class instance for Commcell: '{0}'".format(
             self._commcell_object.commserv_name
         )
+
+    def __len__(self):
+        """Returns the number of the plans added to the Commcell."""
+        return len(self.all_plans)
+
+    def __getitem__(self, value):
+        """Returns the name of the plan for the given plan ID or
+            the details of the plan for given plan Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the plan
+
+            Returns:
+                str     -   name of the plan, if the plan id was given
+
+                dict    -   dict of details of the plan, if plan name was given
+
+            Raises:
+                IndexError:
+                    no plan exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_plans:
+            return self.all_plans[value]
+        else:
+            try:
+                return list(filter(lambda x: x[1]['id'] == value, self.all_plans.items()))[0][0]
+            except IndexError:
+                raise IndexError('No plan exists with the given Name / Id')
 
     def _get_plans(self):
         """Gets all the plans associated with the commcell
@@ -185,6 +230,21 @@ class Plans(object):
             else:
                 response_string = self._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_plans(self):
+        """Returns the dictionary consisting of all the plans added to the Commcell.
+
+            dict - consists of all the plans configured on the commcell
+
+                {
+                    "plan1_name": plan1_id,
+
+                    "plan2_name": plan2_id
+                }
+
+        """
+        return self._plans
 
     def has_plan(self, plan_name):
         """Checks if a plan exists in the commcell with the input plan name.
@@ -763,7 +823,7 @@ class Plan(object):
                 }
                 for entity in self._override_entities['enforcedEntities']:
                     from functools import reduce
-                    if len(override_entities) > 0 and entity in reduce(
+                    if override_entities and entity in reduce(
                             lambda i, j: i + j, override_entities.values()):
                         raise SDKException(
                             'Plan', '102', 'Override not allowed')
@@ -843,7 +903,7 @@ class Plan(object):
             headers = self._commcell_object._headers.copy()
             headers['LookupNames'] = 'False'
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
+            flag, response = self._cvpysdk_object.make_request(
                 'POST', add_plan_service, request_json, headers=headers
             )
 
@@ -879,8 +939,7 @@ class Plan(object):
                 else:
                     raise SDKException('Response', 102)
             else:
-                response_string = self._commcell_object._update_response_(
-                    response.text)
+                response_string = self._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         else:
             raise SDKException('Plan', '102', 'Inheritance disabled for plan')

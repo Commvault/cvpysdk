@@ -14,25 +14,30 @@ Domains: Class for representing all the associated domains with the commcell.
 
 Domains:
 
-    __init__(commcell_object)  --  initialize instance of the Domains associated with
+    __init__(commcell_object)   --  initialize instance of the Domains associated with
     the specified commcell
 
-    __str__()                  --  returns all the domains associated with the commcell
+    __str__()                   --  returns all the domains associated with the commcell
 
-    __repr__()                 --  returns the string for the instance of the Domains class
+    __repr__()                  --  returns the string for the instance of the Domains class
 
-    _get_domains()             --  gets all the domains associated with the commcell specified
+    __len__()                   --  returns the number of domains associated with the Commcell
 
-    all_domains()              -- returns the dict of all the domanin configured
+    __getitem__()               --  returns the name of the domain for the given domain Id
+    or the details for the given domain name
 
-    has_domain()               --  checks if a domain exists with the given name or not
+    _get_domains()              --  gets all the domains associated with the commcell specified
 
-    get(domain_name)           --  returns the instance of the Domain class,
+    all_domains()               --  returns the dict of all the domanin configured
+
+    has_domain()                --  checks if a domain exists with the given name or not
+
+    get(domain_name)            --  returns the instance of the Domain class,
     for the the input domain name
 
-    delete(domain_name)        --  deletes the domain from the commcell
+    delete(domain_name)         --  deletes the domain from the commcell
 
-    refresh()                  --  refresh the domains associated with the commcell
+    refresh()                   --  refresh the domains associated with the commcell
 
 
 """
@@ -90,6 +95,37 @@ class Domains(object):
         return "Domains class instance for Commcell: '{0}'".format(
             self._commcell_object.commserv_name
         )
+
+    def __len__(self):
+        """Returns the number of the domains associated to the Commcell."""
+        return len(self.all_domains)
+
+    def __getitem__(self, value):
+        """Returns the name of the domain for the given domain ID or
+            the details of the domain for given domain Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the domain
+
+            Returns:
+                str     -   name of the domain, if the domain id was given
+
+                dict    -   dict of details of the domain, if domain name was given
+
+            Raises:
+                IndexError:
+                    no domain exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_domains:
+            return self.all_domains[value]
+        else:
+            try:
+                return list(filter(lambda x: x[1]['id'] == value, self.all_domains.items()))[0][0]
+            except IndexError:
+                raise IndexError('No domain exists with the given Name / Id')
 
     def _get_domains(self):
         """Gets all the domains associated with the commcell

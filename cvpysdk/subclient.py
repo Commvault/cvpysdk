@@ -23,6 +23,12 @@ Subclients:
 
     __repr__()                  --  returns the string for the instance of the Subclients class
 
+    __len__()                   --  returns the number of subclients associated with the Agent
+    for the selected Client
+
+    __getitem__()               --  returns the name of the subclient for the given subclient Id
+    or the details for the given subclient name
+
     _get_subclients()           --  gets all the subclients associated with the backupset specified
 
     default_subclient()         --  returns the name of the default subclient
@@ -284,6 +290,39 @@ class Subclients(object):
             )
 
         return o_str
+
+    def __len__(self):
+        """Returns the number of the subclients associated to the Agent for the selected Client."""
+        return len(self.all_subclients)
+
+    def __getitem__(self, value):
+        """Returns the name of the subclient for the given subclient ID or
+            the details of the subclient for given subclient Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the subclient
+
+            Returns:
+                str     -   name of the subclient, if the subclient id was given
+
+                dict    -   dict of details of the subclient, if subclient name was given
+
+            Raises:
+                IndexError:
+                    no subclient exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_subclients:
+            return self.all_subclients[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1]['id'] == value, self.all_subclients.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError('No subclient exists with the given Name / Id')
 
     def _get_subclients(self):
         """Gets all the subclients associated to the client specified by the backupset object.
@@ -1045,7 +1084,7 @@ class Subclient(object):
             )
 
         if schedule_pattern:
-            request_json = SchedulePattern().create_schedule(request_json,schedule_pattern)
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         return request_json
 

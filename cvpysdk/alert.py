@@ -23,6 +23,11 @@ Alerts:
 
     __repr__()                  --  returns the string for the instance of the Alerts class
 
+    __len__()                   --  returns the number of alerts configured on the Commcell
+
+    __getitem__()               --  returns the name of the alert for the given alert Id or the
+    details for the given alert name
+
     _get_alert()                --  gets all the alerts associated with the commcell specified
 
     all_alerts()                --  returns the dict of all the alerts associated
@@ -120,6 +125,37 @@ class Alerts(object):
         return "Alerts class instance for Commcell: '{0}'".format(
             self._commcell_object.commserv_name
         )
+
+    def __len__(self):
+        """Returns the number of the alerts configured on the Commcell."""
+        return len(self.all_alerts)
+
+    def __getitem__(self, value):
+        """Returns the name of the alert for the given alert ID or
+            the details of the alert for given alert Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the alert
+
+            Returns:
+                str     -   name of the alert, if the alert id was given
+
+                dict    -   dict of details of the alert, if alert name was given
+
+            Raises:
+                IndexError:
+                    no alert exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_alerts:
+            return self.all_alerts[value]
+        else:
+            try:
+                return list(filter(lambda x: x[1]['id'] == value, self.all_alerts.items()))[0][0]
+            except IndexError:
+                raise IndexError('No alert exists with the given Name / Id')
 
     def _get_alerts(self):
         """Gets all the alerts associated with the commcell

@@ -18,7 +18,14 @@ ClientGroups:
     __init__(commcell_object)  -- initialise instance of the ClientGroups associated with
     the specified commcell
 
-    __repr__()                 -- return all the clientgroup associated with the specified commcell
+    __str__()                  -- returns all the client groups associated with the Commcell
+
+    __repr__()                 -- returns the string for the instance of the ClientGroups class
+
+    __len__()                  -- returns the number of client groups associated with the Commcell
+
+    __getitem__()              -- returns the name of the client group for the given client group
+    Id or the details for the given client group name
 
     _get_clientgroups()        -- gets all the clientgroups associated with the commcell specified
 
@@ -147,6 +154,39 @@ class ClientGroups(object):
         return "ClientGroups class instance for Commcell: '{0}'".format(
             self._commcell_object.commserv_name
         )
+
+    def __len__(self):
+        """Returns the number of the client groups associated to the Commcell."""
+        return len(self.all_clientgroups)
+
+    def __getitem__(self, value):
+        """Returns the name of the client group for the given client group ID or
+            the details of the client group for given client group Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the client group
+
+            Returns:
+                str     -   name of the client group, if the client group id was given
+
+                dict    -   dict of details of the client group, if client group name was given
+
+            Raises:
+                IndexError:
+                    no client group exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_clientgroups:
+            return self.all_clientgroups[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1]['id'] == value, self.all_clientgroups.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError('No client group exists with the given Name / Id')
 
     def _get_clientgroups(self):
         """Gets all the clientgroups associated with the commcell
@@ -772,7 +812,7 @@ class ClientGroup(object):
 
                     if failed to remove clients from the ClientGroup
         """
-        if isinstance(clients, basestring) or isinstance(clients, list):
+        if isinstance(clients, (basestring, list)):
             clientgroups_object = ClientGroups(self._commcell_object)
 
             if isinstance(clients, list):
@@ -1215,8 +1255,9 @@ class ClientGroup(object):
                         </App_PushFirewallConfigurationRequest>
             """.format(self.clientgroup_name)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._commcell_object._services[
-            'EXECUTE_QCOMMAND'], xml_execute_command)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_command
+        )
 
         if flag:
             if response.json():
@@ -1234,7 +1275,7 @@ class ClientGroup(object):
                     if 'errorCode' in response.json():
                         error_code = response.json()['errorCode']
 
-                if error_code !=0:
+                if error_code != 0:
                     raise SDKException('ClientGroup', '102', error_message)
 
             else:
@@ -1248,5 +1289,3 @@ class ClientGroup(object):
         """Refresh the properties of the ClientGroup."""
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
-
-

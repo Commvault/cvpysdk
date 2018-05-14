@@ -14,7 +14,8 @@ JobController:  Class for managing jobs on this commcell
 Job:            Class for keeping track of a job and perform various operations on it.
 
 
-JobController:
+JobController
+=============
 
     __init__(commcell_object)   --  initializes the instance of JobController class associated
     with the specified commcell
@@ -36,7 +37,8 @@ JobController:
     get()                       --  returns the Job class instance for the given job id
 
 
-Job:
+Job
+===
 
     __init__()                  --  initializes the instance of Job class associated with the
     specified commcell of job with id: 'job_id'
@@ -71,7 +73,7 @@ Job:
 
 
 Job instance Attributes
-=======================
+-----------------------
 
 **job.is_finished**         --  specifies whether the job is finished or not    (True / False)
 
@@ -239,7 +241,7 @@ class JobController(object):
                 "limit": options.get('limit', 20)
             },
             "jobFilter": {
-                "completedJobLookupTime": options.get('lookup_time', 5) * 60 * 60,
+                "completedJobLookupTime": int(options.get('lookup_time', 5) * 60 * 60),
                 "showAgedJobs": options.get('show_aged_jobs', False),
                 "clientList": [
                     {

@@ -15,7 +15,9 @@ Clients:    Class for representing all the clients associated with the commcell
 Client:     Class for a single client of the commcell
 
 
-Clients:
+Clients
+=======
+
     __init__(commcell_object)             --  initialize object of Clients class associated with
     the commcell
 
@@ -23,6 +25,12 @@ Clients:
 
     __repr__()                            --  returns the string to represent the instance of the
     Clients class
+
+    __len__()                             --  returns the number of clients associated with the
+    Commcell
+
+    __getitem__()                         --  returns the name of the client at the given index
+    or the details for the given client name
 
     _get_clients()                        --  gets all the clients associated with the commcell
 
@@ -61,8 +69,8 @@ Clients:
 
     refresh()                             --  refresh the clients associated with the commcell
 
-Attributes
-==========
+Clients Attributes
+------------------
 
     **all_clients**             --  returns the dictioanry consisting of all the clients that are
     associated with the commcell and their information such as id and hostname
@@ -74,7 +82,9 @@ Attributes
     clients that are associated with the commcell and their information such as id and hostname
 
 
-Client:
+Client
+======
+
     __init__()                   --  initialize object of Class with the specified client name
     and id, and associated to the commcell
 
@@ -87,6 +97,10 @@ Client:
     _get_instance_of_client()    --  get the instance associated with the client
 
     _get_log_directory()         --  get the log directory path on the client
+
+    _service_operations()        --  perform services related operations on a client
+
+                START / STOP / RESTART
 
     _make_request()              --  makes the upload request to the server
 
@@ -120,6 +134,12 @@ Client:
 
     upload_folder()              --  uploads the specified folder on controller to client machine
 
+    start_service()              --  starts the service with the given name on the client
+
+    stop_service()               --  stops the service with the given name on the client
+
+    restart_service()            --  restarts the service with the given name on the client
+
     restart_services()           --  executes the command on the client to restart the services
 
     network()                    --  returns Network class object
@@ -130,8 +150,8 @@ Client:
 
     refresh()                    --  refresh the properties of the client
 
-Attributes
-==========
+Client Attributes
+-----------------
 
     **available_security_roles**    --  returns the security roles available for the selected
     client
@@ -272,20 +292,57 @@ class Clients(object):
             self._commcell_object.commserv_name
         )
 
+    def __len__(self):
+        """Returns the number of the clients associated to the Commcell."""
+        return len(self.all_clients)
+
+    def __getitem__(self, value):
+        """Returns the name of the client for the given client ID or
+            the details of the client for given client Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the client
+
+            Returns:
+                str     -   name of the client, if the client id was given
+
+                dict    -   dict of details of the client, if client name was given
+
+            Raises:
+                IndexError:
+                    no client exists with the given Name / Id
+
+        """
+        value = str(value)
+
+        if value in self.all_clients:
+            return self.all_clients[value]
+        else:
+            try:
+                return list(filter(lambda x: x[1]['id'] == value, self.all_clients.items()))[0][0]
+            except IndexError:
+                raise IndexError('No client exists with the given Name / Id')
+
     def _get_clients(self):
         """Gets all the clients associated with the commcell
 
             Returns:
-                dict - consists of all clients in the commcell
+                dict    -   consists of all clients in the commcell
+
                     {
-                         "client1_name": {
-                                "id": client1_id,
-                                "hostname": client1_hostname
+                        "client1_name": {
+
+                            "id": client1_id,
+
+                            "hostname": client1_hostname
                         },
-                         "client2_name": {
-                                "id": client2_id,
-                                "hostname": client2_hostname
-                         },
+
+                        "client2_name": {
+
+                            "id": client2_id,
+
+                            "hostname": client2_hostname
+                        }
                     }
 
             Raises:
@@ -293,6 +350,7 @@ class Clients(object):
                     if response is empty
 
                     if response is not success
+
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._CLIENTS)
 
@@ -319,16 +377,22 @@ class Clients(object):
         """Gets all the clients associated with the commcell, including all VM's and hidden clients
 
             Returns:
-                dict - consists of all clients (including hidden clients) in the commcell
+                dict    -   consists of all clients (including hidden clients) in the commcell
+
                     {
-                         "client1_name": {
-                                "id": client1_id,
-                                "hostname": client1_hostname
+                        "client1_name": {
+
+                            "id": client1_id,
+
+                            "hostname": client1_hostname
                         },
-                         "client2_name": {
-                                "id": client2_id,
-                                "hostname": client2_hostname
-                         },
+
+                        "client2_name": {
+
+                            "id": client2_id,
+
+                            "hostname": client2_hostname
+                        }
                     }
 
             Raises:
@@ -373,18 +437,19 @@ class Clients(object):
                 dict    -   consists of all virtualization clients in the commcell
 
                     {
-
                         "client1_name": {
+
                             "id": client1_id,
 
                             "hostname": client1_hostname
                         },
 
                         "client2_name": {
+
                             "id": client2_id,
 
                             "hostname": client2_hostname
-                        },
+                        }
                     }
 
             Raises:
@@ -446,6 +511,7 @@ class Clients(object):
             Raises:
                 SDKException:
                     if type of clients list argument is not list
+
         """
         if not isinstance(clients_list, list):
             raise SDKException('Client', '101')
@@ -1418,6 +1484,101 @@ class Client(object):
         else:
             raise SDKException('Client', '109')
 
+    def _service_operations(self, service_name=None, operation=None):
+        """Executes the command on the client machine to start / stop / restart a
+            Commvault service, or ALL services.
+
+            Args:
+                service_name        (str)   --  name of the service to be operated on
+
+                    default:    None
+
+                operation           (str)   --  name of the operation to be done
+
+                    Valid Values are:
+
+                        -   START
+
+                        -   STOP
+
+                        -   RESTART
+
+                        -   RESTART_SVC_GRP     **Only available for Windows Clients**
+
+                    default:    None
+
+                    for None as the input, we will run **RESTART_SVC_GRP** operation
+
+            Returns:
+                None    -   if the operation was performed successfully
+
+        """
+        operations_dict = {
+            'START': {
+                'windows_command': 'startsvc',
+                'unix_command': 'start',
+                'exception_message': 'Failed to start "{0}" service.\n Error: "{1}"'
+            },
+            'STOP': {
+                'windows_command': 'stopsvc',
+                'unix_command': 'stop',
+                'exception_message': 'Failed to stop "{0}" service.\n Error: "{1}"'
+            },
+            'RESTART': {
+                'windows_command': 'restartsvc',
+                'unix_command': 'restart',
+                'exception_message': 'Failed to restart "{0}" service.\n Error: "{1}"'
+            },
+            'RESTART_SVC_GRP': {
+                'windows_command': 'restartsvcgrp',
+                'unix_command': 'restart',
+                'exception_message': 'Failed to restart "{0}" services.\n Error: "{1}"'
+            }
+        }
+
+        operation = operation.upper() if operation else 'RESTART_SVC_GRP'
+
+        if operation not in operations_dict:
+            raise SDKException('Client', '109')
+
+        if not service_name:
+            service_name = 'ALL'
+
+        if 'windows' in self.os_info.lower():
+            command = '"{0}" -consoleMode -{1} {2}'.format(
+                '\\'.join([self.install_directory, 'Base', 'GxAdmin.exe']),
+                operations_dict[operation]['windows_command'],
+                service_name
+            )
+
+            __, output, __ = self.execute_command(command, wait_for_completion=False)
+
+            if output:
+                raise SDKException(
+                    'Client',
+                    '102',
+                    operations_dict[operation]['exception_message'].format(service_name, output)
+                )
+        elif 'unix' in self.os_info.lower():
+            if self.instance:
+                command = 'commvault -instance {0} {1}'.format(
+                    self.instance, operations_dict[operation]['unix_command']
+                )
+
+                __, __, error = self.execute_command(command, wait_for_completion=False)
+
+                if error:
+                    raise SDKException(
+                        'Client', '102', 'Failed to {0} services.\nError: {1}'.format(
+                            operations_dict[operation]['unix_command'],
+                            error
+                        )
+                    )
+            else:
+                raise SDKException('Client', '109')
+        else:
+            raise SDKException('Client', '109')
+
     @property
     def _security_association(self):
         """Returns the security association object"""
@@ -2325,8 +2486,71 @@ class Client(object):
             else:
                 self.upload_folder(item, destination_dir)
 
+    def start_service(self, service_name=None):
+        """Executes the command on the client machine to start the Commvault service(s).
+
+            Args:
+                service_name    (str)   --  name of the service to be started
+
+                    service name is required only for Windows Clients, as for UNIX clients, the
+                    operation is executed on all services
+
+                    default:    None
+
+            Returns:
+                None    -   if the service was started successfully
+
+            Raises:
+                SDKException:
+                    if failed to start the service
+
+        """
+        return self._service_operations(service_name, 'START')
+
+    def stop_service(self, service_name=None):
+        """Executes the command on the client machine to stop the Commvault service(s).
+
+            Args:
+                service_name    (str)   --  name of the service to be stopped
+
+                    service name is required only for Windows Clients, as for UNIX clients, the
+                    operation is executed on all services
+
+                    default:    None
+
+            Returns:
+                None    -   if the service was stopped successfully
+
+            Raises:
+                SDKException:
+                    if failed to stop the service
+
+        """
+        return self._service_operations(service_name, 'STOP')
+
+    def restart_service(self, service_name=None):
+        """Executes the command on the client machine to restart the Commvault service(s).
+
+            Args:
+                service_name    (str)   --  name of the service to be restarted
+
+                    service name is required only for Windows Clients, as for UNIX clients, the
+                    operation is executed on all services
+
+                    default:    None
+
+            Returns:
+                None    -   if the service was restarted successfully
+
+            Raises:
+                SDKException:
+                    if failed to restart the service
+
+        """
+        return self._service_operations(service_name, 'RESTART')
+
     def restart_services(self, wait_for_service_restart=True, timeout=10):
-        """Executes the command on the client machine to restart all services.
+        """Executes the command on the client machine to restart **ALL** services.
 
             Args:
                 wait_for_service_restart    (bool)  --  boolean to specify whether to wait for the
@@ -2354,31 +2578,7 @@ class Client(object):
                     if failed to restart the services before the timeout value
 
         """
-        if 'windows' in self.os_info.lower():
-            command = '"{0}" -consoleMode -restartsvcgrp ALL'.format(
-                os.path.join(self.install_directory, 'Base', 'GxAdmin.exe')
-            )
-
-            __, output, __ = self.execute_command(command, wait_for_completion=False)
-
-            if output:
-                raise SDKException(
-                    'Client', '102', 'Failed to restart services.\nError: {0}'.format(output)
-                )
-        elif 'unix' in self.os_info.lower():
-            if self.instance:
-                command = 'commvault -instance {0} restart'.format(self.instance)
-
-                __, __, error = self.execute_command(command, wait_for_completion=False)
-
-                if error:
-                    raise SDKException(
-                        'Client', '102', 'Failed to restart services.\nError: {0}'.format(error)
-                    )
-            else:
-                raise SDKException('Client', '109')
-        else:
-            raise SDKException('Client', '109')
+        self._service_operations('ALL', 'RESTART_SVC_GRP')
 
         if wait_for_service_restart:
             start_time = time.time()

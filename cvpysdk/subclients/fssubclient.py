@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -16,30 +15,30 @@ FileSystemSubclient: Derived class from Subclient Base class, representing a fil
 
 FileSystemSubclient:
 
-    _get_subclient_properties()          --  initializes the subclient  related properties of
-                                                 File System subclient
+    _get_subclient_properties()         --  initializes the subclient related properties of the
+    File System subclient
 
-    _get_subclient_properties_json()     --  gets all the subclient  related properties of
-                                                 File System subclient
+    _get_subclient_properties_json()    --  gets all the subclient related properties of the
+    File System subclient
 
-    _advanced_backup_options()           --  sets the advanced backup options
+    _advanced_backup_options()          --  sets the advanced backup options
 
-    content()                            --  update the content of the subclient
+    content()                           --  update the content of the subclient
 
-    filter_content()                     --  update the filter of the subclient
+    filter_content()                    --  update the filter of the subclient
 
-    exception_content()                  --  update the exception of the subclient
+    exception_content()                 --  update the exception of the subclient
 
-    scan_type()                          --  update the scan type of the subclient
+    scan_type()                         --  update the scan type of the subclient
 
-    trueup_option()                      --  enable/disable trueup option of the subclient
+    trueup_option()                     --  enable/disable trueup option of the subclient
 
-    trueup_days()                        --  update trueup after n days value of the subclient.
+    trueup_days()                       --  update trueup after **n** days value of the subclient
 
-    find_all_versions()                  --  returns the dict containing list of all the backuped up
-                                                versions of specified file
+    find_all_versions()                 --  returns the dict containing list of all the backed up
+    versions of specified file
 
-    backup()                             --  run a backup job for the subclient
+    backup()                            --  run a backup job for the subclient
 
 """
 
@@ -61,10 +60,13 @@ class FileSystemSubclient(Subclient):
 
         """
         super(FileSystemSubclient, self)._get_subclient_properties()
+
         if 'impersonateUser' in self._subclient_properties:
             self._impersonateUser = self._subclient_properties['impersonateUser']
+
         if 'fsSubClientProp' in self._subclient_properties:
             self._fsSubClientProp = self._subclient_properties['fsSubClientProp']
+
         if 'content' in self._subclient_properties:
             self._content = self._subclient_properties['content']
 
@@ -89,18 +91,49 @@ class FileSystemSubclient(Subclient):
         }
         return subclient_json
 
+    @property
+    def _fs_subclient_prop(self):
+        """Returns the JSON for the fsSubclientProp tag in the Subclient Properties JSON"""
+        return self._fsSubClientProp
+
+    @_fs_subclient_prop.setter
+    def _fs_subclient_prop(self, value):
+        """Update the values of fsSubclientProp JSON.
+
+            Args:
+                value   (dict)  --  dictionary consisting of the JSON attribute as the key
+                and the new data as its value
+
+            Raises:
+                SDKException:
+                    if value is not of type dict
+
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        for key, value in value.items():
+            self._fsSubClientProp[key] = value
+
+        if 'enableOnePass' in self._fsSubClientProp:
+            del self._fsSubClientProp['enableOnePass']
+
+        if 'isTurboSubclient' in self._commonProperties:
+            del self._commonProperties['isTurboSubclient']
+
     def _set_content(self,
                      content=None,
                      filter_content=None,
                      exception_content=None):
-        """Sets the subclient content / filter / exception content
+        """Sets the subclient content / filter / exception content.
 
             Args:
-                content         	(list)      --  list of subclient content
+                content             (list)  --  list of subclient content
 
-                filter_content  	(list)      --  list of filter content
+                filter_content      (list)  --  list of filter content
 
-                exception_content	(list)		--	list of exception content
+                exception_content   (list)  --  list of exception content
+
         """
         if content is None:
             content = self.content
@@ -263,66 +296,74 @@ class FileSystemSubclient(Subclient):
             self._set_content(exception_content=value)
         else:
             raise SDKException(
-                'Subclient', '102', 'Subclient exception content should be a list value and not empty'
+                'Subclient',
+                '102',
+                'Subclient exception content should be a list value and not empty'
             )
 
     @property
     def scan_type(self):
         """Gets the appropriate scan type for this Subclient
 
-            Returns: int
-                1 - Recursive Scan
-                2 - Optimized Scan
-                3 - Change Journal Scan
-        """
+            Returns:
+                int
+                    1   -   Recursive Scan
+                    2   -   Optimized Scan
+                    3   -   Change Journal Scan
 
+        """
         return self._fsSubClientProp['scanOption']
 
     @scan_type.setter
     def scan_type(self, scan_type_value):
-        """Creates the JSON with the specified scan type to pass to the API to update the scan type of this
-            File System Subclient.
+        """Creates the JSON with the specified scan type to pass to the API
+            to update the scan type of this File System Subclient.
 
             Args:
-                scan_type_value (int)  --  scan type value as indicated below
-                1 - Recursive Scan
-                2 - Optimized Scan
-                3 - Change Journal Scan
+                scan_type_value     (int)   --  scan type value as indicated below
+
+                    1   -   Recursive Scan
+                    2   -   Optimized Scan
+                    3   -   Change Journal Scan
 
             Raises:
                 SDKException:
                     if failed to update scan type of subclient
 
                     if scan_type_value is invalid
+
         """
-        if isinstance(scan_type_value, int) and scan_type_value >= 1 and scan_type_value <=3 :
+        if isinstance(scan_type_value, int) and scan_type_value >= 1 and scan_type_value <= 3:
             self._set_subclient_properties("_fsSubClientProp['scanOption']", scan_type_value)
-        else :
-            raise SDKException(
-                'Subclient', '102', 'Invalid scan type'
-            )
+        else:
+            raise SDKException('Subclient', '102', 'Invalid scan type')
 
     @property
     def trueup_option(self):
         """Gets the value of TrueUp Option
 
             Returns:
-                true - if trueup is enabled on the subclient
-                false - if trueup is not enabled on the subclient
+                True    -   if trueup is enabled on the subclient
+
+                False   -   if trueup is not enabled on the subclient
+
         """
 
         return self._fsSubClientProp['isTrueUpOptionEnabledForFS']
 
     @trueup_option.setter
     def trueup_option(self, trueup_option_value):
-        """Creates the JSON with the specified scan type to pass to the API to update the scan type of this
-            File System Subclient.
+        """Creates the JSON with the specified scan type to pass to the API
+            to update the scan type of this File System Subclient.
 
             Args:
                 trueup_option_value (bool)  --  Specifies to enable or disable trueup
         """
 
-        self._set_subclient_properties("_fsSubClientProp['isTrueUpOptionEnabledForFS']", trueup_option_value)
+        self._set_subclient_properties(
+            "_fsSubClientProp['isTrueUpOptionEnabledForFS']",
+            trueup_option_value
+        )
 
     @property
     def trueup_days(self):
@@ -335,24 +376,26 @@ class FileSystemSubclient(Subclient):
 
     @trueup_days.setter
     def trueup_days(self, trueup_days_value):
-        """Creates the JSON with the specified trueup days to pass to the API to update the trueup after n days value of this
-            File System Subclient.
+        """Creates the JSON with the specified trueup days to pass to the API
+            to update the trueup after **n** days value of this File System Subclient.
 
             Args:
-                trueup_days_value (int)  --  run trueup after days
+                trueup_days_value   (int)   --  run trueup after days
 
             Raises:
                 SDKException:
                     if failed to update trueup after n days of subclient
 
                     if trueup_days_value is invalid
+
         """
         if isinstance(trueup_days_value, int):
-            self._set_subclient_properties("_fsSubClientProp['runTrueUpJobAfterDaysForFS']", trueup_days_value)
-        else :
-            raise SDKException(
-                'Subclient', '102', 'Invalid trueup days'
+            self._set_subclient_properties(
+                "_fsSubClientProp['runTrueUpJobAfterDaysForFS']",
+                trueup_days_value
             )
+        else:
+            raise SDKException('Subclient', '102', 'Invalid trueup days')
 
     def find_all_versions(self, *args, **kwargs):
         """Searches the content of a Subclient.
@@ -383,7 +426,7 @@ class FileSystemSubclient(Subclient):
             dict    -   dictionary of the specified file with list of all the file versions and
                             additional metadata retrieved from browse
         """
-        if len(args) > 0 and isinstance(args[0], dict):
+        if args and isinstance(args[0], dict):
             options = args[0]
         else:
             options = kwargs
@@ -444,6 +487,7 @@ class FileSystemSubclient(Subclient):
                     if response is empty
 
                     if response is not success
+
         """
         if on_demand_input is not None:
             if not isinstance(on_demand_input, basestring):
@@ -460,18 +504,26 @@ class FileSystemSubclient(Subclient):
             advanced_options['on_demand_input'] = on_demand_input
 
         if advanced_options or schedule_pattern:
-            request_json = self._backup_json(backup_level, incremental_backup, incremental_level, advanced_options,schedule_pattern)
+            request_json = self._backup_json(
+                backup_level,
+                incremental_backup,
+                incremental_level,
+                advanced_options,
+                schedule_pattern
+            )
 
-            backup_service = self._commcell_object._services['CREATE_TASK']
+            backup_service = self._services['CREATE_TASK']
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
+            flag, response = self._cvpysdk_object.make_request(
                 'POST', backup_service, request_json
             )
 
         else:
-            return super(FileSystemSubclient, self).backup(backup_level=backup_level,
-                                                           incremental_backup=incremental_backup,
-                                                           incremental_level=incremental_level,
-                                                           collect_metadata=collect_metadata)
+            return super(FileSystemSubclient, self).backup(
+                backup_level=backup_level,
+                incremental_backup=incremental_backup,
+                incremental_level=incremental_level,
+                collect_metadata=collect_metadata
+            )
 
         return self._process_backup_response(flag, response)
