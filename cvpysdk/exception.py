@@ -119,10 +119,6 @@ EXCEPTION_DICT = {
     'GlobalFilter': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
-    },
-    'Plan': {
-        '101': 'Data type of the input(s) is not valid',
-        '102':''
     }
 }
 

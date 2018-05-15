@@ -283,7 +283,6 @@ class Instance(object):
 
         self._INSTANCE = self._commcell_object._services['INSTANCE'] % (self._instance_id)
         self._RESTORE = self._commcell_object._services['RESTORE']
-
         self._properties = None
         self._restore_association = None
 
@@ -648,20 +647,6 @@ class Instance(object):
             else:
                 request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(temp)
 
-        if fs_options.get('all_versions') and fs_options['all_versions'] is True:
-            request_json['taskInfo']['subTasks'][0]['options'][
-                'restoreOptions']['commonOptions']['allVersion'] = True
-
-        if fs_options.get('versions'):
-            versions = fs_options['versions']
-            if not isinstance(versions, list):
-                raise SDKException('Instance', '101')
-
-            for version in versions:
-                version = "|\\|#15!vErSiOnS|#15!\\{0}".format(version)
-                request_json['taskInfo']['subTasks'][0]['options'][
-                    'restoreOptions']['fileOption']['sourceItem'].append(version)
-
         return request_json
 
     def _restore_in_place(
@@ -671,8 +656,7 @@ class Instance(object):
             restore_data_and_acl=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None,
-            fs_options=None):
+            to_time=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -696,17 +680,6 @@ class Instance(object):
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
-
-                fs_options      (dict)          -- dictionary that includes all advanced options
-                    options:
-                        preserve_level      : preserve level option to set in restore
-                        proxy_client        : proxy that needed to be used for restore
-                        impersonate_user    : Impersonate user options for restore
-                        impersonate_password: Impersonate password option for restore
-                                                in base64 encoded form
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-                        versions            : list of version numbers to be backed up
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -737,8 +710,7 @@ class Instance(object):
             restore_data_and_acl=restore_data_and_acl,
             copy_precedence=copy_precedence,
             from_time=from_time,
-            to_time=to_time,
-            fs_options=fs_options)
+            to_time=to_time)
 
         return self._process_restore_response(request_json)
 
@@ -790,10 +762,7 @@ class Instance(object):
                         proxy_client        : proxy that needed to be used for restore
                         impersonate_user    : Impersonate user options for restore
                         impersonate_password: Impersonate password option for restore
-                                                in base64 encoded form
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-                        versions            : list of version numbers to be backed up
+                                                                        in base64 encoded form
 
             Returns:
                 object - instance of the Job class for this restore job

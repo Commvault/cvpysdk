@@ -120,11 +120,7 @@ SERVICES_DICT_TEMPLATE = {
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=%s&appId=%s&flag=8',
     
     'UPLOAD_FULL_FILE': '{0}Client/%s/file/action/upload?uploadType=fullFile',
-    'UPLOAD_CHUNKED_FILE': '{0}Client/%s/file/action/upload?uploadType=chunkedFile',
-
-    'PLANS': '{0}V2/Plan',
-    'PLAN': '{0}V2/Plan/%s',
-    'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True'
+    'UPLOAD_CHUNKED_FILE': '{0}Client/%s/file/action/upload?uploadType=chunkedFile'
 }
 
 

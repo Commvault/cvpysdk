@@ -49,7 +49,7 @@ class HyperVInstance(VirtualServerInstance):
         """
         super(HyperVInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 2
-
+        
 
 
     def  _get_instance_properties(self):
@@ -71,7 +71,7 @@ class HyperVInstance(VirtualServerInstance):
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():
-                    self._server_name.append(str(client['clientName']))
+                        self._server_name.append(str(client['clientName']))
 
 
     def _get_instance_properties_json(self):
@@ -82,25 +82,22 @@ class HyperVInstance(VirtualServerInstance):
 
         """
         instance_json = {
-            "instanceProperties":{
-                "isDeleted": False,
-                "instance": self._instance,
-                "instanceActivityControl": self._instanceActivityControl,
-                "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": {}                           
-                    }
+                       "instanceProperties":
+                           {
+                               "isDeleted": False,
+                               "instance": self._instance,
+                               "instanceActivityControl": self._instanceActivityControl,
+                               "virtualServerInstance": {
+                                   "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
+                                   "associatedClients": self._virtualserverinstance['associatedClients'],
+                                   "vmwareVendor": {}
+                                   }
+                               }
                        }
-               }
+		
         return instance_json
 
     @property
     def server_name(self):
-        """getter for the domain name in the Hyper-V json"""
-        return self._server_name
-
-    @property
-    def server_host_name(self):
         """getter for the domain name in the vmware vendor json"""
         return self._server_name

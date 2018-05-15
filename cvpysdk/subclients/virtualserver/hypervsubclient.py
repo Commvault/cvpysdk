@@ -16,7 +16,7 @@ HyperVVirtualServerSubclient: Derived class from VirtualServerSubClient  Base cl
 
 HyperVInstance:
 
-    __init__(backupset_object, subclient_name, subclient_id)     --  initialize object of hyper-v
+    __init__(,backupset_object, subclient_name, subclient_id)    --  initialize object of hyper-v
                                                                              subclient object
                                                                                  associated with
                                                                         the VirtualServer subclient

@@ -1240,7 +1240,6 @@ class Client(object):
             if response.json():
                 exit_code = -1
                 output = ''
-                error_message = ''
 
                 if 'processExitCode' in response.json():
                     exit_code = response.json()['processExitCode']
@@ -1248,10 +1247,10 @@ class Client(object):
                 if 'commandLineOutput' in response.json():
                     output = response.json()['commandLineOutput']
 
-                if 'errorMessage' in response.json():
-                    error_message = response.json()['errorMessage']
+                if not output and 'errorMessage' in response.json():
+                    output = response.json()['errorMessage']
 
-                return exit_code, output, error_message
+                return exit_code, output
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1304,7 +1303,6 @@ class Client(object):
             if response.json():
                 exit_code = -1
                 output = ''
-                error_message = ''
 
                 if 'processExitCode' in response.json():
                     exit_code = response.json()['processExitCode']
@@ -1312,10 +1310,10 @@ class Client(object):
                 if 'commandLineOutput' in response.json():
                     output = response.json()['commandLineOutput']
 
-                if 'errorMessage' in response.json():
-                    error_message = response.json()['errorMessage']
+                if not output and 'errorMessage' in response.json():
+                    output = response.json()['errorMessage']
 
-                return exit_code, output, error_message
+                return exit_code, output
             else:
                 raise SDKException('Response', '102')
         else:

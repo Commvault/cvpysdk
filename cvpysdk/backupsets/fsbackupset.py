@@ -17,9 +17,6 @@ FSBackupset:
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
                                         to the input client, at the specified destionation location
 
-    find_all_versions()         --  Returns the dict containing list of all the backuped up
-                                        versions of specified file
-
 """
 
 from __future__ import unicode_literals
@@ -38,8 +35,7 @@ class FSBackupset(Backupset):
             restore_data_and_acl=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None,
-            fs_options=None):
+            to_time=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -64,12 +60,6 @@ class FSBackupset(Backupset):
 
                     default: None
 
-                fs_options      (dict)          -- dictionary that includes all advanced options
-                    options:
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-                        versions            : list of version numbers to be backed up
-
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -91,8 +81,7 @@ class FSBackupset(Backupset):
             restore_data_and_acl=restore_data_and_acl,
             copy_precedence=copy_precedence,
             from_time=from_time,
-            to_time=to_time,
-            fs_options=fs_options
+            to_time=to_time
         )
 
     def restore_out_of_place(
@@ -143,10 +132,7 @@ class FSBackupset(Backupset):
                         proxy_client        : proxy that needed to be used for restore
                         impersonate_user    : Impersonate user options for restore
                         impersonate_password: Impersonate password option for restore
-                                                in base64 encoded form
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-                        versions            : list of version numbers to be backed up
+                                                                        in base64 encoded form
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -178,42 +164,3 @@ class FSBackupset(Backupset):
             to_time=to_time,
             fs_options=fs_options
         )
-
-    def find_all_versions(self, *args, **kwargs):
-        """Searches the content of a Subclient.
-
-            Args:
-                Dictionary of browse options:
-                    Example:
-                        find_all_versions({
-                            'path': 'c:\\hello',
-                            'show_deleted': True,
-                            'from_time': '2014-04-20 12:00:00',
-                            'to_time': '2016-04-31 12:00:00'
-                        })
-
-                    (OR)
-
-                Keyword argument of browse options:
-                    Example:
-                        find_all_versions(
-                            path='c:\\hello.txt',
-                            show_deleted=True,
-                            to_time='2016-04-31 12:00:00'
-                        )
-
-                Refer self._default_browse_options for all the supported options
-
-        Returns:
-            list - List of only the file, folder paths from the browse response
-
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
-        """
-        if len(args) > 0 and isinstance(args[0], dict):
-            options = args[0]
-        else:
-            options = kwargs
-
-        options['operation'] = 'all_versions'
-
-        return self._do_browse(options)

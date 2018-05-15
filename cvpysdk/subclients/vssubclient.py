@@ -101,6 +101,7 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.hypervsubclient import HyperVVirtualServerSubclient
             return object.__new__(HyperVVirtualServerSubclient)
 
+
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialize the Instance object for the given Virtual Server instance.
 
@@ -118,11 +119,6 @@ class VirtualServerSubclient(Subclient):
             '9': 'Virtual Machine',
             '16': 'All unprotected VMs',
             '17': 'Root'
-        }
-        self.filter_types = {
-            '1': 'Datastore',
-            '2': 'Virtual Disk Name/Pattern',
-            '3': 'Virtual Device Node'
         }
         super(VirtualServerSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
@@ -172,7 +168,7 @@ class VirtualServerSubclient(Subclient):
         """
         vm_filter = []
 
-        if self._vmFilter is not None:
+        if not self._vmFilter is None:
             subclient_filter = self._vmFilter
 
             if 'children' in subclient_filter:
@@ -199,42 +195,10 @@ class VirtualServerSubclient(Subclient):
 
         return vm_filter
 
-    @property
-    def vm_diskfilter(self):
-        """Gets the appropriate Diskfilter from the Subclient relevant to the user.
-
-            Returns:
-                list - list of Diskfilter associated with the subclient
-        """
-        vm_diskfilter = []
-        if self._vmDiskFilter is not None:
-            subclient_diskfilter = self._vmDiskFilter
-
-            if 'filters' in subclient_diskfilter:
-                filters = subclient_diskfilter['filters']
-
-                for child in filters:
-                    filter_type = self.filter_types[str(child['filterType'])]
-                    vm_id = str(child['vmGuid']) if 'vmGuid' in child else None
-                    filter_name = str(child['filter'])
-
-                    temp_dict = {
-                        'filter': filter_name,
-                        'filterType': filter_type,
-                        'vmGuid': vm_id
-                    }
-
-                    vm_diskfilter.append(temp_dict)
-
-        else:
-            vm_diskfilter = self._vmDiskFilter
-
-        return vm_diskfilter
-
     @content.setter
     def content(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to update the content of a
-            Virtual Server Subclient. i.e. it works in overwrite mode
+        """Creates the list of content JSON to pass to the API to add/update content of a
+            Virtual Server Subclient.
 
             Args:
                 subclient_content (list)  --  list of the content to add to the subclient
@@ -269,8 +233,8 @@ class VirtualServerSubclient(Subclient):
 
     @vm_filter.setter
     def vm_filter(self, subclient_filter):
-        """Creates the list of Filter JSON to pass to the API to update the VM_filter of a
-            Virtual Server Subclient. i.e. it works in overwrite mode
+        """Creates the list of Filter JSON to pass to the API to add/update content of a
+            Virtual Server Subclient.
 
             Args:
                 subclient_filter (list)  --  list of the filter to add to the subclient
@@ -305,44 +269,7 @@ class VirtualServerSubclient(Subclient):
         vs_filter_content = {
             "children": vm_filter
         }
-        self._set_subclient_properties("_vmFilter", vs_filter_content)
-
-    @vm_diskfilter.setter
-    def vm_diskfilter(self, subclient_diskfilter):
-        """Creates the list of Disk Filter JSON to pass to the API to update the Disk_filter of a
-            Virtual Server Subclient. i.e. it works in overwrite mode
-
-            Args:
-                subclient_diskfilter (list)  --  list of the Disk filter to add to the subclient
-
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
-        """
-        vm_diskfilter = []
-
-        try:
-            for temp_dict in subclient_diskfilter:
-                for type_id, type_name in self.filter_types.items():
-                    if type_name == temp_dict['type']:
-                        filter_type_id = type_id
-                        break
-
-                virtual_server_dict = {
-                    'filter': temp_dict['filter'],
-                    'filterType': filter_type_id,
-                    'vmGuid': temp_dict['vmGuid']
-                }
-
-                vm_diskfilter.append(virtual_server_dict)
-
-        except KeyError as err:
-            raise SDKException('Subclient', '102',
-                               '{} not given in content'.format(err))
-
-        vs_diskfilter_content = {
-            "filters": vm_diskfilter
-        }
-        self._set_subclient_properties("_vmDiskFilter", vs_diskfilter_content)
+        self._set_subclient_content("_vmFilter", vs_filter_content)
 
     def _get_subclient_properties(self):
         """Gets the subclient  related properties of File System subclient.
@@ -360,7 +287,7 @@ class VirtualServerSubclient(Subclient):
         if 'vmDiskFilter' in self._subclient_properties:
             self._vmDiskFilter = self._subclient_properties['vmDiskFilter']
         if 'vmFilter' in self._subclient_properties:
-            self._vmFilter = self._subclient_properties['vmFilter']
+            self._vmFilter = self._subclient_properties['vmBackupInfo']
         if 'vmBackupInfo' in self._subclient_properties:
             self._vmBackupInfo = self._subclient_properties['vmBackupInfo']
         if 'vsaSubclientProp' in self._subclient_properties:
@@ -390,14 +317,11 @@ class VirtualServerSubclient(Subclient):
                     "proxyClient": self._proxyClient,
                     "subClientEntity": self._subClientEntity,
                     "vmDiskFilter": self._vmDiskFilter,
-                    "vmFilter": self._vmFilter,
                     "vmBackupInfo": self._vmBackupInfo,
                     "vsaSubclientProp": self._vsaSubclientProp,
                     #"content": self._content,
                     "commonProperties": self._commonProperties,
-                    "vmContentOperationType": 1,
-                    "vmDiskFilterOperationType": 1,
-                    "vmFilterOperationType": 1
+                    "contentOperationType": 1
                 }
         }
         return subclient_json
@@ -1225,7 +1149,7 @@ class VirtualServerSubclient(Subclient):
                                                 eg:\\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
 
                 copy_precedence_applicable  - True if needs copy_preceedence to be honored else False
-                copy_preceedence            - the copy id from which browse and
+                copy_preceedence            - the copy id from which browse and 
                                                                 restore needs to be performed
 
         returns:
@@ -1294,7 +1218,7 @@ class VirtualServerSubclient(Subclient):
                                             eg:\\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
 
             copy_precedence_applicable  - True if needs copy_preceedence to be honoured else False
-            copy_preceedence            - the copy id from which browse and
+            copy_preceedence            - the copy id from which browse and 
                                                             restore needs to be performed
 
             power_on                    - power on the VM after restore
@@ -1338,7 +1262,7 @@ class VirtualServerSubclient(Subclient):
         _virt_restore_json = self._virtualserver_option_restore_json
         _virt_restore_json["diskLevelVMRestoreOption"] = self._json_disklevel_option_restore
         _virt_restore_json["diskLevelVMRestoreOption"][
-            "advancedRestoreOptions"] = self._advanced_restore_option_list
+                                "advancedRestoreOptions"] = self._advanced_restore_option_list
 
         request_json = {
             "taskInfo": {
