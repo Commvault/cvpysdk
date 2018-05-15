@@ -54,5 +54,10 @@ setup(
     keywords='commvault, python, sdk, cv, simpana, commcell, cvlt, webconsole',
     include_package_data=True,
     install_requires=['requests', 'future', 'xmltodict'],
-    zip_safe=False
+    zip_safe=False,
+    project_urls={
+        'Bug Tracker': 'https://github.com/CommvaultEngg/cvpysdk/issues',
+        'Documentation': 'https://commvaultengg.github.io/cvpysdk/',
+        'Source Code': 'https://github.com/CommvaultEngg/cvpysdk/tree/SP10'
+    }
 )
