@@ -815,7 +815,7 @@ class Clients(object):
         if self.has_client(index_server):
             index_server_cloud = self.get(index_server)
 
-            if index_server_cloud.agents.has_agent('distributed apps'):
+            if index_server_cloud.agents.has_agent('big data apps'):
                 index_server_dict = {
                     "mediaAgentId": int(index_server_cloud.client_id),
                     "_type_": 11,
@@ -839,16 +839,13 @@ class Clients(object):
 
                 if self.has_client(client):
                     temp_client = self.get(client)
-
-                    if temp_client.agents.has_agent('exchange mailbox (classic)'):
-                        client_dict = self._get_client_dict(temp_client)
-                        member_servers.append(client_dict)
-
-                    del temp_client
-            elif isinstance(client, Client):
-                if client.agents.has_agent('exchange mailbox (classic)'):
-                    client_dict = self._get_client_dict(client)
+                    client_dict = self._get_client_dict(temp_client)
                     member_servers.append(client_dict)
+                    del temp_client
+
+            elif isinstance(client, Client):
+                client_dict = self._get_client_dict(client)
+                member_servers.append(client_dict)
 
         for account in service_accounts:
             account_dict = {}
@@ -2075,6 +2072,9 @@ class Client(object):
     def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True):
         """Executes the given script of the script type on this client.
 
+            **Only scripts of text format are supported**, i.e., the scripts should not have
+            any binary/bytes content
+
             Args:
                 script_type             (str)   --  type of script to be executed on the client
 
@@ -2145,8 +2145,8 @@ class Client(object):
         import html
 
         if os.path.isfile(script):
-            with open(script, 'rb') as temp_file:
-                script = html.escape(temp_file.read().decode())
+            with open(script, 'r') as temp_file:
+                script = html.escape(temp_file.read())
         else:
             script = html.escape(script)
 

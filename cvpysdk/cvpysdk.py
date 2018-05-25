@@ -39,6 +39,8 @@ CVPySDK:
     _logout()                   --  sign out the current logged in user from the commcell,
     and ends the session
 
+    who_am_i()                  --  Fetches the username of the user to whom authtoken is mapped
+
     make_request()              --  run the http request specified on the URL/WebService provided,
     and return the flag specifying success/fail, and response
 
@@ -103,6 +105,40 @@ class CVPySDK(object):
             return response.status_code == httplib.OK and response.ok
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
             raise error
+
+    def who_am_i(self, authtoken=None):
+        """Get the username of the user, to whom the Authtoken belongs to.
+
+            Args:
+                authtoken   (str)   --  QSDK or SAML authentication token
+
+            Returns:
+                str     -   username of the user respective to the token
+
+            Raises:
+                SDKException:
+                    if no user mapping found
+
+        """
+        temp_headers = self._commcell_object._headers.copy()
+
+        if authtoken:
+            temp_headers['Authtoken'] = authtoken
+
+        flag, response = self.make_request(
+            'POST', self._commcell_object._services['WHO_AM_I'], headers=temp_headers
+        )
+
+        if flag:
+            user_dict = xmltodict.parse(response.content)
+
+            if 'CvEntities_ProcessingInstructionInfo' in user_dict:
+                return user_dict['CvEntities_ProcessingInstructionInfo']['user']['@userName']
+            else:
+                raise SDKException('CVPySDK', '107')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def _login(self):
         """Posts a login request to the server.
@@ -172,6 +208,9 @@ class CVPySDK(object):
 
         """
         try:
+            if self._commcell_object._is_saml_login:
+                raise SDKException('CVPySDK', '106')
+
             token_renew_request = {
                 "sessionId": self._commcell_object._headers['Authtoken'],
                 "deviceId": self._commcell_object.device_id
@@ -223,14 +262,14 @@ class CVPySDK(object):
                 method      (str)           --  HTTP operation to perform
 
                     e.g.:
-                        GET
 
-                        POST
+                    -   GET
 
-                        PUT
+                    -   POST
 
-                        DELETE
+                    -   PUT
 
+                    -   DELETE
 
                 url         (str)           --  the web url or service to run the HTTP request on
 

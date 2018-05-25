@@ -1085,6 +1085,7 @@ class Backupset(object):
                         for result in result_set:
 
                             name = result['displayName']
+                            snap_display_name = result['name']
                             if 'path' in result:
                                 path = result['path']
                             else:
@@ -1111,6 +1112,7 @@ class Backupset(object):
 
                             paths_dict[path] = {
                                 'name': name,
+                                'snap_display_name': snap_display_name,
                                 'size': size,
                                 'modified_time': mod_time,
                                 'type': file_or_folder,

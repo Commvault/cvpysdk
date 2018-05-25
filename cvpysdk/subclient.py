@@ -875,18 +875,16 @@ class Subclient(object):
 
 
         """
-        backup = None
-        if getattr(self, attr_name, None):
-            exec(
-                "backup = self.%s" %
-                (attr_name))      # Take backup of old value
+        try:
+            backup = eval('self.%s' % attr_name)        # Take backup of old value
+        except AttributeError:
+            backup = None
 
         exec("self.%s = %s" % (attr_name, 'value'))     # set new value
 
         request_json = self._get_subclient_properties_json()
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._SUBCLIENT, request_json)
+        flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
 
         output = self._process_update_response(flag, response)
 
@@ -1333,23 +1331,32 @@ class Subclient(object):
 
             Raises:
                 SDKException:
+                    if storage policy name is not in string format
+
                     if failed to update storage policy name
 
-                    if storage policy name is not in string format
         """
         if isinstance(value, basestring):
+            value = value.lower()
+
             if not self._commcell_object.storage_policies.has_policy(value):
                 raise SDKException(
                     'Subclient',
                     '102',
-                    'Storage Policy: "{0}" does not exist in the Commcell'.format(
-                        value)
+                    'Storage Policy: "{0}" does not exist in the Commcell'.format(value)
                 )
 
-        self._set_subclient_properties(
-            "_commonProperties['storageDevice']['dataBackupStoragePolicy']['storagePolicyName']",
-            value
-        )
+            self._set_subclient_properties(
+                "_commonProperties['storageDevice']['dataBackupStoragePolicy']",
+                {
+                    "storagePolicyName": value,
+                    "storagePolicyId": int(
+                        self._commcell_object.storage_policies.all_storage_policies[value]
+                    )
+                }
+            )
+        else:
+            raise SDKException('Subclient', '101')
 
     def enable_backup(self):
         """Enables Backup for the subclient.
@@ -1358,8 +1365,7 @@ class Subclient(object):
                 SDKException:
                     if failed to enable backup of subclient
         """
-        self._set_subclient_properties(
-            "_commonProperties['enableBackup']", True)
+        self._set_subclient_properties("_commonProperties['enableBackup']", True)
 
     def enable_backup_at_time(self, enable_time):
         """Disables Backup if not already disabled, and enables at the time specified.

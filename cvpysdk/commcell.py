@@ -191,7 +191,7 @@ from .array_management import ArrayManagement
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
-                of the Commcell class, after the user was logged out.
+of the Commcell class, after the user was logged out.
 
 """
 
@@ -199,20 +199,48 @@ USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell objec
 class Commcell(object):
     """Class for establishing a session to the Commcell via Commvault REST API."""
 
-    def __init__(self, webconsole_hostname, commcell_username, commcell_password=None):
-        """Initialize the Commcell object with the values required for doing the api operations.
+    def __init__(
+            self,
+            webconsole_hostname,
+            commcell_username=None,
+            commcell_password=None,
+            authtoken=None):
+        """Initialize the Commcell object with the values required for doing the API operations.
+
+            Commcell Username and Password can be None, if QSDK / SAML token is being given
+            as the input by the user.
+
+            If both the Commcell Password and the Authtoken are None,
+            then the user will be prompted to enter the password via command line.
+
 
             Args:
-                webconsole_hostname  (str)  --  webconsole host name/ip; webclient.company.com
+                webconsole_hostname     (str)   --  webconsole host Name / IP address
 
-                commcell_username    (str)  --  username of the user to log in to commcell console
+                    e.g.:
 
-                commcell_password    (str)  --  plain text password to log in to commcell console
+                        -   webclient.company.com
+
+                        -   xxx.xxx.xxx.xxx
+
+
+                commcell_username       (str)   --  username for log in to the commcell console
 
                     default: None
 
+
+                commcell_password       (str)   --  plain-text password for log in to the console
+
+                    default: None
+
+
+                authtoken               (str)   --  QSDK / SAML token for log in to the console
+
+                    default: None
+
+
             Returns:
-                object - instance of this class
+                object  -   instance of this class
 
             Raises:
                 SDKException:
@@ -228,6 +256,8 @@ class Commcell(object):
 
         self._user = commcell_username
 
+        self._password = None
+
         self._headers = {
             'Host': webconsole_hostname,
             'Accept': 'application/json',
@@ -236,15 +266,6 @@ class Commcell(object):
         }
 
         self._device_id = socket.getfqdn()
-
-        if commcell_password is None:
-            commcell_password = getpass.getpass('Please enter the Commcell Password: ')
-
-        if isinstance(commcell_password, dict):
-            self._password = commcell_password
-        else:
-            # encodes the plain text password using base64 encoding
-            self._password = b64encode(commcell_password.encode()).decode()
 
         self._cvpysdk_object = CVPySDK(self)
 
@@ -262,17 +283,38 @@ class Commcell(object):
         # Initialize all the services with this commcell service
         self._services = get_services(self._web_service)
 
+        validity_err = None
+        self._is_saml_login = False
+
         if isinstance(commcell_password, dict):
-            if self._password['Authtoken'].startswith('QSDK '):
-                self._headers['Authtoken'] = self._password['Authtoken']
+            authtoken = commcell_password['Authtoken']
+
+        if authtoken:
+            if authtoken.startswith('QSDK ') or authtoken.startswith('SAML '):
+                self._headers['Authtoken'] = authtoken
             else:
-                self._headers['Authtoken'] = '{0}{1}'.format('QSDK ', self._password['Authtoken'])
-        else:
+                self._headers['Authtoken'] = '{0}{1}'.format('QSDK ', authtoken)
+
+            try:
+                self._user = self._cvpysdk_object.who_am_i()
+                self._is_saml_login = True if authtoken.startswith('SAML ') else False
+            except SDKException as error:
+                self._headers['Authtoken'] = None
+                validity_err = error
+
+        if not self._headers['Authtoken'] and commcell_username is not None:
+            if commcell_password is None:
+                commcell_password = getpass.getpass('Please enter the Commcell Password: ')
+
+            self._password = b64encode(commcell_password.encode()).decode()
             # Login to the commcell with the credentials provided
             # and store the token in the headers
             self._headers['Authtoken'] = self._cvpysdk_object._login()
 
         if not self._headers['Authtoken']:
+            if isinstance(validity_err, Exception):
+                raise validity_err
+
             raise SDKException('Commcell', '102')
 
         self._commserv_name = None
@@ -955,7 +997,6 @@ class Commcell(object):
         self._array_management = None
 
         self._get_commserv_details()
-
 
     def run_data_aging(
             self,

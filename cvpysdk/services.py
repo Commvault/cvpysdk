@@ -36,6 +36,7 @@ SERVICES_DICT_TEMPLATE = {
     'RENEW_LOGIN_TOKEN': '{0}RenewLoginToken',
     'COMMSERV': '{0}CommServ',
     'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
+    'WHO_AM_I': '{0}WhoAmI',
 
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',

@@ -1,8 +1,7 @@
-﻿#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -276,7 +275,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
     def disk_restore(self,
                      vm_name,
-                     staging_path,
+                     destination_path,
                      disk_name=None,
                      proxy_client=None,
                      copy_precedence=0,
@@ -287,7 +286,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 vm_name             (basestring)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
-                staging_path        (basestring)    --  Staging (destination) path to restore the
+                destination_path        (basestring)    --  Staging (destination) path to restore the
                                                         disk.
 
                 disk_name                 (list)    --  name of the disk which has to be restored
@@ -329,7 +328,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         # check if inputs are correct
         if not (isinstance(vm_name, basestring) and
-                isinstance(staging_path, basestring) and
+                isinstance(destination_path, basestring) and
                 isinstance(disk_name, list) and
                 disk_extn == '.vmdk'):
             raise SDKException('Subclient', '101')
@@ -387,7 +386,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             _disk_restore_option,
             in_place=False,
             copy_precedence=copy_precedence,
-            destination_path=staging_path,
+            destination_path=destination_path,
             paths=src_item_list
         )
 

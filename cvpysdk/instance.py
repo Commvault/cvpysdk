@@ -539,20 +539,23 @@ class Instance(object):
 
     def _set_instance_properties(self, attr_name, value):
         """sets the properties of this sub client.value is updated to instance once when post call
-            succeeds
+            succeeds.
 
             Args:
-                attr_name (str)  --  old value of the property. this should be instance variable.
-                value (str)  --  new value of the property. this should be instance variable.
+                attr_name   (str)   --  old value of the property. this should be instance variable
+
+                value       (str)   --  new value of the property. this should be instance variable
 
             Raises:
                 SDKException:
                     if failed to update number properties for subclient
 
-
         """
-        backup = None
-        exec("backup = self.%s" % (attr_name))          # Take backup of old value
+        try:
+            backup = eval('self.%s' % attr_name)        # Take backup of old value
+        except AttributeError:
+            backup = None
+
         exec("self.%s = %s" % (attr_name, 'value'))     # set new value
 
         # _get_instance_properties_json method must be added in all child classes

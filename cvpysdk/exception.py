@@ -78,7 +78,7 @@ EXCEPTION_DICT = {
     },
     'Commcell': {
         '101': 'Commcell is not reachable. Please check the commcell name and services again',
-        '102': 'Authtoken not received. Please try again.',
+        '102': 'Credentials not received. Please try again.',
         '103': 'Failed to get the CommServ details',
         '104': 'Failed to send an email to specified user',
         '105': 'Failed to run the Data Aging job',
@@ -89,7 +89,9 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Reached the maximum attempts limit',
         '104': 'This session has expired. Please login again',
-        '105': 'Script Type is not valid'
+        '105': 'Script Type is not valid',
+        '106': 'The token has expired. Please login again',
+        '107': 'No mapping exists for the given token for any user'
     },
     'Client': {
         '101': 'Data type of the input(s) is not valid',

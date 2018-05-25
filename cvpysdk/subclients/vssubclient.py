@@ -107,6 +107,10 @@ VirtualServerSubclient:
 
     full_vm_restore_in_place()              -- restores the VM specified by the
                                                user to the same location
+
+    backup()                               --  run a backup job for the subclient
+
+    _advanced_backup_options()              --  sets the advanced backup options
 """
 
 import os
@@ -661,7 +665,7 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": "",
-                "networkName": "",
+                "networkName": network_card_dict['name'],
                 "destinationNetwork": network_card_dict['name']
             }
 
@@ -990,8 +994,9 @@ class VirtualServerSubclient(Subclient):
             show_deleted_files=True,
             restore_index=True,
             vm_disk_browse=False,
-            from_date=None,
-            to_date=None,
+            from_date=0,
+            to_date=0,
+            copy_precedence=0,
             vm_files_browse=False):
         """Gets the content of the backup for this subclient
                 at the path specified in the time range specified.
@@ -1013,19 +1018,22 @@ class VirtualServerSubclient(Subclient):
                     vm_disk_browse      (bool)  --  browse the VM disks or not
                                                     default: False
 
-                    from_date           (str)   --  date to get the contents
+                    from_date           (int)   --  date to get the contents
                                                     after
                                                     format: dd/MM/YYYY
                                                     gets contents from
                                                     01/01/1970 if not specified
-                                                    default: None
+                                                    default: 0
 
-                    to_date             (str)  --   date to get the contents
+                    to_date             (int)  --   date to get the contents
                                                     before
                                                     format: dd/MM/YYYY
                                                     gets contents till current
                                                     day if not specified
-                                                    default: None
+                                                    default: 0
+
+                    copy_precedence     (int)   --  copy precedence to be used
+                                                    for browsing
 
                 Returns:
                     list - list of all folders or files with their full paths
@@ -1053,16 +1061,17 @@ class VirtualServerSubclient(Subclient):
 
 
         browse_content = super(VirtualServerSubclient, self).browse(
-            show_deleted_files, restore_index, vm_disk_browse, from_date, to_date, True,
-            path=vm_path, vm_disk_browse=vm_disk_browse, vs_file_browse=vm_files_browse)
+            show_deleted=show_deleted_files, restore_index=restore_index, vm_disk_browse=vm_disk_browse,
+            from_time=from_date, to_time=to_date, copy_precedence=copy_precedence,
+            path=vm_path, vs_file_browse=vm_files_browse)
 
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
     def disk_level_browse(self, vm_path='\\',
                           show_deleted_files=True,
                           restore_index=True,
-                          from_date=None,
-                          to_date=None):
+                          from_date=0,
+                          to_date=0):
         """Browses the Disks of a Virtual Machine.
 
             Args:
@@ -1072,18 +1081,20 @@ class VirtualServerSubclient(Subclient):
                 show_deleted_files  (bool)  --  include deleted files in the
                                                 content or not default: True
 
+                restore_index  (bool)  --       Restore index or not.
+                                                default: True
 
-                from_date           (str)   --  date to get the contents after
+                from_date           (int)   --  date to get the contents after
                                                 format: dd/MM/YYYY
                                                 gets contents from 01/01/1970
                                                 if not specified
-                                                default: None
+                                                default: 0
 
-                to_date             (str)  --  date to get the contents before
+                to_date             (int)  --  date to get the contents before
                                                format: dd/MM/YYYY
                                                gets contents till current day
                                                if not specified
-                                               default: None
+                                               default: 0
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1133,8 +1144,9 @@ class VirtualServerSubclient(Subclient):
             vm_path='\\',
             show_deleted_files=True,
             restore_index=True,
-            from_date=None,
-            to_date=None):
+            from_date=0,
+            to_date=0,
+            copy_precedence=0):
         """Browses the Files and Folders inside a Virtual Machine in the time
            range specified.
 
@@ -1151,19 +1163,22 @@ class VirtualServerSubclient(Subclient):
                 restore_index       (bool)  --  restore index if it is not cached
                                                 default: True
 
-                from_date           (str)   --  date to get the contents after
+                from_date           (int)   --  date to get the contents after
                                                 format: dd/MM/YYYY
 
                                                 gets contents from 01/01/1970
                                                 if not specified
-                                                default: None
+                                                default: 0
 
-                to_date             (str)  --  date to get the contents before
+                to_date             (int)  --  date to get the contents before
                                                format: dd/MM/YYYY
 
                                                gets contents till current day
                                                if not specified
-                                               default: None
+                                               default: 0
+
+                copy_precedence     (int)   --  copy precedence to be used
+                                                    for browsing
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1187,7 +1202,7 @@ class VirtualServerSubclient(Subclient):
                     if response is not success
         """
         return self.browse_in_time(
-            vm_path, show_deleted_files, restore_index, False, from_date, to_date,
+            vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
             vm_files_browse=True)
 
     def _check_folder_in_browse(
@@ -1195,7 +1210,8 @@ class VirtualServerSubclient(Subclient):
             _vm_id,
             _folder_to_restore,
             from_date,
-            to_date):
+            to_date,
+            copy_precedence):
         """
         Check if the particular folder is present in browse of the subclient
         in particular VM
@@ -1203,7 +1219,24 @@ class VirtualServerSubclient(Subclient):
         args:
             _vm_id      (str)     -- VM id from which folder has to be restored
 
-            folder_path (str)     -- folder path which has to be restored
+            _folder_to_restore (str)     -- folder path which has to be restored
+
+            from_date           (int)   --  date to get the contents after
+                                                format: dd/MM/YYYY
+
+                                                gets contents from 01/01/1970
+                                                if not specified
+                                                default: 0
+
+            to_date             (int)  --  date to get the contents before
+                                               format: dd/MM/YYYY
+
+                                               gets contents till current day
+                                               if not specified
+                                               default: 0
+
+            copy_precedence     (int)   --  copy precedence to be used
+                                                    for browsing
 
         exception:
             raise exception
@@ -1218,7 +1251,7 @@ class VirtualServerSubclient(Subclient):
         _source_path = r'\\'.join([_vm_id, _folder_to_restore])
 
         _browse_files, _browse_files_dict = self.guest_files_browse(
-            _source_path, from_date=from_date, to_date=to_date)
+            _source_path, from_date=from_date, to_date=to_date, copy_precedence=copy_precedence)
 
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split("\\")[-1]
@@ -1240,10 +1273,10 @@ class VirtualServerSubclient(Subclient):
                            preserve_level=1,
                            unconditional_overwrite=False,
                            restore_ACL=True,
-                           from_date=None,
-                           to_date=None,
+                           from_date=0,
+                           to_date=0,
                            show_deleted_files=True,
-                           fbr_ma = None):
+                           fbr_ma=None):
         """perform Guest file restore of the provided path
 
         Args:
@@ -1259,15 +1292,20 @@ class VirtualServerSubclient(Subclient):
 
             destination_path    (basestring)   --  path to restore
 
-            from_date           (basestring)   --  date to get the contents after
+            copy_precedence     (int)   --  copy precedence to be used
+                                                    for browsing
+
+            from_date           (int)   --  date to get the contents after
                                             format: dd/MM/YYYY
                                             gets contents from 01/01/1970 if
-                                            not specified default: None
+                                            not specified default: 0
 
-            to_date             (basestring)   --  date to get the contents before
+            to_date             (int)   --  date to get the contents before
                                             format: dd/MM/YYYY
                                             gets contents till current day
-                                            if not specified default: None
+                                            if not specified default: 0
+
+            fbr_ma              (basestring)    --  FRE MA used for browsing Unix VMs
 
          Raises:
                 SDKException:
@@ -1321,7 +1359,8 @@ class VirtualServerSubclient(Subclient):
                 self._check_folder_in_browse(_vm_ids[vm_name],
                                              "%s" % _each_folder,
                                              from_date,
-                                             to_date))
+                                             to_date,
+                                             copy_precedence))
 
         # set the browse options
         _file_restore_option["disk_browse"] = False
@@ -1377,8 +1416,8 @@ class VirtualServerSubclient(Subclient):
             vm_path='\\',
             show_deleted_files=True,
             restore_index=True,
-            from_date=None,
-            to_date=None):
+            from_date=0,
+            to_date=0):
         """Browses the Files and Folders of a Virtual Machine in the time range
            specified.
 
@@ -1396,17 +1435,17 @@ class VirtualServerSubclient(Subclient):
                                                 cached
                                                 default: True
 
-                from_date           (basestring)   --  date to get the contents after
+                from_date           (int)   --  date to get the contents after
                                                 format: dd/MM/YYYY
                                                 gets contents from 01/01/1970
                                                 if not specified
-                                                default: None
+                                                default: 0
 
-                to_date             (basestring)  --   date to get the contents before
+                to_date             (int)  --   date to get the contents before
                                                 format: dd/MM/YYYY
                                                 gets contents till current day
                                                 if not specified
-                                                default: None
+                                                default: 0
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1559,7 +1598,7 @@ class VirtualServerSubclient(Subclient):
             restore_option["destination_instance"] = instance.instance_name
 
         if (("esx_server" not in restore_option) or (
-                    restore_option["esx_server"] is None)):
+                restore_option["esx_server"] is None)):
             restore_option["esx_server"] = instance.server_host_name[0]
 
         if (("client_name" not in restore_option) or
@@ -1625,19 +1664,17 @@ class VirtualServerSubclient(Subclient):
         vm_disks = []
         disk_list, disk_info_dict = self.disk_level_browse(
             "\\\\" + vm_ids[vm_to_restore])
-
         for disk, data in disk_info_dict.items():
-                self._set_restore_inputs(restore_option,
-                                         datastore=data["advanced_data"]["browseMetaData"][
-                                             "virtualServerMetaData"]["datastore"])
-                _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1],
+            if restore_option["in_place"]:
+                restore_option["datastore"] = data["advanced_data"]["browseMetaData"][
+                                             "virtualServerMetaData"]["datastore"]
+            _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1],
                                                      restore_option["datastore"])
-                vm_disks.append(_disk_dict)
-
-        restore_option["disks"] = vm_disks
+            vm_disks.append(_disk_dict)
 
         if not vm_disks:
             raise SDKException('Subclient', 104)
+        restore_option["disks"] = vm_disks
 
         # prepare nics info json
         nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore)
@@ -1822,6 +1859,8 @@ class VirtualServerSubclient(Subclient):
                 if ("restore_new_name" in restore_option and
                         restore_option["restore_new_name"] is not None):
                     restore_option["new_name"] = restore_option["restore_new_name"]
+                else:
+                    restore_option["new_name"] = "Delete" + _each_vm_to_restore
             else:
                 restore_option["new_name"] = _each_vm_to_restore
             self.set_advanced_vm_restore_options(_each_vm_to_restore, restore_option)
@@ -1841,3 +1880,87 @@ class VirtualServerSubclient(Subclient):
             "restoreOptions"]["volumeRstOption"] = self._volume_restore_json
 
         return request_json
+
+    def backup(self,
+               backup_level="Incremental",
+               incremental_backup=False,
+               incremental_level='BEFORE_SYNTH',
+               collect_metadata=False,
+               advanced_options=None):
+        """Runs a backup job for the subclient of the level specified.
+
+            Args:
+                backup_level            (str)   --  level of backup the user wish to run
+                                                    Full / Incremental / Differential / Synthetic_full
+
+                incremental_backup      (bool)  --  run incremental backup
+                                                    only applicable in case of Synthetic_full backup
+
+                incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                    BEFORE_SYNTH / AFTER_SYNTH
+                                                    only applicable in case of Synthetic_full backup
+
+                collect_metadata        (bool)  --  Collect Meta data for the backup
+
+                advacnced_options       (dict)  --  advanced backup options to be included while
+                                                    making the request
+                    options:
+                        create_backup_copy_immediately  --  Run Backup copy just after snap backup
+                        backup_copy_type                --  Backup Copy level using storage policy
+                                                            or subclient rule
+            Returns:
+                object : instance of the Job class for this backup job
+
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        backup_level = backup_level.lower()
+        if backup_level not in ['full', 'incremental',
+                                'differential', 'synthetic_full']:
+            raise SDKException('Subclient', '103')
+
+        if advanced_options:
+            request_json = self._backup_json(backup_level, incremental_backup, incremental_level, advanced_options)
+
+            backup_service = self._commcell_object._services['CREATE_TASK']
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', backup_service, request_json
+            )
+
+        else:
+            return super(VirtualServerSubclient, self).backup(backup_level=backup_level,
+                                                              incremental_backup=incremental_backup,
+                                                              incremental_level=incremental_level,
+                                                              collect_metadata=collect_metadata)
+
+        return self._process_backup_response(flag, response)
+
+    def _advanced_backup_options(self, options):
+        """Generates the advanced backup options dict
+
+            Args:
+                options         (dict)  --  advanced backup options that are to be included
+                                            in the request
+                    create_backup_copy_immediately  --  Run Backup copy just after snap backup
+                    backup_copy_type                --  Backup Copy level using storage policy
+                                                        or subclient rule
+
+            Returns:
+            (dict)                      --  generated advanced options dict
+        """
+        final_dict = super(VirtualServerSubclient, self)._advanced_backup_options(options)
+
+        if 'create_backup_copy_immediately' in options:
+            final_dict['dataOpt'] = {
+                'createBackupCopyImmediately': options.get('create_backup_copy_immediately', False),
+                'backupCopyType': options.get('backup_copy_type', 'USING_STORAGE_POLICY_RULE')
+            }
+
+        return final_dict
