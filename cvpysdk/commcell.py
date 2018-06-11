@@ -71,6 +71,9 @@ Commcell instance Attributes
 
     **auth_token**              --  returns the `Authtoken` for the current session to the commcell
 
+    **commcell_username**       --  returns the associated `user` name for the current session
+    to the commcell
+
     **device_id**               --  returns the id associated with the calling machine
 
     **clients**                 --  returns the instance of the `Clients` class,
@@ -534,6 +537,11 @@ class Commcell(object):
     def auth_token(self):
         """Returns the Authtoken for the current session to the Commcell."""
         return self._headers['Authtoken']
+
+    @property
+    def commcell_username(self):
+        """Returns the logged in user name"""
+        return self._user
 
     @property
     def device_id(self):
