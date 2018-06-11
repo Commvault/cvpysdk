@@ -877,7 +877,7 @@ class Subclient(object):
         """
         try:
             backup = eval('self.%s' % attr_name)        # Take backup of old value
-        except AttributeError:
+        except (AttributeError, KeyError):
             backup = None
 
         exec("self.%s = %s" % (attr_name, 'value'))     # set new value
