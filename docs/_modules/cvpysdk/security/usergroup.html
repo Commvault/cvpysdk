@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.security.usergroup &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.security.usergroup &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -48,46 +48,81 @@
 <span class="sd">UserGroup:  Class for representing a single User Group of the commcell</span>
 
 <span class="sd">UserGroups:</span>
-<span class="sd">    __init__(commcell_object)  --  initialise instance of the UserGroups associated with</span>
-<span class="sd">    the specified commcell</span>
+<span class="sd">    __init__(commcell_object)       --  initialise instance of the UserGroups</span>
+<span class="sd">                                        associated with the specified commcell</span>
 
-<span class="sd">    __str__()                  --  returns all the user groups associated with the commcell</span>
+<span class="sd">    __str__()                       --  returns all the user groups associated with</span>
+<span class="sd">                                        the commcell</span>
 
-<span class="sd">    __repr__()                 --  returns the string for the instance of the UserGroups class</span>
+<span class="sd">    __repr__()                      --  returns the string for the instance of the</span>
+<span class="sd">                                        UserGroups class</span>
 
-<span class="sd">    _get_usergroups()          --  gets all the usergroups associated with the commcell specified</span>
+<span class="sd">    _get_usergroups()               --  gets all the usergroups associated with the</span>
+<span class="sd">                                        commcell specified</span>
 
-<span class="sd">    all_user_groups()          -- returns the dict of all the usergroups on commcell</span>
+<span class="sd">    has_user_group()                --  checks if a user group exists with the given</span>
+<span class="sd">                                        name or not</span>
 
-<span class="sd">    has_user_group()           --  checks if a user group exists with the given name or not</span>
+<span class="sd">    get(user_group_name)            --  returns the instance of the UserGroup class,</span>
+<span class="sd">                                        for the the input user group name</span>
 
-<span class="sd">    get(user_group_name)       --  returns the instance of the UserGroup class,</span>
-<span class="sd">    for the the input user group name</span>
+<span class="sd">    add()                           --  adds local/external user group on this</span>
+<span class="sd">                                        commserver</span>
 
-<span class="sd">    delete(user_group_name)    --  deletes the user group from the commcell</span>
+<span class="sd">    delete(user_group_name)         --  deletes the user group from the commcell</span>
 
-<span class="sd">    refresh()                  --  refresh the user groups associated with the commcell</span>
-<span class="sd">    </span>
+<span class="sd">    refresh()                       --  refresh the user groups associated with the</span>
+<span class="sd">                                        commcell</span>
+
+<span class="sd">    all_user_groups()               --  Returns all the usergroups present in the commcell</span>
+
 
 <span class="sd">UserGroup:</span>
 <span class="sd">    __init__(commcell_object,</span>
 <span class="sd">             usergroup_name,</span>
-<span class="sd">             usergroup_id=None)  -- initialise instance of the UserGroup for the commcell</span>
+<span class="sd">             usergroup_id=None)     --  initialise instance of the UserGroup for the</span>
+<span class="sd">                                        commcell</span>
 
-<span class="sd">    __repr__()                   -- return the usergroup name, the instance is associated with</span>
+<span class="sd">    __repr__()                      --  return the usergroup name, the instance is</span>
+<span class="sd">                                        associated with</span>
 
-<span class="sd">    _get_usergroup_id()          -- method to get the usergroup id, if not specified in __init__</span>
+<span class="sd">    _get_usergroup_id()             --  method to get the usergroup id, if not</span>
+<span class="sd">                                        specified in __init__</span>
 
-<span class="sd">    _get_usergroup_properties()  -- get the properties of this usergroup</span>
+<span class="sd">    _get_usergroup_properties()     --  get the properties of this usergroup</span>
 
-<span class="sd">    refresh()                    -- refresh the properties of the user group</span>
+<span class="sd">    _has_usergroup()                --  checks list of users present on the commcell</span>
+
+<span class="sd">    refresh()                       --  refresh the properties of the user group</span>
+
+<span class="sd">    status()                        --  sets status for users (enable\disable)</span>
+
+<span class="sd">    update_security_associations()  --  updates 3-way security associations on usergroup</span>
+
+<span class="sd">    update_usergroup_members()      --  DELETE, OVERWRITE users with this usergroup</span>
+
+<span class="sd">    _send_request()                 --  forms complete joson request for usergroup</span>
+
+<span class="sd">    _update_usergroup_props()       --  Updates the properties of this usergroup</span>
+
+<span class="sd">    users()                         --  returns users who are members of this usergroup</span>
+
+<span class="sd">    usergroups()                    --  returns external usergroups who are members of this usergroup</span>
+
+<span class="sd">    user_group_id()                 --  returns group id of this user group</span>
+
+<span class="sd">    user_group_name()               --  returns user group name of this group</span>
+
+<span class="sd">    description()                   --  returns the description set for this user group</span>
+
+<span class="sd">    email()                         --  returns the email of this user group</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.security_association</span> <span class="k">import</span> <span class="n">SecurityAssociation</span>
 
 <span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 
@@ -106,7 +141,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_USERGROUPS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USERGROUPS&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USERGROUPS&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
@@ -148,7 +183,7 @@
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_USERGROUPS</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_group</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
@@ -168,18 +203,6 @@
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">all_user_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns dict of all the user groups associated with this commcell</span>
-<span class="sd">        </span>
-<span class="sd">            dict - consists of all user group in the commcell</span>
-<span class="sd">                    {</span>
-<span class="sd">                         &quot;user_group1_name&quot;: user_group1_id,</span>
-<span class="sd">                         &quot;user_group2_name&quot;: user_group2_id</span>
-<span class="sd">                    }</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span>
-
 <div class="viewcode-block" id="UserGroups.has_user_group"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroups.has_user_group">[docs]</a>    <span class="k">def</span> <span class="nf">has_user_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_group_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if a user group exists in the commcell with the input user group name.</span>
 
@@ -187,7 +210,8 @@
 <span class="sd">                user_group_name (str)  --  name of the user group</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                bool - boolean output whether the user group exists in the commcell or not</span>
+<span class="sd">                bool - boolean output whether the user group exists in the commcell</span>
+<span class="sd">                       or not</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -195,8 +219,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_group_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="ow">and</span> <span class="n">user_group_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="ow">and</span> <span class="n">user_group_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span></div>
 
 <div class="viewcode-block" id="UserGroups.get"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroups.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_group_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a user group object of the specified user group name.</span>
@@ -219,90 +243,243 @@
             <span class="n">user_group_name</span> <span class="o">=</span> <span class="n">user_group_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_user_group</span><span class="p">(</span><span class="n">user_group_name</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">UserGroup</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
-                    <span class="n">user_group_name</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span><span class="p">[</span><span class="n">user_group_name</span><span class="p">]</span>
-                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">UserGroup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">user_group_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span><span class="p">[</span>
+                    <span class="n">user_group_name</span><span class="p">])</span>
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No user group exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">user_group_name</span><span class="p">)</span></div>
-            <span class="p">)</span>
+                <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No user group exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">user_group_name</span><span class="p">)</span>
+            <span class="p">)</span></div>
 
-<div class="viewcode-block" id="UserGroups.delete"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroups.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_group_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Deletes the usergroup from the commcell.</span>
+<div class="viewcode-block" id="UserGroups.add"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroups.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">usergroup_name</span><span class="p">,</span>
+            <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">users_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">entity_dictionary</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">external_usergroup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">local_usergroup</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds local/external user group on this commcell based domain parameter provided</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                user_group_name (str)  --  name of the usergroup to remove from the commcell</span>
+<span class="sd">                usergroup_name (str)        --  name of the user group</span>
+
+<span class="sd">                domain  (str)               --  name of the domain to which user group</span>
+<span class="sd">                                                belongs to</span>
+
+<span class="sd">                users_list	(list)			--  list which contains users who will be</span>
+<span class="sd">                                                members of this group</span>
+
+<span class="sd">                entity_dictionary(dict)     --  combination of entity_type, entity</span>
+<span class="sd">                                                names and role</span>
+<span class="sd">                e.g.: security_dict={</span>
+<span class="sd">                                &#39;assoc1&#39;:</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &#39;entity_type&#39;:[&#39;entity_name&#39;],</span>
+<span class="sd">                                        &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],</span>
+<span class="sd">                                        &#39;role&#39;: [&#39;role1&#39;]</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                &#39;assoc2&#39;:</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],</span>
+<span class="sd">                                        &#39;clientName&#39;: [&#39;Linux1&#39;],</span>
+<span class="sd">                                        &#39;role&#39;: [&#39;New1&#39;]</span>
+<span class="sd">                                        }</span>
+<span class="sd">                                    }</span>
+<span class="sd">                entity_type         --      key for the entity present in dictionary</span>
+<span class="sd">                                            on which user will have access</span>
+<span class="sd">                entity_name         --      Value of the key</span>
+<span class="sd">                role                --      key for role name you specify</span>
+<span class="sd">                e.g:   e.g.: {&quot;clientName&quot;:&quot;Linux1&quot;}</span>
+<span class="sd">                Entity Types are:   clientName, mediaAgentName, libraryName, userName,</span>
+<span class="sd">                                    userGroupName, storagePolicyName, clientGroupName,</span>
+<span class="sd">                                    schedulePolicyName, locationName, providerDomainName,</span>
+<span class="sd">                                    alertName, workflowName, policyName, roleName</span>
+
+<span class="sd">                entity_name = &quot;Linux1&quot;, &quot;ClientMachine1&quot;</span>
+
+<span class="sd">                external_usergroup(list)    --  list of domain user group which could</span>
+<span class="sd">                                                be added as members to this group</span>
+
+<span class="sd">                local_usergroup (list)      --  list of commcell usergroup which could</span>
+<span class="sd">                                                be added as members to this group</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (object)    -   UserGroup class instance for the specified user group name</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
-<span class="sd">                    if type of the usergroup name argument is not string</span>
 
-<span class="sd">                    if failed to delete usergroup</span>
+<span class="sd">                    if usergroup with specified name already exists</span>
 
-<span class="sd">                    if response is empty</span>
+<span class="sd">                    if failed to add usergroup to commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">domain</span><span class="p">:</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">usergroup_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="n">usergroup_name</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_user_group</span><span class="p">(</span><span class="n">group_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;UserGroup </span><span class="si">{0}</span><span class="s2"> already exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span>
+                <span class="p">(</span><span class="n">group_name</span><span class="p">))</span>
+
+        <span class="n">local_usergroup_json</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">local_usergroup</span><span class="p">:</span>
+            <span class="n">local_usergroup_json</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span> <span class="n">local_group</span><span class="p">}</span>
+                                    <span class="k">for</span> <span class="n">local_group</span> <span class="ow">in</span> <span class="n">local_usergroup</span><span class="p">]</span>
+
+        <span class="n">security_json</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">entity_dictionary</span><span class="p">:</span>
+            <span class="n">security_request</span> <span class="o">=</span> <span class="n">SecurityAssociation</span><span class="o">.</span><span class="n">_security_association_json</span><span class="p">(</span>
+                <span class="n">entity_dictionary</span><span class="o">=</span><span class="n">entity_dictionary</span><span class="p">)</span>
+            <span class="n">security_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;associationsOperationType&quot;</span><span class="p">:</span> <span class="s2">&quot;ADD&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="n">security_request</span>
+            <span class="p">}</span>
+        <span class="n">user_json</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">uname</span><span class="p">}</span> <span class="k">for</span> <span class="n">uname</span> <span class="ow">in</span> <span class="n">users_list</span><span class="p">]</span>
+
+        <span class="n">external_usergroup_json</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">external_usergroup</span><span class="p">:</span>
+            <span class="n">external_usergroup_json</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span> <span class="n">external_group</span><span class="p">}</span>
+                                       <span class="k">for</span> <span class="n">external_group</span> <span class="ow">in</span> <span class="n">external_usergroup</span><span class="p">]</span>
+
+        <span class="n">usergrop_request</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;userGroupEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span> <span class="n">group_name</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;securityAssociations&quot;</span><span class="p">:</span> <span class="n">security_json</span><span class="p">,</span>
+                    <span class="s2">&quot;users&quot;</span><span class="p">:</span> <span class="n">user_json</span><span class="p">,</span>
+                    <span class="s2">&quot;localUserGroups&quot;</span><span class="p">:</span> <span class="n">local_usergroup_json</span><span class="p">,</span>
+                    <span class="s2">&quot;associatedExternalUserGroups&quot;</span><span class="p">:</span> <span class="n">external_usergroup_json</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="n">usergroup_req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USERGROUPS&#39;</span><span class="p">]</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">usergroup_req</span><span class="p">,</span> <span class="n">usergrop_request</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">group_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UserGroups.delete"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroups.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_group</span><span class="p">,</span> <span class="n">new_user</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_usergroup</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes the specified user from the existing commcell users</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                user_group          (str)   --  name of the usergroup which has to be deleted</span>
+
+<span class="sd">                new_user            (str)   --  name of the target user, whom the ownership</span>
+<span class="sd">                                                of entities should be transferred</span>
+
+<span class="sd">                new_usergroup       (str)   --  name of the user group, whom the ownership</span>
+<span class="sd">                                                of entities should be transferred</span>
+
+<span class="sd">            Note: either user or usergroup  should be provided for ownership</span>
+<span class="sd">                transfer not both.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if usergroup doesn&#39;t exist</span>
+
+<span class="sd">                    if new user and new usergroup any of these is passed and these doesn&#39;t</span>
+<span class="sd">                    exist on commcell</span>
+
+<span class="sd">                    if both user and usergroup is passed for ownership transfer</span>
+
+<span class="sd">                    if both user and usergroup is not passed for ownership transfer</span>
 
 <span class="sd">                    if response is not success</span>
 
-<span class="sd">                    if no usergroup exists with the given name</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_group_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_user_group</span><span class="p">(</span><span class="n">user_group</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;UserGroup </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">user_group</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_user</span> <span class="ow">and</span> <span class="n">new_usergroup</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> and </span><span class="si">{1}</span><span class="s2"> both can not be set as owner!! &quot;</span>
+                               <span class="s2">&quot;please send either new_user or new_usergroup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_user</span><span class="p">,</span>
+                                                                                     <span class="n">new_usergroup</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">user_group_name</span> <span class="o">=</span> <span class="n">user_group_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_user_group</span><span class="p">(</span><span class="n">user_group_name</span><span class="p">):</span>
-                <span class="n">usergroup_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span><span class="p">[</span><span class="n">user_group_name</span><span class="p">]</span>
-
-                <span class="n">delete_usergroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USERGROUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">usergroup_id</span><span class="p">)</span>
-
-                <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-                    <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">delete_usergroup</span>
-                <span class="p">)</span>
-
-                <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                        <span class="n">response_value</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
-                        <span class="n">error_message</span> <span class="o">=</span> <span class="kc">None</span>
-
-                        <span class="k">if</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response_value</span><span class="p">:</span>
-                            <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
-
-                        <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
-                            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete user group</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
-                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                                <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-                            <span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
-                                <span class="c1"># initialize the usergroup again</span>
-                                <span class="c1"># so the usergroups object has all the usergroups</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
-                            <span class="k">else</span><span class="p">:</span>
-                                <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Failed to delete usergroup with error code: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
-                                         <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Please check the documentation for &#39;</span>
-                                         <span class="s1">&#39;more details on the error&#39;</span><span class="p">)</span>
-                                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                                    <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span>
-                                <span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_user</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">has_user</span><span class="p">(</span><span class="n">new_user</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;User </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">new_user</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="n">new_user_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">_users</span><span class="p">[</span><span class="n">new_user</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+                <span class="n">new_group_id</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;No usergroup exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">user_group_name</span><span class="p">)</span></div>
-                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">new_usergroup</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_user_group</span><span class="p">(</span><span class="n">new_usergroup</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                            <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;UserGroup </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists &quot;</span>
+                                                <span class="s2">&quot;on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_usergroup</span><span class="p">)</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                        <span class="s2">&quot;Ownership transfer is mondatory!! Please provide new owner information&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">new_group_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">user_groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">new_usergroup</span><span class="p">)</span><span class="o">.</span><span class="n">user_group_id</span>
+                <span class="n">new_user_id</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">delete_usergroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DELETE_USERGROUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span><span class="p">[</span><span class="n">user_group</span><span class="o">.</span><span class="n">lower</span><span class="p">()],</span> <span class="n">new_user_id</span><span class="p">,</span> <span class="n">new_group_id</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">delete_usergroup</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_user_groups</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="UserGroups.refresh"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroups.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the user groups associated with the Commcell.&quot;&quot;&quot;</span></div></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_user_groups</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the user groups associated with the Commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_user_groups</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_user_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns dict of all the user groups associated with this commcell</span>
+
+<span class="sd">        dict - consists of all user group in the commcell</span>
+<span class="sd">                 {</span>
+<span class="sd">                   &quot;user_group1_name&quot;: user_group1_id,</span>
+<span class="sd">                   &quot;user_group2_name&quot;: user_group2_id</span>
+<span class="sd">                  }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span></div>
 
 
 <div class="viewcode-block" id="UserGroup"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroup">[docs]</a><span class="k">class</span> <span class="nc">UserGroup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -330,13 +507,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_user_group_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_usergroup_id</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_USERGROUP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USERGROUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_group_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_usergroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USERGROUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_group_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_email</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_users</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span> <span class="o">=</span> <span class="p">{}</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_users</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_usergroups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_usergroup_status</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -368,25 +547,24 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_USERGROUP</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_usergroup</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;userGroups&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="n">usergroup_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;userGroups&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;userGroups&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;description&#39;</span> <span class="ow">in</span> <span class="n">usergroup_properties</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="n">usergroup_properties</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;description&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;email&#39;</span> <span class="ow">in</span> <span class="n">usergroup_properties</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_email</span> <span class="o">=</span> <span class="n">usergroup_properties</span><span class="p">[</span><span class="s1">&#39;email&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;enabled&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_usergroup_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;users&#39;</span> <span class="ow">in</span> <span class="n">usergroup_properties</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">usergroup_properties</span><span class="p">[</span><span class="s1">&#39;users&#39;</span><span class="p">]:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_users</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user</span><span class="p">[</span><span class="s1">&#39;userName&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s1">&#39;email&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_email</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;email&#39;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;securityAssociations&#39;</span> <span class="ow">in</span> <span class="n">usergroup_properties</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="s1">&#39;associations&#39;</span> <span class="ow">in</span> <span class="n">usergroup_properties</span><span class="p">[</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">]:</span>
-                        <span class="n">associations</span> <span class="o">=</span> <span class="n">usergroup_properties</span><span class="p">[</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">][</span><span class="s1">&#39;associations&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;securityAssociations&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;associations&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">]:</span>
+                        <span class="n">associations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">][</span><span class="s1">&#39;associations&#39;</span><span class="p">]</span>
 
                         <span class="k">for</span> <span class="n">association</span> <span class="ow">in</span> <span class="n">associations</span><span class="p">:</span>
                             <span class="n">entity</span> <span class="o">=</span> <span class="n">association</span><span class="p">[</span><span class="s1">&#39;entities&#39;</span><span class="p">][</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
@@ -422,7 +600,6 @@
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;permissions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
                                     <span class="n">permission</span>
                                 <span class="p">)</span>
-
                             <span class="k">if</span> <span class="n">role</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;roles&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -430,6 +607,23 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_has_usergroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">usergroup_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;checks whether these users are present on this commcell</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">            usergroup_list (list)   --   list of local_usergroup or external user group</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if user is not found on this commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">usergroup_list</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">usergroup</span> <span class="ow">in</span> <span class="n">usergroup_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">user_groups</span><span class="o">.</span><span class="n">has_user_group</span><span class="p">(</span><span class="n">usergroup</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;UserGroup </span><span class="si">{0}</span><span class="s2"> doesn&#39;texists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">usergroup</span><span class="p">))</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">user_group_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -451,19 +645,266 @@
         <span class="sd">&quot;&quot;&quot;Treats the usergroup email as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_email</span>
 
+<div class="viewcode-block" id="UserGroup.refresh"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroup.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of the UserGroup.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_usergroup_properties</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the status of user group on this commcell&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_usergroup_status</span>
+
+    <span class="nd">@status</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the status for this commcell user group&quot;&quot;&quot;</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="n">value</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_usergroup_props</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the usergroup users as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_users</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of associated users with this usergroup&quot;&quot;&quot;</span>
+        <span class="n">users</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;users&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;users&#39;</span><span class="p">]:</span>
+                <span class="n">users</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user</span><span class="p">[</span><span class="s1">&#39;userName&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">users</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">associations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the usergroup security associations as a read-only attribute.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">usergroups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of associated external usergroups with this usergroup&quot;&quot;&quot;</span>
+        <span class="n">user_groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;externalUserGroups&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">user_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;externalUserGroups&#39;</span><span class="p">]:</span>
+                <span class="n">user_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user_group</span><span class="p">[</span><span class="s1">&#39;externalGroupName&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">user_groups</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">assocaitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of associated external usergroups with this usergroup&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span>
 
-<div class="viewcode-block" id="UserGroup.refresh"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroup.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the properties of the UserGroup.&quot;&quot;&quot;</span></div></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_get_usergroup_properties</span><span class="p">()</span>
+<div class="viewcode-block" id="UserGroup.update_security_associations"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroup.update_security_associations">[docs]</a>    <span class="k">def</span> <span class="nf">update_security_associations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_dictionary</span><span class="p">,</span> <span class="n">request_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;handles three way associations (role-usergroup-entities)</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entity_dictionary   (dict)      --  combination of entity_type, entity names</span>
+<span class="sd">                                                    and role</span>
+<span class="sd">                e.g.: security_dict={</span>
+<span class="sd">                                &#39;assoc1&#39;:</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &#39;entity_type&#39;:[&#39;entity_name&#39;],</span>
+<span class="sd">                                        &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],</span>
+<span class="sd">                                        &#39;role&#39;: [&#39;role1&#39;]</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                &#39;assoc2&#39;:</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],</span>
+<span class="sd">                                        &#39;clientName&#39;: [&#39;Linux1&#39;],</span>
+<span class="sd">                                        &#39;role&#39;: [&#39;New1&#39;]</span>
+<span class="sd">                                        }</span>
+<span class="sd">                                    }</span>
+
+<span class="sd">                entity_type         --      key for the entity present in dictionary</span>
+<span class="sd">                                            on which user will have access</span>
+
+<span class="sd">                entity_name         --      Value of the key</span>
+
+<span class="sd">                role                --      key for role name you specify</span>
+
+<span class="sd">                e.g.: {&quot;clientName&quot;:&quot;Linux1&quot;}</span>
+<span class="sd">                Entity Types are:   clientName, mediaAgentName, libraryName, userName,</span>
+<span class="sd">                                    userGroupName, storagePolicyName, clientGroupName,</span>
+<span class="sd">                                    schedulePolicyName, locationName, providerDomainName,</span>
+<span class="sd">                                    alertName, workflowName, policyName, roleName</span>
+
+<span class="sd">                entity_name:        client name for entity_type &#39;clientName&#39;</span>
+<span class="sd">                                    Media agent name for entitytype &#39;mediaAgentName&#39;</span>
+<span class="sd">                                    similar for other entity_types</span>
+
+<span class="sd">                request_type        --      decides whether to UPDATE, DELETE or</span>
+<span class="sd">                                            OVERWRITE user security association.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed update user properties</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">security_request</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">entity_dictionary</span><span class="p">:</span>
+            <span class="n">security_request</span> <span class="o">=</span> <span class="n">SecurityAssociation</span><span class="o">.</span><span class="n">_security_association_json</span><span class="p">(</span><span class="n">entity_dictionary</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">request_type</span><span class="p">,</span> <span class="n">association_blob</span><span class="o">=</span><span class="n">security_request</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UserGroup.update_usergroup_members"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.usergroup.UserGroup.update_usergroup_members">[docs]</a>    <span class="k">def</span> <span class="nf">update_usergroup_members</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">request_type</span><span class="p">,</span>
+            <span class="n">users_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">external_usergroups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">local_usergroups</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;updates users and usergroups to local usergroup members tab</span>
+<span class="sd">            Args:</span>
+<span class="sd">                request_type (str)              --      decides whether to UPDATE, DELETE or</span>
+<span class="sd">                                                        OVERWRITE user security association</span>
+
+<span class="sd">                users_list  (list)              --      comlete list of local users and</span>
+<span class="sd">                                                        externalusers</span>
+<span class="sd">                e.g : users_list = [r&#39;Red\\RedUser2&#39;, r&#39;Red\\RedUser12&#39;, r&#39;mirje-pc\\A&#39;,</span>
+<span class="sd">                                    r&#39;mirje-pc\\B&#39;, r&#39;John&#39;, r&#39;Prasad&#39;, r&#39;Mahesh&#39;]</span>
+<span class="sd">                where:</span>
+<span class="sd">                RedUser2, RedUser12 are belongs to AD &#39;Red&#39;</span>
+<span class="sd">                A, B are belongs to AD &#39;mirje-pc&#39;</span>
+<span class="sd">                John, Prasad, Mahesh are local users</span>
+
+<span class="sd">                external_usergroups (list)      --      complete list of external usergroup only</span>
+
+<span class="sd">                e.g : external_usergroups_list = [&#39;Red\\RedGroup2&#39;, &#39;mirje-pc\\XYZ&#39;]</span>
+<span class="sd">                where:</span>
+<span class="sd">                RedGroup2 is external user group present in AD &#39;Red&#39;</span>
+<span class="sd">                XYZ is external user group present in AD &#39;mirje-pc&#39;</span>
+
+<span class="sd">                local_usergroups (list) --  complete list of local user groups</span>
+<span class="sd">                                            (Not required when updating external</span>
+<span class="sd">                                            usergroup properties)</span>
+<span class="sd">                e.g : local_usergroups=[&#39;usergroup1&#39;, &#39;usegrouop2&#39;]</span>
+
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed update local usergroup properties</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">users_list</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">users_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">has_user</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;User </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
+            <span class="n">userlist_json</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">xuser</span><span class="p">}</span> <span class="k">for</span> <span class="n">xuser</span> <span class="ow">in</span> <span class="n">users_list</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">userlist_json</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">external_usergroups</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_has_usergroup</span><span class="p">(</span><span class="n">external_usergroups</span><span class="p">)</span>
+            <span class="n">usergroup_json</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">external_usergroups</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">usergroup_json</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">local_usergroups</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_has_usergroup</span><span class="p">(</span><span class="n">local_usergroups</span><span class="p">)</span>
+            <span class="n">local_groups_json</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span> <span class="n">user_name</span><span class="p">}</span> <span class="k">for</span> <span class="n">user_name</span> <span class="ow">in</span> <span class="n">local_usergroups</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">local_groups_json</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">request_type</span><span class="o">=</span><span class="n">request_type</span><span class="p">,</span> <span class="n">users_blob</span><span class="o">=</span><span class="n">userlist_json</span><span class="p">,</span>
+                           <span class="n">external_group_blob</span><span class="o">=</span><span class="n">usergroup_json</span><span class="p">,</span> <span class="n">local_group_blob</span><span class="o">=</span><span class="n">local_groups_json</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_send_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_type</span><span class="p">,</span> <span class="n">association_blob</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">users_blob</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">external_group_blob</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">local_group_blob</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;forms complete json request for user groups</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_type        (str)   --  decides whether to UPDATE, DELETE or</span>
+<span class="sd">                                                OVERWRITE user security association</span>
+
+<span class="sd">                association_blob    (dict)  --  security association blob generated from</span>
+<span class="sd">                                                static method _security_association_json</span>
+<span class="sd">                                                present in SecurityAssociation</span>
+
+<span class="sd">                users_blob          (dict)  --  comlete json blob of local users and</span>
+<span class="sd">                                                externalusers</span>
+
+<span class="sd">                external_group_blob (dict)  --  complete json blob of external</span>
+<span class="sd">                                                usergroup only</span>
+
+<span class="sd">                local_group_blob    (list)  --  complete json blob of local</span>
+<span class="sd">                                                usergroup only</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed update local usergroup properties</span>
+
+<span class="sd">                    if response received is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">update_usergroup_request</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;NONE&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;OVERWRITE&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;UPDATE&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;DELETE&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">local_group_blob</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">local_group_blob</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">association_blob</span><span class="p">:</span>
+            <span class="n">security_association_request</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;associationsOperationType&quot;</span><span class="p">:</span> <span class="n">update_usergroup_request</span><span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()],</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="n">association_blob</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">security_association_request</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">users_blob</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">users_blob</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">group_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;localUserGroupsOperationType&quot;</span><span class="p">:</span> <span class="n">update_usergroup_request</span><span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()],</span>
+            <span class="s2">&quot;usersOperationType&quot;</span><span class="p">:</span> <span class="n">update_usergroup_request</span><span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()],</span>
+            <span class="s2">&quot;externalUserGroupsOperationType&quot;</span><span class="p">:</span> <span class="n">update_usergroup_request</span><span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()],</span>
+            <span class="s2">&quot;securityAssociations&quot;</span><span class="p">:</span> <span class="n">security_association_request</span><span class="p">,</span>
+            <span class="s2">&quot;localUserGroups&quot;</span><span class="p">:</span> <span class="n">local_group_blob</span><span class="p">,</span>
+            <span class="s2">&quot;users&quot;</span><span class="p">:</span> <span class="n">users_blob</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">external_group_blob</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group_json</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;associatedExternalUserGroups&quot;</span><span class="p">:</span> <span class="n">external_group_blob</span><span class="p">})</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">group_json</span><span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_usergroup_props</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_usergroup_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the properties of this usergroup</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                properties_dict (dict)  --  user property dict which is to be updated</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed update usergroup properties</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">usergroup_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USERGROUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_user_group_id</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">usergroup_request</span><span class="p">,</span> <span class="n">properties_dict</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
 </pre></div>
 
           </div>
@@ -499,7 +940,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

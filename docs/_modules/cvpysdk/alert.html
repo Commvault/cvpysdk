@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.alert &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.alert &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -55,6 +55,11 @@
 <span class="sd">    __str__()                   --  returns all the alerts associated with the commcell</span>
 
 <span class="sd">    __repr__()                  --  returns the string for the instance of the Alerts class</span>
+
+<span class="sd">    __len__()                   --  returns the number of alerts configured on the Commcell</span>
+
+<span class="sd">    __getitem__()               --  returns the name of the alert for the given alert Id or the</span>
+<span class="sd">    details for the given alert name</span>
 
 <span class="sd">    _get_alert()                --  gets all the alerts associated with the commcell specified</span>
 
@@ -154,6 +159,37 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of the alerts configured on the Commcell.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_alerts</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the alert for the given alert ID or</span>
+<span class="sd">            the details of the alert for given alert Name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str / int)     --  Name or ID of the alert</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str     -   name of the alert, if the alert id was given</span>
+
+<span class="sd">                dict    -   dict of details of the alert, if alert name was given</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                IndexError:</span>
+<span class="sd">                    no alert exists with the given Name / Id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_alerts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_alerts</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_alerts</span><span class="o">.</span><span class="n">items</span><span class="p">()))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;No alert exists with the given Name / Id&#39;</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_get_alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets all the alerts associated with the commcell</span>
 
@@ -236,8 +272,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alert_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span> <span class="ow">and</span> <span class="n">alert_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span> <span class="ow">and</span> <span class="n">alert_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span></div>
 
 <div class="viewcode-block" id="Alerts.get"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alerts.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a alert object of the specified alert name.</span>
@@ -265,8 +301,8 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span><span class="p">[</span><span class="n">alert_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span><span class="p">[</span><span class="n">alert_name</span><span class="p">][</span><span class="s1">&#39;category&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
-</div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Alert exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_name</span><span class="p">))</span>
+
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Alert exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_name</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Alerts.console_alerts"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alerts.console_alerts">[docs]</a>    <span class="k">def</span> <span class="nf">console_alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page_number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">page_count</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the console alerts from page_number to the number of pages asked for page_count</span>
@@ -314,8 +350,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alerts.delete"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alerts.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the alert from the commcell.</span>
@@ -364,12 +400,12 @@
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">exception_message</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No alert exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_name</span><span class="p">)</span></div>
-                <span class="p">)</span>
+                    <span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No alert exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_name</span><span class="p">)</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alerts.refresh"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alerts.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the alerts associated with the Commcell.&quot;&quot;&quot;</span></div></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_alerts</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the alerts associated with the Commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_alerts</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="Alert"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert">[docs]</a><span class="k">class</span> <span class="nc">Alert</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -580,8 +616,8 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Alert&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;No notification type with name </span><span class="si">{0}</span><span class="s1"> exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_notification_type</span><span class="p">)</span></div>
-            <span class="p">)</span>
+                <span class="s1">&#39;No notification type with name </span><span class="si">{0}</span><span class="s1"> exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_notification_type</span><span class="p">)</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alert.disable_notification_type"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert.disable_notification_type">[docs]</a>    <span class="k">def</span> <span class="nf">disable_notification_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_notification_type</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disable the notification type.</span>
@@ -632,8 +668,8 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Alert&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;No notification type with name </span><span class="si">{0}</span><span class="s1"> exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_notification_type</span><span class="p">)</span></div>
-            <span class="p">)</span>
+                <span class="s1">&#39;No notification type with name </span><span class="si">{0}</span><span class="s1"> exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_notification_type</span><span class="p">)</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alert.enable"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert.enable">[docs]</a>    <span class="k">def</span> <span class="nf">enable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enable an alert.</span>
@@ -673,8 +709,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alert.disable"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert.disable">[docs]</a>    <span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disable an alert.</span>
@@ -716,12 +752,12 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alert.refresh"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the properties of the Alert.&quot;&quot;&quot;</span></div></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_get_alert_properties</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of the Alert.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_alert_properties</span><span class="p">()</span></div></div>
 </pre></div>
 
           </div>
@@ -757,7 +793,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

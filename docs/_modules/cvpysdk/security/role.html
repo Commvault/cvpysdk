@@ -1,0 +1,800 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.security.role &#8212; Developer SDK - Python 11.12 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.security.role</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for managing roles on this commcell</span>
+
+<span class="sd">Roles and Role are only the two classes defined in this commcell</span>
+
+<span class="sd">Roles</span>
+<span class="sd">    __init__()              --  initializes the Roles class object</span>
+
+<span class="sd">    __str__()               --  returns all the Roles associated</span>
+<span class="sd">                                with the commcell</span>
+
+<span class="sd">    __repr__()              --  returns the string for the</span>
+<span class="sd">                                instance of the Roles class</span>
+
+<span class="sd">    _get_roles()            --  gets all the roles on this commcell</span>
+
+<span class="sd">    has_role()              --  checks if role with specified role exists</span>
+<span class="sd">                                on this commcell</span>
+
+<span class="sd">    add()                   --  craetes the role on this commcell</span>
+
+<span class="sd">    get()                   --  returns the role class object for the</span>
+<span class="sd">                                specified role name</span>
+
+<span class="sd">    delete()                --  deletes the role on this commcell</span>
+
+<span class="sd">    refresh()               --  refreshes the list of roles on this commcell</span>
+
+<span class="sd">Role</span>
+<span class="sd">    __init__()              --  initiaizes the role class object</span>
+
+<span class="sd">    __repr__()              --  returns the string for the instance of the</span>
+<span class="sd">                                role class</span>
+
+<span class="sd">    _get_role_id()          --  returns the role id associated with this role</span>
+
+<span class="sd">    _get_role_properties()  --  gets all the properties associated with this role</span>
+
+<span class="sd">    role_name()             --  returns the name of this role</span>
+
+<span class="sd">    role_id()               --  returns the id of this role</span>
+
+<span class="sd">    role_description()      --  returns the description of this role</span>
+
+<span class="sd">    status()                --  returns the status of this role</span>
+
+<span class="sd">    refresh()               --  refreshes the properties of this role</span>
+
+<span class="sd">    _update_role_props()    --  Updates properties of existing roles</span>
+
+<span class="sd">    associate_user()        --  sharing role to user with valid permissions who can</span>
+<span class="sd">                                manage this role.</span>
+
+<span class="sd">    associate_usergroup()   --  sharing role to user group with valid permissions who</span>
+<span class="sd">                                can manage this role</span>
+
+<span class="sd">    modify_capability()     --  modifying permissions of the role</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+<div class="viewcode-block" id="Roles"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Roles">[docs]</a><span class="k">class</span> <span class="nc">Roles</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for maintaining all the configured role on this commcell&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the roles class object for this commcell</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Clients class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_roles</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all roles of the commcell.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the roles configured on the commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;Roles&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">role</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_roles</span><span class="p">):</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">role</span><span class="p">)</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Roles class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Roles class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of roles configured on this commcell&quot;&quot;&quot;</span>
+        <span class="n">get_all_roles_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ROLES&#39;</span><span class="p">]</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">get_all_roles_service</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;roleProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">roles_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;roleProperties&#39;</span><span class="p">]:</span>
+                    <span class="n">temp_id</span> <span class="o">=</span> <span class="n">role</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">][</span><span class="s1">&#39;roleId&#39;</span><span class="p">]</span>
+                    <span class="n">temp_name</span> <span class="o">=</span> <span class="n">role</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">][</span><span class="s1">&#39;roleName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">roles_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+
+                <span class="k">return</span> <span class="n">roles_dict</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Roles.has_role"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Roles.has_role">[docs]</a>    <span class="k">def</span> <span class="nf">has_role</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if any role with specified name exists on this commcell</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                role_name         (str)     --      name of the role which has to be</span>
+<span class="sd">                                                    checked if exists</span>
+
+<span class="sd">            Retruns:</span>
+<span class="sd">                Bool- True if specified role is presnt on th ecommcell else false</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if data type of input is invalid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">role_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span> <span class="ow">and</span> <span class="n">role_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span></div>
+
+<div class="viewcode-block" id="Roles.add"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Roles.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rolename</span><span class="p">,</span> <span class="n">permission_list</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">categoryname_list</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;creates new role</span>
+
+<span class="sd">             Args:</span>
+<span class="sd">                 role Name          --  Name of the role to be created</span>
+<span class="sd">                 category Name list --  role will be created with all the permissions</span>
+<span class="sd">                                    associated with this category</span>
+<span class="sd">                    e.g.: category Name=Client :role will have all permisisons from</span>
+<span class="sd">                                        this category.</span>
+<span class="sd">                    e.g.: category Name=Client Group :role will have all permissions</span>
+<span class="sd">                                        from this category</span>
+<span class="sd">                    e.g.: category Name=commcell :role will have all permissions from</span>
+<span class="sd">                                        this category</span>
+<span class="sd">                 permission_list (array)  --  permission array which is to be updated</span>
+<span class="sd">                     e.g.: permisison_list=[&quot;View&quot;, &quot;Agent Management&quot;, &quot;Browse&quot;]</span>
+<span class="sd">             Returns:</span>
+<span class="sd">                 Role Properties update dict</span>
+<span class="sd">                             Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                    if data type of input is invalid</span>
+
+<span class="sd">                    if role already exists on the commcell</span>
+
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">permission_list</span><span class="o">==</span><span class="s2">&quot;&quot;</span> <span class="ow">and</span> <span class="n">categoryname_list</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;empty role can not be created!!  &quot;</span>
+                                              <span class="s2">&quot;either permission_list or categoryname_list &quot;</span>
+                                              <span class="s2">&quot;should have some value! &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rolename</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_role</span><span class="p">(</span><span class="n">rolename</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s2">&quot;Role </span><span class="si">{0}</span><span class="s2"> already exists on this commcell.&quot;</span><span class="o">.</span>\
+                               <span class="nb">format</span><span class="p">(</span><span class="n">rolename</span><span class="p">))</span>
+
+        <span class="n">arr</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;permissionName&quot;</span><span class="p">:</span> <span class="n">permission</span><span class="p">}</span> <span class="k">for</span> <span class="n">permission</span> <span class="ow">in</span> <span class="n">permission_list</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">categoryname_list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">catname</span> <span class="ow">in</span> <span class="n">categoryname_list</span><span class="p">:</span>
+                <span class="n">cat_blob</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;categoryName&quot;</span><span class="p">:</span><span class="n">catname</span><span class="p">}</span>
+                <span class="n">arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cat_blob</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;roles&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;roleName&quot;</span><span class="p">:</span> <span class="n">rolename</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;categoryPermission&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;categoriesPermissionOperationType&quot;</span><span class="p">:</span> <span class="s2">&quot;ADD&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;categoriesPermissionList&quot;</span><span class="p">:</span> <span class="n">arr</span>
+                <span class="p">}</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ROLES&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rolename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Roles.get"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Roles.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the role object for the specified role name</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                role_name  (str)    --  name of the role for which the object has to</span>
+<span class="sd">                                        be created</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if role doesn&#39;t exist with specified name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_role</span><span class="p">(</span><span class="n">role_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Role </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span>\
+                    <span class="p">(</span><span class="n">role_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Role</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">role_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span><span class="p">[</span><span class="n">role_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()])</span></div>
+
+<div class="viewcode-block" id="Roles.delete"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Roles.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes the role object for specified role name</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                role_name (str) --  name of the role for which the object has to be</span>
+<span class="sd">                                    deleted</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if role doesn&#39;t exist</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_role</span><span class="p">(</span><span class="n">role_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Role </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span>\
+                    <span class="p">(</span><span class="n">role_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">delete_role</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ROLE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_roles</span>\
+                                                                <span class="p">[</span><span class="n">role_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()])</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">delete_role</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Roles.refresh"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Roles.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the list of Roles on this commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_roles</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;Returns all the roles present in the commcell&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_roles</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Role"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Role">[docs]</a><span class="k">class</span> <span class="nc">Role</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;&quot;Class for representing a particular role configured on this commcell&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">role_name</span><span class="p">,</span> <span class="n">role_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Role class object for specified role</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">                role_name         (str)     --  name of the role</span>
+
+<span class="sd">                role_id           (str)     --  id of the role</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_role_name</span> <span class="o">=</span> <span class="n">role_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">role_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_role_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_role_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_role_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_role_id</span> <span class="o">=</span> <span class="n">role_id</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_role</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ROLE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_role_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_role_description</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_role_status</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_role_properties</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Role class instance for Role: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_role_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the role id associated with this role.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - id associated with this role</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">roles</span> <span class="o">=</span> <span class="n">Roles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">roles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">role_name</span><span class="p">)</span><span class="o">.</span><span class="n">role_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_role_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the properties of this role&quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_role</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;roleProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">role_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;roleProperties&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_role_description</span> <span class="o">=</span> <span class="n">role_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_role_id</span> <span class="o">=</span> <span class="n">role_properties</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;roleId&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_role_name</span> <span class="o">=</span> <span class="n">role_properties</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;roleName&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_role_status</span> <span class="o">=</span> <span class="n">role_properties</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">][</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;disabled&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s1">&#39;securityAssociations&#39;</span> <span class="ow">in</span> <span class="n">role_properties</span><span class="p">:</span>
+
+                    <span class="k">for</span> <span class="n">association</span> <span class="ow">in</span> <span class="n">role_properties</span><span class="p">[</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">]</span><span class="o">.</span> \
+                            <span class="n">get</span><span class="p">(</span><span class="s1">&#39;associations&#39;</span><span class="p">,</span> <span class="p">[]):</span>
+
+                        <span class="n">user_or_group</span> <span class="o">=</span> <span class="n">association</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="s1">&#39;userName&#39;</span> <span class="ow">in</span> <span class="n">user_or_group</span><span class="p">:</span>
+                            <span class="n">name</span> <span class="o">=</span> <span class="n">user_or_group</span><span class="p">[</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="s1">&#39;userGroupName&#39;</span> <span class="ow">in</span> <span class="n">user_or_group</span><span class="p">:</span>
+                            <span class="n">name</span> <span class="o">=</span> <span class="n">user_or_group</span><span class="p">[</span><span class="s1">&#39;userGroupName&#39;</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">return</span>
+
+                        <span class="n">properties</span> <span class="o">=</span> <span class="n">association</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                                <span class="s1">&#39;permissions&#39;</span><span class="p">:</span> <span class="nb">set</span><span class="p">([]),</span>
+                                <span class="s1">&#39;roles&#39;</span><span class="p">:</span> <span class="nb">set</span><span class="p">([])</span>
+                            <span class="p">}</span>
+
+                        <span class="n">permission</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="n">role</span> <span class="o">=</span> <span class="kc">None</span>
+
+                        <span class="k">if</span> <span class="s1">&#39;categoryPermission&#39;</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                            <span class="n">permissions</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;categoryPermission&#39;</span><span class="p">]</span>
+                            <span class="n">permission_list</span> <span class="o">=</span> <span class="n">permissions</span><span class="p">[</span><span class="s1">&#39;categoriesPermissionList&#39;</span><span class="p">]</span>\
+                                <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">permission</span> <span class="o">=</span> <span class="n">permission_list</span><span class="p">[</span><span class="s1">&#39;permissionName&#39;</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="s1">&#39;permissions&#39;</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                            <span class="n">permission</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;permissions&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>\
+                                <span class="p">[</span><span class="s1">&#39;permissionName&#39;</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="s1">&#39;role&#39;</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                            <span class="n">role</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">][</span><span class="s1">&#39;roleName&#39;</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="n">permission</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;permissions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+                                <span class="n">permission</span>
+                            <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">role</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;roles&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_role_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the properties of this role</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                properties_dict (dict)  --  role property dict which is to be updated</span>
+<span class="sd">                    e.g.: {</span>
+<span class="sd">                            &quot;description&quot;: &quot;My description&quot;</span>
+<span class="sd">                        }</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                role Properties update dict</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if role doesn&#39;t exist</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;roles&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;roleName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">role_name</span>
+                <span class="p">}</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;description&quot;</span> <span class="ow">in</span> <span class="n">properties_dict</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;roles&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;roles&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_role</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Role.associate_user"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Role.associate_user">[docs]</a>    <span class="k">def</span> <span class="nf">associate_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rolename</span><span class="p">,</span> <span class="n">username</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the user who can manage this role with the permission provided</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                role Name   --  Role given to user on this role object</span>
+<span class="sd">                user Name   --  user name who can manage this role</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if role Name doesn&#39;t exist</span>
+
+<span class="sd">                    if user Name doesn&#39;t exist</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">roles</span><span class="o">.</span><span class="n">has_role</span><span class="p">(</span><span class="n">rolename</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Role </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span>\
+                    <span class="p">(</span><span class="n">rolename</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">has_user</span><span class="p">(</span><span class="n">username</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;User </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span>\
+                    <span class="p">(</span><span class="n">username</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;roles&quot;</span><span class="p">:[{</span>
+                <span class="s2">&quot;securityAssociations&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;associationsOperationType&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;associations&quot;</span><span class="p">:[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;userOrGroup&quot;</span><span class="p">:[</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;userName&quot;</span><span class="p">:</span><span class="n">username</span>
+                                <span class="p">}</span>
+                            <span class="p">],</span>
+                            <span class="s2">&quot;properties&quot;</span><span class="p">:{</span>
+                                <span class="s2">&quot;role&quot;</span><span class="p">:{</span>
+                                    <span class="s2">&quot;roleName&quot;</span><span class="p">:</span><span class="n">rolename</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_role</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Role.associate_usergroup"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Role.associate_usergroup">[docs]</a>    <span class="k">def</span> <span class="nf">associate_usergroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rolename</span><span class="p">,</span> <span class="n">usergroupname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the usergroup who can manage this role with the permission provided</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                role Name        --  Role given to user on this role object</span>
+<span class="sd">                user Group Name   --  user name who can manage this role</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if role Name doesn&#39;t exist</span>
+
+<span class="sd">                    if user Group Name doesn&#39;t exist</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">usergroupname</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">roles</span><span class="o">.</span><span class="n">has_role</span><span class="p">(</span><span class="n">rolename</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Role </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span>\
+                    <span class="p">(</span><span class="n">rolename</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">user_groups</span><span class="o">.</span><span class="n">has_user_group</span><span class="p">(</span><span class="n">usergroupname</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;UserGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;UserGroup </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span>\
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">usergroupname</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;roles&quot;</span><span class="p">:[{</span>
+                <span class="s2">&quot;securityAssociations&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;associationsOperationType&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;associations&quot;</span><span class="p">:[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;userOrGroup&quot;</span><span class="p">:[</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span><span class="n">usergroupname</span>
+                                <span class="p">}</span>
+                            <span class="p">],</span>
+                            <span class="s2">&quot;properties&quot;</span><span class="p">:{</span>
+                                <span class="s2">&quot;role&quot;</span><span class="p">:{</span>
+                                    <span class="s2">&quot;roleName&quot;</span><span class="p">:</span><span class="n">rolename</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_role</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Role.modify_capability"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Role.modify_capability">[docs]</a>    <span class="k">def</span> <span class="nf">modify_capability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_type</span><span class="p">,</span> <span class="n">permission_list</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">categoryname_list</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates role capabilities</span>
+
+<span class="sd">             Args:</span>
+<span class="sd">                 request_type(str)      --  type of request to be done</span>
+<span class="sd">                                            ADD, OVERWRITE, DELETE</span>
+<span class="sd">                 category Name list     --  role will be created with all the</span>
+<span class="sd">                                            permissions associated with this category</span>
+<span class="sd">                    e.g.: category Name=Client :role will have all permisisons from</span>
+<span class="sd">                                        this category.</span>
+<span class="sd">                    e.g.: category Name=Client Group :role will have all permissions</span>
+<span class="sd">                                        from this category</span>
+<span class="sd">                    e.g.: category Name=commcell :role will have all permissions from</span>
+<span class="sd">                                        this category</span>
+<span class="sd">                 permission_list(list)  --  permission array which is to be updated</span>
+<span class="sd">                     e.g.: permisison_list=[&quot;View&quot;, &quot;Agent Management&quot;, &quot;Browse&quot;]</span>
+<span class="sd">             Returns:</span>
+<span class="sd">                 Role Properties update dict</span>
+<span class="sd">                             Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                    if data type of input is invalid</span>
+
+<span class="sd">                    if role already exists on the commcell</span>
+
+<span class="sd">         &quot;&quot;&quot;</span>
+
+        <span class="n">update_role_request</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;NONE&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;OVERWRITE&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;UPDATE&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;ADD&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;DELETE&quot;</span><span class="p">:</span> <span class="mi">3</span>
+        <span class="p">}</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">permission_list</span><span class="o">==</span><span class="s2">&quot;&quot;</span> <span class="ow">and</span> <span class="n">categoryname_list</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Capabilties can not be modified!!  &quot;</span>
+                                              <span class="s2">&quot;either permission_list or categoryname_list &quot;</span>
+                                              <span class="s2">&quot;should have some value! &quot;</span><span class="p">)</span>
+        <span class="n">capability_arr</span><span class="o">=</span><span class="p">[]</span>
+        <span class="k">if</span> <span class="n">permission_list</span><span class="p">:</span>
+            <span class="n">capability_arr</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;permissionName&quot;</span><span class="p">:</span> <span class="n">permission</span><span class="p">}</span> <span class="k">for</span> <span class="n">permission</span> \
+                              <span class="ow">in</span> <span class="n">permission_list</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">categoryname_list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">catname</span> <span class="ow">in</span> <span class="n">categoryname_list</span><span class="p">:</span>
+                <span class="n">cat_blob</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;categoryName&quot;</span><span class="p">:</span><span class="n">catname</span><span class="p">}</span>
+                <span class="n">capability_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cat_blob</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;roles&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;roleName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">role_name</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;categoryPermission&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;categoriesPermissionOperationType&quot;</span><span class="p">:</span><span class="n">update_role_request</span>\
+                        <span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()],</span>
+                    <span class="s2">&quot;categoriesPermissionList&quot;</span><span class="p">:</span> <span class="n">capability_arr</span>
+                <span class="p">}</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_role</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">role_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the role name of this commcell role&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_role_name</span>
+
+    <span class="nd">@role_name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">role_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the value for role_name with the parameter provided</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_role_name</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">role_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the role id of this commcell role&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_role_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">role_description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the role_desccription of this commcell role&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_role_description</span>
+
+    <span class="nd">@role_description</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">role_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the description for this commcell role&quot;&quot;&quot;</span>
+        <span class="n">props_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">value</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_role_props</span><span class="p">(</span><span class="n">props_dict</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the role_status of this commcell role&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_role_status</span>
+
+    <span class="nd">@status</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the description for this commcell role&quot;&quot;&quot;</span>
+        <span class="n">props_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">value</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_role_props</span><span class="p">(</span><span class="n">props_dict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Role.refresh"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.role.Role.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of the Roles.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_role_properties</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

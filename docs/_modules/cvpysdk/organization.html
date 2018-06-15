@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.organization &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.organization &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -43,24 +43,25 @@
 
 <span class="sd">This module has classes defined for doing operations for organizations:</span>
 
-<span class="sd">    1. Add a new organization</span>
+<span class="sd">    #. Add a new organization</span>
 
-<span class="sd">    2. Delete an organization</span>
+<span class="sd">    #. Delete an organization</span>
 
-<span class="sd">    3. Enabling Auth Code</span>
+<span class="sd">    #. Enabling Auth Code</span>
 
-<span class="sd">    4. Disabling Auth Code</span>
+<span class="sd">    #. Disabling Auth Code</span>
 
-<span class="sd">    5. Get Auth Code</span>
+<span class="sd">    #. Get Auth Code</span>
 
-<span class="sd">    6. Get the list of plans associated with the organization</span>
+<span class="sd">    #. Get the list of plans associated with the organization</span>
 
-<span class="sd">    7. Update the plans associated with the organization</span>
+<span class="sd">    #. Update the plans associated with the organization</span>
 
-<span class="sd">    8. Update the default plan of the organization</span>
+<span class="sd">    #. Update the default plan of the organization</span>
 
 
-<span class="sd">Organizations:</span>
+<span class="sd">Organizations</span>
+<span class="sd">=============</span>
 
 <span class="sd">    __init__(commcell_object)   --  initializes object of the Organizations class associated</span>
 <span class="sd">    with the commcell</span>
@@ -68,6 +69,11 @@
 <span class="sd">    __str__()                   --  returns all the organizations associated with the commcell</span>
 
 <span class="sd">    __repr__()                  --  returns the string representation of an instance of this class</span>
+
+<span class="sd">    __len__()                   --  returns the number of organizations configured on the Commcell</span>
+
+<span class="sd">    __getitem__()               --  returns the name of the organization for the organization Id</span>
+<span class="sd">    or the details for the given organization name</span>
 
 <span class="sd">    _get_organizations()        --  returns all organizations added to the commcell</span>
 
@@ -81,8 +87,14 @@
 
 <span class="sd">    refresh()                   --  refresh the list of organizations associated with the commcell</span>
 
+<span class="sd">Organizations Attributes</span>
+<span class="sd">------------------------</span>
 
-<span class="sd">Organization:</span>
+<span class="sd">    **all_organizations**   --  returns the dict consisting of organizations and their details</span>
+
+
+<span class="sd">Organization</span>
+<span class="sd">============</span>
 
 <span class="sd">    __init__()                  --  initializes instance of the Organization class for doing</span>
 <span class="sd">    operations on the selected Organization</span>
@@ -105,7 +117,8 @@
 <span class="sd">    disable_auth_code()         --  disable Auth Code generation for the organization</span>
 
 
-<span class="sd">Attributes:</span>
+<span class="sd">Organization Attributes</span>
+<span class="sd">-----------------------</span>
 
 <span class="sd">    Following attributes are available for an instance of the Organization class:</span>
 
@@ -196,6 +209,39 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of the organizations configured on the Commcell.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_organizations</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the organization for the given organization ID or</span>
+<span class="sd">            the details of the organization for given organization Name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str / int)     --  Name or ID of the organization</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str     -   name of the organization, if the organization id was given</span>
+
+<span class="sd">                dict    -   dict of details of the organization, if organization name was given</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                IndexError:</span>
+<span class="sd">                    no organization exists with the given Name / Id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_organizations</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_organizations</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span>
+                    <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_organizations</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+                <span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;No organization exists with the given Name / Id&#39;</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_get_organizations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets all the organizations associated with the Commcell environment.</span>
 
@@ -232,6 +278,21 @@
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_organizations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dictionary consisting of all the organizations and their info.</span>
+
+<span class="sd">            dict - consists of all the organizations configured on the commcell</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;organization1_name&quot;: organization1_id,</span>
+
+<span class="sd">                    &quot;organization2_name&quot;: organization2_id</span>
+<span class="sd">                }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span>
+
 <div class="viewcode-block" id="Organizations.has_organization"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organizations.has_organization">[docs]</a>    <span class="k">def</span> <span class="nf">has_organization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if an organization exists in the Commcell with the input organization name.</span>
 
@@ -248,8 +309,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span></div>
 
 <div class="viewcode-block" id="Organizations.add"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organizations.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">name</span><span class="p">,</span>
@@ -391,8 +452,8 @@
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;107&#39;</span><span class="p">,</span> <span class="s1">&#39;Response: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()))</span>
-        <span class="k">else</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Organizations.get"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organizations.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns an instance of the Organization class for the given organization name.</span>
@@ -417,8 +478,8 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_organization</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">Organization</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Organizations.delete"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organizations.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the organization with the given name from the Commcell.</span>
@@ -461,12 +522,12 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Organizations.refresh"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organizations.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the list of organizations associated to the Commcell.&quot;&quot;&quot;</span></div></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_organizations</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the list of organizations associated to the Commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_organizations</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="Organization"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organization">[docs]</a><span class="k">class</span> <span class="nc">Organization</span><span class="p">:</span>
@@ -759,8 +820,8 @@
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the Organization.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_plan</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_contacts</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="o">=</span> <span class="p">{}</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_properties</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Organization.enable_auth_code"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organization.enable_auth_code">[docs]</a>    <span class="k">def</span> <span class="nf">enable_auth_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Executes the request on the server to enable Auth Code Generation for the Organization.</span>
@@ -803,8 +864,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_code</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_code</span></div>
 
 <div class="viewcode-block" id="Organization.disable_auth_code"><a class="viewcode-back" href="../../organization.html#cvpysdk.organization.Organization.disable_auth_code">[docs]</a>    <span class="k">def</span> <span class="nf">disable_auth_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Executes the request on the server to disable Auth Code Generation for the Organization.</span>
@@ -827,8 +888,8 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">({</span><span class="s1">&#39;enableAuthCodeGen&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span></div></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;109&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;109&#39;</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -864,7 +925,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

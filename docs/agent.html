@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Agent &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Agent &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -17,7 +17,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Alert" href="alert.html" />
-    <link rel="prev" title="Virtual Server Subclients" href="subclients/virtualserver/virtualserver.html" />
+    <link rel="prev" title="Activity Control" href="activitycontrol.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -40,10 +40,13 @@
 <p>Agent:      Class for a single agent selected for a client, and to perform operations on that agent</p>
 <dl class="docutils">
 <dt>Agents:</dt>
-<dd><p class="first">__init__(client_object)     –  initialise object of Agents class associated with
+<dd><p class="first">__init__(client_object)     –  initialize object of Agents class associated with
 the specified client</p>
 <p>__str__()                   –  returns all the agents associated with the client</p>
 <p>__repr__()                  –  returns the string for the instance of the Agents class</p>
+<p>__len__()                   – returns the number of agents licensed for the selected Client</p>
+<p>__getitem__()               – returns the name of the agent for the given agent Id or the
+details for the given agent name</p>
 <p>_get_agents()               –  gets all the agents associated with the client specified</p>
 <p>all_agents()                –  returns the dict of all the agents installed on client</p>
 <p>has_agent(agent_name)       –  checks if an agent exists with the given name</p>
@@ -54,7 +57,7 @@ the specified client</p>
 <dd><dl class="first docutils">
 <dt>__init__(client_object,</dt>
 <dd>agent_name,
-agent_id=None)     –   initialise object of Agent with the specified agent name</dd>
+agent_id=None)     –   initialize object of Agent with the specified agent name</dd>
 </dl>
 <p>and id, and associated to the specified client</p>
 <p>__repr__()                  –   return the agent name, the instance is associated with</p>
@@ -79,13 +82,20 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 <dl class="attribute">
 <dt id="cvpysdk.agent.Agent.agent_id">
 <code class="descname">agent_id</code><a class="headerlink" href="#cvpysdk.agent.Agent.agent_id" title="Permalink to this definition">¶</a></dt>
-<dd><p>Treats the agent id as a read-only attribute.</p>
+<dd><p>Returns the id of the Agent.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="cvpysdk.agent.Agent.agent_name">
 <code class="descname">agent_name</code><a class="headerlink" href="#cvpysdk.agent.Agent.agent_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Treats the agent name as a read-only attribute.</p>
+<dd><p>Returns the name of the Agent.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.agent.Agent.backupsets">
+<code class="descname">backupsets</code><a class="headerlink" href="#cvpysdk.agent.Agent.backupsets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Backupsets class representing the list of Backupsets
+installed / configured on the Client for the selected Agent.</p>
 </dd></dl>
 
 <dl class="method">
@@ -207,6 +217,13 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.agent.Agent.instances">
+<code class="descname">instances</code><a class="headerlink" href="#cvpysdk.agent.Agent.instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Instances class representing the list of Instances
+installed / configured on the Client for the selected Agent.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.agent.Agent.is_backup_enabled">
 <code class="descname">is_backup_enabled</code><a class="headerlink" href="#cvpysdk.agent.Agent.is_backup_enabled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns boolean specifying whether backup is enabled for this agent or not.</p>
@@ -224,6 +241,13 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 <dd><p>Refresh the properties of the Agent.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="cvpysdk.agent.Agent.schedules">
+<code class="descname">schedules</code><a class="headerlink" href="#cvpysdk.agent.Agent.schedules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Schedules class representing the list of Schedules
+installed / configured on the Client for the selected Agent.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -234,17 +258,17 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 <dl class="attribute">
 <dt id="cvpysdk.agent.Agents.all_agents">
 <code class="descname">all_agents</code><a class="headerlink" href="#cvpysdk.agent.Agents.all_agents" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns dict of all the agents installed on client</p>
-<dl class="docutils">
-<dt>dict - consists of all agents in the client</dt>
-<dd><dl class="first docutils">
+<dd><p>Returns dict of all the agents installed on client.</p>
+<p>dict    -   consists of all agents in the client</p>
+<blockquote>
+<div><dl class="docutils">
 <dt>{</dt>
-<dd>“agent1_name”: agent1_id,
-“agent2_name”: agent2_id</dd>
-</dl>
-<p class="last">}</p>
+<dd><p class="first">“agent1_name”: agent1_id,</p>
+<p class="last">“agent2_name”: agent2_id</p>
 </dd>
 </dl>
+<p>}</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -305,7 +329,7 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
-      <li>Previous: <a href="subclients/virtualserver/virtualserver.html" title="previous chapter">Virtual Server Subclients</a></li>
+      <li>Previous: <a href="activitycontrol.html" title="previous chapter">Activity Control</a></li>
       <li>Next: <a href="alert.html" title="next chapter">Alert</a></li>
   </ul></li>
   </ul></li>
@@ -338,7 +362,7 @@ agent_id=None)     –   initialise object of Agent with the specified agent nam
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclients.vssubclient &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.subclients.vssubclient &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -141,6 +141,9 @@
 <span class="sd">    full_vm_restore_in_place()              -- restores the VM specified by the</span>
 <span class="sd">                                               user to the same location</span>
 
+<span class="sd">    backup()                               --  run a backup job for the subclient</span>
+
+<span class="sd">    _advanced_backup_options()              --  sets the advanced backup options</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
@@ -175,9 +178,20 @@
             <span class="kn">from</span> <span class="nn">.virtualserver.vmwaresubclient</span> <span class="k">import</span> <span class="n">VMWareVirtualServerSubclient</span>
             <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">VMWareVirtualServerSubclient</span><span class="p">)</span>
 
+        
+        <span class="k">elif</span> <span class="n">instance_name</span> <span class="o">==</span> <span class="n">hv_type</span><span class="o">.</span><span class="n">AZURE</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="kn">from</span> <span class="nn">.virtualserver.azuresubclient</span> <span class="k">import</span> <span class="n">AzureSubclient</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">AzureSubclient</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">instance_name</span> <span class="o">==</span> <span class="n">hv_type</span><span class="o">.</span><span class="n">AZURE_V2</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="kn">from</span> <span class="nn">.virtualserver.azureRMsubclient</span> <span class="k">import</span> <span class="n">AzureRMSubclient</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">AzureRMSubclient</span><span class="p">)</span>
+
+
         <span class="k">elif</span> <span class="n">instance_name</span> <span class="o">==</span> <span class="n">hv_type</span><span class="o">.</span><span class="n">FUSION_COMPUTE</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
             <span class="kn">from</span> <span class="nn">.virtualserver.fusioncomputesubclient</span> <span class="k">import</span> <span class="n">FusionComputeVirtualServerSubclient</span>
             <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">FusionComputeVirtualServerSubclient</span><span class="p">)</span>
+
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -215,7 +229,7 @@
             <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="s1">&#39;Virtual Disk Name/Pattern&#39;</span><span class="p">,</span>
             <span class="s1">&#39;3&#39;</span><span class="p">:</span> <span class="s1">&#39;Virtual Device Node&#39;</span>
         <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">diskExtension</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;.vhd&quot;</span><span class="p">,</span> <span class="s2">&quot;.avhd&quot;</span><span class="p">,</span> <span class="s2">&quot;.avhdx&quot;</span><span class="p">,</span> <span class="s2">&quot;.vhdx&quot;</span><span class="p">,</span> <span class="s2">&quot;.vmdk&quot;</span><span class="p">]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_vm_names_browse</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_vm_ids_browse</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_restore_option_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -224,8 +238,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        stores the disk pattern of all hypervisors</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;name&quot;</span></div>
-        <span class="n">datastore</span> <span class="o">=</span> <span class="s2">&quot;Datastore&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;name&quot;</span>
+        <span class="n">datastore</span> <span class="o">=</span> <span class="s2">&quot;Datastore&quot;</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -323,11 +337,35 @@
                     <span class="p">}</span>
 
                     <span class="n">vm_diskfilter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span>
-
         <span class="k">else</span><span class="p">:</span>
             <span class="n">vm_diskfilter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vmDiskFilter</span>
 
         <span class="k">return</span> <span class="n">vm_diskfilter</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cbtvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get CBT value for given subclient. Returns status as True/False (string)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+        <span class="n">cbt_attr</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;useChangedTrackingOnVM&#39;</span>
+        <span class="n">vsasubclient_cbt_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vsaSubclientProp</span><span class="p">[</span><span class="n">cbt_attr</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">vsasubclient_cbt_status</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Get if collect files/metadata value for given subclient. </span>
+<span class="sd">            Returns status as True/False (string)</span>
+<span class="sd">            Default: False for subclient which doesnt have the property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">collectdetails</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;collectFileDetails&#39;</span>
+        <span class="k">if</span> <span class="n">collectdetails</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vsaSubclientProp</span><span class="p">:</span>
+            <span class="n">vsasubclient_collect_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vsaSubclientProp</span><span class="p">[</span><span class="n">collectdetails</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vsasubclient_collect_details</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">vsasubclient_collect_details</span>
 
     <span class="nd">@content</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_content</span><span class="p">):</span>
@@ -510,6 +548,38 @@
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_vmDiskFilter&quot;</span><span class="p">,</span> <span class="n">vs_diskfilter_content</span><span class="p">)</span>
 
+    <span class="nd">@cbtvalue</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">cbtvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set given value (enabled/disabled) on the subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">                value   (int)   - enabled(1)/disabled(0)</span>
+
+<span class="sd">        Raise Exception:</span>
+<span class="sd">                If unable to set the give CBT value</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cbt_status</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">cbt_attr</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;useChangedTrackingOnVM&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_vsaSubclientProp[&#39;useChangedTrackingOnVM&#39;]&quot;</span><span class="p">,</span> <span class="n">cbt_status</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@metadata</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set given value of collectFileDetails/metadata (True/false) on the subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">                value   (str)    True/False</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">collectdetails</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;collectFileDetails&#39;</span>
+        <span class="k">if</span> <span class="n">collectdetails</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vsaSubclientProp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_vsaSubclientProp[&#39;collectFileDetails&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the subclient  related properties of File System subclient.</span>
 
@@ -625,10 +695,10 @@
 
         <span class="k">for</span> <span class="n">network_card_dict</span> <span class="ow">in</span> <span class="n">vm_nics_list</span><span class="p">:</span>
             <span class="n">nics</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;subnetId&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;subnetId&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subnetId&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;sourceNetwork&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
                 <span class="s2">&quot;sourceNetworkId&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;networkName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;networkName&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
                 <span class="s2">&quot;destinationNetwork&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
             <span class="p">}</span>
 
@@ -643,6 +713,7 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_json_disklevel_option_restore</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;esxServerName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;esx_server_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;vmFolderName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vm_folder&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;dataCenterName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_center&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;hostOrCluster&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;host_cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
@@ -652,9 +723,10 @@
             <span class="s2">&quot;passUnconditionalOverride&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;powerOnVmAfterRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;power_on&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;registerWithFailoverCluster&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;add_to_failover&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-            <span class="s2">&quot;userPassword&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span><span class="p">},</span>
-            <span class="s2">&quot;dataStore&quot;</span><span class="p">:</span> <span class="p">{}</span>
+            <span class="s2">&quot;userPassword&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span><span class="p">}</span>
         <span class="p">}</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;in_place&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_json_disklevel_option_restore</span><span class="p">[</span><span class="s2">&quot;dataStore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">_json_restore_advancedRestoreOptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for the Virtual server restore  option in restore json&quot;&quot;&quot;</span>
@@ -669,8 +741,18 @@
             <span class="s2">&quot;newName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;new_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;esxHost&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;esx_host&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;nics&quot;</span><span class="p">:</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nics&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;nics&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nics&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;FolderPath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FolderPath&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;ResourcePool&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ResourcePool&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;vmSize&quot;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_option_restore_json</span><span class="p">[</span><span class="s2">&quot;vmSize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instanceSize&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;createPublicIP&quot;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_option_restore_json</span><span class="p">[</span><span class="s2">&quot;createPublicIP&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;createPublicIP&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;restoreAsManagedVM&quot;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_option_restore_json</span><span class="p">[</span><span class="s2">&quot;restoreAsManagedVM&quot;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restoreAsManagedVM&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">disk_pattern</span><span class="o">.</span><span class="n">datastore</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;DestinationPath&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_option_restore_json</span><span class="p">[</span><span class="s2">&quot;DestinationPath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;datastore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
@@ -858,8 +940,8 @@
         <span class="n">browse_content</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
             <span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">vm_disk_browse</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">vs_file_browse</span><span class="o">=</span><span class="n">vm_files_browse</span>
         <span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_vsa_browse_response</span><span class="p">(</span><span class="n">vm_ids</span><span class="p">,</span> <span class="n">browse_content</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_vsa_browse_response</span><span class="p">(</span><span class="n">vm_ids</span><span class="p">,</span> <span class="n">browse_content</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.parse_nics_xml"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.parse_nics_xml">[docs]</a>    <span class="k">def</span> <span class="nf">parse_nics_xml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_xml</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -889,14 +971,18 @@
         <span class="k">for</span> <span class="n">nic</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;nic&#39;</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
             <span class="n">label</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">)</span>
+            <span class="n">subnet</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subnet&#39;</span><span class="p">)</span>
+            <span class="n">networkDisplayName</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;networkDisplayName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
             <span class="n">nic_info</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
-                <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="n">label</span>
+                <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+                <span class="s1">&#39;subnetId&#39;</span><span class="p">:</span> <span class="n">subnet</span><span class="p">,</span>
+                <span class="s1">&#39;networkDisplayName&#39;</span><span class="p">:</span> <span class="n">networkDisplayName</span>
             <span class="p">}</span>
             <span class="n">nic_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nic_info</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="n">nic_list</span>
+
+        <span class="k">return</span> <span class="n">nic_list</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.get_nics_from_browse"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse">[docs]</a>    <span class="k">def</span> <span class="nf">get_nics_from_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -932,8 +1018,8 @@
                             <span class="n">nics</span> <span class="o">=</span> <span class="n">virtual_server_metadata</span><span class="p">[</span><span class="s1">&#39;nics&#39;</span><span class="p">]</span>
 
             <span class="n">nics_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_nics_xml</span><span class="p">(</span><span class="n">nics</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="n">nics_dict</span>
+
+        <span class="k">return</span> <span class="n">nics_dict</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.browse_in_time"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_in_time">[docs]</a>    <span class="k">def</span> <span class="nf">browse_in_time</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -941,8 +1027,9 @@
             <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">restore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">from_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">to_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">vm_files_browse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the content of the backup for this subclient</span>
 <span class="sd">                at the path specified in the time range specified.</span>
@@ -964,19 +1051,22 @@
 <span class="sd">                    vm_disk_browse      (bool)  --  browse the VM disks or not</span>
 <span class="sd">                                                    default: False</span>
 
-<span class="sd">                    from_date           (str)   --  date to get the contents</span>
+<span class="sd">                    from_date           (int)   --  date to get the contents</span>
 <span class="sd">                                                    after</span>
 <span class="sd">                                                    format: dd/MM/YYYY</span>
 <span class="sd">                                                    gets contents from</span>
 <span class="sd">                                                    01/01/1970 if not specified</span>
-<span class="sd">                                                    default: None</span>
+<span class="sd">                                                    default: 0</span>
 
-<span class="sd">                    to_date             (str)  --   date to get the contents</span>
+<span class="sd">                    to_date             (int)  --   date to get the contents</span>
 <span class="sd">                                                    before</span>
 <span class="sd">                                                    format: dd/MM/YYYY</span>
 <span class="sd">                                                    gets contents till current</span>
 <span class="sd">                                                    day if not specified</span>
-<span class="sd">                                                    default: None</span>
+<span class="sd">                                                    default: 0</span>
+
+<span class="sd">                    copy_precedence     (int)   --  copy precedence to be used</span>
+<span class="sd">                                                    for browsing</span>
 
 <span class="sd">                Returns:</span>
 <span class="sd">                    list - list of all folders or files with their full paths</span>
@@ -1002,17 +1092,19 @@
         <span class="n">vm_ids</span><span class="p">,</span> <span class="n">vm_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_ids_and_names_dict</span><span class="p">()</span>
         <span class="n">vm_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_vm_path</span><span class="p">(</span><span class="n">vm_names</span><span class="p">,</span> <span class="n">vm_path</span><span class="p">)</span>
 
+
         <span class="n">browse_content</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
-            <span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">restore_index</span><span class="p">,</span> <span class="n">vm_disk_browse</span><span class="p">,</span> <span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="n">path</span><span class="o">=</span><span class="n">vm_path</span><span class="p">,</span> <span class="n">vm_disk_browse</span><span class="o">=</span><span class="n">vm_disk_browse</span><span class="p">,</span> <span class="n">vs_file_browse</span><span class="o">=</span><span class="n">vm_files_browse</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_vsa_browse_response</span><span class="p">(</span><span class="n">vm_ids</span><span class="p">,</span> <span class="n">browse_content</span><span class="p">)</span>
+            <span class="n">show_deleted</span><span class="o">=</span><span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">restore_index</span><span class="o">=</span><span class="n">restore_index</span><span class="p">,</span> <span class="n">vm_disk_browse</span><span class="o">=</span><span class="n">vm_disk_browse</span><span class="p">,</span>
+            <span class="n">from_time</span><span class="o">=</span><span class="n">from_date</span><span class="p">,</span> <span class="n">to_time</span><span class="o">=</span><span class="n">to_date</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">vm_path</span><span class="p">,</span> <span class="n">vs_file_browse</span><span class="o">=</span><span class="n">vm_files_browse</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_vsa_browse_response</span><span class="p">(</span><span class="n">vm_ids</span><span class="p">,</span> <span class="n">browse_content</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.disk_level_browse"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.disk_level_browse">[docs]</a>    <span class="k">def</span> <span class="nf">disk_level_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span>
                           <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                           <span class="n">restore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                          <span class="n">from_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                          <span class="n">to_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                          <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the Disks of a Virtual Machine.</span>
 
 <span class="sd">            Args:</span>
@@ -1022,18 +1114,20 @@
 <span class="sd">                show_deleted_files  (bool)  --  include deleted files in the</span>
 <span class="sd">                                                content or not default: True</span>
 
+<span class="sd">                restore_index  (bool)  --       Restore index or not.</span>
+<span class="sd">                                                default: True</span>
 
-<span class="sd">                from_date           (str)   --  date to get the contents after</span>
+<span class="sd">                from_date           (int)   --  date to get the contents after</span>
 <span class="sd">                                                format: dd/MM/YYYY</span>
 <span class="sd">                                                gets contents from 01/01/1970</span>
 <span class="sd">                                                if not specified</span>
-<span class="sd">                                                default: None</span>
+<span class="sd">                                                default: 0</span>
 
-<span class="sd">                to_date             (str)  --  date to get the contents before</span>
+<span class="sd">                to_date             (int)  --  date to get the contents before</span>
 <span class="sd">                                               format: dd/MM/YYYY</span>
 <span class="sd">                                               gets contents till current day</span>
 <span class="sd">                                               if not specified</span>
-<span class="sd">                                               default: None</span>
+<span class="sd">                                               default: 0</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all folders or files with their full paths</span>
@@ -1060,7 +1154,8 @@
                 <span class="n">paths_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
-                <span class="n">paths_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">diskExtension</span><span class="p">:</span>
+                    <span class="n">paths_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
         <span class="n">paths_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -1069,20 +1164,22 @@
                 <span class="n">paths_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">browse_content</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">path</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
                 <span class="c1"># assuming it as Fusion compute kind of hypervisors</span>
-                <span class="n">paths_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">browse_content</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">path</span><span class="p">]</span>
+                <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">diskExtension</span><span class="p">:</span>
+                    <span class="n">paths_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">browse_content</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">path</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">paths_list</span> <span class="ow">and</span> <span class="n">paths_dict</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">paths_list</span><span class="p">,</span> <span class="n">paths_dict</span>
-        <span class="k">else</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.guest_files_browse"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_files_browse">[docs]</a>    <span class="k">def</span> <span class="nf">guest_files_browse</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">restore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">from_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">to_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the Files and Folders inside a Virtual Machine in the time</span>
 <span class="sd">           range specified.</span>
 
@@ -1099,19 +1196,22 @@
 <span class="sd">                restore_index       (bool)  --  restore index if it is not cached</span>
 <span class="sd">                                                default: True</span>
 
-<span class="sd">                from_date           (str)   --  date to get the contents after</span>
+<span class="sd">                from_date           (int)   --  date to get the contents after</span>
 <span class="sd">                                                format: dd/MM/YYYY</span>
 
 <span class="sd">                                                gets contents from 01/01/1970</span>
 <span class="sd">                                                if not specified</span>
-<span class="sd">                                                default: None</span>
+<span class="sd">                                                default: 0</span>
 
-<span class="sd">                to_date             (str)  --  date to get the contents before</span>
+<span class="sd">                to_date             (int)  --  date to get the contents before</span>
 <span class="sd">                                               format: dd/MM/YYYY</span>
 
 <span class="sd">                                               gets contents till current day</span>
 <span class="sd">                                               if not specified</span>
-<span class="sd">                                               default: None</span>
+<span class="sd">                                               default: 0</span>
+
+<span class="sd">                copy_precedence     (int)   --  copy precedence to be used</span>
+<span class="sd">                                                    for browsing</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all folders or files with their full paths</span>
@@ -1135,15 +1235,16 @@
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse_in_time</span><span class="p">(</span>
-            <span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">restore_index</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="p">,</span></div>
-            <span class="n">vm_files_browse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">restore_index</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">vm_files_browse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_check_folder_in_browse</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">_vm_id</span><span class="p">,</span>
             <span class="n">_folder_to_restore</span><span class="p">,</span>
             <span class="n">from_date</span><span class="p">,</span>
-            <span class="n">to_date</span><span class="p">):</span>
+            <span class="n">to_date</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if the particular folder is present in browse of the subclient</span>
 <span class="sd">        in particular VM</span>
@@ -1151,7 +1252,24 @@
 <span class="sd">        args:</span>
 <span class="sd">            _vm_id      (str)     -- VM id from which folder has to be restored</span>
 
-<span class="sd">            folder_path (str)     -- folder path which has to be restored</span>
+<span class="sd">            _folder_to_restore (str)     -- folder path which has to be restored</span>
+
+<span class="sd">            from_date           (int)   --  date to get the contents after</span>
+<span class="sd">                                                format: dd/MM/YYYY</span>
+
+<span class="sd">                                                gets contents from 01/01/1970</span>
+<span class="sd">                                                if not specified</span>
+<span class="sd">                                                default: 0</span>
+
+<span class="sd">            to_date             (int)  --  date to get the contents before</span>
+<span class="sd">                                               format: dd/MM/YYYY</span>
+
+<span class="sd">                                               gets contents till current day</span>
+<span class="sd">                                               if not specified</span>
+<span class="sd">                                               default: 0</span>
+
+<span class="sd">            copy_precedence     (int)   --  copy precedence to be used</span>
+<span class="sd">                                                    for browsing</span>
 
 <span class="sd">        exception:</span>
 <span class="sd">            raise exception</span>
@@ -1166,7 +1284,7 @@
         <span class="n">_source_path</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">_vm_id</span><span class="p">,</span> <span class="n">_folder_to_restore</span><span class="p">])</span>
 
         <span class="n">_browse_files</span><span class="p">,</span> <span class="n">_browse_files_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">guest_files_browse</span><span class="p">(</span>
-            <span class="n">_source_path</span><span class="p">,</span> <span class="n">from_date</span><span class="o">=</span><span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="o">=</span><span class="n">to_date</span><span class="p">)</span>
+            <span class="n">_source_path</span><span class="p">,</span> <span class="n">from_date</span><span class="o">=</span><span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="o">=</span><span class="n">to_date</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">_path</span> <span class="ow">in</span> <span class="n">_browse_files_dict</span><span class="p">:</span>
             <span class="n">_browse_folder_name</span> <span class="o">=</span> <span class="n">_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -1184,14 +1302,14 @@
                            <span class="n">folder_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                            <span class="n">destination_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                           <span class="n">copy_preceedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                            <span class="n">preserve_level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                            <span class="n">restore_ACL</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                           <span class="n">from_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                           <span class="n">to_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                            <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                           <span class="n">fbr_ma</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+                           <span class="n">fbr_ma</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;perform Guest file restore of the provided path</span>
 
 <span class="sd">        Args:</span>
@@ -1207,15 +1325,20 @@
 
 <span class="sd">            destination_path    (basestring)   --  path to restore</span>
 
-<span class="sd">            from_date           (basestring)   --  date to get the contents after</span>
+<span class="sd">            copy_precedence     (int)   --  copy precedence to be used</span>
+<span class="sd">                                                    for browsing</span>
+
+<span class="sd">            from_date           (int)   --  date to get the contents after</span>
 <span class="sd">                                            format: dd/MM/YYYY</span>
 <span class="sd">                                            gets contents from 01/01/1970 if</span>
-<span class="sd">                                            not specified default: None</span>
+<span class="sd">                                            not specified default: 0</span>
 
-<span class="sd">            to_date             (basestring)   --  date to get the contents before</span>
+<span class="sd">            to_date             (int)   --  date to get the contents before</span>
 <span class="sd">                                            format: dd/MM/YYYY</span>
 <span class="sd">                                            gets contents till current day</span>
-<span class="sd">                                            if not specified default: None</span>
+<span class="sd">                                            if not specified default: 0</span>
+
+<span class="sd">            fbr_ma              (basestring)    --  FRE MA used for browsing Unix VMs</span>
 
 <span class="sd">         Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1267,9 +1390,10 @@
         <span class="k">for</span> <span class="n">_each_folder</span> <span class="ow">in</span> <span class="n">_folder_to_restore_list</span><span class="p">:</span>
             <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_check_folder_in_browse</span><span class="p">(</span><span class="n">_vm_ids</span><span class="p">[</span><span class="n">vm_name</span><span class="p">],</span>
-                                             <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">_each_folder</span><span class="p">,</span>
+                                             <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">_each_folder</span><span class="p">,</span>
                                              <span class="n">from_date</span><span class="p">,</span>
-                                             <span class="n">to_date</span><span class="p">))</span>
+                                             <span class="n">to_date</span><span class="p">,</span>
+                                             <span class="n">copy_precedence</span><span class="p">))</span>
 
         <span class="c1"># set the browse options</span>
         <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;disk_browse&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1281,11 +1405,14 @@
         <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unconditional_overwrite</span>
         <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;restore_ACL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_ACL</span>
 
+        <span class="c1"># set the browse option</span>
+        <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence_applicable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy_precedence</span>
 
         <span class="c1"># prepare and execute the Json</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_filelevel_restore_json</span><span class="p">(</span><span class="n">_file_restore_option</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the Files and Folders of a Virtual Machine.</span>
@@ -1314,16 +1441,16 @@
 <span class="sd">                    if response is empty</span>
 
 <span class="sd">                    if response is not success</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse_in_time"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse_in_time">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse_in_time</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">restore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">from_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">to_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the Files and Folders of a Virtual Machine in the time range</span>
 <span class="sd">           specified.</span>
 
@@ -1341,17 +1468,17 @@
 <span class="sd">                                                cached</span>
 <span class="sd">                                                default: True</span>
 
-<span class="sd">                from_date           (basestring)   --  date to get the contents after</span>
+<span class="sd">                from_date           (int)   --  date to get the contents after</span>
 <span class="sd">                                                format: dd/MM/YYYY</span>
 <span class="sd">                                                gets contents from 01/01/1970</span>
 <span class="sd">                                                if not specified</span>
-<span class="sd">                                                default: None</span>
+<span class="sd">                                                default: 0</span>
 
-<span class="sd">                to_date             (basestring)  --   date to get the contents before</span>
+<span class="sd">                to_date             (int)  --   date to get the contents before</span>
 <span class="sd">                                                format: dd/MM/YYYY</span>
 <span class="sd">                                                gets contents till current day</span>
 <span class="sd">                                                if not specified</span>
-<span class="sd">                                                default: None</span>
+<span class="sd">                                                default: 0</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all folders or files with their full paths</span>
@@ -1375,8 +1502,8 @@
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse_in_time</span><span class="p">(</span>
-            <span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">restore_index</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span></div>
-        <span class="p">)</span>
+            <span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">restore_index</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span>
+        <span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_get_disk_extension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">disk_list</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1458,7 +1585,8 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_temp_res_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">_temp_res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">each_vm</span> <span class="ow">in</span> <span class="n">vm_to_restore</span><span class="p">:</span>
+                <span class="n">_temp_res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">each_vm</span><span class="p">)</span>
 
         <span class="n">vm_to_restore</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vm_names_browse</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">_temp_res_list</span><span class="p">))</span>
 
@@ -1503,12 +1631,14 @@
             <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;destination_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">instance_name</span>
 
         <span class="k">if</span> <span class="p">((</span><span class="s2">&quot;esx_server&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
-                    <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;esx_server&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
+                <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;esx_server&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
             <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;esx_server&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">server_host_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="p">((</span><span class="s2">&quot;client_name&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">)</span> <span class="ow">or</span>
                 <span class="p">(</span><span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
-            <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">co_ordinator</span>
+            <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">co_ordinator</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="VirtualServerSubclient.set_advanced_vm_restore_options"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">[docs]</a>    <span class="k">def</span> <span class="nf">set_advanced_vm_restore_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_to_restore</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">):</span>
@@ -1549,39 +1679,42 @@
         <span class="c1"># vs metadata from browse result</span>
         <span class="n">_metadata</span> <span class="o">=</span> <span class="n">browse_result</span><span class="p">[</span><span class="mi">1</span><span class="p">][(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">vm_to_restore</span><span class="p">)]</span>
         <span class="n">vs_metadata</span> <span class="o">=</span> <span class="n">_metadata</span><span class="p">[</span><span class="s2">&quot;advanced_data&quot;</span><span class="p">][</span><span class="s2">&quot;browseMetaData&quot;</span><span class="p">][</span><span class="s2">&quot;virtualServerMetaData&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;in_place&#39;</span><span class="p">]:</span>
+            <span class="n">folder_path</span> <span class="o">=</span> <span class="n">vs_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inventoryPath&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">instanceSize</span> <span class="o">=</span> <span class="n">vs_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instanceSize&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">instanceSize</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
         <span class="c1"># populate restore source item</span>
         <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">vm_ids</span><span class="p">[</span><span class="n">vm_to_restore</span><span class="p">])</span>
         <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_to_restore</span>
         <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;guid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_ids</span><span class="p">[</span><span class="n">vm_to_restore</span><span class="p">]</span>
-
+        <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;FolderPath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">folder_path</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;ResourcePool&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span>
 
         <span class="c1"># populate restore disk and datastore</span>
         <span class="n">vm_disks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">disk_list</span><span class="p">,</span> <span class="n">disk_info_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">disk_level_browse</span><span class="p">(</span>
             <span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">vm_ids</span><span class="p">[</span><span class="n">vm_to_restore</span><span class="p">])</span>
-
         <span class="k">for</span> <span class="n">disk</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">disk_info_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span><span class="n">restore_option</span><span class="p">,</span>
-                                     <span class="n">datastore</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;advanced_data&quot;</span><span class="p">][</span><span class="s2">&quot;browseMetaData&quot;</span><span class="p">][</span>
-                                         <span class="s2">&quot;virtualServerMetaData&quot;</span><span class="p">][</span><span class="s2">&quot;datastore&quot;</span><span class="p">])</span>
-
-            <span class="n">_disk_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disk_dict_pattern</span><span class="p">(</span><span class="n">disk</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;datastore&quot;</span><span class="p">])</span>
-
+            <span class="k">if</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;in_place&quot;</span><span class="p">]:</span>
+                <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;datastore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;advanced_data&quot;</span><span class="p">][</span><span class="s2">&quot;browseMetaData&quot;</span><span class="p">][</span>
+                                             <span class="s2">&quot;virtualServerMetaData&quot;</span><span class="p">][</span><span class="s2">&quot;datastore&quot;</span><span class="p">]</span>
+            <span class="n">_disk_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disk_dict_pattern</span><span class="p">(</span><span class="n">disk</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                                     <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;datastore&quot;</span><span class="p">])</span>
             <span class="n">vm_disks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_disk_dict</span><span class="p">)</span>
-
-        <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;disks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_disks</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">vm_disks</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="mi">104</span><span class="p">)</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;disks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_disks</span>
 
         <span class="c1"># prepare nics info json</span>
         <span class="n">nics_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_nics_advancedRestoreOptions</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">)</span>
         <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;nics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nics_list</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;out_place&quot;</span><span class="p">]):</span>
-            <span class="k">if</span> <span class="s2">&quot;hyper&quot;</span> <span class="ow">in</span>  <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;destination_instance&quot;</span><span class="p">]</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;in_place&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s2">&quot;hyper&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;destination_instance&quot;</span><span class="p">]:</span>
                 <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vs_metadata</span><span class="p">[</span><span class="s1">&#39;esxHost&#39;</span><span class="p">]</span>
                 <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;esx_server&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vs_metadata</span><span class="p">[</span><span class="s1">&#39;esxHost&#39;</span><span class="p">]</span>
 
@@ -1590,12 +1723,12 @@
             <span class="n">restore_option</span><span class="p">,</span>
             <span class="n">disks</span><span class="o">=</span><span class="n">vm_disks</span><span class="p">,</span>
             <span class="n">esx_host</span><span class="o">=</span><span class="n">vs_metadata</span><span class="p">[</span><span class="s1">&#39;esxHost&#39;</span><span class="p">],</span>
-            <span class="n">new_name</span><span class="o">=</span><span class="s2">&quot;Delete&quot;</span> <span class="o">+</span> <span class="n">vm_to_restore</span><span class="p">,</span>
-            <span class="n">client</span><span class="o">=</span><span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;client_name&quot;</span><span class="p">]</span>
+            <span class="n">instanceSize</span><span class="o">=</span><span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instanceSize&#39;</span><span class="p">,</span> <span class="n">instanceSize</span><span class="p">),</span>
+            <span class="n">new_name</span><span class="o">=</span><span class="s2">&quot;Delete&quot;</span> <span class="o">+</span> <span class="n">vm_to_restore</span>
         <span class="p">)</span>
 
-        <span class="n">temp_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_advancedRestoreOptions</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_restore_option_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span>
+        <span class="n">temp_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_advancedRestoreOptions</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_restore_option_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_prepare_filelevel_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_file_restore_option</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1641,10 +1774,10 @@
 <span class="sd">                paths                 - GUID of VM from which disk needs to be restored</span>
 <span class="sd">                                                eg:\\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA</span>
 
-<span class="sd">                copy_precedence_applicable  - True if needs copy_preceedence to be honored else</span>
+<span class="sd">                copy_precedence_applicable  - True if needs copy_precedence to be honored else</span>
 <span class="sd">                                                        False</span>
 
-<span class="sd">                copy_preceedence            - the copy id from which browse and</span>
+<span class="sd">                copy_precedence            - the copy id from which browse and</span>
 <span class="sd">                                                                restore needs to be performed</span>
 
 <span class="sd">        returns:</span>
@@ -1703,10 +1836,10 @@
 <span class="sd">                                          eg:</span>
 <span class="sd">                                          \\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA</span>
 
-<span class="sd">            copy_precedence_applicable  - True if needs copy_preceedence to</span>
+<span class="sd">            copy_precedence_applicable  - True if needs copy_precedence to</span>
 <span class="sd">                                          be honoured else False</span>
 
-<span class="sd">            copy_preceedence            - the copy id from which browse and</span>
+<span class="sd">            copy_precedence            - the copy id from which browse and</span>
 <span class="sd">                                          restore needs to be performed</span>
 
 <span class="sd">            power_on                    - power on the VM after restore</span>
@@ -1744,7 +1877,7 @@
         <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;destination_vendor&quot;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_vendor_id</span>
 
-        <span class="c1">#set all the restore defaults</span>
+        <span class="c1"># set all the restore defaults</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_defaults</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
 
         <span class="c1"># set the setters</span>
@@ -1755,27 +1888,115 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_json_vcenter_instance</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">_each_vm_to_restore</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;vm_to_restore&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;out_place&quot;</span><span class="p">]:</span>
-                <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;restore_new_name&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;in_place&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;restore_new_name&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span> <span class="ow">and</span>
+                        <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;restore_new_name&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                    <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;restore_new_name&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Delete&quot;</span> <span class="o">+</span> <span class="n">_each_vm_to_restore</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_each_vm_to_restore</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_advanced_vm_restore_options</span><span class="p">(</span><span class="n">_each_vm_to_restore</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
 
-        <span class="c1">#prepare json</span>
+        <span class="c1"># prepare json</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="o">=</span><span class="n">restore_option</span><span class="p">)</span>
         <span class="n">_virt_restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_virtualserver_option_restore_json</span>
         <span class="n">_virt_restore_json</span><span class="p">[</span><span class="s2">&quot;diskLevelVMRestoreOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_disklevel_option_restore</span>
         <span class="n">_virt_restore_json</span><span class="p">[</span><span class="s2">&quot;vCenterInstance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vcenter_instance_json</span>
         <span class="n">_virt_restore_json</span><span class="p">[</span><span class="s2">&quot;diskLevelVMRestoreOption&quot;</span><span class="p">][</span>
             <span class="s2">&quot;advancedRestoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_restore_option_list</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_restore_option_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
             <span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;virtualServerRstOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_virt_restore_json</span>
 
         <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
             <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;volumeRstOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_volume_restore_json</span>
-</div>
+
         <span class="k">return</span> <span class="n">request_json</span>
+
+<div class="viewcode-block" id="VirtualServerSubclient.backup"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+               <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;Incremental&quot;</span><span class="p">,</span>
+               <span class="n">incremental_backup</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">incremental_level</span><span class="o">=</span><span class="s1">&#39;BEFORE_SYNTH&#39;</span><span class="p">,</span>
+               <span class="n">collect_metadata</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs a backup job for the subclient of the level specified.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                backup_level            (str)   --  level of backup the user wish to run</span>
+<span class="sd">                                                    Full / Incremental / Differential / Synthetic_full</span>
+
+<span class="sd">                incremental_backup      (bool)  --  run incremental backup</span>
+<span class="sd">                                                    only applicable in case of Synthetic_full backup</span>
+
+<span class="sd">                incremental_level       (str)   --  run incremental backup before/after synthetic full</span>
+<span class="sd">                                                    BEFORE_SYNTH / AFTER_SYNTH</span>
+<span class="sd">                                                    only applicable in case of Synthetic_full backup</span>
+
+<span class="sd">                collect_metadata        (bool)  --  Collect Meta data for the backup</span>
+
+<span class="sd">                advacnced_options       (dict)  --  advanced backup options to be included while</span>
+<span class="sd">                                                    making the request</span>
+<span class="sd">                    options:</span>
+<span class="sd">                        create_backup_copy_immediately  --  Run Backup copy just after snap backup</span>
+<span class="sd">                        backup_copy_type                --  Backup Copy level using storage policy</span>
+<span class="sd">                                                            or subclient rule</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                object : instance of the Job class for this backup job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if backup level specified is not correct</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">backup_level</span> <span class="o">=</span> <span class="n">backup_level</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;differential&#39;</span><span class="p">,</span> <span class="s1">&#39;synthetic_full&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">advanced_options</span><span class="p">:</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span><span class="n">backup_level</span><span class="p">,</span> <span class="n">incremental_backup</span><span class="p">,</span> <span class="n">incremental_level</span><span class="p">,</span> <span class="n">advanced_options</span><span class="p">)</span>
+
+            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
+
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">,</span> <span class="n">request_json</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="n">backup_level</span><span class="o">=</span><span class="n">backup_level</span><span class="p">,</span>
+                                                              <span class="n">incremental_backup</span><span class="o">=</span><span class="n">incremental_backup</span><span class="p">,</span>
+                                                              <span class="n">incremental_level</span><span class="o">=</span><span class="n">incremental_level</span><span class="p">,</span>
+                                                              <span class="n">collect_metadata</span><span class="o">=</span><span class="n">collect_metadata</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_advanced_backup_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates the advanced backup options dict</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                options         (dict)  --  advanced backup options that are to be included</span>
+<span class="sd">                                            in the request</span>
+<span class="sd">                    create_backup_copy_immediately  --  Run Backup copy just after snap backup</span>
+<span class="sd">                    backup_copy_type                --  Backup Copy level using storage policy</span>
+<span class="sd">                                                        or subclient rule</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">            (dict)                      --  generated advanced options dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">final_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_advanced_backup_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;create_backup_copy_immediately&#39;</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+            <span class="n">final_dict</span><span class="p">[</span><span class="s1">&#39;dataOpt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;createBackupCopyImmediately&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;create_backup_copy_immediately&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;backupCopyType&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backup_copy_type&#39;</span><span class="p">,</span> <span class="s1">&#39;USING_STORAGE_POLICY_RULE&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">final_dict</span></div>
 </pre></div>
 
           </div>
@@ -1811,7 +2032,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

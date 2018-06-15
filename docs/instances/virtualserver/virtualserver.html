@@ -6,17 +6,17 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Virtual Server Instances &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Virtual Server Instances &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Security" href="../../security/security.html" />
+    <link rel="next" title="Policies" href="../../policies/policies.html" />
     <link rel="prev" title="Cloud Apps Instances" href="../cloudapps/cloudapps.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -67,14 +67,29 @@
 <p>AzureInstance:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>__init__(agent_object,instance_name,instance_id)    –  initialize object of azure Instance object associated with</dt>
-<dd>the VirtualServer Instance</dd>
+<dt>_init_(self, agent, name, iid)      – initialize object of azure Instance</dt>
+<dd>object associated with the VirtualServer Instance</dd>
+<dt>_get_instance_properties()          –  VirtualServer Instance class method</dt>
+<dd>overwritten to get Azure classic
+Specific instance properties as well</dd>
 </dl>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.instances.virtualserver.azureinstance.AzureInstance">
 <em class="property">class </em><code class="descclassname">cvpysdk.instances.virtualserver.azureinstance.</code><code class="descname">AzureInstance</code><span class="sig-paren">(</span><em>agent</em>, <em>name</em>, <em>iid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/instances/virtualserver/azureinstance.html#AzureInstance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.virtualserver.azureinstance.AzureInstance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../instances.html#cvpysdk.instances.vsinstance.VirtualServerInstance" title="cvpysdk.instances.vsinstance.VirtualServerInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.instances.vsinstance.VirtualServerInstance</span></code></a></p>
+<dl class="attribute">
+<dt id="cvpysdk.instances.virtualserver.azureinstance.AzureInstance.server_host_name">
+<code class="descname">server_host_name</code><a class="headerlink" href="#cvpysdk.instances.virtualserver.azureinstance.AzureInstance.server_host_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>getter for the domain name in the vmware vendor json</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.virtualserver.azureinstance.AzureInstance.server_name">
+<code class="descname">server_name</code><a class="headerlink" href="#cvpysdk.instances.virtualserver.azureinstance.AzureInstance.server_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>getter for the domain name in the Hyper-V json</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -83,20 +98,50 @@
 <p>File for operating on a Virtual Server Azure Resource Manager Instance.</p>
 <p>AzureResoureceManagerInstance is the only class defined in this file.</p>
 <dl class="docutils">
-<dt>AzureResoureceManagerInstance: Derived class from VirtualServer  Base class, representing a</dt>
-<dd>Azure Resource Manager instance, and to perform operations on that instance</dd>
+<dt>AzureResoureceManagerInstance: Derived class from VirtualServer</dt>
+<dd><blockquote class="first">
+<div>Base class, representing a Azure Resource Manager
+instance, and to perform operations on that
+instance</div></blockquote>
+<dl class="last docutils">
+<dt>__init__(self, agent,_name,iid)      –     initialize object of azure RM</dt>
+<dd>Instance object associated with the
+VirtualServer Instance</dd>
+<dt>_get_instance_properties()     –  VirtualServer Instance class method</dt>
+<dd><blockquote class="first">
+<div>overwritten to get azure RM
+Specific instance properties as well</div></blockquote>
+<dl class="last docutils">
+<dt>_get_instance_properties_json()                 –  get the all instance related</dt>
+<dd>properties of this subclient.</dd>
 </dl>
-<p>AzureResoureceManagerInstance:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>__init__(agent_object,instance_name,instance_id)    –  initialize object of azure resource manager Instance object associated with</dt>
-<dd>the VirtualServer Instance</dd>
+</dd>
 </dl>
-</div></blockquote>
+</dd>
+</dl>
 <dl class="class">
 <dt id="cvpysdk.instances.virtualserver.azureRMinstance.AzureRMInstance">
 <em class="property">class </em><code class="descclassname">cvpysdk.instances.virtualserver.azureRMinstance.</code><code class="descname">AzureRMInstance</code><span class="sig-paren">(</span><em>agent</em>, <em>name</em>, <em>iid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/instances/virtualserver/azureRMinstance.html#AzureRMInstance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.virtualserver.azureRMinstance.AzureRMInstance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../instances.html#cvpysdk.instances.vsinstance.VirtualServerInstance" title="cvpysdk.instances.vsinstance.VirtualServerInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.instances.vsinstance.VirtualServerInstance</span></code></a></p>
+<p>AzureResoureceManagerInstance:</p>
+<blockquote>
+<div>__init__(agent_object,instance_name,instance_id)    –  initialize object</div></blockquote>
+<dl class="docutils">
+<dt>of azure resource manager Instance object associated with</dt>
+<dd>the VirtualServer Instance</dd>
+</dl>
+<dl class="attribute">
+<dt id="cvpysdk.instances.virtualserver.azureRMinstance.AzureRMInstance.server_host_name">
+<code class="descname">server_host_name</code><a class="headerlink" href="#cvpysdk.instances.virtualserver.azureRMinstance.AzureRMInstance.server_host_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>getter for the domain name in the vmware vendor json</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.virtualserver.azureRMinstance.AzureRMInstance.server_name">
+<code class="descname">server_name</code><a class="headerlink" href="#cvpysdk.instances.virtualserver.azureRMinstance.AzureRMInstance.server_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>getter for the domain name in the Hyper-V json</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -262,7 +307,7 @@ instance_id)                    –  initialize object of vmware Instance object
   <li><a href="../../developer_sdk.html">Developer SDK - Python</a><ul>
   <li><a href="../instances.html">Instances</a><ul>
       <li>Previous: <a href="../cloudapps/cloudapps.html" title="previous chapter">Cloud Apps Instances</a></li>
-      <li>Next: <a href="../../security/security.html" title="next chapter">Security</a></li>
+      <li>Next: <a href="../../policies/policies.html" title="next chapter">Policies</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
@@ -295,7 +340,7 @@ instance_id)                    –  initialize object of vmware Instance object
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

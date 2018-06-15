@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclient &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.subclient &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -55,6 +55,12 @@
 <span class="sd">    __str__()                   --  returns all the subclients associated with the backupset</span>
 
 <span class="sd">    __repr__()                  --  returns the string for the instance of the Subclients class</span>
+
+<span class="sd">    __len__()                   --  returns the number of subclients associated with the Agent</span>
+<span class="sd">    for the selected Client</span>
+
+<span class="sd">    __getitem__()               --  returns the name of the subclient for the given subclient Id</span>
+<span class="sd">    or the details for the given subclient name</span>
 
 <span class="sd">    _get_subclients()           --  gets all the subclients associated with the backupset specified</span>
 
@@ -146,6 +152,7 @@
 <span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">JobController</span>
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
 
 <span class="n">install_aliases</span><span class="p">()</span>
 
@@ -154,53 +161,55 @@
     <span class="sd">&quot;&quot;&quot;Class for getting all the subclients associated with a client.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize the Sublcients object for the given backupset.</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Subclients object for the given backupset.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                class_object (object)  --  instance of the Backupset/Instance class</span>
+<span class="sd">                class_object    (object)    --  instance of the Agent / Instance / Backupset class</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Subclients class</span>
+<span class="sd">                object  -   instance of the Subclients class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if class object is not an instance of Agent / Instance / Backupset</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agent</span>
         <span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instance</span>
         <span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupset</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Agent</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="n">class_object</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="n">class_object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span>
+
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Backupset</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="n">class_object</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_instance_object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span>
 
-            <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">            try:</span>
-<span class="sd">                self._backupset_object = Backupset(</span>
-<span class="sd">                    class_object._agent_object,</span>
-<span class="sd">                    &#39;defaultBackupSet&#39;,</span>
-<span class="sd">                    instance_id=class_object.instance_id,</span>
-<span class="sd">                    instance_name=class_object.instance_name</span>
-<span class="sd">                )</span>
-<span class="sd">            except SDKException:</span>
-<span class="sd">                self._backupset_object = Backupset(</span>
-<span class="sd">                    class_object._agent_object,</span>
-<span class="sd">                    sorted(class_object.backupsets._backupsets)[0],</span>
-<span class="sd">                    instance_id=class_object.instance_id,</span>
-<span class="sd">                    instance_name=class_object.instance_name</span>
-<span class="sd">                )</span>
-<span class="sd">            &#39;&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;115&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_commcell_object</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_SUBCLIENTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SUBCLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ADD_SUBCLIENT&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_SUBCLIENTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SUBCLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ADD_SUBCLIENT&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
         <span class="kn">from</span> <span class="nn">.subclients.fssubclient</span> <span class="k">import</span> <span class="n">FileSystemSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
@@ -212,6 +221,10 @@
         <span class="kn">from</span> <span class="nn">.subclients.lndbsubclient</span> <span class="k">import</span> <span class="n">LNDbSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.sybasesubclient</span> <span class="k">import</span> <span class="n">SybaseSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.saporaclesubclient</span> <span class="k">import</span> <span class="n">SAPOracleSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.exchsubclient</span> <span class="k">import</span> <span class="n">ExchangeSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.mysqlsubclient</span> <span class="k">import</span> <span class="n">MYSQLSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.exchange.exchange_database_subclient</span> <span class="k">import</span> <span class="n">ExchangeDatabaseSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.postgressubclient</span> <span class="k">import</span> <span class="n">PostgresSubclient</span>
 
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;FileSystemSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FileSystemSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;VirtualServerSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">VirtualServerSubclient</span>
@@ -223,6 +236,10 @@
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;LNDbSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LNDbSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;SybaseSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SybaseSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;SAPOracleSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAPOracleSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;ExchangeSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ExchangeSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;MYSQLSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MYSQLSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;ExchangeDatabaseSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ExchangeDatabaseSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;PostgresSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PostgresSubclient</span>
 
         <span class="c1"># add the agent name to this dict, and its class as the value</span>
         <span class="c1"># the appropriate class object will be initialized based on the agent</span>
@@ -231,13 +248,35 @@
             <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="n">VirtualServerSubclient</span><span class="p">,</span>
             <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="n">CloudAppsSubclient</span><span class="p">,</span>
             <span class="s1">&#39;sql server&#39;</span><span class="p">:</span> <span class="n">SQLServerSubclient</span><span class="p">,</span>
-            <span class="s1">&#39;nas&#39;</span><span class="p">:</span> <span class="n">NASSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;ndmp&#39;</span><span class="p">:</span> <span class="n">NASSubclient</span><span class="p">,</span>
             <span class="s1">&#39;sap hana&#39;</span><span class="p">:</span> <span class="n">SAPHANASubclient</span><span class="p">,</span>
             <span class="s1">&#39;oracle&#39;</span><span class="p">:</span> <span class="n">OracleSubclient</span><span class="p">,</span>
             <span class="s1">&#39;notes database&#39;</span><span class="p">:</span> <span class="n">LNDbSubclient</span><span class="p">,</span>
             <span class="s1">&#39;sybase&#39;</span><span class="p">:</span> <span class="n">SybaseSubclient</span><span class="p">,</span>
             <span class="s1">&#39;sap for oracle&#39;</span><span class="p">:</span> <span class="n">SAPOracleSubclient</span><span class="p">,</span>
+            <span class="s2">&quot;exchange mailbox&quot;</span><span class="p">:</span> <span class="n">ExchangeSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;mysql&#39;</span><span class="p">:</span> <span class="n">MYSQLSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;exchange database&#39;</span><span class="p">:</span> <span class="n">ExchangeDatabaseSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;postgresql&#39;</span><span class="p">:</span> <span class="n">PostgresSubclient</span>
         <span class="p">}</span>
+
+        <span class="c1"># sql server subclient type dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sqlsubclient_type_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;DATABASE&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;FILE_FILEGROUP&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># this will work only for `Exchange Database` Agent, as only an object of</span>
+        <span class="c1"># ExchangeDatabaseAgent class has these attributes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">,</span> <span class="s1">&#39;_instance_object&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_instance_object</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">,</span> <span class="s1">&#39;_backupset_object&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_backupset_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all subclients of the backupset.</span>
@@ -255,8 +294,8 @@
                 <span class="n">subclient</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span><span class="p">[</span><span class="n">subclient</span><span class="p">][</span><span class="s1">&#39;backupset&#39;</span><span class="p">],</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
             <span class="p">)</span>
             <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
 
@@ -264,16 +303,59 @@
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Subclients class.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">o_str</span> <span class="o">=</span> <span class="s2">&quot;Subclients class instance for Instance: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s1">&#39;Subclients class instance for Backupset: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, &#39;</span>
+                <span class="s1">&#39;of Instance: &quot;</span><span class="si">{1}</span><span class="s1">&quot;, for Agent: &quot;</span><span class="si">{2}</span><span class="s1">&quot;&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Subclients class instance for Instance: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, of Agent: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">o_str</span> <span class="o">=</span> <span class="s2">&quot;Subclients class instance for Backupset: &#39;</span><span class="si">{0}</span><span class="s2">&#39;, of Instance: &#39;</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span>
+            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Subclients class instance for Agent: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">o_str</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of the subclients associated to the Agent for the selected Client.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the subclient for the given subclient ID or</span>
+<span class="sd">            the details of the subclient for given subclient Name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str / int)     --  Name or ID of the subclient</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str     -   name of the subclient, if the subclient id was given</span>
+
+<span class="sd">                dict    -   dict of details of the subclient, if subclient name was given</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                IndexError:</span>
+<span class="sd">                    no subclient exists with the given Name / Id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span>
+                    <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_subclients</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+                <span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;No subclient exists with the given Name / Id&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_subclients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets all the subclients associated to the client specified by the backupset object.</span>
@@ -297,77 +379,128 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENTS</span>
-        <span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENTS</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;subClientProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
                 <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">]:</span>
-                    <span class="n">backupset</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-                    <span class="n">instance</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="c1"># store the agent, instance, and backupset name for the current subclient</span>
+                    <span class="c1"># the API call returns the subclients for all Agents, so we need to filter</span>
+                    <span class="c1"># them out based on the Agent / Instance / Backupset that had been selected</span>
+                    <span class="c1"># by the user earlier</span>
                     <span class="n">agent</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;appName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">instance</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                    <span class="p">)</span>
+                    <span class="n">backupset</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                    <span class="p">)</span>
 
+                    <span class="c1"># filter subclients for all entities: Agent, Instance, and Backupset</span>
+                    <span class="c1"># as the instance of the Backupset class was passed for Subclients instance</span>
+                    <span class="c1"># creation</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="ow">in</span> <span class="n">instance</span> <span class="ow">and</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span> <span class="ow">in</span> <span class="n">backupset</span> <span class="ow">and</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">):</span>
-                            <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-                            <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span> <span class="ow">in</span> <span class="n">backupset</span> <span class="ow">and</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="ow">in</span> <span class="n">instance</span> <span class="ow">and</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">):</span>
+                            <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                            <span class="p">)</span>
+                            <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+                                <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
                             <span class="n">return_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                                 <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">temp_id</span><span class="p">,</span>
                                 <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="n">backupset</span>
                             <span class="p">}</span>
 
-                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isDefaultSubclient&#39;</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                    <span class="s1">&#39;isDefaultSubclient&#39;</span><span class="p">):</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="n">temp_name</span>
 
-                    <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="ow">in</span> <span class="n">instance</span> <span class="ow">and</span>
-                          <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">):</span>
-                        <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-                        <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="ow">in</span> <span class="n">instance</span> <span class="ow">and</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">):</span>
+                            <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                            <span class="p">)</span>
+                            <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+                                <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">_backupsets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                            <span class="n">return_dict</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backupset</span><span class="p">,</span> <span class="n">temp_name</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
-                                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">temp_id</span><span class="p">,</span>
-                                <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="n">backupset</span>
-                            <span class="p">}</span>
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="n">temp_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                    <span class="n">backupset</span><span class="p">,</span> <span class="n">temp_name</span><span class="p">)</span>
 
-                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isDefaultSubclient&#39;</span><span class="p">):</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backupset</span><span class="p">,</span> <span class="n">temp_name</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
                             <span class="n">return_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                                 <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">temp_id</span><span class="p">,</span>
                                 <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="n">backupset</span>
                             <span class="p">}</span>
 
-                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isDefaultSubclient&#39;</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                    <span class="s1">&#39;isDefaultSubclient&#39;</span><span class="p">):</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="n">temp_name</span>
+
+                    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">:</span>
+                            <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                            <span class="p">)</span>
+                            <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+                                <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">all_instances</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                                    <span class="n">temp_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="se">\\</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                        <span class="n">instance</span><span class="p">,</span> <span class="n">backupset</span><span class="p">,</span> <span class="n">temp_name</span>
+                                    <span class="p">)</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="n">temp_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                        <span class="n">instance</span><span class="p">,</span> <span class="n">temp_name</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                                    <span class="n">temp_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="se">\\</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                        <span class="n">backupset</span><span class="p">,</span> <span class="n">temp_name</span><span class="p">)</span>
+
+                            <span class="n">return_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">temp_id</span><span class="p">,</span>
+                                <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="n">backupset</span>
+                            <span class="p">}</span>
+
+                            <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                    <span class="s1">&#39;isDefaultSubclient&#39;</span><span class="p">):</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="n">temp_name</span>
 
                 <span class="k">return</span> <span class="n">return_dict</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">all_subclients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns dict of all the subclients configured on this backupset</span>
 
-<span class="sd">            dict - consists of all subclients in the backupset</span>
+<span class="sd">            Retruns:</span>
+<span class="sd">                dict    -   consists of all subclients in the backupset</span>
+
 <span class="sd">                    {</span>
-<span class="sd">                         &quot;subclient1_name&quot;: {</span>
-<span class="sd">                             &quot;id&quot;: subclient1_id,</span>
-<span class="sd">                             &quot;backupset&quot;: backupset</span>
-<span class="sd">                         },</span>
-<span class="sd">                         &quot;subclient2_name&quot;: {</span>
-<span class="sd">                             &quot;id&quot;: subclient2_id,</span>
-<span class="sd">                             &quot;backupset&quot;: backupset</span>
-<span class="sd">                         }</span>
+<span class="sd">                        &quot;subclient1_name&quot;: {</span>
+<span class="sd">                            &quot;id&quot;: subclient1_id,</span>
+
+<span class="sd">                            &quot;backupset&quot;: backupset</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &quot;subclient2_name&quot;: {</span>
+<span class="sd">                            &quot;id&quot;: subclient2_id,</span>
+
+<span class="sd">                            &quot;backupset&quot;: backupset</span>
+<span class="sd">                        }</span>
 <span class="sd">                    }</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span>
 
@@ -386,22 +519,36 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span> <span class="ow">and</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span>
 
-<div class="viewcode-block" id="Subclients.add"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclients.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span> <span class="ow">and</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span></div>
+
+<div class="viewcode-block" id="Subclients.add"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclients.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span>
+            <span class="n">subclient_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new subclient to the backupset.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                subclient_name      (str)   --  name of the new subclient to add</span>
 
-<span class="sd">                storage_policy      (str)   --  name of the storage policy to</span>
-<span class="sd">                                                    associate with the subclient</span>
+<span class="sd">                storage_policy      (str)   --  name of the storage policy to be associated</span>
+<span class="sd">                with the subclient</span>
+
+<span class="sd">                subclient_type      (str)   --  type of subclient for sql server</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                    Valid Values are:</span>
+
+<span class="sd">                        - DATABASE</span>
+
+<span class="sd">                        - FILE_FILEGROUP</span>
+
 
 <span class="sd">                description         (str)   --  description for the subclient (optional)</span>
 
+<span class="sd">                    default: &#39;&#39;</span>
+
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Subclient class</span>
+<span class="sd">                object  -   instance of the Subclient class</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -418,6 +565,7 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">                    if subclient already exists with the given name</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
@@ -426,30 +574,35 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_subclient</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">subclient_name</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">has_backupset</span><span class="p">(</span><span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">has_backupset</span><span class="p">(</span>
+                    <span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                    <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">_backupsets</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span><span class="n">storage_policy</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span>
+                <span class="n">storage_policy</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">storage_policy</span><span class="p">)</span>
+                <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">storage_policy</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
                 <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
-                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
                     <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
                     <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">,</span>
                     <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span>
@@ -466,7 +619,12 @@
             <span class="p">}</span>
         <span class="p">}</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="o">==</span> <span class="s1">&#39;sql server&#39;</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">][</span><span class="s1">&#39;mssqlSubClientProp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;sqlSubclientType&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqlsubclient_type_dict</span><span class="p">[</span><span class="n">subclient_type</span><span class="p">]</span>
+            <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SUBCLIENT</span><span class="p">,</span> <span class="n">request_json</span>
         <span class="p">)</span>
 
@@ -479,16 +637,18 @@
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                         <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
                         <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;Failed to create subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                        <span class="s1">&#39;Failed to create subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">error_string</span><span class="p">)</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">subclient_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">]</span>
+                    <span class="n">subclient_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">(</span>
+                    <span class="p">)[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">]</span>
 
                     <span class="c1"># initialize the subclients again</span>
                     <span class="c1"># so the subclient object has all the subclients</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-                    <span class="n">agent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+                    <span class="n">agent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
 
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">](</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span>
@@ -496,8 +656,11 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Subclients.get"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclients.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a subclient object of the specified backupset name.</span>
@@ -519,7 +682,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">subclient_name</span> <span class="o">=</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-            <span class="n">agent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+            <span class="n">agent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_subclient</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">):</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -532,8 +695,9 @@
                 <span class="p">)</span>
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No subclient exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span></div>
-            <span class="p">)</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No subclient exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">subclient_name</span><span class="p">)</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclients.delete"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclients.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the subclient specified by the subclient_name from the backupset.</span>
@@ -559,13 +723,12 @@
             <span class="n">subclient_name</span> <span class="o">=</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_subclient</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">):</span>
-            <span class="n">delete_subclient_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">delete_subclient_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span><span class="p">[</span><span class="n">subclient_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
             <span class="p">)</span>
 
-            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-                <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">delete_subclient_service</span>
-            <span class="p">)</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">delete_subclient_service</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -579,35 +742,40 @@
 
                         <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
                             <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
-                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
                                 <span class="c1"># initialize the subclients again</span>
-                                <span class="c1"># so the subclient object has all the subclients</span>
+                                <span class="c1"># so the subclient object has all the</span>
+                                <span class="c1"># subclients</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Failed to delete subclient with Error Code: &quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
                                          <span class="s1">&#39;Please check the documentation for &#39;</span>
                                          <span class="s1">&#39;more details on the error&#39;</span><span class="p">)</span>
-                                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">))</span>
+                                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                        <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No subclient exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span></div>
-            <span class="p">)</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No subclient exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">subclient_name</span><span class="p">)</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclients.refresh"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclients.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the subclients associated with the Backupset / Instance.&quot;&quot;&quot;</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclients</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the subclients associated with the Backupset / Instance.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclients</span><span class="p">()</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">default_subclient</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the name of the default subclient for the selected Agent and Backupset.&quot;&quot;&quot;</span></div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the default subclient for the selected Agent and Backupset.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span></div>
 
 
 <div class="viewcode-block" id="Subclient"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient">[docs]</a><span class="k">class</span> <span class="nc">Subclient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -629,31 +797,39 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="n">backupset_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_name</span> <span class="o">=</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_agent_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_process_restore_response&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_filter_paths&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_restore_json&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_impersonation_json&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_restore_browse_option_json&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_restore_common_options_json&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_restore_destination_json&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_restore_fileoption_json&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;_json_restore_subtask&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_methods</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;_process_restore_response&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_filter_paths&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_restore_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_impersonation_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_restore_browse_option_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_restore_common_options_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_restore_destination_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_restore_fileoption_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_json_restore_subtask&#39;</span>
+        <span class="p">]</span>
 
         <span class="k">if</span> <span class="n">subclient_id</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">subclient_id</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_id</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_BROWSE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;BROWSE&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_BROWSE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;BROWSE&#39;</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_RESTORE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_RESTORE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="p">[]</span>
@@ -692,11 +868,13 @@
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENT</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENT</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;subClientProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span>
+                    <span class="s1">&#39;subClientProperties&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="s1">&#39;commonProperties&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">]</span>
@@ -710,8 +888,11 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_set_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;sets the properties of this sub client.value is updated to instance once when post call</span>
@@ -727,14 +908,16 @@
 
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">backup</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">exec</span><span class="p">(</span><span class="s2">&quot;backup = self.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">attr_name</span><span class="p">))</span>  <span class="c1"># Take backup of old value</span>
-        <span class="n">exec</span><span class="p">(</span><span class="s2">&quot;self.</span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">attr_name</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">))</span>  <span class="c1"># set new value</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">backup</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s1">&#39;self.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">attr_name</span><span class="p">)</span>        <span class="c1"># Take backup of old value</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="n">backup</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">exec</span><span class="p">(</span><span class="s2">&quot;self.</span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">attr_name</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">))</span>     <span class="c1"># set new value</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties_json</span><span class="p">()</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENT</span><span class="p">,</span> <span class="n">request_json</span>
-        <span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENT</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
 
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
 
@@ -742,8 +925,10 @@
             <span class="k">return</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to update properties of subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+
             <span class="c1"># Restore original value from backup on failure</span>
             <span class="n">exec</span><span class="p">(</span><span class="s2">&quot;self.</span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">attr_name</span><span class="p">,</span> <span class="n">backup</span><span class="p">))</span>
+
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
 
     <span class="nd">@staticmethod</span>
@@ -790,7 +975,8 @@
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s2">&quot;response&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;response&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;errorCode&quot;</span><span class="p">])</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+                        <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;response&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;errorCode&quot;</span><span class="p">])</span>
 
                     <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
                         <span class="k">return</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
@@ -798,7 +984,8 @@
                         <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
                         <span class="k">if</span> <span class="s2">&quot;errorString&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;response&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
-                            <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;response&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;errorString&quot;</span><span class="p">]</span>
+                            <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">(</span>
+                            <span class="p">)[</span><span class="s2">&quot;response&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;errorString&quot;</span><span class="p">]</span>
 
                         <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
                             <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
@@ -820,8 +1007,11 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_process_backup_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs the Backup for a subclient with the request provided and returns the Job object.</span>
@@ -843,7 +1033,8 @@
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                               <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Initializing backup failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
@@ -852,35 +1043,46 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
 
     <span class="k">def</span> <span class="nf">_backup_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                      <span class="n">backup_level</span><span class="p">,</span>
                      <span class="n">incremental_backup</span><span class="p">,</span>
                      <span class="n">incremental_level</span><span class="p">,</span>
-                     <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                     <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                backup_level        (str)   --  level of backup the user wish to run</span>
-<span class="sd">                        Full / Incremental / Differential / Synthetic_full</span>
+
+<span class="sd">                    Full / Incremental / Differential / Synthetic_full</span>
 
 <span class="sd">                incremental_backup  (bool)  --  run incremental backup</span>
-<span class="sd">                        only applicable in case of Synthetic_full backup</span>
+
+<span class="sd">                    only applicable in case of Synthetic_full backup</span>
 
 <span class="sd">                incremental_level   (str)   --  run incremental backup before/after synthetic full</span>
-<span class="sd">                        BEFORE_SYNTH / AFTER_SYNTH</span>
 
-<span class="sd">                        only applicable in case of Synthetic_full backup</span>
+<span class="sd">                    BEFORE_SYNTH / AFTER_SYNTH</span>
+
+<span class="sd">                    only applicable in case of Synthetic_full backup</span>
 
 <span class="sd">                advanced_options   (dict)  --  advanced backup options to be included while</span>
-<span class="sd">                                                    making the request</span>
-<span class="sd">                        default: None</span>
+<span class="sd">                making the request</span>
+
+<span class="sd">                    default: None</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                dict - JSON request to pass to the API</span>
+<span class="sd">                dict    -   JSON request to pass to the API</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">],</span>
@@ -904,10 +1106,16 @@
         <span class="n">advanced_options_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">if</span> <span class="n">advanced_options</span><span class="p">:</span>
-            <span class="n">advanced_options_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_backup_options</span><span class="p">(</span><span class="n">advanced_options</span><span class="p">)</span>
+            <span class="n">advanced_options_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_backup_options</span><span class="p">(</span>
+                <span class="n">advanced_options</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">advanced_options_dict</span><span class="p">:</span>
-            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;backupOpts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">advanced_options_dict</span><span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;backupOpts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="n">advanced_options_dict</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">schedule_pattern</span><span class="p">:</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">()</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">request_json</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">request_json</span>
 
@@ -1053,7 +1261,8 @@
 <span class="sd">                    if the type of value input is not int</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;numberOfBackupStreams&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_commonProperties[&#39;numberOfBackupStreams&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient data readers should be an int value&#39;</span>
@@ -1139,7 +1348,8 @@
 <span class="sd">                    if the type of value input is not string</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;description&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_commonProperties[&#39;description&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient description should be a string value&#39;</span>
@@ -1154,11 +1364,14 @@
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
+<span class="sd">                    if storage policy name is not in string format</span>
+
 <span class="sd">                    if failed to update storage policy name</span>
 
-<span class="sd">                    if storage policy name is not in string format</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                     <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
@@ -1166,10 +1379,17 @@
                     <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
                 <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
-            <span class="s2">&quot;_commonProperties[&#39;storageDevice&#39;][&#39;dataBackupStoragePolicy&#39;][&#39;storagePolicyName&#39;]&quot;</span><span class="p">,</span>
-            <span class="n">value</span>
-        <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_commonProperties[&#39;storageDevice&#39;][&#39;dataBackupStoragePolicy&#39;]&quot;</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                    <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">all_storage_policies</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Subclient.enable_backup"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enables Backup for the subclient.</span>
@@ -1177,8 +1397,8 @@
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if failed to enable backup of subclient</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;enableBackup&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;enableBackup&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.enable_backup_at_time"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Backup if not already disabled, and enables at the time specified.</span>
@@ -1212,8 +1432,8 @@
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
-            <span class="s2">&quot;_commonProperties[&#39;enableBackupAtDateTime&#39;]&quot;</span><span class="p">,</span> <span class="n">enable_backup_at_time</span></div>
-        <span class="p">)</span>
+            <span class="s2">&quot;_commonProperties[&#39;enableBackupAtDateTime&#39;]&quot;</span><span class="p">,</span> <span class="n">enable_backup_at_time</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.disable_backup"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.disable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">disable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Backup for the subclient.</span>
@@ -1221,8 +1441,9 @@
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if failed to disable backup of subclient</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;enableBackup&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_commonProperties[&#39;enableBackup&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.enable_intelli_snap"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">[docs]</a>    <span class="k">def</span> <span class="nf">enable_intelli_snap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snap_engine_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enables Intelli Snap for the subclient.</span>
@@ -1243,8 +1464,9 @@
                 <span class="s2">&quot;snapShotEngineName&quot;</span><span class="p">:</span> <span class="n">snap_engine_name</span>
             <span class="p">}</span>
         <span class="p">}</span>
-</div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;snapCopyInfo&#39;]&quot;</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_commonProperties[&#39;snapCopyInfo&#39;]&quot;</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.disable_intelli_snap"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.disable_intelli_snap">[docs]</a>    <span class="k">def</span> <span class="nf">disable_intelli_snap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Intelli Snap for the subclient.</span>
@@ -1254,8 +1476,8 @@
 <span class="sd">                    if failed to disable intelli snap for subclient</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
-            <span class="s2">&quot;_commonProperties[&#39;snapCopyInfo&#39;][&#39;isSnapBackupEnabled&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span></div>
-        <span class="p">)</span>
+            <span class="s2">&quot;_commonProperties[&#39;snapCopyInfo&#39;][&#39;isSnapBackupEnabled&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.backup"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;Incremental&quot;</span><span class="p">,</span>
@@ -1292,7 +1514,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">backup_level</span> <span class="o">=</span> <span class="n">backup_level</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">,</span> <span class="s1">&#39;differential&#39;</span><span class="p">,</span> <span class="s1">&#39;synthetic_full&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;differential&#39;</span><span class="p">,</span> <span class="s1">&#39;synthetic_full&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
         <span class="n">backup_request</span> <span class="o">=</span> <span class="n">backup_level</span>
@@ -1300,52 +1523,64 @@
         <span class="k">if</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;synthetic_full&#39;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">incremental_backup</span><span class="p">:</span>
                 <span class="n">backup_request</span> <span class="o">+=</span> <span class="s1">&#39;&amp;runIncrementalBackup=True&#39;</span>
-                <span class="n">backup_request</span> <span class="o">+=</span> <span class="s1">&#39;&amp;incrementalLevel=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">incremental_level</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+                <span class="n">backup_request</span> <span class="o">+=</span> <span class="s1">&#39;&amp;incrementalLevel=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">incremental_level</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">backup_request</span> <span class="o">+=</span> <span class="s1">&#39;&amp;runIncrementalBackup=False&#39;</span>
 
         <span class="n">backup_request</span> <span class="o">+=</span> <span class="s1">&#39;&amp;collectMetaInfo=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">collect_metadata</span>
 
-        <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT_BACKUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">,</span> <span class="n">backup_request</span>
-        <span class="p">)</span>
+        <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT_BACKUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">,</span> <span class="n">backup_request</span><span class="p">)</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span>
-        <span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.browse"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Browses the content of a Subclient.</span>
+        <span class="sd">&quot;&quot;&quot;Browses the content of the Subclient.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                Dictionary of browse options:</span>
 <span class="sd">                    Example:</span>
+
 <span class="sd">                        browse({</span>
-<span class="sd">                            &#39;path&#39;: &#39;c:\\hello&#39;,</span>
+<span class="sd">                            &#39;path&#39;: &#39;c:\\\\hello&#39;,</span>
+
 <span class="sd">                            &#39;show_deleted&#39;: True,</span>
+
 <span class="sd">                            &#39;from_time&#39;: &#39;2014-04-20 12:00:00&#39;,</span>
+
 <span class="sd">                            &#39;to_time&#39;: &#39;2016-04-21 12:00:00&#39;</span>
 <span class="sd">                        })</span>
 
-<span class="sd">                    (OR)</span>
-
+<span class="sd">            Kwargs:</span>
 <span class="sd">                Keyword argument of browse options:</span>
 <span class="sd">                    Example:</span>
+
 <span class="sd">                        browse(</span>
 <span class="sd">                            path=&#39;c:\\hello&#39;,</span>
+
 <span class="sd">                            show_deleted=True,</span>
+
 <span class="sd">                            from_time=&#39;2014-04-20 12:00:00&#39;,</span>
+
 <span class="sd">                            to_time=&#39;2016-04-21 12:00:00&#39;</span>
 <span class="sd">                        )</span>
 
-<span class="sd">                Refer Backupset._default_browse_options for all the supported options</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                (list, dict)</span>
+<span class="sd">                    list    -   List of only the file, folder paths from the browse response</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            list - List of only the file, folder paths from the browse response</span>
+<span class="sd">                    dict    -   Dictionary of all the paths with additional metadata retrieved</span>
+<span class="sd">                    from browse operation</span>
 
-<span class="sd">            dict - Dictionary of all the paths with additional metadata retrieved from browse</span>
+
+<span class="sd">            Refer `default_browse_options`_ for all the supported options.</span>
+
+<span class="sd">            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1353,49 +1588,62 @@
             <span class="n">options</span> <span class="o">=</span> <span class="n">kwargs</span>
 
         <span class="n">options</span><span class="p">[</span><span class="s1">&#39;_subclient_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.find"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Searches a file/folder in the subclient backup content,</span>
+        <span class="sd">&quot;&quot;&quot;Searches a file/folder in the backed up content of the subclient,</span>
 <span class="sd">            and returns all the files matching the filters given.</span>
 
-<span class="sd">         Args:</span>
-<span class="sd">            Dictionary of find options:</span>
-<span class="sd">                Example:</span>
-<span class="sd">                    find({</span>
-<span class="sd">                        &#39;file_name&#39;: &#39;*.txt&#39;,</span>
-<span class="sd">                        &#39;show_deleted&#39;: True,</span>
-<span class="sd">                        &#39;from_time&#39;: &#39;2014-04-20 12:00:00&#39;,</span>
-<span class="sd">                        &#39;to_time&#39;: &#39;2016-04-21 12:00:00&#39;</span>
-<span class="sd">                    })</span>
+<span class="sd">            Args:</span>
+<span class="sd">                Dictionary of browse options:</span>
+<span class="sd">                    Example:</span>
 
-<span class="sd">                (OR)</span>
+<span class="sd">                        find({</span>
+<span class="sd">                            &#39;file_name&#39;: &#39;*.txt&#39;,</span>
 
-<span class="sd">            Keyword argument of find options:</span>
-<span class="sd">                Example:</span>
-<span class="sd">                    find(</span>
-<span class="sd">                        file_name=&#39;*.txt&#39;,</span>
-<span class="sd">                        show_deleted=True,</span>
-<span class="sd">                        from_time=2014-04-20 12:00:00,</span>
-<span class="sd">                        to_time=&#39;2016-04-21 12:00:00&#39;</span>
-<span class="sd">                    )</span>
+<span class="sd">                            &#39;show_deleted&#39;: True,</span>
 
-<span class="sd">            Refer Backupset._default_browse_options for all the supported options</span>
+<span class="sd">                            &#39;from_time&#39;: &#39;2014-04-20 12:00:00&#39;,</span>
+
+<span class="sd">                            &#39;to_time&#39;: &#39;2016-04-31 12:00:00&#39;</span>
+<span class="sd">                        })</span>
+
+<span class="sd">            Kwargs:</span>
+<span class="sd">                Keyword argument of browse options:</span>
+<span class="sd">                    Example:</span>
+
+<span class="sd">                        find(</span>
+<span class="sd">                            file_name=&#39;*.txt&#39;,</span>
+
+<span class="sd">                            show_deleted=True,</span>
+
+<span class="sd">                            &#39;from_time&#39;: &#39;2014-04-20 12:00:00&#39;,</span>
+
+<span class="sd">                            to_time=&#39;2016-04-31 12:00:00&#39;</span>
+<span class="sd">                        )</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (list, dict)</span>
+<span class="sd">                    list    -   List of only the file, folder paths from the browse response</span>
+
+<span class="sd">                    dict    -   Dictionary of all the paths with additional metadata retrieved</span>
+<span class="sd">                    from browse operation</span>
+
+
+<span class="sd">            Refer `default_browse_options`_ for all the supported options.</span>
 
 <span class="sd">            Additional options supported:</span>
-<span class="sd">                file_name       (str)   --   Find files with name</span>
+<span class="sd">                file_name       (str)   --  Find files with name</span>
 
-<span class="sd">                file_size_gt    (int)   --   Find files with size greater than size</span>
+<span class="sd">                file_size_gt    (int)   --  Find files with size greater than size</span>
 
-<span class="sd">                file_size_lt    (int)   --   Find files with size lesser than size</span>
+<span class="sd">                file_size_lt    (int)   --  Find files with size lesser than size</span>
 
-<span class="sd">                file_size_et    (int)   --   Find files with size equal to size</span>
+<span class="sd">                file_size_et    (int)   --  Find files with size equal to size</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            list - List of only the file, folder paths from the browse response</span>
+<span class="sd">            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565</span>
 
-<span class="sd">            dict - Dictionary of all the paths with additional metadata retrieved from browse</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1403,8 +1651,8 @@
             <span class="n">options</span> <span class="o">=</span> <span class="n">kwargs</span>
 
         <span class="n">options</span><span class="p">[</span><span class="s1">&#39;_subclient_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.restore_in_place"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -1458,17 +1706,17 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_in_place</span><span class="p">(</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_in_place</span><span class="p">(</span>
             <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">restore_data_and_acl</span><span class="o">=</span><span class="n">restore_data_and_acl</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span></div>
-        <span class="p">)</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.restore_out_of_place"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -1541,9 +1789,9 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_out_of_place</span><span class="p">(</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_out_of_place</span><span class="p">(</span>
             <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span>
             <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
             <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
@@ -1552,14 +1800,15 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span></div>
-        <span class="p">)</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span>
+        <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Subclient.find_latest_job"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.find_latest_job">[docs]</a>    <span class="k">def</span> <span class="nf">find_latest_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                        <span class="n">include_active</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                        <span class="n">include_finished</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                        <span class="n">lookup_time</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                        <span class="n">job_filter</span><span class="o">=</span><span class="s1">&#39;Backup,SYNTHFULL&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="Subclient.find_latest_job"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.find_latest_job">[docs]</a>    <span class="k">def</span> <span class="nf">find_latest_job</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">include_active</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">include_finished</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">lookup_time</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">job_filter</span><span class="o">=</span><span class="s1">&#39;Backup,SYNTHFULL&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds the latest job for the subclient</span>
 <span class="sd">            which includes current running job also.</span>
 
@@ -1598,57 +1847,54 @@
 <span class="sd">                        to get the complete list of filters available</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Job class for the latest job</span>
+<span class="sd">                object  -   instance of the Job class for the latest job</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if any error occurred while finding the latest job.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">job_controller</span> <span class="o">=</span> <span class="n">JobController</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
-        <span class="k">if</span><span class="p">(</span><span class="n">include_active</span> <span class="ow">and</span> <span class="n">include_finished</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">include_active</span> <span class="ow">and</span> <span class="n">include_finished</span><span class="p">:</span>
             <span class="n">client_jobs</span> <span class="o">=</span> <span class="n">job_controller</span><span class="o">.</span><span class="n">all_jobs</span><span class="p">(</span>
                 <span class="n">client_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
                 <span class="n">lookup_time</span><span class="o">=</span><span class="n">lookup_time</span><span class="p">,</span>
                 <span class="n">job_filter</span><span class="o">=</span><span class="n">job_filter</span>
-                <span class="p">)</span>
-        <span class="k">elif</span><span class="p">(</span><span class="n">include_active</span><span class="p">):</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">include_active</span><span class="p">:</span>
             <span class="n">client_jobs</span> <span class="o">=</span> <span class="n">job_controller</span><span class="o">.</span><span class="n">active_jobs</span><span class="p">(</span>
                 <span class="n">client_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
                 <span class="n">lookup_time</span><span class="o">=</span><span class="n">lookup_time</span><span class="p">,</span>
                 <span class="n">job_filter</span><span class="o">=</span><span class="n">job_filter</span>
-                <span class="p">)</span>
-        <span class="k">elif</span><span class="p">(</span><span class="n">include_finished</span><span class="p">):</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">include_finished</span><span class="p">:</span>
             <span class="n">client_jobs</span> <span class="o">=</span> <span class="n">job_controller</span><span class="o">.</span><span class="n">finished_jobs</span><span class="p">(</span>
                 <span class="n">client_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
                 <span class="n">lookup_time</span><span class="o">=</span><span class="n">lookup_time</span><span class="p">,</span>
                 <span class="n">job_filter</span><span class="o">=</span><span class="n">job_filter</span>
-                <span class="p">)</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Either active or finished job must be included&quot;</span>
-                <span class="p">)</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;Either active or finished job must be included&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">latest_jobid</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">client_jobs</span><span class="p">:</span>
-            <span class="k">if</span><span class="p">(</span>
-                <span class="n">client_jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;subclient_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span>
-                    <span class="p">)</span>
-               <span class="p">):</span>
-                <span class="k">if</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">latest_jobid</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">client_jobs</span><span class="p">[</span><span class="n">job</span><span class="p">][</span><span class="s1">&#39;subclient_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">latest_jobid</span><span class="p">:</span>
                     <span class="n">latest_jobid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">latest_jobid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;No jobs found&quot;</span>
-                <span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">latest_jobid</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;No jobs found&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">latest_jobid</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.refresh"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the Subclient.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span></div></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -1684,7 +1930,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

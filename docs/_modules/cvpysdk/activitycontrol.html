@@ -1,0 +1,340 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.activitycontrol &#8212; Developer SDK - Python 11.12 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.activitycontrol</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing activity control operations</span>
+
+<span class="sd">Activity Control is the only class defined in this file.</span>
+
+<span class="sd">ActivityControl: Class for managing Activity Control enable/disable</span>
+<span class="sd">                    for various entities within the comcell.</span>
+
+<span class="sd">ActivityControl:</span>
+<span class="sd">    __init__(commcell_object) -- initialise object of Class associated to the commcell</span>
+
+<span class="sd">    __repr__()               --  String representation of the instance of this class.</span>
+
+<span class="sd">    set()                       --  method to set activity control.</span>
+
+<span class="sd">    enable_after_delay()   -- method to disable activity control and set a delay time.</span>
+
+<span class="sd">    _get_activity_control_status()   -- method to get activity control status</span>
+
+<span class="sd">    is_enabled()          --  boolean specifying if a given activity is enabled or not</span>
+<span class="sd">    **reEnableTime**                --  returns the Enable back time</span>
+<span class="sd">    **reEnableTimeZone**                --  returns the Enable back time zone</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="ActivityControl"><a class="viewcode-back" href="../../activitycontrol.html#cvpysdk.activitycontrol.ActivityControl">[docs]</a><span class="k">class</span> <span class="nc">ActivityControl</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing activity control operations.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Activity control class instance.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the ActivityControl class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_activity_type_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ALL ACTIVITY&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+            <span class="s2">&quot;DATA MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;DATA RECOVERY&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;DATA AGING&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+            <span class="s2">&quot;AUX COPY&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s2">&quot;DATA VERIFICATION&quot;</span><span class="p">:</span> <span class="mi">8192</span><span class="p">,</span>
+            <span class="s2">&quot;DDB ACTIVITY&quot;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+            <span class="s2">&quot;SCHEDULER&quot;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+            <span class="s2">&quot;OFFLINE CONTENT INDEXING&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_activity_control_status</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;ActivityControl class instance&#39;</span>
+        <span class="k">return</span> <span class="n">representation_string</span>
+
+    <span class="k">def</span> <span class="nf">_request_json_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activity_type</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API</span>
+<span class="sd">            as per the options selected by the user.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - JSON request to pass to the API</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;commCellInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;commCellActivityControlInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;activityControlOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;activityType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activity_type_dict</span><span class="p">[</span><span class="n">activity_type</span><span class="p">],</span>
+                            <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="s2">&quot;dateTime&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">enable_time</span><span class="p">}}]}}}</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+<div class="viewcode-block" id="ActivityControl.set"><a class="viewcode-back" href="../../activitycontrol.html#cvpysdk.activitycontrol.ActivityControl.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activity_type</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets activity control on Commcell.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                activity_type (str)  --  Activity Type to be Enabled or Disabled</span>
+<span class="sd">                Values:</span>
+<span class="sd">                    &quot;ALL ACTIVITY&quot;,</span>
+<span class="sd">                    &quot;DATA MANAGEMENT&quot;,</span>
+<span class="sd">                    &quot;DATA RECOVERY&quot;,</span>
+<span class="sd">                    &quot;DATA AGING&quot;,</span>
+<span class="sd">                    &quot;AUX COPY&quot;,</span>
+<span class="sd">                    &quot;DATA VERIFICATION&quot;,</span>
+<span class="sd">                    &quot;DDB ACTIVITY&quot;,</span>
+<span class="sd">                    &quot;SCHEDULER&quot;,</span>
+<span class="sd">                    &quot;OFFLINE CONTENT INDEXING&quot;,</span>
+
+<span class="sd">                action (str)    --    Enable or Disable</span>
+<span class="sd">                Values:</span>
+<span class="sd">                    Enable</span>
+<span class="sd">                    Disable</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to set</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">set_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SET_ACTIVITY_CONTROL&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_activity_type_dict</span><span class="p">[</span><span class="n">activity_type</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span><span class="n">action</span><span class="p">))</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">set_request</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_activity_control_status</span><span class="p">()</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;CVPySDK&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ActivityControl.enable_after_delay"><a class="viewcode-back" href="../../activitycontrol.html#cvpysdk.activitycontrol.ActivityControl.enable_after_delay">[docs]</a>    <span class="k">def</span> <span class="nf">enable_after_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activity_type</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables activity if not already disabled</span>
+<span class="sd">            and enables at the time specified.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                activity_type (str)  --  Activity Type to be Enabled or Disabled</span>
+<span class="sd">                Values:</span>
+<span class="sd">                    &quot;ALL ACTIVITY&quot;,</span>
+<span class="sd">                    &quot;DATA MANAGEMENT&quot;,</span>
+<span class="sd">                    &quot;DATA RECOVERY&quot;,</span>
+<span class="sd">                    &quot;DATA AGING&quot;,</span>
+<span class="sd">                    &quot;AUX COPY&quot;,</span>
+<span class="sd">                    &quot;DATA VERIFICATION&quot;,</span>
+<span class="sd">                    &quot;DDB ACTIVITY&quot;,</span>
+<span class="sd">                    &quot;SCHEDULER&quot;,</span>
+<span class="sd">                    &quot;OFFLINE CONTENT INDEXING&quot;,</span>
+
+<span class="sd">                enable_time (str)-- Unix Timestamp in UTC timezone</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to enable activity control after a time</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="n">activity_type</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+
+        <span class="n">set_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SET_COMMCELL_PROPERTIES&#39;</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">set_request</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_activity_control_status</span><span class="p">()</span>
+                    <span class="k">return</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">(</span>
+                    <span class="p">)[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to enable activity control </span><span class="se">\</span>
+<span class="s1">                                after a delay</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                    <span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CVPySDK&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_activity_control_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the activity control status</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">get_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ACTIVITY_CONTROL&#39;</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">get_request</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;acObjects&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_activity_control_properties_list</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span>
+                    <span class="s1">&#39;acObjects&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activity_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True/False based on the enabled flag and also sets</span>
+<span class="sd">                     other relevant properties for a given activity type.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                activity_type (str)  --  Activity Type to be Enabled or Disabled</span>
+<span class="sd">                Values:</span>
+<span class="sd">                    &quot;ALL ACTIVITY&quot;,</span>
+<span class="sd">                    &quot;DATA MANAGEMENT&quot;,</span>
+<span class="sd">                    &quot;DATA RECOVERY&quot;,</span>
+<span class="sd">                    &quot;DATA AGING&quot;,</span>
+<span class="sd">                    &quot;AUX COPY&quot;,</span>
+<span class="sd">                    &quot;DATA VERIFICATION&quot;,</span>
+<span class="sd">                    &quot;DDB ACTIVITY&quot;,</span>
+<span class="sd">                    &quot;SCHEDULER&quot;,</span>
+<span class="sd">                    &quot;OFFLINE CONTENT INDEXING&quot;,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_activity_control_status</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">each_activity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activity_control_properties_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">each_activity</span><span class="p">[</span><span class="s1">&#39;activityType&#39;</span><span class="p">])</span> <span class="o">==</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_activity_type_dict</span><span class="p">[</span><span class="n">activity_type</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reEnableTime</span> <span class="o">=</span> <span class="n">each_activity</span><span class="p">[</span><span class="s1">&#39;reEnableTime&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_noSchedEnable</span> <span class="o">=</span> <span class="n">each_activity</span><span class="p">[</span><span class="s1">&#39;noSchedEnable&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reenableTimeZone</span> <span class="o">=</span> <span class="n">each_activity</span><span class="p">[</span><span class="s1">&#39;reenableTimeZone&#39;</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">each_activity</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span>
+
+        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to find activity type:&quot;</span><span class="si">{0}</span><span class="s1">&quot; in the response&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">activity_type</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">reEnableTime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the reEnableTime as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reEnableTime</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">reEnableTimeZone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the reEnableTimeZone as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reenableTimeZone</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

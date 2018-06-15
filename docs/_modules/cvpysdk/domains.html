@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.domains &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.domains &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -47,25 +47,30 @@
 
 <span class="sd">Domains:</span>
 
-<span class="sd">    __init__(commcell_object)  --  initialize instance of the Domains associated with</span>
+<span class="sd">    __init__(commcell_object)   --  initialize instance of the Domains associated with</span>
 <span class="sd">    the specified commcell</span>
 
-<span class="sd">    __str__()                  --  returns all the domains associated with the commcell</span>
+<span class="sd">    __str__()                   --  returns all the domains associated with the commcell</span>
 
-<span class="sd">    __repr__()                 --  returns the string for the instance of the Domains class</span>
+<span class="sd">    __repr__()                  --  returns the string for the instance of the Domains class</span>
 
-<span class="sd">    _get_domains()             --  gets all the domains associated with the commcell specified</span>
+<span class="sd">    __len__()                   --  returns the number of domains associated with the Commcell</span>
 
-<span class="sd">    all_domains()              -- returns the dict of all the domanin configured</span>
+<span class="sd">    __getitem__()               --  returns the name of the domain for the given domain Id</span>
+<span class="sd">    or the details for the given domain name</span>
 
-<span class="sd">    has_domain()               --  checks if a domain exists with the given name or not</span>
+<span class="sd">    _get_domains()              --  gets all the domains associated with the commcell specified</span>
 
-<span class="sd">    get(domain_name)           --  returns the instance of the Domain class,</span>
+<span class="sd">    all_domains()               --  returns the dict of all the domanin configured</span>
+
+<span class="sd">    has_domain()                --  checks if a domain exists with the given name or not</span>
+
+<span class="sd">    get(domain_name)            --  returns the instance of the Domain class,</span>
 <span class="sd">    for the the input domain name</span>
 
-<span class="sd">    delete(domain_name)        --  deletes the domain from the commcell</span>
+<span class="sd">    delete(domain_name)         --  deletes the domain from the commcell</span>
 
-<span class="sd">    refresh()                  --  refresh the domains associated with the commcell</span>
+<span class="sd">    refresh()                   --  refresh the domains associated with the commcell</span>
 
 
 <span class="sd">&quot;&quot;&quot;</span>
@@ -123,6 +128,37 @@
         <span class="k">return</span> <span class="s2">&quot;Domains class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of the domains associated to the Commcell.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_domains</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the domain for the given domain ID or</span>
+<span class="sd">            the details of the domain for given domain Name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str / int)     --  Name or ID of the domain</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str     -   name of the domain, if the domain id was given</span>
+
+<span class="sd">                dict    -   dict of details of the domain, if domain name was given</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                IndexError:</span>
+<span class="sd">                    no domain exists with the given Name / Id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_domains</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_domains</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_domains</span><span class="o">.</span><span class="n">items</span><span class="p">()))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;No domain exists with the given Name / Id&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_domains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets all the domains associated with the commcell</span>
@@ -191,8 +227,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span> <span class="ow">and</span> <span class="n">domain_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span> <span class="ow">and</span> <span class="n">domain_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span></div>
 
 <div class="viewcode-block" id="Domains.get"><a class="viewcode-back" href="../../domains.html#cvpysdk.domains.Domains.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a domain object of the specified domain name.</span>
@@ -219,8 +255,8 @@
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No domain exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain_name</span><span class="p">)</span></div>
-                <span class="p">)</span>
+                    <span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No domain exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain_name</span><span class="p">)</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Domains.delete"><a class="viewcode-back" href="../../domains.html#cvpysdk.domains.Domains.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the domain from the commcell.</span>
@@ -275,12 +311,12 @@
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No domain exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain_name</span><span class="p">)</span></div>
-                <span class="p">)</span>
+                    <span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No domain exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain_name</span><span class="p">)</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Domains.refresh"><a class="viewcode-back" href="../../domains.html#cvpysdk.domains.Domains.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the domains associated with the Commcell.&quot;&quot;&quot;</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_domains</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the domains associated with the Commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_domains</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Domains.add"><a class="viewcode-back" href="../../domains.html#cvpysdk.domains.Domains.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">domain_name</span><span class="p">,</span>
@@ -383,8 +419,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -420,7 +456,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

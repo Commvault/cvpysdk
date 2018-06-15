@@ -1,0 +1,252 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.subclients.exchange.exchange_database_subclient &#8212; Developer SDK - Python 11.12 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.subclients.exchange.exchange_database_subclient</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Module for doing operations on an Exchange Database Agent.</span>
+
+<span class="sd">This module has operations that are applicable at the Agent level for Exchange Database.</span>
+
+<span class="sd">ExchangeDatabaseSubclient:</span>
+<span class="sd">    _get_subclient_properties()         --  get the properties of the subclient, and initialize</span>
+<span class="sd">    the basic properties</span>
+
+<span class="sd">    _get_subclient_properties_json()    --  gets all the subclient properties of the</span>
+<span class="sd">    Exchange Database subclient</span>
+
+<span class="sd">    _set_content                        --  Sets the content for Exchange Database subclient</span>
+
+<span class="sd">    restore_in_place()                  --  runs in-place restore for the subclient</span>
+
+<span class="sd">    restore_out_of_place                --  runs out of place restore for the subclient</span>
+
+
+<span class="sd">Attributes</span>
+<span class="sd">----------</span>
+
+<span class="sd">    **content**     --  returns the content of the Exchange Database subclient</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">...subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="ExchangeDatabaseSubclient"><a class="viewcode-back" href="../../../../subclients/exchange/exchange.html#cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient">[docs]</a><span class="k">class</span> <span class="nc">ExchangeDatabaseSubclient</span><span class="p">(</span><span class="n">Subclient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from the Subclient Base class,</span>
+<span class="sd">        to perform operations specific to an Exchange Database Subclient.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the subclient  related properties of Exchange Database subclient..&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ExchangeDatabaseSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_db_subclient_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;exchangeDBSubClientProp&#39;</span><span class="p">,</span> <span class="p">{}</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON with the properties for the Subclient, that can be used for a POST</span>
+<span class="sd">        request to update the properties of the Subclient.</span>
+
+<span class="sd">           Returns:</span>
+<span class="sd">               dict     -   all subclient properties put inside a dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subclient_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
+                <span class="s2">&quot;exchangeDBSubClientProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_db_subclient_prop</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">,</span>
+                <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
+                <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">subclient_json</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the appropriate content from the Subclient relevant to the user.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list    -   list of content added to the subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span>
+
+    <span class="nd">@content</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_content</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the content of the subclient with the content list given by the user.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_content   (list)  --  list of the content to add to the subclient</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if specified input is not a list</span>
+
+<span class="sd">                    if failed to update subclient content</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_content</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">subclient_content</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_content</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">subclient_content</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient content should be a list value and not empty&#39;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the subclient content </span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content         	(list)      --  list of subclient content</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+            <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">{</span>
+                    <span class="s2">&quot;exchangeDBContent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;databaseName&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">,</span>
+                        <span class="s2">&quot;forceFull&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                    <span class="p">}</span>
+                <span class="p">}</span> <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_content&quot;</span><span class="p">,</span> <span class="n">temp</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                kwargs   (dict)  --  dict of options need to be set for restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - JSON request to pass to the API</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+
+        <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">exchange_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;exchangeRestoreLogOption&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;exchangeVersion&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="mi">15</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">restore_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;exchangeOption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">exchange_options</span>
+
+        <span class="k">return</span> <span class="n">restore_json</span>
+
+<div class="viewcode-block" id="ExchangeDatabaseSubclient.restore_in_place"><a class="viewcode-back" href="../../../../subclients/exchange/exchange.html#cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Run inplace restore for Exchange database subclient</span>
+<span class="sd">        </span>
+<span class="sd">         Args:</span>
+<span class="sd">             paths      (list) -- list of path used for inplace restore</span>
+<span class="sd">             </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            object  -   Job class object for restore job</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">restore_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExchangeDatabaseSubclient.restore_out_of_place"><a class="viewcode-back" href="../../../../subclients/exchange/exchange.html#cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">paths</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Run out of place restore for Exchange database subclient</span>
+<span class="sd">            Args:</span>
+<span class="sd">                client      (str)       -- destination client on which the restore should run</span>
+
+<span class="sd">                paths       (list)      -- list of path used for out of place restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   Job class object for restore job</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">restore_json</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

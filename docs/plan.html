@@ -6,17 +6,17 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Plan &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Plan &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Schedules" href="schedules.html" />
+    <link rel="next" title="Policy" href="policy.html" />
     <link rel="prev" title="Organizations" href="organization.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -38,30 +38,42 @@
 <p>Plans and Plan are the classes defined in this file.</p>
 <p>Plans: Class for representing all the plans in the commcell</p>
 <p>Plan: Class for representing a single plan of the commcell</p>
-<dl class="docutils">
-<dt>Plans:</dt>
-<dd><p class="first">__init__(commcell_object)   –  initialise object of plans class of the commcell</p>
+<div class="section" id="plans">
+<h2>Plans<a class="headerlink" href="#plans" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>__init__(commcell_object)   –  initialise object of plans class of the commcell</p>
 <p>__str__()                   –  returns all the plans associated with the commcell</p>
 <p>__repr__()                  –  returns the string for the instance of the plans class</p>
+<p>__len__()                   –  returns the number of plans added to the Commcell</p>
+<p>__getitem__()               –  returns the name of the plan for the given plan Id
+or the details for the given plan name</p>
 <p>_get_plans()                –  gets all the plans associated with the commcell specified</p>
 <p>_get_plan_template()        –  gets the Plan subtype’s JSON template</p>
 <p>add()                       –  adds a new Plan to the CommCell</p>
 <p>has_plan()                  –  checks if a plan exists with the given name or not</p>
 <p>get()                       –  returns the instance of the Plans class</p>
 <p>delete()                    –  deletes the plan from the commcell</p>
-<p class="last">refresh()                   –  refresh the plans associated with the commcell</p>
-</dd>
-<dt>Plan:</dt>
-<dd><p class="first">__init__()                  – initialise instance of the plan for the commcell</p>
+<p>refresh()                   –  refresh the plans associated with the commcell</p>
+</div></blockquote>
+<div class="section" id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><strong>all_plans</strong>   –  returns the dict consisting of plans and their details</div></blockquote>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Plan<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>__init__()                  – initialise instance of the plan for the commcell</p>
 <p>__repr__()                  – return the plan name, the instance is associated with</p>
 <p>_get_plan_id()              – method to get the plan id, if not specified in __init__</p>
 <p>_get_plan_properties()      – get the properties of this plan</p>
+<p>derive_and_add()            – add new plan by deriving from the parent Plan object</p>
 <p>plan_name                   –  returns the name of the plan</p>
 <p>plan_id                     –  returns the ID of the plan</p>
 <p>refresh()                   –  refresh the properties of the plan</p>
-<p class="last">associate_user()            –  associates users to the plan</p>
-</dd>
-</dl>
+<p>associate_user()            –  associates users to the plan</p>
+</div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.plan.Plan">
 <em class="property">class </em><code class="descclassname">cvpysdk.plan.</code><code class="descname">Plan</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>plan_name</em>, <em>plan_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/plan.html#Plan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plan" title="Permalink to this definition">¶</a></dt>
@@ -84,6 +96,77 @@
 <p class="last">if response is not success</p>
 </dd>
 </dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.plan.Plan.derive_and_add">
+<code class="descname">derive_and_add</code><span class="sig-paren">(</span><em>plan_name</em>, <em>storage_pool_name=None</em>, <em>sla_in_minutes=None</em>, <em>override_entities=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/plan.html#Plan.derive_and_add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plan.derive_and_add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derives the base plan based on the the inheritance properties to created a derived plan</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">plan_name           (str)        –  name of the new plan to add</p>
+<dl class="docutils">
+<dt>storage_pool_name   (str)   –  name of the storage pool to be used for the plan</dt>
+<dd><dl class="first last docutils">
+<dt>default: None <span class="classifier-delimiter">:</span> <span class="classifier">when the name is left to default, it inherits the base plan</span></dt>
+<dd>storage pool if overriding is optional/not allowed</dd>
+</dl>
+</dd>
+<dt>sla_in_minutes        (int)        –  Backup SLA in hours</dt>
+<dd><dl class="first last docutils">
+<dt>default: None <span class="classifier-delimiter">:</span> <span class="classifier">when the SLA is left to default, it inherits the base plan</span></dt>
+<dd>SLA if overriding is optional/not allowed</dd>
+</dl>
+</dd>
+</dl>
+<p>override_entities   (dict)  –  Specify the entities with respective overriding.</p>
+<blockquote class="last">
+<div><p>default: None</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>{</dt>
+<dd><p class="first">‘privateEntities’: [1, 4],</p>
+<p class="last">‘enforcedEntities’: [256, 512, 1024]</p>
+</dd>
+</dl>
+<p>}
+- where,</p>
+<blockquote>
+<div>privateEntities are set when respective entity overriding is must
+enforcedEntities are set when respective entity overriding is
+not allowed
+left blank if overriding is optional</div></blockquote>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>entity IDs,</dt>
+<dd>1    - Storage
+4    - SLA/Schedules
+256  - Windows content
+512  - Unix content
+1024 - Mac content</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object - instance of the Plan class created by this method</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if plan name is in incorrect format</p>
+<p>if plan already exists</p>
+<p>if neccessary arguments are not passed</p>
+<p class="last">if inheritance rules are not followed</p>
 </dd>
 </dl>
 </dd>
@@ -162,19 +245,58 @@
 <blockquote>
 <div><dl class="docutils">
 <dt>{</dt>
-<dd><p class="first">‘private’: [1, 4, 256, 512, 1024],</p>
-<p class="last">‘enforced’: []</p>
+<dd><p class="first">‘privateEntities’: [1, 4],</p>
+<p class="last">‘enforcedEntities’: [256, 512, 1024]</p>
 </dd>
 </dl>
-<p>}</p>
+<p>}
+- where,</p>
+<blockquote>
+<div>privateEntities are set when respective entity overriding is must
+enforcedEntities are set when respective entity overriding is not
+allowed
+left blank if overriding is optional</div></blockquote>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>entity IDs,</dt>
+<dd>1    - Storage
+4    - SLA/Schedules
+256  - Windows content
+512  - Unix content
+1024 - Mac content</dd>
+</dl>
+</li>
+</ul>
 </div></blockquote>
 </div></blockquote>
 </dd>
 <dt>Returns:</dt>
 <dd>object  -   instance of the Plan class created by this method</dd>
 <dt>Raises:</dt>
-<dd>SDKException:</dd>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if input parameters are incorrect</p>
+<p class="last">if Plan already exists</p>
+</dd>
 </dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.plan.Plans.all_plans">
+<code class="descname">all_plans</code><a class="headerlink" href="#cvpysdk.plan.Plans.all_plans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dictionary consisting of all the plans added to the Commcell.</p>
+<p>dict - consists of all the plans configured on the commcell</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>{</dt>
+<dd><p class="first">“plan1_name”: plan1_id,</p>
+<p class="last">“plan2_name”: plan2_id</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -219,6 +341,37 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.plan.Plans.get_eligible_plans">
+<code class="descname">get_eligible_plans</code><span class="sig-paren">(</span><em>entities</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/plan.html#Plans.get_eligible_plans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plans.get_eligible_plans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of plans that are eligible for the specified entities</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>entities    (dict)  - dictionary containing entities as keys and</dt>
+<dd><blockquote class="first">
+<div>their respective IDs as values</div></blockquote>
+<dl class="docutils">
+<dt>{</dt>
+<dd>‘clientId’: id,
+‘appId’: id,
+‘backupsetId’: id</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>dict                - dict of eligible plans</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if there is an error in the response</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.plan.Plans.has_plan">
 <code class="descname">has_plan</code><span class="sig-paren">(</span><em>plan_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/plan.html#Plans.has_plan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plans.has_plan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if a plan exists in the commcell with the input plan name.</p>
@@ -245,19 +398,32 @@
 </dd></dl>
 
 </div>
+</div>
 
 
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Plan</a><ul>
+<li><a class="reference internal" href="#plans">Plans</a><ul>
+<li><a class="reference internal" href="#attributes">Attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id1">Plan</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
       <li>Previous: <a href="organization.html" title="previous chapter">Organizations</a></li>
-      <li>Next: <a href="schedules.html" title="next chapter">Schedules</a></li>
+      <li>Next: <a href="policy.html" title="next chapter">Policy</a></li>
   </ul></li>
   </ul></li>
 </ul>
@@ -289,7 +455,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Client &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Client &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -38,13 +38,18 @@
 <p>Clients and Client are 2 classes defined in this file.</p>
 <p>Clients:    Class for representing all the clients associated with the commcell</p>
 <p>Client:     Class for a single client of the commcell</p>
-<dl class="docutils">
-<dt>Clients:</dt>
-<dd><p class="first">__init__(commcell_object)             –  initialize object of Clients class associated with
+<div class="section" id="clients">
+<h2>Clients<a class="headerlink" href="#clients" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>__init__(commcell_object)             –  initialize object of Clients class associated with
 the commcell</p>
 <p>__str__()                             –  returns all the clients associated with the commcell</p>
 <p>__repr__()                            –  returns the string to represent the instance of the
 Clients class</p>
+<p>__len__()                             –  returns the number of clients associated with the
+Commcell</p>
+<p>__getitem__()                         –  returns the name of the client at the given index
+or the details for the given client name</p>
 <p>_get_clients()                        –  gets all the clients associated with the commcell</p>
 <p>_get_hidden_clients()                 –  gets all the hidden clients associated with the
 commcell</p>
@@ -62,15 +67,15 @@ hostname if exists</p>
 <p>has_hidden_client(client_name)        –  checks if a hidden client exists with the given name</p>
 <p>add_vmware_client()                   –  adds a new VMWare Virtualization Client to the
 Commcell</p>
+<p>add_exchange_client()                 –  adds a new Exchange Virtual Client to the Commcell</p>
 <p>get(client_name)                      –  returns the Client class object of the input client
 name</p>
 <p>delete(client_name)                   –  deletes the client specified by the client name from
 the commcell</p>
-<p class="last">refresh()                             –  refresh the clients associated with the commcell</p>
-</dd>
-</dl>
-<div class="section" id="attributes">
-<h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
+<p>refresh()                             –  refresh the clients associated with the commcell</p>
+</div></blockquote>
+<div class="section" id="clients-attributes">
+<h3>Clients Attributes<a class="headerlink" href="#clients-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><p><strong>all_clients</strong>             –  returns the dictioanry consisting of all the clients that are
 associated with the commcell and their information such as id and hostname</p>
@@ -79,14 +84,21 @@ that are associated with the commcell and their information such as id and hostn
 <p><strong>virtualization_clients</strong>  –  returns the dictioanry consisting of only the virtualization
 clients that are associated with the commcell and their information such as id and hostname</p>
 </div></blockquote>
-<dl class="docutils">
-<dt>Client:</dt>
-<dd><p class="first">__init__()                   –  initialize object of Class with the specified client name
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Client<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>__init__()                   –  initialize object of Class with the specified client name
 and id, and associated to the commcell</p>
 <p>__repr__()                   –  return the client name and id, the instance is associated with</p>
 <p>_get_client_id()             –  method to get the client id, if not specified in __init__</p>
 <p>_get_client_properties()     –  get the properties of this client</p>
 <p>_get_instance_of_client()    –  get the instance associated with the client</p>
+<p>_get_log_directory()         –  get the log directory path on the client</p>
+<p>_service_operations()        –  perform services related operations on a client</p>
+<blockquote>
+<div>START / STOP / RESTART</div></blockquote>
 <p>_make_request()              –  makes the upload request to the server</p>
 <p>enable_backup()              –  enables the backup for the client</p>
 <p>enable_backup_at_time()      –  enables the backup for the client at the input time specified</p>
@@ -103,16 +115,17 @@ and id, and associated to the commcell</p>
 <p>disable_intelli_snap()       –  disables intelli snap for the client</p>
 <p>upload_file()                –  uploads the specified file on controller to the client machine</p>
 <p>upload_folder()              –  uploads the specified folder on controller to client machine</p>
+<p>start_service()              –  starts the service with the given name on the client</p>
+<p>stop_service()               –  stops the service with the given name on the client</p>
+<p>restart_service()            –  restarts the service with the given name on the client</p>
 <p>restart_services()           –  executes the command on the client to restart the services</p>
 <p>network()                    –  returns Network class object</p>
 <p>push_network_config()        –  performs a push network configuration on the client</p>
 <p>add_user_association()       –  adds the user associations on this client</p>
-<p class="last">refresh()                    –  refresh the properties of the client</p>
-</dd>
-</dl>
-</div>
-<div class="section" id="id1">
-<h2>Attributes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>refresh()                    –  refresh the properties of the client</p>
+</div></blockquote>
+<div class="section" id="client-attributes">
+<h3>Client Attributes<a class="headerlink" href="#client-attributes" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><p><strong>available_security_roles</strong>    –  returns the security roles available for the selected
 client</p>
@@ -137,6 +150,9 @@ client or not</p>
 <p><strong>install_directory</strong>           –  returns the path where the client is installed at</p>
 <p><strong>version</strong>                     –  returns the version of the product installed on the client</p>
 <p><strong>service_pack</strong>                –  returns the service pack installed on the client</p>
+<p><strong>job_results_directory</strong>       –  returns the path of the job results directory on the client</p>
+<p><strong>instance</strong>                    –  returns the Instance of the client</p>
+<p><strong>log_directory</strong>               –  returns the path of the log directory on the client</p>
 <p><strong>agents</strong>                      –  returns the instance of the Agents class representing
 the list of agents installed on the Client</p>
 <p><strong>schedules</strong>                   –  returns the instance of the Schedules class representing
@@ -145,7 +161,6 @@ the list of schedules configured for the Client</p>
 list of users with access to the Client</p>
 <p><strong>network</strong>                     –  returns object of the Network class corresponding to the
 selected client</p>
-<p><strong>instance</strong>                    –  returns the Instance of the client</p>
 <p><strong>is_ready</strong>                    –  returns boolean value specifying whether services on the
 client are running or not, and whether the CommServ is able to communicate with the client</p>
 <p>set_encryption_prop ()       –    Set encryption properties on a client</p>
@@ -477,6 +492,8 @@ script execution to finish or not</p>
 <dt id="cvpysdk.client.Client.execute_script">
 <code class="descname">execute_script</code><span class="sig-paren">(</span><em>script_type</em>, <em>script</em>, <em>script_arguments=None</em>, <em>wait_for_completion=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.execute_script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.execute_script" title="Permalink to this definition">¶</a></dt>
 <dd><p>Executes the given script of the script type on this client.</p>
+<p><strong>Only scripts of text format are supported</strong>, i.e., the scripts should not have
+any binary/bytes content</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><p class="first">script_type             (str)   –  type of script to be executed on the client</p>
@@ -607,6 +624,12 @@ script execution to finish or not</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.client.Client.log_directory">
+<code class="descname">log_directory</code><a class="headerlink" href="#cvpysdk.client.Client.log_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the path of the log directory on the client.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.client.Client.network">
 <code class="descname">network</code><a class="headerlink" href="#cvpysdk.client.Client.network" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the object of Network class</p>
@@ -638,9 +661,33 @@ SDKException:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.client.Client.restart_service">
+<code class="descname">restart_service</code><span class="sig-paren">(</span><em>service_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.restart_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.restart_service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the command on the client machine to restart the Commvault service(s).</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">service_name    (str)   –  name of the service to be restarted</p>
+<blockquote class="last">
+<div><p>service name is required only for Windows Clients, as for UNIX clients, the
+operation is executed on all services</p>
+<p>default:    None</p>
+</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>None    -   if the service was restarted successfully</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to restart the service</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.client.Client.restart_services">
 <code class="descname">restart_services</code><span class="sig-paren">(</span><em>wait_for_service_restart=True</em>, <em>timeout=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.restart_services"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.restart_services" title="Permalink to this definition">¶</a></dt>
-<dd><p>Executes the command on the client machine to restart all services.</p>
+<dd><p>Executes the command on the client machine to restart <strong>ALL</strong> services.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><p class="first">wait_for_service_restart    (bool)  –  boolean to specify whether to wait for the
@@ -747,6 +794,54 @@ to disable: give value param</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.client.Client.start_service">
+<code class="descname">start_service</code><span class="sig-paren">(</span><em>service_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.start_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.start_service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the command on the client machine to start the Commvault service(s).</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">service_name    (str)   –  name of the service to be started</p>
+<blockquote class="last">
+<div><p>service name is required only for Windows Clients, as for UNIX clients, the
+operation is executed on all services</p>
+<p>default:    None</p>
+</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>None    -   if the service was started successfully</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to start the service</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.client.Client.stop_service">
+<code class="descname">stop_service</code><span class="sig-paren">(</span><em>service_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.stop_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.stop_service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the command on the client machine to stop the Commvault service(s).</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">service_name    (str)   –  name of the service to be stopped</p>
+<blockquote class="last">
+<div><p>service name is required only for Windows Clients, as for UNIX clients, the
+operation is executed on all services</p>
+<p>default:    None</p>
+</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>None    -   if the service was stopped successfully</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to stop the service</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.client.Client.upload_file">
 <code class="descname">upload_file</code><span class="sig-paren">(</span><em>source_file_path</em>, <em>destination_folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.upload_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.upload_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Upload the specified source file to destination path on the client machine</p>
@@ -814,6 +909,39 @@ with permissions set on the Client.</p>
 <em class="property">class </em><code class="descclassname">cvpysdk.client.</code><code class="descname">Clients</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for representing all the clients associated with the commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.client.Clients.add_exchange_client">
+<code class="descname">add_exchange_client</code><span class="sig-paren">(</span><em>client_name</em>, <em>index_server</em>, <em>clients_list</em>, <em>storage_policy</em>, <em>recall_service_url</em>, <em>job_result_dir</em>, <em>exchange_servers</em>, <em>service_accounts</em>, <em>azure_app_key_secret</em>, <em>azure_tenant_name</em>, <em>azure_app_key_id</em>, <em>environment_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients.add_exchange_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.add_exchange_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new Exchange Mailbox Client to the Commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">client_name             (str)   –  name of the new Exchange Mailbox Client</p>
+<p>index_server            (str)   –  index server for virtual cleint</p>
+<p>clients_list            (list)  –  list cotaining client names / client objects,
+to associate with the Virtual Client</p>
+<p>storage_policy          (str)   –  storage policy to associate with the client</p>
+<p>recall_service_url      (str)   –  recall service for client</p>
+<p>job_result_dir          (str)   –  job reult directory path</p>
+<p>exchange_servers        (list)  –  list of exchange servers</p>
+<p>azure_app_key_secret    (str)   –  app secret for the Exchange online</p>
+<p>azure_tenant_name       (str)   –  tenant for exchange online</p>
+<p class="last">azure_app_key_id        (str)   –  app key for exchange online</p>
+</dd>
+<dt>Returns:</dt>
+<dd>object  -   instance of the Client class for this new client</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if client with given name already exists</p>
+<p>if failed to add the client</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="cvpysdk.client.Clients.add_vmware_client">
 <code class="descname">add_vmware_client</code><span class="sig-paren">(</span><em>client_name</em>, <em>vcenter_hostname</em>, <em>vcenter_username</em>, <em>vcenter_password</em>, <em>clients</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients.add_vmware_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.add_vmware_client" title="Permalink to this definition">¶</a></dt>
@@ -1032,6 +1160,7 @@ compare specified name with host names of existing clients</p>
 
 </div>
 </div>
+</div>
 
 
           </div>
@@ -1042,8 +1171,14 @@ compare specified name with host names of existing clients</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Client</a><ul>
-<li><a class="reference internal" href="#attributes">Attributes</a></li>
-<li><a class="reference internal" href="#id1">Attributes</a></li>
+<li><a class="reference internal" href="#clients">Clients</a><ul>
+<li><a class="reference internal" href="#clients-attributes">Clients Attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id1">Client</a><ul>
+<li><a class="reference internal" href="#client-attributes">Client Attributes</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -1085,7 +1220,7 @@ compare specified name with host names of existing clients</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

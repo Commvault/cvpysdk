@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.plan &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.plan &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -47,12 +47,19 @@
 
 <span class="sd">Plan: Class for representing a single plan of the commcell</span>
 
-<span class="sd">Plans:</span>
+<span class="sd">Plans</span>
+<span class="sd">=====</span>
+
 <span class="sd">    __init__(commcell_object)   --  initialise object of plans class of the commcell</span>
 
 <span class="sd">    __str__()                   --  returns all the plans associated with the commcell</span>
 
 <span class="sd">    __repr__()                  --  returns the string for the instance of the plans class</span>
+
+<span class="sd">    __len__()                   --  returns the number of plans added to the Commcell</span>
+
+<span class="sd">    __getitem__()               --  returns the name of the plan for the given plan Id</span>
+<span class="sd">    or the details for the given plan name</span>
 
 <span class="sd">    _get_plans()                --  gets all the plans associated with the commcell specified</span>
 
@@ -68,8 +75,15 @@
 
 <span class="sd">    refresh()                   --  refresh the plans associated with the commcell</span>
 
+<span class="sd">Attributes</span>
+<span class="sd">----------</span>
 
-<span class="sd">Plan:</span>
+<span class="sd">    **all_plans**   --  returns the dict consisting of plans and their details</span>
+
+
+<span class="sd">Plan</span>
+<span class="sd">====</span>
+
 <span class="sd">    __init__()                  -- initialise instance of the plan for the commcell</span>
 
 <span class="sd">    __repr__()                  -- return the plan name, the instance is associated with</span>
@@ -77,6 +91,8 @@
 <span class="sd">    _get_plan_id()              -- method to get the plan id, if not specified in __init__</span>
 
 <span class="sd">    _get_plan_properties()      -- get the properties of this plan</span>
+
+<span class="sd">    derive_and_add()            -- add new plan by deriving from the parent Plan object</span>
 
 <span class="sd">    plan_name                   --  returns the name of the plan</span>
 
@@ -94,8 +110,6 @@
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
 
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="k">import</span> <span class="n">ClientGroup</span>
-<span class="kn">from</span> <span class="nn">.usergroup</span> <span class="k">import</span> <span class="n">UserGroup</span>
 
 
 <div class="viewcode-block" id="Plans"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plans">[docs]</a><span class="k">class</span> <span class="nc">Plans</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -141,6 +155,37 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of the plans added to the Commcell.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_plans</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the plan for the given plan ID or</span>
+<span class="sd">            the details of the plan for given plan Name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str / int)     --  Name or ID of the plan</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str     -   name of the plan, if the plan id was given</span>
+
+<span class="sd">                dict    -   dict of details of the plan, if plan name was given</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                IndexError:</span>
+<span class="sd">                    no plan exists with the given Name / Id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_plans</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_plans</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_plans</span><span class="o">.</span><span class="n">items</span><span class="p">()))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;No plan exists with the given Name / Id&#39;</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_get_plans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets all the plans associated with the commcell</span>
 
@@ -179,7 +224,7 @@
         <span class="sd">&quot;&quot;&quot;Gets the Plan subtype&#39;s JSON template.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                plan_subType    (str)   --  Sub-type of plan to add</span>
+<span class="sd">                plan_sub_type    (str)   --  Sub-type of plan to add</span>
 
 <span class="sd">                    &quot;Server&quot;    -   Server Plans</span>
 
@@ -199,6 +244,8 @@
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if type or subtype of the plan does not exist</span>
 
+<span class="sd">                    if there is a failure in getting the template</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_sub_type</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_type</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
@@ -217,6 +264,21 @@
                 <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_plans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dictionary consisting of all the plans added to the Commcell.</span>
+
+<span class="sd">            dict - consists of all the plans configured on the commcell</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;plan1_name&quot;: plan1_id,</span>
+
+<span class="sd">                    &quot;plan2_name&quot;: plan2_id</span>
+<span class="sd">                }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span>
+
 <div class="viewcode-block" id="Plans.has_plan"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plans.has_plan">[docs]</a>    <span class="k">def</span> <span class="nf">has_plan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if a plan exists in the commcell with the input plan name.</span>
 
@@ -233,8 +295,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="ow">and</span> <span class="n">plan_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="ow">and</span> <span class="n">plan_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span></div>
 
 <div class="viewcode-block" id="Plans.get"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plans.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a plan object of the specified plan name.</span>
@@ -265,8 +327,8 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No plan exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">plan_name</span><span class="p">)</span></div>
-            <span class="p">)</span>
+                    <span class="n">plan_name</span><span class="p">)</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Plans.delete"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plans.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the plan from the commcell.</span>
@@ -320,8 +382,8 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                     <span class="s1">&#39;Plan&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;No plan exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">plan_name</span><span class="p">)</span></div>
-                <span class="p">)</span>
+                    <span class="s1">&#39;No plan exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">plan_name</span><span class="p">)</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Plans.add"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plans.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">plan_name</span><span class="p">,</span>
@@ -354,17 +416,31 @@
 <span class="sd">                default: None</span>
 
 <span class="sd">                    {</span>
-<span class="sd">                        &#39;private&#39;: [1, 4, 256, 512, 1024],</span>
+<span class="sd">                        &#39;privateEntities&#39;: [1, 4],</span>
 
-<span class="sd">                        &#39;enforced&#39;: []</span>
+<span class="sd">                        &#39;enforcedEntities&#39;: [256, 512, 1024]</span>
 <span class="sd">                    }</span>
+<span class="sd">                    - where,</span>
+<span class="sd">                            privateEntities are set when respective entity overriding is must</span>
+<span class="sd">                            enforcedEntities are set when respective entity overriding is not</span>
+<span class="sd">                            allowed</span>
+<span class="sd">                            left blank if overriding is optional</span>
 
+<span class="sd">                    - entity IDs,</span>
+<span class="sd">                            1    - Storage</span>
+<span class="sd">                            4    - SLA/Schedules</span>
+<span class="sd">                            256  - Windows content</span>
+<span class="sd">                            512  - Unix content</span>
+<span class="sd">                            1024 - Mac content</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            object  -   instance of the Plan class created by this method</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            SDKException:</span>
+<span class="sd">                if input parameters are incorrect</span>
+
+<span class="sd">                if Plan already exists</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
@@ -446,16 +522,58 @@
                              <span class="s1">&#39;Please check the documentation for &#39;</span>
                              <span class="s1">&#39;more details on the error&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span>
 
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="mi">102</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Plans.get_eligible_plans"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plans.get_eligible_plans">[docs]</a>    <span class="k">def</span> <span class="nf">get_eligible_plans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns dict of plans that are eligible for the specified entities</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entities    (dict)  - dictionary containing entities as keys and</span>
+<span class="sd">                                        their respective IDs as values</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;clientId&#39;: id,</span>
+<span class="sd">                        &#39;appId&#39;: id,</span>
+<span class="sd">                        &#39;backupsetId&#39;: id</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict                - dict of eligible plans</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if there is an error in the response</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">entities</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">=</span><span class="si">{1}</span><span class="s1">&amp;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">entities</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">requset_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ELIGIBLE_PLANS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">requset_url</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">query</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="n">plans</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;plans&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">response_value</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;plans&#39;</span><span class="p">]</span>
+
+                <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">response_value</span><span class="p">:</span>
+                    <span class="n">temp_name</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;planName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;planId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">plans</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+
+            <span class="k">return</span> <span class="n">plans</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Plans.refresh"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plans.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the plans associated with the Commcell.&quot;&quot;&quot;</span></div></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_plans</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the plans associated with the Commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_plans</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="Plan"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plan">[docs]</a><span class="k">class</span> <span class="nc">Plan</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -499,8 +617,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_permissions</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pool</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;storagePolicyId&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s1">&#39;schedulePolicyId&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;storagePolicy&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;schedulePolicy&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s1">&#39;subclientPolicyIds&#39;</span><span class="p">:</span> <span class="p">[]</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_user_group</span> <span class="o">=</span> <span class="kc">None</span>
@@ -561,26 +679,26 @@
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subtype</span> <span class="o">==</span> <span class="mi">33554439</span><span class="p">:</span>
                     <span class="k">if</span> <span class="s1">&#39;clientGroup&#39;</span> <span class="ow">in</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;autoCreatedEntities&#39;</span><span class="p">]:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_client_group</span> <span class="o">=</span> <span class="n">ClientGroup</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_client_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                             <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;autoCreatedEntities&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroup&#39;</span><span class="p">][</span>
                                 <span class="s1">&#39;clientGroupName&#39;</span><span class="p">]</span>
                         <span class="p">)</span>
 
                     <span class="k">if</span> <span class="s1">&#39;localUserGroup&#39;</span> <span class="ow">in</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;autoCreatedEntities&#39;</span><span class="p">]:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_user_group</span> <span class="o">=</span> <span class="n">UserGroup</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">user_groups</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_user_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">user_groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                             <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;autoCreatedEntities&#39;</span><span class="p">][</span><span class="s1">&#39;localUserGroup&#39;</span><span class="p">][</span>
                                 <span class="s1">&#39;userGroupName&#39;</span><span class="p">]</span>
                         <span class="p">)</span>
 
                 <span class="k">if</span> <span class="s1">&#39;storagePolicy&#39;</span> <span class="ow">in</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">]:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;storagePolicyId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span>
-                        <span class="s1">&#39;storagePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyId&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;storagePolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span>
+                        <span class="s1">&#39;storagePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="s1">&#39;task&#39;</span> <span class="ow">in</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">]:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;schedulePolicyId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">][</span>
-                        <span class="s1">&#39;task&#39;</span><span class="p">][</span><span class="s1">&#39;taskId&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;schedulePolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">][</span>
+                        <span class="s1">&#39;task&#39;</span><span class="p">][</span><span class="s1">&#39;taskName&#39;</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subtype</span> <span class="o">!=</span> <span class="mi">33554437</span><span class="p">:</span>
                     <span class="k">if</span> <span class="s1">&#39;backupContent&#39;</span> <span class="ow">in</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;laptop&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]:</span>
@@ -593,6 +711,10 @@
                         <span class="ow">not</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;inheritance&#39;</span><span class="p">][</span><span class="s1">&#39;isSealed&#39;</span><span class="p">]):</span>
                     <span class="n">temp_dict</span> <span class="o">=</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;inheritance&#39;</span><span class="p">]</span>
                     <span class="k">del</span> <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;isSealed&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s1">&#39;enforcedEntities&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">temp_dict</span><span class="p">:</span>
+                        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">if</span> <span class="s1">&#39;privateEntities&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">temp_dict</span><span class="p">:</span>
+                        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span> <span class="o">=</span> <span class="n">temp_dict</span>
 
                 <span class="k">if</span> <span class="s1">&#39;parent&#39;</span> <span class="ow">in</span> <span class="n">plan_properties</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]:</span>
@@ -604,6 +726,256 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Plan.derive_and_add"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plan.derive_and_add">[docs]</a>    <span class="k">def</span> <span class="nf">derive_and_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                       <span class="n">plan_name</span><span class="p">,</span>
+                       <span class="n">storage_pool_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">sla_in_minutes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">override_entities</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Derives the base plan based on the the inheritance properties to created a derived plan</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                plan_name           (str)        --  name of the new plan to add</span>
+
+<span class="sd">                storage_pool_name   (str)   --  name of the storage pool to be used for the plan</span>
+<span class="sd">                    default: None   :   when the name is left to default, it inherits the base plan</span>
+<span class="sd">                                        storage pool if overriding is optional/not allowed</span>
+
+<span class="sd">                sla_in_minutes        (int)        --  Backup SLA in hours</span>
+<span class="sd">                    default: None   :   when the SLA is left to default, it inherits the base plan</span>
+<span class="sd">                                        SLA if overriding is optional/not allowed</span>
+
+<span class="sd">                override_entities   (dict)  --  Specify the entities with respective overriding.</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                        {</span>
+<span class="sd">                            &#39;privateEntities&#39;: [1, 4],</span>
+
+<span class="sd">                            &#39;enforcedEntities&#39;: [256, 512, 1024]</span>
+<span class="sd">                        }</span>
+<span class="sd">                        - where,</span>
+<span class="sd">                                privateEntities are set when respective entity overriding is must</span>
+<span class="sd">                                enforcedEntities are set when respective entity overriding is</span>
+<span class="sd">                                not allowed</span>
+<span class="sd">                                left blank if overriding is optional</span>
+
+<span class="sd">                        - entity IDs,</span>
+<span class="sd">                                1    - Storage</span>
+<span class="sd">                                4    - SLA/Schedules</span>
+<span class="sd">                                256  - Windows content</span>
+<span class="sd">                                512  - Unix content</span>
+<span class="sd">                                1024 - Mac content</span>
+
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object - instance of the Plan class created by this method</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if plan name is in incorrect format</span>
+
+<span class="sd">                if plan already exists</span>
+
+<span class="sd">                if neccessary arguments are not passed</span>
+
+<span class="sd">                if inheritance rules are not followed</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s1">&#39;Plan name must be string value&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">plan_name</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Plan &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">plan_name</span><span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">_get_plan_template</span><span class="p">(</span>
+                <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_subtype</span><span class="p">),</span> <span class="s2">&quot;MSP&quot;</span><span class="p">)</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Created from CvPySDK.&quot;</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;planName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plan_name</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;parent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;planId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_plan_id</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;dedupeFlags&#39;</span><span class="p">][</span><span class="s1">&#39;useGlobalDedupStore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">storage_pool_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">storage_pool_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_pools</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">storage_pool_id</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">storage_pool_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pool</span><span class="p">[</span><span class="s1">&#39;storagePolicyId&#39;</span><span class="p">]</span>
+                    <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Storage is enforced by base plan, cannot be overridden&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">storage_pool_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="n">storage_pool_id</span>
+                    <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Storage must be input&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">storage_pool_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="n">storage_pool_id</span>
+                    <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pool</span><span class="p">[</span><span class="s1">&#39;storagePolicyId&#39;</span><span class="p">]</span>
+                    <span class="p">}</span>
+
+            <span class="k">if</span> <span class="mi">4</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">sla_in_minutes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;slaInMinutes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sla_in_minutes</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;SLA is enforced by base plan, cannot be overridden&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="mi">4</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">sla_in_minutes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;slaInMinutes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sla_in_minutes</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;SLA must be input&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sla_in_minutes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;slaInMinutes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sla_in_minutes</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;slaInMinutes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sla_in_minutes</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">override_entities</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;restrictions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;inheritance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;isSealed&#39;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]:</span>
+                    <span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
+                    <span class="k">if</span> <span class="n">override_entities</span> <span class="ow">and</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">reduce</span><span class="p">(</span>
+                            <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">,</span> <span class="n">override_entities</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                            <span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Override not allowed&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;enforcedEntities&#39;</span> <span class="ow">in</span> <span class="n">override_entities</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;inheritance&#39;</span><span class="p">][</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;privateEntities&#39;</span> <span class="ow">in</span> <span class="n">override_entities</span><span class="p">:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;inheritance&#39;</span><span class="p">][</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;restrictions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;inheritance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;isSealed&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">sla_in_minutes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesSchedule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;definesEntity&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesSchedule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;definesEntity&#39;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="mi">4</span> <span class="ow">not</span> <span class="ow">in</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]</span> <span class="o">+</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]):</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesSchedule&#39;</span><span class="p">][</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="mi">4</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesSchedule&#39;</span><span class="p">][</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="k">elif</span> <span class="mi">4</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesSchedule&#39;</span><span class="p">][</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">storage_pool_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesStorage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;definesEntity&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesStorage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;definesEntity&#39;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="mi">1</span> <span class="ow">not</span> <span class="ow">in</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]</span> <span class="o">+</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]):</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesStorage&#39;</span><span class="p">][</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesStorage&#39;</span><span class="p">][</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="k">elif</span> <span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]:</span>
+                    <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;definesStorage&#39;</span><span class="p">][</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subtype</span> <span class="o">!=</span> <span class="mi">33554437</span><span class="p">:</span>
+                <span class="n">temp_defines_key</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;definesEntity&#39;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">entity</span> <span class="ow">in</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]</span> <span class="o">+</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]</span>
+                                <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">])):</span>
+                        <span class="n">temp_defines_key</span><span class="p">[</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="n">entity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;enforcedEntities&#39;</span><span class="p">]</span>
+                             <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">]):</span>
+                        <span class="n">temp_defines_key</span><span class="p">[</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+                    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="n">entity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span><span class="p">[</span><span class="s1">&#39;privateEntities&#39;</span><span class="p">]</span>
+                             <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">]):</span>
+                        <span class="n">temp_defines_key</span><span class="p">[</span><span class="s1">&#39;overrideEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;laptop&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="s1">&#39;definesSubclientLin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_defines_key</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;laptop&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="s1">&#39;definesSubclientMac&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_defines_key</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;laptop&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="s1">&#39;definesSubclientWin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_defines_key</span>
+
+            <span class="n">add_plan_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">_PLANS</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_headers</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;LookupNames&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span>
+
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">add_plan_service</span><span class="p">,</span> <span class="n">request_json</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_value</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="kc">None</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response_value</span><span class="p">:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;error_message&#39;</span><span class="p">]</span>
+                        <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;error_code&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create new Plan</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">error_message</span>
+                        <span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;plan&#39;</span> <span class="ow">in</span> <span class="n">response_value</span><span class="p">:</span>
+                        <span class="n">plan_name</span> <span class="o">=</span> <span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;planName&#39;</span><span class="p">]</span>
+
+                        <span class="c1"># initialize the plans again</span>
+                        <span class="c1"># so that the plans object has all the plans</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plan_name</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Failed to create new plan due to error code: &quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                                 <span class="s1">&#39;Please check the documentation for &#39;</span>
+                                 <span class="s1">&#39;more details on the error&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span>
+
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="mi">102</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Inheritance disabled for plan&#39;</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">plan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -636,8 +1008,8 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_override_entities</span>
 
 <div class="viewcode-block" id="Plan.refresh"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plan.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the properties of the Plan.&quot;&quot;&quot;</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_plan_properties</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of the Plan.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_plan_properties</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Plan.associate_user"><a class="viewcode-back" href="../../plan.html#cvpysdk.plan.Plan.associate_user">[docs]</a>    <span class="k">def</span> <span class="nf">associate_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">userlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;associates the users to the plan.</span>
@@ -691,8 +1063,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -728,7 +1100,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

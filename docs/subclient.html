@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Subclient &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Subclient &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -44,6 +44,10 @@
 the specified backup set/instance.</p>
 <p>__str__()                   –  returns all the subclients associated with the backupset</p>
 <p>__repr__()                  –  returns the string for the instance of the Subclients class</p>
+<p>__len__()                   –  returns the number of subclients associated with the Agent
+for the selected Client</p>
+<p>__getitem__()               –  returns the name of the subclient for the given subclient Id
+or the details for the given subclient name</p>
 <p>_get_subclients()           –  gets all the subclients associated with the backupset specified</p>
 <p>default_subclient()         –  returns the name of the default subclient</p>
 <p>all_subclients()            –  returns dict of all the subclients on commcell</p>
@@ -142,51 +146,55 @@ which includes current running job also.</p>
 <dl class="method">
 <dt id="cvpysdk.subclient.Subclient.browse">
 <code class="descname">browse</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.browse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Browses the content of a Subclient.</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first docutils">
-<dt>Dictionary of browse options:</dt>
-<dd><dl class="first docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
-<dt>browse({</dt>
-<dd>‘path’: ‘c:hello’,
-‘show_deleted’: True,
-‘from_time’: ‘2014-04-20 12:00:00’,
-‘to_time’: ‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">})</p>
-</dd>
-</dl>
-<p class="last">(OR)</p>
-</dd>
-<dt>Keyword argument of browse options:</dt>
-<dd><dl class="first last docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
-<dt>browse(</dt>
-<dd>path=’c:hello’,
-show_deleted=True,
-from_time=‘2014-04-20 12:00:00’,
-to_time=‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">)</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="last">Refer Backupset._default_browse_options for all the supported options</p>
-</dd>
-</dl>
-</div></blockquote>
+<dd><p>Browses the content of the Subclient.</p>
 <dl class="docutils">
-<dt>Returns:</dt>
-<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
-<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>Dictionary of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>browse({</dt>
+<dd><p class="first">‘path’: ‘c:\hello’,</p>
+<p>‘show_deleted’: True,</p>
+<p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
+<p class="last">‘to_time’: ‘2016-04-21 12:00:00’</p>
 </dd>
 </dl>
+<p>})</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+<dt>Kwargs:</dt>
+<dd><dl class="first last docutils">
+<dt>Keyword argument of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>browse(</dt>
+<dd><p class="first">path=’c:hello’,</p>
+<p>show_deleted=True,</p>
+<p>from_time=‘2014-04-20 12:00:00’,</p>
+<p class="last">to_time=‘2016-04-21 12:00:00’</p>
+</dd>
+</dl>
+<p>)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>(list, dict)</dt>
+<dd><p class="first">list    -   List of only the file, folder paths from the browse response</p>
+<p class="last">dict    -   Dictionary of all the paths with additional metadata retrieved
+from browse operation</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Refer <a class="reference external" href="https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565">default_browse_options</a> for all the supported options.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -287,58 +295,62 @@ to_time=‘2016-04-21 12:00:00’</dd>
 <dl class="method">
 <dt id="cvpysdk.subclient.Subclient.find">
 <code class="descname">find</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.find"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.find" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Searches a file/folder in the subclient backup content,</dt>
-<dd><blockquote class="first">
-<div>and returns all the files matching the filters given.</div></blockquote>
-<dl class="last docutils">
+<dd><p>Searches a file/folder in the backed up content of the subclient,
+and returns all the files matching the filters given.</p>
+<dl class="docutils">
 <dt>Args:</dt>
-<dd><dl class="first docutils">
-<dt>Dictionary of find options:</dt>
-<dd><dl class="first docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
-<dt>find({</dt>
-<dd>‘file_name’: ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.txt’,
-‘show_deleted’: True,
-‘from_time’: ‘2014-04-20 12:00:00’,
-‘to_time’: ‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">})</p>
-</dd>
-</dl>
-<p class="last">(OR)</p>
-</dd>
-<dt>Keyword argument of find options:</dt>
 <dd><dl class="first last docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
+<dt>Dictionary of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>find({</dt>
+<dd><p class="first">‘file_name’: ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.txt’,</p>
+<p>‘show_deleted’: True,</p>
+<p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
+<p class="last">‘to_time’: ‘2016-04-31 12:00:00’</p>
+</dd>
+</dl>
+<p>})</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+<dt>Kwargs:</dt>
+<dd><dl class="first last docutils">
+<dt>Keyword argument of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
 <dt>find(</dt>
-<dd>file_name=’<a href="#id3"><span class="problematic" id="id4">*</span></a>.txt’,
-show_deleted=True,
-from_time=2014-04-20 12:00:00,
-to_time=‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">)</p>
+<dd><p class="first">file_name=’<a href="#id3"><span class="problematic" id="id4">*</span></a>.txt’,</p>
+<p>show_deleted=True,</p>
+<p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
+<p class="last">to_time=‘2016-04-31 12:00:00’</p>
 </dd>
 </dl>
-</dd>
-</dl>
-<p>Refer Backupset._default_browse_options for all the supported options</p>
-<dl class="last docutils">
-<dt>Additional options supported:</dt>
-<dd><p class="first">file_name       (str)   –   Find files with name</p>
-<p>file_size_gt    (int)   –   Find files with size greater than size</p>
-<p>file_size_lt    (int)   –   Find files with size lesser than size</p>
-<p class="last">file_size_et    (int)   –   Find files with size equal to size</p>
-</dd>
-</dl>
+<p>)</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
-<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
-<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+<dd><dl class="first last docutils">
+<dt>(list, dict)</dt>
+<dd><p class="first">list    -   List of only the file, folder paths from the browse response</p>
+<p class="last">dict    -   Dictionary of all the paths with additional metadata retrieved
+from browse operation</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Refer <a class="reference external" href="https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565">default_browse_options</a> for all the supported options.</p>
+<dl class="docutils">
+<dt>Additional options supported:</dt>
+<dd><p class="first">file_name       (str)   –  Find files with name</p>
+<p>file_size_gt    (int)   –  Find files with size greater than size</p>
+<p>file_size_lt    (int)   –  Find files with size lesser than size</p>
+<p class="last">file_size_et    (int)   –  Find files with size equal to size</p>
 </dd>
 </dl>
 </dd></dl>
@@ -386,7 +398,7 @@ give the values <strong>comma(,)</strong> separated</p>
 </dl>
 </dd>
 <dt>Returns:</dt>
-<dd>object - instance of the Job class for the latest job</dd>
+<dd>object  -   instance of the Job class for the latest job</dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
 <dt>SDKException:</dt>
@@ -597,19 +609,30 @@ media_agent         : Media Agent need to be used for Browse and restore</p>
 <p>Class for getting all the subclients associated with a client.</p>
 <dl class="method">
 <dt id="cvpysdk.subclient.Subclients.add">
-<code class="descname">add</code><span class="sig-paren">(</span><em>subclient_name</em>, <em>storage_policy</em>, <em>description=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclients.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.add" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add</code><span class="sig-paren">(</span><em>subclient_name</em>, <em>storage_policy</em>, <em>subclient_type=None</em>, <em>description=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclients.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a new subclient to the backupset.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><p class="first">subclient_name      (str)   –  name of the new subclient to add</p>
-<dl class="docutils">
-<dt>storage_policy      (str)   –  name of the storage policy to</dt>
-<dd>associate with the subclient</dd>
-</dl>
-<p class="last">description         (str)   –  description for the subclient (optional)</p>
+<p>storage_policy      (str)   –  name of the storage policy to be associated
+with the subclient</p>
+<p>subclient_type      (str)   –  type of subclient for sql server</p>
+<blockquote>
+<div><p>default: None</p>
+<p>Valid Values are:</p>
+<blockquote>
+<div><ul class="simple">
+<li>DATABASE</li>
+<li>FILE_FILEGROUP</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+<p>description         (str)   –  description for the subclient (optional)</p>
+<blockquote class="last">
+<div>default: ‘’</div></blockquote>
 </dd>
 <dt>Returns:</dt>
-<dd>object - instance of the Subclient class</dd>
+<dd>object  -   instance of the Subclient class</dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
 <dt>SDKException:</dt>
@@ -631,23 +654,28 @@ media_agent         : Media Agent need to be used for Browse and restore</p>
 <code class="descname">all_subclients</code><a class="headerlink" href="#cvpysdk.subclient.Subclients.all_subclients" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns dict of all the subclients configured on this backupset</p>
 <dl class="docutils">
-<dt>dict - consists of all subclients in the backupset</dt>
-<dd><dl class="first docutils">
+<dt>Retruns:</dt>
+<dd><p class="first">dict    -   consists of all subclients in the backupset</p>
+<blockquote class="last">
+<div><dl class="docutils">
 <dt>{</dt>
 <dd><dl class="first docutils">
 <dt>“subclient1_name”: {</dt>
-<dd>“id”: subclient1_id,
-“backupset”: backupset</dd>
+<dd><p class="first">“id”: subclient1_id,</p>
+<p class="last">“backupset”: backupset</p>
+</dd>
 </dl>
 <p>},
 “subclient2_name”: {</p>
 <blockquote>
-<div>“id”: subclient2_id,
-“backupset”: backupset</div></blockquote>
+<div><p>“id”: subclient2_id,</p>
+<p>“backupset”: backupset</p>
+</div></blockquote>
 <p class="last">}</p>
 </dd>
 </dl>
-<p class="last">}</p>
+<p>}</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd></dl>
@@ -770,7 +798,7 @@ media_agent         : Media Agent need to be used for Browse and restore</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

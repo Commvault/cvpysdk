@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.network &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.network &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -477,8 +477,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_restriction_to</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">restriction_to_dict</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">configure_network_settings</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">additional_ports</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -525,8 +525,8 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">configure_network_settings</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">outgoing_routes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -554,13 +554,15 @@
 
 <span class="sd">            Args:</span>
 <span class="sd">                outgoing_routes(list)  -- list of outgoing routes should be a list of dict containing</span>
-<span class="sd">                route type, entity name, entity type, streams, gateway host, gateway port and remote proxy based on route type.</span>
+<span class="sd">                route type, entity name, entity type, streams, gateway host, gateway port and remote proxy based on</span>
+<span class="sd">                route type.</span>
 
 <span class="sd">                For routeType: DIRECT</span>
-<span class="sd">                [{&#39;routeType&#39;:&#39;DIRECT&#39;, &#39;remoteEntity&#39;:val ,&#39;streams&#39;:val, &#39;isClient&#39;:val}]</span>
+<span class="sd">                [{&#39;routeType&#39;:&#39;DIRECT&#39;, &#39;remoteEntity&#39;:val ,&#39;streams&#39;:val, &#39;isClient&#39;:val, &#39;forceAllDataTraffic&#39;: True}]</span>
 
 <span class="sd">                For routeType: VIA_GATEWAY</span>
-<span class="sd">                [{&#39;routeType&#39;:&#39;VIA_GATEWAY&#39;, &#39;remoteEntity&#39;:val, &#39;streams&#39;:val, &#39;gatewayPort&#39;:val, &#39;gatewayHost&#39;: val, &#39;isClient&#39;:val}]</span>
+<span class="sd">                [{&#39;routeType&#39;:&#39;VIA_GATEWAY&#39;, &#39;remoteEntity&#39;:val, &#39;streams&#39;:val, &#39;gatewayPort&#39;:val, &#39;gatewayHost&#39;: val,</span>
+<span class="sd">                &#39;isClient&#39;:val, &#39;forceAllDataTraffic&#39;: False}]</span>
 
 <span class="sd">                For routeType: VIA_PROXY</span>
 <span class="sd">                [{&#39;routeType&#39;:&#39;VIA_PROXY&#39;, &#39;remoteEntity&#39;:val, &#39;remoteProxy&#39;:val, &#39;isClient&#39;:val}]</span>
@@ -571,7 +573,8 @@
 <span class="sd">                &#39;routeType&#39;: &#39;DIRECT&#39;,</span>
 <span class="sd">                &#39;remoteEntity&#39;:&#39;Testcs&#39; ,</span>
 <span class="sd">                &#39;streams&#39;: 1,</span>
-<span class="sd">                &#39;isClient&#39;: True</span>
+<span class="sd">                &#39;isClient&#39;: True,</span>
+<span class="sd">                &#39;forceAllDataTraffic&#39; : True</span>
 <span class="sd">                },</span>
 <span class="sd">                {</span>
 <span class="sd">                &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,</span>
@@ -579,7 +582,8 @@
 <span class="sd">                &#39;streams&#39;: 2,</span>
 <span class="sd">                &#39;gatewayPort&#39;: 443,</span>
 <span class="sd">                &#39;gatewayHost&#39;: &#39;1.2.3.4&#39;,</span>
-<span class="sd">                &#39;isClient&#39;: True</span>
+<span class="sd">                &#39;isClient&#39;: True,</span>
+<span class="sd">                &#39;forceAllDataTraffic&#39; :False</span>
 <span class="sd">                },</span>
 <span class="sd">                {</span>
 <span class="sd">                &#39;routeType&#39;: &#39;VIA_PROXY&#39;,</span>
@@ -617,17 +621,20 @@
                     <span class="n">gatewayhostname</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
                     <span class="n">remote_proxy</span> <span class="o">=</span> <span class="p">{}</span>
                     <span class="n">nstreams</span> <span class="o">=</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;streams&#39;</span><span class="p">]</span>
+                    <span class="n">force_all_data_traffic</span> <span class="o">=</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;forceAllDataTraffic&#39;</span><span class="p">]</span>
 
                 <span class="k">elif</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;routeType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_firewall_outgoing_route_type</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
                     <span class="n">gatewayport</span> <span class="o">=</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;gatewayPort&#39;</span><span class="p">]</span>
                     <span class="n">gatewayhostname</span> <span class="o">=</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;gatewayHost&#39;</span><span class="p">]</span>
                     <span class="n">remote_proxy</span> <span class="o">=</span> <span class="p">{}</span>
                     <span class="n">nstreams</span> <span class="o">=</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;streams&#39;</span><span class="p">]</span>
+                    <span class="n">force_all_data_traffic</span> <span class="o">=</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;forceAllDataTraffic&#39;</span><span class="p">]</span>
 
                 <span class="k">elif</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;routeType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_firewall_outgoing_route_type</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
                     <span class="n">gatewayport</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="n">gatewayhostname</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
                     <span class="n">nstreams</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">force_all_data_traffic</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="n">remote_proxy</span> <span class="o">=</span> <span class="p">{</span>
                         <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;remoteProxy&#39;</span><span class="p">],</span>
 
@@ -643,7 +650,7 @@
                         <span class="s2">&quot;numberOfStreams&quot;</span><span class="p">:</span> <span class="n">nstreams</span><span class="p">,</span>
                         <span class="s2">&quot;connectionProtocol&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
                         <span class="s2">&quot;gatewayTunnelPort&quot;</span><span class="p">:</span> <span class="n">gatewayport</span><span class="p">,</span>
-                        <span class="s2">&quot;forceAllBackupRestoreDataTraffic&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;forceAllBackupRestoreDataTraffic&quot;</span><span class="p">:</span> <span class="n">force_all_data_traffic</span><span class="p">,</span>
                         <span class="s2">&quot;gatewayHostname&quot;</span><span class="p">:</span> <span class="n">gatewayhostname</span><span class="p">,</span>
                         <span class="s2">&quot;routeType&quot;</span><span class="p">:</span> <span class="n">outgoing_route</span><span class="p">[</span><span class="s1">&#39;routeType&#39;</span><span class="p">],</span>
                         <span class="s2">&quot;remoteProxy&quot;</span><span class="p">:</span> <span class="n">remote_proxy</span>
@@ -654,8 +661,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_network_outgoing_routes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outgoing_routes_dict</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">configure_network_settings</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">tppm_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -735,8 +742,8 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">configure_network_settings</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">_advanced_network_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
@@ -880,17 +887,15 @@
 
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_get_network_properties</span><span class="p">()</span>
-                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span><span class="s1">&#39;Client group properties were not updated&#39;</span><span class="p">)</span>
-
-
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Client group properties were not updated&#39;</span><span class="p">)</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_get_network_properties</span><span class="p">()</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_get_network_properties</span><span class="p">()</span></div>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_network_properties</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 </pre></div>
 
           </div>
@@ -926,7 +931,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

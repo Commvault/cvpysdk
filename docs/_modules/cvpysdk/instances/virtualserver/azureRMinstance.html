@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.instances.virtualserver.azureRMinstance &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.instances.virtualserver.azureRMinstance &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
@@ -31,11 +31,10 @@
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.instances.virtualserver.azureRMinstance</h1><div class="highlight"><pre>
-<span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="c1"># -*- coding: utf-8 -*-</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
 <span class="c1"># --------------------------------------------------------------------------</span>
-<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># Copyright  Commvault Systems, Inc.</span>
 <span class="c1"># See LICENSE.txt in the project root for</span>
 <span class="c1"># license information.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
@@ -44,14 +43,21 @@
 
 <span class="sd">AzureResoureceManagerInstance is the only class defined in this file.</span>
 
-<span class="sd">AzureResoureceManagerInstance: Derived class from VirtualServer  Base class, representing a</span>
-<span class="sd">                           Azure Resource Manager instance, and to perform operations on that instance</span>
+<span class="sd">AzureResoureceManagerInstance: Derived class from VirtualServer</span>
+<span class="sd">                            Base class, representing a Azure Resource Manager</span>
+<span class="sd">                            instance, and to perform operations on that</span>
+<span class="sd">                            instance</span>
 
-<span class="sd">AzureResoureceManagerInstance:</span>
+<span class="sd">    __init__(self, agent,_name,iid)   	 -- 	initialize object of azure RM</span>
+<span class="sd">                                            Instance object associated with the</span>
+<span class="sd">                                            VirtualServer Instance		</span>
 
-<span class="sd">	__init__(agent_object,instance_name,instance_id)    --  initialize object of azure resource manager Instance object associated with</span>
-<span class="sd">																the VirtualServer Instance</span>
+<span class="sd">    _get_instance_properties()     --  VirtualServer Instance class method</span>
+<span class="sd">                                        overwritten to get azure RM</span>
+<span class="sd">                                        Specific instance properties as well</span>
 
+<span class="sd">	_get_instance_properties_json()			--  get the all instance related</span>
+<span class="sd">														properties of this subclient.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -60,11 +66,87 @@
 <span class="kn">from</span> <span class="nn">...instance</span> <span class="k">import</span> <span class="n">Instance</span>
 
 <div class="viewcode-block" id="AzureRMInstance"><a class="viewcode-back" href="../../../../instances/virtualserver/virtualserver.html#cvpysdk.instances.virtualserver.azureRMinstance.AzureRMInstance">[docs]</a><span class="k">class</span> <span class="nc">AzureRMInstance</span><span class="p">(</span><span class="n">VirtualServerInstance</span><span class="p">):</span>
-    
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">iid</span><span class="p">):</span></div>
+
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    AzureResoureceManagerInstance:</span>
+
+<span class="sd">	__init__(agent_object,instance_name,instance_id)    --  initialize object</span>
+<span class="sd">    of azure resource manager Instance object associated with</span>
+<span class="sd">		the VirtualServer Instance</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">iid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given Virtual Server instance.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                class_object (agent_object,instance_name,instance_id)  --  instance of the</span>
+<span class="sd">                                                                                Agent class,</span>
+<span class="sd">                                                                                instance name,</span>
+<span class="sd">                                                                                instance id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
         <span class="nb">super</span><span class="p">(</span><span class="n">VirtualServerInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">iid</span><span class="p">)</span>
-        
-    
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vendor_id</span> <span class="o">=</span> <span class="mi">7</span>
+
+
+
+    <span class="k">def</span>  <span class="nf">_get_instance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the properties of this instance</span>
+
+<span class="sd">        Raise:</span>
+<span class="sd">            SDK Exception:</span>
+<span class="sd">                if response is not empty</span>
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">AzureRMInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_instance_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;virtualServerInstance&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+            <span class="n">_member_servers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;virtualServerInstance&quot;</span><span class="p">]</span> \
+                                                <span class="p">[</span><span class="s2">&quot;associatedClients&quot;</span><span class="p">][</span><span class="s2">&quot;memberServers&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">_each_client</span> <span class="ow">in</span> <span class="n">_member_servers</span><span class="p">:</span>
+                <span class="n">client</span> <span class="o">=</span> <span class="n">_each_client</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;clientName&#39;</span> <span class="ow">in</span> <span class="n">client</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">client</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]))</span>
+        <span class="c1"># waiting for praveen form</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_instance_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get the all instance related properties of this subclient.</span>
+
+<span class="sd">          Returns:</span>
+<span class="sd">               dict - all instance properties put inside a dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instanceProperties&quot;</span><span class="p">:{</span>
+                <span class="s2">&quot;isDeleted&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span>
+                <span class="s2">&quot;instanceActivityControl&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instanceActivityControl</span><span class="p">,</span>
+                <span class="s2">&quot;virtualServerInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;vsInstanceType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_virtualserverinstance</span><span class="p">[</span><span class="s1">&#39;vsInstanceType&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;associatedClients&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_virtualserverinstance</span><span class="p">[</span><span class="s1">&#39;associatedClients&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;vmwareVendor&quot;</span><span class="p">:</span> <span class="p">{}</span>
+                    <span class="p">}</span>
+                       <span class="p">}</span>
+               <span class="p">}</span>
+        <span class="k">return</span> <span class="n">instance_json</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">server_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getter for the domain name in the Hyper-V json&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">server_host_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getter for the domain name in the vmware vendor json&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span></div>
+    <span class="c1">#return self._server_name</span>
+    <span class="c1"># TODO will change with Praveen Form(jmalik)</span>
 </pre></div>
 
           </div>
@@ -100,7 +182,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

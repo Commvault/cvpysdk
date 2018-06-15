@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.instances.sqlinstance &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.instances.sqlinstance &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -82,6 +82,7 @@
 <span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
 <span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">SQLDefines</span>
 
 
 <div class="viewcode-block" id="SQLServerInstance"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance">[docs]</a><span class="k">class</span> <span class="nc">SQLServerInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
@@ -94,12 +95,38 @@
             <span class="n">restore_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sql_restore_type</span><span class="o">=</span><span class="n">SQLDefines</span><span class="o">.</span><span class="n">DATABASE_RESTORE</span><span class="p">,</span>
+            <span class="n">sql_recover_type</span><span class="o">=</span><span class="n">SQLDefines</span><span class="o">.</span><span class="n">STATE_RECOVER</span><span class="p">,</span>
+            <span class="n">undo_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">restricted_user</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                content_to_restore   (list)  --  databases list to restore</span>
-
+<span class="sd">                content_to_restore (list): databases list to restore</span>
+<span class="sd">                </span>
+<span class="sd">                restore_path (list, optional): list of dicts for restore paths of database files</span>
+<span class="sd">                </span>
+<span class="sd">                drop_connections_to_databse (bool, optional): drop connections to database during restore</span>
+<span class="sd">                </span>
+<span class="sd">                overwrite (bool, optional): overwrite database on restore</span>
+<span class="sd">                </span>
+<span class="sd">                destination_instance (str): restore databases to this sql instance</span>
+<span class="sd">                </span>
+<span class="sd">                to_time (str, optional): restore to time</span>
+<span class="sd">                </span>
+<span class="sd">                sql_restore_type (str, optional): type of sql restore state </span>
+<span class="sd">                (DATABASE_RESTORE, STEP_RESTORE, RECOVER_ONLY)</span>
+<span class="sd">                </span>
+<span class="sd">                sql_recover_type (str, optional): type of sql restore state </span>
+<span class="sd">                (STATE_RECOVER, STATE_NORECOVER, STATE_STANDBY)</span>
+<span class="sd">                </span>
+<span class="sd">                undo_path (str, optional): file path for undo path for sql server standby restore</span>
+<span class="sd">                </span>
+<span class="sd">                restricted_user (bool, optional): Restore database in restricted user mode</span>
+<span class="sd">                </span>
 <span class="sd">            Returns:</span>
 <span class="sd">                dict - JSON request to pass to the API</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -107,7 +134,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_sql_restore_options</span><span class="p">(</span><span class="n">content_to_restore</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">destination_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -143,10 +170,10 @@
                     <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
                             <span class="s2">&quot;sqlServerRstOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;sqlRecoverType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                <span class="s2">&quot;sqlRecoverType&quot;</span><span class="p">:</span> <span class="n">sql_recover_type</span><span class="p">,</span>
                                 <span class="s2">&quot;dropConnectionsToDatabase&quot;</span><span class="p">:</span> <span class="n">drop_connections_to_databse</span><span class="p">,</span>
                                 <span class="s2">&quot;overWrite&quot;</span><span class="p">:</span> <span class="n">overwrite</span><span class="p">,</span>
-                                <span class="s2">&quot;sqlRestoreType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                <span class="s2">&quot;sqlRestoreType&quot;</span><span class="p">:</span> <span class="n">sql_restore_type</span><span class="p">,</span>
                                 <span class="s2">&quot;database&quot;</span><span class="p">:</span> <span class="n">content_to_restore</span><span class="p">,</span>
                                 <span class="s2">&quot;restoreSource&quot;</span><span class="p">:</span> <span class="n">content_to_restore</span>
                             <span class="p">},</span>
@@ -168,14 +195,44 @@
             <span class="p">}</span>
         <span class="p">}</span>
 
+        <span class="k">if</span> <span class="n">sql_recover_type</span> <span class="o">==</span> <span class="n">SQLDefines</span><span class="o">.</span><span class="n">STATE_STANDBY</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">undo_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">undo_path_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;fileOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;mapFiles&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;renameFilesSuffix&quot;</span><span class="p">:</span> <span class="n">undo_path</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">undo_path_dict</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to set Undo Path for Standby Restore.&#39;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">restore_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">restore_path_dict</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;restoreToDiskPath&quot;</span><span class="p">:</span> <span class="n">restore_path</span><span class="p">,</span>
-                <span class="s2">&quot;restoreToDisk&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="s2">&quot;device&quot;</span><span class="p">:</span>
+                    <span class="n">restore_path</span>
             <span class="p">}</span>
-
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
                 <span class="s1">&#39;sqlServerRstOption&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">restore_path_dict</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">restricted_user</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">restricted_user_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;dbOnly&quot;</span><span class="p">:</span>
+                    <span class="n">restricted_user</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;sqlServerRstOption&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">restricted_user_dict</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">to_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">to_time_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;browseOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;toTimeValue&quot;</span><span class="p">:</span> <span class="n">to_time</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">to_time_dict</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">request_json</span>
 
@@ -184,7 +241,7 @@
 <span class="sd">            and returns the contents after parsing the response.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                request_json    (dict)  --  JSON request to run for the API</span>
+<span class="sd">                request_json (dict):  JSON request to run for the API</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -223,7 +280,7 @@
 <span class="sd">            and returns the contents after parsing the response.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                content_to_restore   (list)  --  databases list to restore</span>
+<span class="sd">                content_to_restore (list):  Databases list to restore</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                dict - dictionary consisting of the sql destination server options</span>
@@ -247,7 +304,7 @@
             <span class="n">contents_dict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">database_dict</span><span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;restoreDbType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;restoreDbType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
             <span class="s2">&quot;sourceInstanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">),</span>
             <span class="s2">&quot;selectedDatabases&quot;</span><span class="p">:</span> <span class="n">contents_dict</span>
         <span class="p">}</span>
@@ -289,9 +346,9 @@
 <span class="sd">            if any exception is raised while running the backup job for the Subclient.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                subclient_name (str)   --  name of the subclient to trigger the backup for</span>
+<span class="sd">                subclient_name (str):  Name of the subclient to trigger the backup for</span>
 
-<span class="sd">                return_list    (list)  --  list to append the job object to</span>
+<span class="sd">                return_list (list):  List to append the job object to</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="s1">&#39;Full&#39;</span><span class="p">)</span>
@@ -305,7 +362,7 @@
 <span class="sd">            specified, and returns the contents after parsing the response.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                browse_request    (dict)  --  JSON request to be sent to Server</span>
+<span class="sd">                browse_request (dict):  JSON request to be sent to Server</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all databases</span>
@@ -373,8 +430,8 @@
 
         <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">thread_list</span><span class="p">:</span>
             <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-</div>
-        <span class="k">return</span> <span class="n">return_list</span>
+
+        <span class="k">return</span> <span class="n">return_list</span></div>
 
 <div class="viewcode-block" id="SQLServerInstance.browse"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the list of the backed up databases for this instance.</span>
@@ -394,22 +451,18 @@
         <span class="n">browse_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INSTANCE_BROWSE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="s2">&quot;SQL&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span>
         <span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_request</span><span class="p">(</span><span class="n">browse_request</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_request</span><span class="p">(</span><span class="n">browse_request</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SQLServerInstance.browse_in_time"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.browse_in_time">[docs]</a>    <span class="k">def</span> <span class="nf">browse_in_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">to_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the list of the backed up databases for this instance in the given time frame.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                from_date           (str)   --  date to get the contents after</span>
-<span class="sd">                        format: dd/MM/YYYY</span>
-<span class="sd">                        gets contents from 01/01/1970 if not specified</span>
-<span class="sd">                    default: None</span>
+<span class="sd">                from_date (str): date to get the contents after.  Format: dd/MM/YYYY</span>
+<span class="sd">                Gets contents from 01/01/1970 if not specified.  Defaults to None.</span>
 
-<span class="sd">                to_date             (str)  --  date to get the contents before</span>
-<span class="sd">                        format: dd/MM/YYYY</span>
-<span class="sd">                        gets contents till current day if not specified</span>
-<span class="sd">                    default: None</span>
+<span class="sd">                to_date (str): date to get the contents before.  Format: dd/MM/YYYY</span>
+<span class="sd">                Gets contents till current day if not specified.  Defaults to None.</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all databases</span>
@@ -461,29 +514,46 @@
         <span class="p">)</span>
 
         <span class="n">browse_request</span> <span class="o">+=</span> <span class="s1">&#39;?fromTime=</span><span class="si">{0}</span><span class="s1">&amp;toTime=</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_request</span><span class="p">(</span><span class="n">browse_request</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_request</span><span class="p">(</span><span class="n">browse_request</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SQLServerInstance.restore"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">content_to_restore</span><span class="p">,</span>
             <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">restore_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">restore_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sql_restore_type</span><span class="o">=</span><span class="n">SQLDefines</span><span class="o">.</span><span class="n">DATABASE_RESTORE</span><span class="p">,</span>
+            <span class="n">sql_recover_type</span><span class="o">=</span><span class="n">SQLDefines</span><span class="o">.</span><span class="n">STATE_RECOVER</span><span class="p">,</span>
+            <span class="n">undo_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">restricted_user</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the databases specified in the input paths list.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                content_to_restore             (list)  --  list of databases to restore</span>
+<span class="sd">                content_to_restore (list):  List of databases to restore.</span>
 
-<span class="sd">                drop_connections_to_databse    (bool)  --  Drop connections to database</span>
-<span class="sd">                    default: False</span>
+<span class="sd">                drop_connections_to_databse (bool):  Drop connections to database.  Defaults to False.</span>
 
-<span class="sd">                overwrite                      (bool)  --  unconditional overwrite files during</span>
-<span class="sd">                                                               restore</span>
-<span class="sd">                    default: True</span>
+<span class="sd">                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.</span>
 
-<span class="sd">                restore_path                   (str)   --  existing path on disk to restore</span>
-<span class="sd">                    default: None</span>
+<span class="sd">                restore_path (str):  Existing path on disk to restore.  Defaults to None.</span>
+
+<span class="sd">                to_time (str):  Restore to time.  Defaults to None.</span>
+
+<span class="sd">                sql_recover_type (str):  Type of sql recovery state. (STATE_RECOVER, STATE_NORECOVER, STATE_STANDBY)</span>
+<span class="sd">                Defaults to STATE_RECOVER.</span>
+
+<span class="sd">                sql_restore_type (str):  Type of sql restore state.  (DATABASE_RESTORE, STEP_RESTORE, RECOVER_ONLY)</span>
+<span class="sd">                Defaults to DATABASE_RESTORE.</span>
+<span class="sd">                </span>
+<span class="sd">                undo_path (str):  File path for undo path for sql standby restores.  Defaults to None.</span>
+
+<span class="sd">                restricted_user (bool):  Restore database in restricted user mode.  Defaults to None.</span>
+
+<span class="sd">                destination_instance (str):  Destination instance to restore too.  Defaults to None.</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -499,14 +569,23 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="n">destination_instance</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_request_json</span><span class="p">(</span>
             <span class="n">content_to_restore</span><span class="p">,</span>
             <span class="n">drop_connections_to_databse</span><span class="o">=</span><span class="n">drop_connections_to_databse</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
-            <span class="n">restore_path</span><span class="o">=</span><span class="n">restore_path</span>
+            <span class="n">restore_path</span><span class="o">=</span><span class="n">restore_path</span><span class="p">,</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
+            <span class="n">sql_restore_type</span><span class="o">=</span><span class="n">sql_restore_type</span><span class="p">,</span>
+            <span class="n">sql_recover_type</span><span class="o">=</span><span class="n">sql_recover_type</span><span class="p">,</span>
+            <span class="n">undo_path</span><span class="o">=</span><span class="n">undo_path</span><span class="p">,</span>
+            <span class="n">restricted_user</span><span class="o">=</span><span class="n">restricted_user</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="n">destination_instance</span>
         <span class="p">)</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SQLServerInstance.restore_to_destination_server"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.sqlinstance.SQLServerInstance.restore_to_destination_server">[docs]</a>    <span class="k">def</span> <span class="nf">restore_to_destination_server</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -518,19 +597,15 @@
         <span class="sd">&quot;&quot;&quot;Restores the databases specified in the input paths list.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                content_to_restore             (list)  --  list of databases to restore</span>
+<span class="sd">                content_to_restore (list):  List of databases to restore.</span>
 
-<span class="sd">                destination_server             (str)   --  Destination server(instance) name</span>
+<span class="sd">                destination_server (str):  Destination server(instance) name.</span>
 
-<span class="sd">                drop_connections_to_databse    (bool)  --  Drop connections to database</span>
-<span class="sd">                    default: False</span>
+<span class="sd">                drop_connections_to_databse (bool): Drop connections to database.  Defaults to False.</span>
 
-<span class="sd">                overwrite                      (bool)  --  unconditional overwrite files during</span>
-<span class="sd">                                                               restore</span>
-<span class="sd">                    default: True</span>
+<span class="sd">                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.</span>
 
-<span class="sd">                restore_path                   (str)   --  existing path on disk to restore</span>
-<span class="sd">                    default: None</span>
+<span class="sd">                restore_path (str):  Existing path on disk to restore.  Default to None.</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -553,8 +628,8 @@
             <span class="n">restore_path</span><span class="o">=</span><span class="n">restore_path</span><span class="p">,</span>
             <span class="n">destination_instance</span><span class="o">=</span><span class="n">destination_server</span>
         <span class="p">)</span>
-</div></div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -590,7 +665,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

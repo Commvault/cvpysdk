@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Instances &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Instances &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -17,7 +17,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Cloud Apps Instances" href="cloudapps/cloudapps.html" />
-    <link rel="prev" title="Datacube" href="../datacube/datacube.html" />
+    <link rel="prev" title="DR Orchestration" href="../drorchestration/drorchestration.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -218,6 +218,372 @@ DB instance then the backupset name is
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.instances.lndbinstance">
+<span id="notes-database"></span><h2>Notes Database<a class="headerlink" href="#module-cvpysdk.instances.lndbinstance" title="Permalink to this headline">¶</a></h2>
+<p>File for operating on a Lotus Notes Database Agent Instance.</p>
+<p>LNDBInstance is the only class defined in this file.</p>
+<dl class="docutils">
+<dt>LNDBInstance:</dt>
+<dd><p class="first">restore_in_place()                  – performs an in place restore of the subclient</p>
+<p class="last">restore_out_of_place()              – performs an out of place restore of the subclient</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="cvpysdk.instances.lndbinstance.LNDBInstance">
+<em class="property">class </em><code class="descclassname">cvpysdk.instances.lndbinstance.</code><code class="descname">LNDBInstance</code><span class="sig-paren">(</span><em>agent_object</em>, <em>instance_name</em>, <em>instance_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/lndbinstance.html#LNDBInstance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.lndbinstance.LNDBInstance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../instance.html#cvpysdk.instance.Instance" title="cvpysdk.instance.Instance"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.instance.Instance</span></code></a></p>
+<p>Derived class from Backupset Base class, representing a fs backupset,
+and to perform operations on that backupset.</p>
+<dl class="method">
+<dt id="cvpysdk.instances.lndbinstance.LNDBInstance.restore_in_place">
+<code class="descname">restore_in_place</code><span class="sig-paren">(</span><em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em>, <em>fs_options=None</em>, <em>common_options_dict=None</em>, <em>lndb_restore_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/lndbinstance.html#LNDBInstance.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.lndbinstance.LNDBInstance.restore_in_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the files/folders specified in the input paths list to the same location.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">paths                   (list)  –  list of full paths of files/folders to restore</p>
+<dl class="docutils">
+<dt>overwrite               (bool)  –  unconditional overwrite files during restore</dt>
+<dd>default: True</dd>
+<dt>restore_data_and_acl    (bool)  –  restore data and ACL files</dt>
+<dd>default: True</dd>
+<dt>copy_precedence         (int)   –  copy precedence value of storage policy copy</dt>
+<dd>default: None</dd>
+<dt>from_time           (str)       –  time to retore the contents after</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>to_time           (str)         –  time to retore the contents before</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>fs_options      (dict)          – dictionary that includes all advanced options</dt>
+<dd><dl class="first last docutils">
+<dt>options:</dt>
+<dd><dl class="first docutils">
+<dt>all_versions <span class="classifier-delimiter">:</span> <span class="classifier">if set to True restores all the versions of the</span></dt>
+<dd>specified file</dd>
+</dl>
+<p class="last">versions            : list of version numbers to be backed up</p>
+</dd>
+</dl>
+</dd>
+<dt>common_options_dict (dict)          – dictionary for all the common options</dt>
+<dd><dl class="first last docutils">
+<dt>options:</dt>
+<dd><p class="first">unconditionalOverwrite              :   overwrite the files during restore
+even if they exist</p>
+<p>recoverWait                         :   Specifies whether this restore
+operation must wait until resources become available if a database recovery
+is already taking place</p>
+<p>recoverZap                          :   Specifies whether the IBM Domino
+must change the DBIID associated with the restored database</p>
+<p>recoverZapReplica                   :   Specifies whether the restore
+operation changes the replica id of the restored database</p>
+<p>recoverZapIfNecessary               :   Specifies whether the IBM Domino
+can change the DBIID associated with the restored database if necessary</p>
+<p class="last">doNotReplayTransactLogs             :   option to skip restoring or
+replaying logs</p>
+</dd>
+<dt>Disaster Recovery special options:</dt>
+<dd><p class="first">skipErrorsAndContinue               :   enables a data recovery operation
+to continue despite media errors</p>
+<p class="last">disasterRecovery                    :   run disaster recovery</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>lndb_restore_options    (dict)          – dictionary for all options specific
+to an lndb restore</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>options:</dt>
+<dd><p class="first">disableReplication      :   disable relpication on database</p>
+<p class="last">disableBackgroundAgents :   disable background agents</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instances.lndbinstance.LNDBInstance.restore_out_of_place">
+<code class="descname">restore_out_of_place</code><span class="sig-paren">(</span><em>client</em>, <em>destination_path</em>, <em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em>, <em>common_options_dict=None</em>, <em>lndb_restore_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/lndbinstance.html#LNDBInstance.restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.lndbinstance.LNDBInstance.restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the files/folders specified in the input paths list to the input client,
+at the specified destionation location.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">client                (str/object) –  either the name of the client or
+the instance of the Client</p>
+<p>destination_path      (str)        –  full path of the restore location on client</p>
+<p>paths                 (list)       –  list of full paths of
+files/folders to restore</p>
+<p>overwrite             (bool)       –  unconditional overwrite files during restore</p>
+<blockquote>
+<div>default: True</div></blockquote>
+<p>restore_data_and_acl  (bool)       –  restore data and ACL files</p>
+<blockquote>
+<div>default: True</div></blockquote>
+<p>copy_precedence         (int)      –  copy precedence value of storage policy copy</p>
+<blockquote>
+<div>default: None</div></blockquote>
+<p>from_time           (str)          –  time to retore the contents after</p>
+<blockquote>
+<div><blockquote>
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p>default: None</p>
+</div></blockquote>
+<p>to_time           (str)            –  time to retore the contents before</p>
+<blockquote>
+<div><blockquote>
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p>default: None</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>fs_options      (dict)             – dictionary that includes all advanced options</dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>options:</dt>
+<dd><p class="first">preserve_level          : preserve level option to set in restore</p>
+<p>proxy_client            : proxy that needed to be used for restore</p>
+<p>impersonate_user        : Impersonate user options for restore</p>
+<p>impersonate_password    : Impersonate password option for restore
+in base64 encoded form</p>
+<p>all_versions            : if set to True restores all the versions of the
+specified file</p>
+<p class="last">versions                : list of version numbers to be backed up</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="last docutils">
+<dt>common_options_dict (dict)          – dictionary for all the common options</dt>
+<dd><dl class="first last docutils">
+<dt>options:</dt>
+<dd><p class="first">unconditionalOverwrite              :   overwrite the files during restore
+even if they exist</p>
+<p>recoverWait                         :   Specifies whether this restore
+operation must wait until resources become available if a database recovery
+is already taking place</p>
+<p>recoverZap                          :   Specifies whether the IBM Domino
+must change the DBIID associated with the restored database</p>
+<p>recoverZapReplica                   :   Specifies whether the restore
+operation changes the replica id of the restored database</p>
+<p>recoverZapIfNecessary               :   Specifies whether the IBM Domino
+can change the DBIID associated with the restored database if necessary</p>
+<p class="last">doNotReplayTransactLogs             :   option to skip restoring or
+replaying logs</p>
+</dd>
+<dt>Disaster Recovery special options:</dt>
+<dd><p class="first">skipErrorsAndContinue               :   enables a data recovery operation
+to continue despite media errors</p>
+<p class="last">disasterRecovery                    :   run disaster recovery</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>lndb_restore_options    (dict)          – dictionary for all options specific
+to an lndb restore</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>options:</dt>
+<dd><p class="first">disableReplication      :   disable relpication on database</p>
+<p class="last">disableBackgroundAgents :   disable background agents</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if client is not a string or Client instance</p>
+<p>if destination_path is not a string</p>
+<p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.instances.mysqlinstance">
+<span id="mysql"></span><h2>MySQL<a class="headerlink" href="#module-cvpysdk.instances.mysqlinstance" title="Permalink to this headline">¶</a></h2>
+<p>File for operating on a MYSQL Instance.</p>
+<p>MYSQLInstance is the only class defined in this file.</p>
+<dl class="docutils">
+<dt>MYSQLInstance: Derived class from Instance Base class, representing an</dt>
+<dd>MYSQL instance, and to perform operations on that instance</dd>
+</dl>
+<p>MYSQLInstance:</p>
+<blockquote>
+<div><p>port                            – Setter for MySql Server Port number</p>
+<p>mysql_username                  – Setter for SAUser username</p>
+<p>nt_username                     – Setter for NTUsere username</p>
+<p>config_file                     – Setter for MySql Server config file location</p>
+<p>binary_directory                – Setter for MySql Server binary directory location</p>
+<p>version                         – Setter for MySql Server version</p>
+<p>log_data_directory               – Setter for MySql Server LogData directory location</p>
+<p>log_backup_sp_details           – Setter for log backup storage policy name and id</p>
+<p>command_line_sp_details         – Setter for command line storage policy name and id</p>
+<p>autodiscovery_enabled           – Setter for Enable Auto Discovery Feature</p>
+<p>proxy_options                   – Setter for proxy options at MySQL Instance level</p>
+<p>_get_instance_properties()      – method to get the properties of the instance</p>
+<dl class="docutils">
+<dt>_restore_json()                 – returns the apppropriate JSON request to pass for</dt>
+<dd>Restore In-Place</dd>
+</dl>
+<p>restore_in_place()              – Gets the restore json and pass the json for restore process</p>
+<p>_restore_browse_option_json()   – setter for  browse option  property in restore</p>
+<p>_restore_common_options_json()  – setter for common options property in restore</p>
+<p>_restore_destination_json()     – setter for destination options property in restore</p>
+<p>_restore_fileoption_json()      – setter for file option property in restore</p>
+<p>_restore_admin_option_json()    – setter for admin option property in restore</p>
+<p>_restore_mysql_option_json()    – setter for MySQL restore option property in restore</p>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance">
+<em class="property">class </em><code class="descclassname">cvpysdk.instances.mysqlinstance.</code><code class="descname">MYSQLInstance</code><span class="sig-paren">(</span><em>agent_object</em>, <em>instance_name</em>, <em>instance_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/mysqlinstance.html#MYSQLInstance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../instance.html#cvpysdk.instance.Instance" title="cvpysdk.instance.Instance"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.instance.Instance</span></code></a></p>
+<p>Class to represent a standalone MYSQL Instance</p>
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.autodiscovery_enabled">
+<code class="descname">autodiscovery_enabled</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.autodiscovery_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server version number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.binary_directory">
+<code class="descname">binary_directory</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.binary_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server Binary File location from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.command_line_sp_details">
+<code class="descname">command_line_sp_details</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.command_line_sp_details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server version number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.config_file">
+<code class="descname">config_file</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.config_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server Config File location from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_backup_sp_details">
+<code class="descname">log_backup_sp_details</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.log_backup_sp_details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server version number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory">
+<code class="descname">log_data_directory</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server version number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username">
+<code class="descname">mysql_username</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server Port number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username">
+<code class="descname">nt_username</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server Port number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.port">
+<code class="descname">port</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server Port number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options">
+<code class="descname">proxy_options</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server version number from the Instance Properties.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place">
+<code class="descname">restore_in_place</code><span class="sig-paren">(</span><em>path</em>, <em>staging</em>, <em>dest_client_name</em>, <em>dest_instance_name</em>, <em>data_restore</em>, <em>log_restore</em>, <em>overwrite=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/mysqlinstance.html#MYSQLInstance.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the mysql data/log files specified in the input paths list to the same location.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">path                    (list)  –  list of database/databases to be restored</p>
+<p>staging                 (str)   –  staging location for mysql logs during restores</p>
+<dl class="docutils">
+<dt>dest_client_name        (str)   –  destination client name where files are to be</dt>
+<dd>restored</dd>
+<dt>dest_instance_name      (str)   –  destination mysql instance name of destination</dt>
+<dd>client</dd>
+</dl>
+<p>data_restore            (bool)  –  for data only/data+log restore</p>
+<p>log_restore             (bool)  –  for log only/data+log restore</p>
+<dl class="last docutils">
+<dt>overwrite               (bool)  –  unconditional overwrite files during restore</dt>
+<dd>default: True</dd>
+<dt>copy_precedence         (int)   –  copy precedence value of storage policy copy</dt>
+<dd>default: None</dd>
+<dt>from_time               (str)   –  time to retore the contents after</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>to_time                 (str)   –  time to retore the contents before</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.version">
+<code class="descname">version</code><a class="headerlink" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MySQL Server version number from the Instance Properties.</p>
 </dd></dl>
 
 </dd></dl>
@@ -470,6 +836,79 @@ common_options(dict): dictionary containing common options</p>
 
 </dd></dl>
 
+</div>
+<div class="section" id="module-cvpysdk.instances.postgresinstance">
+<span id="postgres"></span><h2>Postgres<a class="headerlink" href="#module-cvpysdk.instances.postgresinstance" title="Permalink to this headline">¶</a></h2>
+<p>File for operating on a POSTGRESQL Instance.</p>
+<p>PostgreSQLInstance is the only class defined in this file.</p>
+<dl class="docutils">
+<dt>PostgreSQLInstance: Derived class from Instance Base class, representing a postgres server instance,</dt>
+<dd>and to perform operations on that instance</dd>
+</dl>
+<p>PostgreSQLInstance:</p>
+<blockquote>
+<div><p>_get_postgres_restore_json()    –  returns the restore request json for FSBased restore</p>
+<p>restore_postgres_server()       –  runs the restore job for postgres instance</p>
+</div></blockquote>
+<div class="section" id="postgresqlinstance-instance-attributes">
+<h3>PostgreSQLInstance instance Attributes<a class="headerlink" href="#postgresqlinstance-instance-attributes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><p><strong>postgres_bin_directory</strong>           –  returns the <cite>postgres_bin_directory</cite> of postgres server</p>
+<dl class="docutils">
+<dt><strong>postgres_archive_log_directory</strong>   –  returns the <cite>postgres_archive_log_directory</cite></dt>
+<dd>of postgres server</dd>
+<dt><strong>postgres_server_user_name</strong>        –  returns the <cite>postgres_server_user_name</cite></dt>
+<dd>of postgres server</dd>
+<dt><strong>postgres_server_port_number</strong>      –  returns the <cite>postgres_server_port_number</cite></dt>
+<dd>of postgres server</dd>
+</dl>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance">
+<em class="property">class </em><code class="descclassname">cvpysdk.instances.postgresinstance.</code><code class="descname">PostgreSQLInstance</code><span class="sig-paren">(</span><em>agent_object</em>, <em>instance_name</em>, <em>instance_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/postgresinstance.html#PostgreSQLInstance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../instance.html#cvpysdk.instance.Instance" title="cvpysdk.instance.Instance"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.instance.Instance</span></code></a></p>
+<p>Derived class from Instance Base class, representing a POSTGRESQL instance,
+and to perform operations on that Instance.</p>
+<dl class="attribute">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory">
+<code class="descname">postgres_archive_log_directory</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the archive log directory of postgres server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_bin_directory">
+<code class="descname">postgres_bin_directory</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_bin_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the bin directory of postgres server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number">
+<code class="descname">postgres_server_port_number</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the port number associated with postgres server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name">
+<code class="descname">postgres_server_user_name</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the username of postgres server</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_postgres_server">
+<code class="descname">restore_postgres_server</code><span class="sig-paren">(</span><em>destination_client</em>, <em>destination_instance_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/postgresinstance.html#PostgreSQLInstance.restore_postgres_server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_postgres_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to restore the Postgres server</p>
+<p>Args:
+destination_client (str) – Destination Client name</p>
+<p>destination_instance_name (str) – Destination Instance name</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object – Job containing restore details</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="module-cvpysdk.instances.saporacleinstance">
 <span id="sap-oracle"></span><h2>SAP ORACLE<a class="headerlink" href="#module-cvpysdk.instances.saporacleinstance" title="Permalink to this headline">¶</a></h2>
@@ -831,20 +1270,10 @@ and to perform operations on that Instance.</p>
 <dd><p>Gets the list of the backed up databases for this instance in the given time frame.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>from_date           (str)   –  date to get the contents after</dt>
-<dd><blockquote class="first">
-<div>format: dd/MM/YYYY
-gets contents from 01/01/1970 if not specified</div></blockquote>
-<p class="last">default: None</p>
-</dd>
-<dt>to_date             (str)  –  date to get the contents before</dt>
-<dd><blockquote class="first">
-<div>format: dd/MM/YYYY
-gets contents till current day if not specified</div></blockquote>
-<p class="last">default: None</p>
-</dd>
-</dl>
+<dd><p class="first">from_date (str): date to get the contents after.  Format: dd/MM/YYYY
+Gets contents from 01/01/1970 if not specified.  Defaults to None.</p>
+<p class="last">to_date (str): date to get the contents before.  Format: dd/MM/YYYY
+Gets contents till current day if not specified.  Defaults to None.</p>
 </dd>
 <dt>Returns:</dt>
 <dd><p class="first">list - list of all databases</p>
@@ -866,22 +1295,22 @@ gets contents till current day if not specified</div></blockquote>
 
 <dl class="method">
 <dt id="cvpysdk.instances.sqlinstance.SQLServerInstance.restore">
-<code class="descname">restore</code><span class="sig-paren">(</span><em>content_to_restore</em>, <em>drop_connections_to_databse=False</em>, <em>overwrite=True</em>, <em>restore_path=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/sqlinstance.html#SQLServerInstance.restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.restore" title="Permalink to this definition">¶</a></dt>
+<code class="descname">restore</code><span class="sig-paren">(</span><em>content_to_restore</em>, <em>drop_connections_to_databse=False</em>, <em>overwrite=True</em>, <em>restore_path=None</em>, <em>to_time=None</em>, <em>sql_restore_type='DATABASE_RESTORE'</em>, <em>sql_recover_type='STATE_RECOVER'</em>, <em>undo_path=None</em>, <em>restricted_user=None</em>, <em>destination_instance=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/sqlinstance.html#SQLServerInstance.restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.restore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restores the databases specified in the input paths list.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><p class="first">content_to_restore             (list)  –  list of databases to restore</p>
-<dl class="last docutils">
-<dt>drop_connections_to_databse    (bool)  –  Drop connections to database</dt>
-<dd>default: False</dd>
-<dt>overwrite                      (bool)  –  unconditional overwrite files during</dt>
-<dd><blockquote class="first">
-<div>restore</div></blockquote>
-<p class="last">default: True</p>
-</dd>
-<dt>restore_path                   (str)   –  existing path on disk to restore</dt>
-<dd>default: None</dd>
-</dl>
+<dd><p class="first">content_to_restore (list):  List of databases to restore.</p>
+<p>drop_connections_to_databse (bool):  Drop connections to database.  Defaults to False.</p>
+<p>overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.</p>
+<p>restore_path (str):  Existing path on disk to restore.  Defaults to None.</p>
+<p>to_time (str):  Restore to time.  Defaults to None.</p>
+<p>sql_recover_type (str):  Type of sql recovery state. (STATE_RECOVER, STATE_NORECOVER, STATE_STANDBY)
+Defaults to STATE_RECOVER.</p>
+<p>sql_restore_type (str):  Type of sql restore state.  (DATABASE_RESTORE, STEP_RESTORE, RECOVER_ONLY)
+Defaults to DATABASE_RESTORE.</p>
+<p>undo_path (str):  File path for undo path for sql standby restores.  Defaults to None.</p>
+<p>restricted_user (bool):  Restore database in restricted user mode.  Defaults to None.</p>
+<p class="last">destination_instance (str):  Destination instance to restore too.  Defaults to None.</p>
 </dd>
 <dt>Returns:</dt>
 <dd>object - instance of the Job class for this restore job</dd>
@@ -903,19 +1332,11 @@ gets contents till current day if not specified</div></blockquote>
 <dd><p>Restores the databases specified in the input paths list.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><p class="first">content_to_restore             (list)  –  list of databases to restore</p>
-<p>destination_server             (str)   –  Destination server(instance) name</p>
-<dl class="last docutils">
-<dt>drop_connections_to_databse    (bool)  –  Drop connections to database</dt>
-<dd>default: False</dd>
-<dt>overwrite                      (bool)  –  unconditional overwrite files during</dt>
-<dd><blockquote class="first">
-<div>restore</div></blockquote>
-<p class="last">default: True</p>
-</dd>
-<dt>restore_path                   (str)   –  existing path on disk to restore</dt>
-<dd>default: None</dd>
-</dl>
+<dd><p class="first">content_to_restore (list):  List of databases to restore.</p>
+<p>destination_server (str):  Destination server(instance) name.</p>
+<p>drop_connections_to_databse (bool): Drop connections to database.  Defaults to False.</p>
+<p>overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.</p>
+<p class="last">restore_path (str):  Existing path on disk to restore.  Default to None.</p>
 </dd>
 <dt>Returns:</dt>
 <dd>object - instance of the Job class for this restore job</dd>
@@ -962,6 +1383,7 @@ gets contents till current day if not specified</div></blockquote>
 <dd>at given sybase instance level</dd>
 </dl>
 <p>localadmin_user()               – returns string of localadmin_user of given sybase instance</p>
+<p>sa_user()                       – returns string of sa_username of given sybase instance</p>
 <p>version()                       – returns string of given sybase server version</p>
 <p>backup_server()                 – returns string of backup_server for given sybase instance</p>
 <p>sybase_ocs()                    – returns string of sybase_ocs for given sybase instance</p>
@@ -1148,6 +1570,16 @@ as value corresponding to that source Database.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.sa_user">
+<code class="descname">sa_user</code><a class="headerlink" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.sa_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter for sa username</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>string - string of sa username</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.sybase_ase">
 <code class="descname">sybase_ase</code><a class="headerlink" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.sybase_ase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Getter for sybase_ase</p>
@@ -1288,7 +1720,13 @@ as value corresponding to that source Database.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-cvpysdk.instances.hanainstance">SAP HANA</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.instances.lndbinstance">Notes Database</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.instances.mysqlinstance">MySQL</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.instances.oracleinstance">Oracle</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.instances.postgresinstance">Postgres</a><ul>
+<li><a class="reference internal" href="#postgresqlinstance-instance-attributes">PostgreSQLInstance instance Attributes</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-cvpysdk.instances.saporacleinstance">SAP ORACLE</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.instances.sqlinstance">SQL</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.instances.sybaseinstance">Sybase</a></li>
@@ -1302,7 +1740,7 @@ as value corresponding to that source Database.</p>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="../developer_sdk.html">Developer SDK - Python</a><ul>
-      <li>Previous: <a href="../datacube/datacube.html" title="previous chapter">Datacube</a></li>
+      <li>Previous: <a href="../drorchestration/drorchestration.html" title="previous chapter">DR Orchestration</a></li>
       <li>Next: <a href="cloudapps/cloudapps.html" title="next chapter">Cloud Apps Instances</a></li>
   </ul></li>
   </ul></li>
@@ -1335,7 +1773,7 @@ as value corresponding to that source Database.</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

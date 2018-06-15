@@ -1,0 +1,897 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.drorchestration.drorchestrationoperations &#8212; Developer SDK - Python 11.12 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.drorchestration.drorchestrationoperations</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing DR Orchestration specific operations.</span>
+
+
+<span class="sd">DROrchestrationOperations:  Class for representing all the DR orchestration operations from failover groups</span>
+<span class="sd">                            or replication monitor</span>
+
+
+<span class="sd">DROrchestrationOperations:</span>
+<span class="sd">    __init__(commcell_object)                       -- Initialise object of DROrchestrationOperations</span>
+
+<span class="sd">    __repr__()                                      -- Return the DROrchestrationOperations</span>
+
+<span class="sd">    testboot()                                      -- Call testboot operation</span>
+
+<span class="sd">    planned_failover()                              -- Call Planned failvoer operation</span>
+
+<span class="sd">    unplanned_failover()                            -- Call Unplanned Failover operation</span>
+
+<span class="sd">    failback()                                      -- Call failback operation</span>
+
+<span class="sd">    undo_failover()                                 -- Call UndoFailover operation</span>
+
+<span class="sd">    revert_failover()                               -- Call RevertFailover operation</span>
+
+<span class="sd">    point_in_time_failover()                        -- Call PointInTimeFailover operation</span>
+
+<span class="sd">    reverse_replication()                           -- Call ReverseReplication operation</span>
+
+<span class="sd">    validate_dr_orchestration_job(jobId)            -- Validate DR orchestration job Id</span>
+
+
+<span class="sd">    ##### internal methods #####</span>
+<span class="sd">    _construct_dr_orchestration_operation_json()    -- Construct dr orchestration operation json</span>
+
+<span class="sd">    _construct_reverse_replication_json()           -- Construct reverse replication json</span>
+
+<span class="sd">    _call_dr_orchestration_task</span>
+<span class="sd">    (dr_orchestration_json)                         -- Call DR orchestration task</span>
+
+<span class="sd">    _call_reverse_replication_task</span>
+<span class="sd">    (dr_orchestration_json)                         -- Call reverse replication</span>
+
+<span class="sd">    _get_dr_orchestration_job_stats</span>
+<span class="sd">    (jobId, replicationId)                          -- Gets DR orchetration job phase types and states</span>
+
+
+<span class="sd">    ##### properties #####</span>
+<span class="sd">    _json_task()                                    -- Returns task json</span>
+
+<span class="sd">    _json_dr_orchestration_subtasks()               -- Returns DR orchestration subtasks json</span>
+
+<span class="sd">    _json_dr_orchestration()                        -- Returns DR orchestration json</span>
+
+<span class="sd">    _dr_group_id()                                  -- Returns DR group Id</span>
+
+<span class="sd">    dr_orchestration_options()                      -- DR orchestration options</span>
+
+<span class="sd">    dr_orchestration_job_phase()                    -- DR orchestration job phase type</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="DROrchestrationOperations"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations">[docs]</a><span class="k">class</span> <span class="nc">DROrchestrationOperations</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for invoking DROrchestration operations in the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the DROrchestrationOperations.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the DROrchestrationOperations class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+
+        <span class="c1">####### init REST API URLS #########</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_CREATE_TASK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_REVERSE_REPLICATION_TASK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span>
+            <span class="s1">&#39;REVERSE_REPLICATION_TASK&#39;</span><span class="p">]</span>
+
+        <span class="c1">#### init variables ######</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_option</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dr_group_Id</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;&quot;DROrchestrationOperations: instance for commcell: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dr_orchestration_job_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns: DR orchestration job phase dict</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span><span class="p">:</span>
+            <span class="n">_dr_orchestration_job_phase</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;0&quot;</span><span class="p">:</span> <span class="s2">&quot;Script Execution&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="s2">&quot;Power On&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="s2">&quot;Power Off&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="s2">&quot;Reboot&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;4&quot;</span><span class="p">:</span> <span class="s2">&quot;Guest Tools Status Check&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;5&quot;</span><span class="p">:</span> <span class="s2">&quot;Create Network Switch&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;6&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete Network Switch&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;7&quot;</span><span class="p">:</span> <span class="s2">&quot;Replication&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;8&quot;</span><span class="p">:</span> <span class="s2">&quot;Backup&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;9&quot;</span><span class="p">:</span> <span class="s2">&quot;Configure Network Switch&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="s2">&quot;Port Configuration&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="s2">&quot;IP Masquerading&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;12&quot;</span><span class="p">:</span> <span class="s2">&quot;Static IP Mapping&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;13&quot;</span><span class="p">:</span> <span class="s2">&quot;Intialization&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;14&quot;</span><span class="p">:</span> <span class="s2">&quot;Waiting on IP Assignment&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;15&quot;</span><span class="p">:</span> <span class="s2">&quot;Disable Sync&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;16&quot;</span><span class="p">:</span> <span class="s2">&quot;Enable Sync&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;17&quot;</span><span class="p">:</span> <span class="s2">&quot;Create Snapshot&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;18&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete Snapshot&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;19&quot;</span><span class="p">:</span> <span class="s2">&quot;Revert Snapshot&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;20&quot;</span><span class="p">:</span> <span class="s2">&quot;Disable Network Adapter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;21&quot;</span><span class="p">:</span> <span class="s2">&quot;Auxiliary Copy&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;22&quot;</span><span class="p">:</span> <span class="s2">&quot;Post Operation&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;23&quot;</span><span class="p">:</span> <span class="s2">&quot;Backup Copy&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;24&quot;</span><span class="p">:</span> <span class="s2">&quot;Shutdown&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;25&quot;</span><span class="p">:</span> <span class="s2">&quot;Storage Operation&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;26&quot;</span><span class="p">:</span> <span class="s2">&quot;Finalize&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;27&quot;</span><span class="p">:</span> <span class="s2">&quot;DR Approval&quot;</span>
+
+            <span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span> <span class="o">=</span> <span class="n">_dr_orchestration_job_phase</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dr_orchestration_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter dr orchestration options json&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_option</span>
+
+    <span class="nd">@dr_orchestration_options</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">dr_orchestration_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter dr orchestration options json&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_option</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dr_group_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter DR group Id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;failoverGroupId&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_json_task</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for the task information in JSON&quot;&quot;&quot;</span>
+
+        <span class="n">_taks_option_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ownerId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;ownerName&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sequenceNumber&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">_taks_option_json</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_json_dr_orchestration_subtasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for the subtask in DR orchestraion JSON . It is read only attribute&quot;&quot;&quot;</span>
+
+        <span class="n">_backup_subtask</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4046</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">_backup_subtask</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_json_dr_orchestration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for the DRorchestration task in failover group JSON . It is read only attribute&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">initiatedFrom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;initiatedfromMonitor&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># if initiated from monitor set To True</span>
+        <span class="k">if</span> <span class="n">initiatedFrom</span><span class="p">:</span>
+
+            <span class="n">_dr_orchestration_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">)),</span>
+                <span class="s2">&quot;initiatedfromMonitor&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;advancedOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;replicationInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;replicationId&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;replicationIds&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+
+            <span class="p">}</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_dr_orchestration_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">)),</span>
+                <span class="s2">&quot;initiatedfromMonitor&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;advancedOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;vApp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;vAppId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;failoverGroupId&quot;</span><span class="p">)),</span>
+                    <span class="s2">&quot;vAppName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;failoverGroupName&quot;</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">_dr_orchestration_json</span>
+
+<div class="viewcode-block" id="DROrchestrationOperations.testboot"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.testboot">[docs]</a>    <span class="k">def</span> <span class="nf">testboot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs testboot failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the Testboot job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;7&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.planned_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.planned_failover">[docs]</a>    <span class="k">def</span> <span class="nf">planned_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Planned failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the Planned Failover job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.unplanned_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.unplanned_failover">[docs]</a>    <span class="k">def</span> <span class="nf">unplanned_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs UnPlanned failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the Unplanned Failover job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;3&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.failback"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.failback">[docs]</a>    <span class="k">def</span> <span class="nf">failback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Failback operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;2&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.undo_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.undo_failover">[docs]</a>    <span class="k">def</span> <span class="nf">undo_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Undo Failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;6&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.reverse_replication"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.reverse_replication">[docs]</a>    <span class="k">def</span> <span class="nf">reverse_replication</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Reverse Replication operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;9&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_reverse_replication_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_reverse_replication_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.revert_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.revert_failover">[docs]</a>    <span class="k">def</span> <span class="nf">revert_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Revert Failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;4&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.point_in_time_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.point_in_time_failover">[docs]</a>    <span class="k">def</span> <span class="nf">point_in_time_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Point in time Failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;8&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.validate_dr_orchestration_job"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.validate_dr_orchestration_job">[docs]</a>    <span class="k">def</span> <span class="nf">validate_dr_orchestration_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobId</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Validates DR orchestration job of jobId</span>
+<span class="sd">            Args:</span>
+<span class="sd">                JobId: Job Id of the DR orchestration job</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean that represents whether the DR orchestration job finished successfully or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">                    If failover phase failed at any stage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jobId</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">_replicationIds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;replicationIds&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_replicationIds</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1"># iterate over replication Ids</span>
+        <span class="k">for</span> <span class="n">replicationId</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="n">_replicationIds</span><span class="p">):</span>
+
+            <span class="n">dr_orchestration_job_stats_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dr_orchestration_job_stats</span><span class="p">(</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">jobId</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">replicationId</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">dr_orchestration_job_stats_json</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">dr_orchestration_job_stats_json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+
+                <span class="k">if</span> <span class="s2">&quot;phase&quot;</span> <span class="ow">in</span> <span class="n">dr_orchestration_job_stats_json</span><span class="p">:</span>
+
+                    <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="n">dr_orchestration_job_stats_json</span><span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">]:</span>
+
+                        <span class="n">phase_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_job_phase</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span>
+                            <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">])]</span>
+                        <span class="n">phase_state</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="n">phase_state</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to complete phase: [&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
+                                <span class="n">phase_type</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;] status: [&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">phase_state</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                                <span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to finish any phases in DR orchestration Job </span><span class="si">{0}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">jobId</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<span class="c1">#################### private functions #####################</span>
+
+    <span class="k">def</span> <span class="nf">_get_dr_orchestration_operation_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orchestration_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for dr orchestration operation type&quot;&quot;&quot;</span>
+
+        <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;Planned Failover&quot;</span>
+
+        <span class="k">elif</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;Failback&quot;</span>
+
+        <span class="k">elif</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;UnPlanned Failover&quot;</span>
+
+        <span class="k">elif</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;Revert Failover&quot;</span>
+
+        <span class="k">elif</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;Undo Failover&quot;</span>
+
+        <span class="k">elif</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;TestBoot&quot;</span>
+
+        <span class="k">elif</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;Point in Time Failover&quot;</span>
+
+        <span class="k">elif</span> <span class="n">orchestration_type</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>
+            <span class="n">_orchestration_string</span> <span class="o">=</span> <span class="s2">&quot;Reverse Replication&quot;</span>
+
+        <span class="k">return</span> <span class="n">_orchestration_string</span>
+
+    <span class="k">def</span> <span class="nf">_construct_dr_orchestration_operation_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Constructs DR orchestration operation json to invoke DR orchestration operation in the commcell</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns: DR orchestration json dict</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_task</span><span class="p">,</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_dr_orchestration_subtasks</span><span class="p">,</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;drOrchestrationOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_dr_orchestration</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">dr_orchestration_json</span>
+
+    <span class="k">def</span> <span class="nf">_construct_reverse_replication_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Constructs reverse replication json to invoke reverse replication task in the commcell</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns: Reverse replication task dict</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="p">{</span>
+
+            <span class="s2">&quot;drOrchestrationOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_dr_orchestration</span>
+
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">dr_orchestration_json</span>
+
+    <span class="k">def</span> <span class="nf">_call_dr_orchestration_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dr_orchestration_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Invokes DR orchestration operation task</span>
+
+<span class="sd">            Args: dr orchestration json</span>
+
+<span class="sd">                    taskInfo&#39;:  {</span>
+<span class="sd">                    &#39;task&#39;:  {</span>
+<span class="sd">                        &#39;taskFlags&#39;:  {</span>
+<span class="sd">                            &#39;disabled&#39;:  0</span>
+<span class="sd">                        },</span>
+<span class="sd">                         &#39;taskType&#39;:  1,</span>
+<span class="sd">                         &#39;ownerId&#39;:  1,</span>
+<span class="sd">                         &#39;initiatedFrom&#39;:  2,</span>
+<span class="sd">                         &#39;sequenceNumber&#39;:  0,</span>
+<span class="sd">                         &#39;ownerName&#39;:  &#39;admin&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                     &#39;subTasks&#39;:  {</span>
+<span class="sd">                        &#39;subTask&#39;:  {</span>
+<span class="sd">                            &#39;subTaskType&#39;:  1,</span>
+<span class="sd">                             &#39;operationType&#39;:  4046</span>
+<span class="sd">                        },</span>
+<span class="sd">                         &#39;options&#39;:  {</span>
+<span class="sd">                            &#39;adminOpts&#39;:  {</span>
+<span class="sd">                                &#39;drOrchestrationOption&#39;:  {</span>
+<span class="sd">                                    &#39;replicationInfo&#39;:  {</span>
+<span class="sd">                                        &#39;replicationId&#39;:  [</span>
+<span class="sd">                                            {</span>
+<span class="sd">                                                &#39;val&#39;:  3</span>
+<span class="sd">                                            },</span>
+<span class="sd">                                             {</span>
+<span class="sd">                                                &#39;val&#39;:  4</span>
+<span class="sd">                                            }</span>
+<span class="sd">                                        ]</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                     &#39;vApp&#39;:  {</span>
+<span class="sd">                                        &#39;vAppId&#39;:  26,</span>
+<span class="sd">                                         &#39;vAppName&#39;:  &#39;fg1-automation1x21&#39;</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                     &#39;advancedOptions&#39;:  {</span>
+<span class="sd">                                        &#39;skipDisableNetworkAdapter&#39;:  0</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                     &#39;operationType&#39;:  7,</span>
+<span class="sd">                                     &#39;initiatedfromMonitor&#39;:  0</span>
+<span class="sd">                                }</span>
+<span class="sd">                            }</span>
+<span class="sd">                        },</span>
+<span class="sd">                         &#39;subTaskOperation&#39;:  1</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the DR orchestration job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1"># passing the built json to start failover</span>
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_CREATE_TASK</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">dr_orchestration_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to start </span><span class="si">{0}</span><span class="s1"> job </span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_get_dr_orchestration_operation_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">)),</span> <span class="n">error_message</span><span class="p">)</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># return object of corresponding Virtual Machine Policy</span>
+                    <span class="c1"># here</span>
+                    <span class="n">task_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskId&#39;</span><span class="p">]</span>
+                    <span class="n">job_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="n">job_id</span><span class="p">,</span> <span class="n">task_id</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_call_reverse_replication_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dr_orchestration_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Create reverse replication task</span>
+
+<span class="sd">            Args: DR orchestration json</span>
+
+<span class="sd">                drOrchestrationOption&#39;:  {</span>
+<span class="sd">                    &#39;replicationInfo&#39;:  {</span>
+<span class="sd">                        &#39;replicationId&#39;:  [</span>
+<span class="sd">                            {</span>
+<span class="sd">                                &#39;val&#39;:  3</span>
+<span class="sd">                            },</span>
+<span class="sd">                             {</span>
+<span class="sd">                                &#39;val&#39;:  4</span>
+<span class="sd">                            }</span>
+<span class="sd">                        ]</span>
+<span class="sd">                    },</span>
+
+<span class="sd">                     &#39;advancedOptions&#39;:  {</span>
+<span class="sd">                        &#39;skipDisableNetworkAdapter&#39;:  0</span>
+<span class="sd">                    },</span>
+<span class="sd">                     &#39;operationType&#39;:  9,</span>
+<span class="sd">                     &#39;initiatedfromMonitor&#39;:  1</span>
+<span class="sd">            }</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (TaskId) - taskId of the created reverse replication schedule</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1"># passing the built json to start DR orchestration</span>
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_REVERSE_REPLICATION_TASK</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">dr_orchestration_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to start </span><span class="si">{0}</span><span class="s1"> job </span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_get_dr_orchestration_operation_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">)),</span> <span class="n">error_message</span><span class="p">)</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># return object of corresponding Virtual Machine Policy</span>
+                    <span class="c1"># here</span>
+                    <span class="n">task_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskId&#39;</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_dr_orchestration_job_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobId</span><span class="p">,</span> <span class="n">replicationId</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets DR orchestration job stats json</span>
+<span class="sd">            Args:</span>
+<span class="sd">                JobId: Job Id of the DR orchestration job</span>
+<span class="sd">                replicationId: replication Id of the DR orchestration</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - DR orchestration job phases</span>
+<span class="sd">                {</span>
+<span class="sd">                            &quot;jobId&quot;: 4240,</span>
+<span class="sd">                            &quot;replicationId&quot;: 7,</span>
+<span class="sd">                            &quot;phase&quot;: [</span>
+<span class="sd">                                {</span>
+<span class="sd">                                    &quot;phase&quot;: 15,</span>
+<span class="sd">                                    &quot;status&quot;: 0,</span>
+<span class="sd">                                    &quot;startTime&quot;: {</span>
+<span class="sd">                                        &quot;_type_&quot;: 55,</span>
+<span class="sd">                                        &quot;time&quot;: 1516293332</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                    &quot;endTime&quot;: {</span>
+<span class="sd">                                        &quot;_type_&quot;: 55,</span>
+<span class="sd">                                        &quot;time&quot;: 1516293335</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                    &quot;entity&quot;: {</span>
+<span class="sd">                                        &quot;clientName&quot;: &quot;failovervm1&quot;</span>
+<span class="sd">                                    }</span>
+<span class="sd">                                },</span>
+<span class="sd">                                {</span>
+<span class="sd">                                    &quot;phase&quot;: 17,</span>
+<span class="sd">                                    &quot;status&quot;: 0,</span>
+<span class="sd">                                    &quot;startTime&quot;: {</span>
+<span class="sd">                                        &quot;_type_&quot;: 55,</span>
+<span class="sd">                                        &quot;time&quot;: 1516293335</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                    &quot;endTime&quot;: {</span>
+<span class="sd">                                        &quot;_type_&quot;: 55,</span>
+<span class="sd">                                        &quot;time&quot;: 1516293340</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                    &quot;entity&quot;: {</span>
+<span class="sd">                                        &quot;clientName&quot;: &quot;failovervm1&quot;</span>
+<span class="sd">                                    }</span>
+<span class="sd">                                },</span>
+<span class="sd">                                {</span>
+<span class="sd">                                    &quot;phase&quot;: 20,</span>
+<span class="sd">                                    &quot;status&quot;: 0,</span>
+<span class="sd">                                    &quot;startTime&quot;: {</span>
+<span class="sd">                                        &quot;_type_&quot;: 55,</span>
+<span class="sd">                                        &quot;time&quot;: 1516293340</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                    &quot;endTime&quot;: {</span>
+<span class="sd">                                        &quot;_type_&quot;: 55,</span>
+<span class="sd">                                        &quot;time&quot;: 1516293345</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                    &quot;entity&quot;: {</span>
+<span class="sd">                                        &quot;clientName&quot;: &quot;failovervm1&quot;</span>
+<span class="sd">                                    }</span>
+<span class="sd">                                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">                    If DR orchestration phase failed at any stage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jobId</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">replicationId</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">_DR_JOB_STATS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DR_GROUP_JOB_STATS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">jobId</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_group_id</span><span class="p">,</span> <span class="n">replicationId</span><span class="p">)</span>
+
+        <span class="c1"># passing the built json to get DR orchestration job phases</span>
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">_DR_JOB_STATS</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to validate DR orchestration job </span><span class="si">{0}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">jobId</span><span class="p">,</span>
+                                                                                                <span class="n">error_message</span><span class="p">)</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;job&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+
+                        <span class="c1"># return DR orchestration job phases</span>
+                        <span class="k">return</span> <span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;job&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                            <span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to start DR orchestration job&#39;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

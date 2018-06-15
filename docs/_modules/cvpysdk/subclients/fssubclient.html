@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclients.fssubclient &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.subclients.fssubclient &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -31,11 +31,10 @@
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.subclients.fssubclient</h1><div class="highlight"><pre>
-<span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="c1"># -*- coding: utf-8 -*-</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
 <span class="c1"># --------------------------------------------------------------------------</span>
-<span class="c1"># Copyright ©2016 Commvault Systems, Inc.</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
 <span class="c1"># See LICENSE.txt in the project root for</span>
 <span class="c1"># license information.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
@@ -49,30 +48,30 @@
 
 <span class="sd">FileSystemSubclient:</span>
 
-<span class="sd">    _get_subclient_properties()          --  initializes the subclient  related properties of</span>
-<span class="sd">                                                 File System subclient</span>
+<span class="sd">    _get_subclient_properties()         --  initializes the subclient related properties of the</span>
+<span class="sd">    File System subclient</span>
 
-<span class="sd">    _get_subclient_properties_json()     --  gets all the subclient  related properties of</span>
-<span class="sd">                                                 File System subclient</span>
+<span class="sd">    _get_subclient_properties_json()    --  gets all the subclient related properties of the</span>
+<span class="sd">    File System subclient</span>
 
-<span class="sd">    _advanced_backup_options()           --  sets the advanced backup options</span>
+<span class="sd">    _advanced_backup_options()          --  sets the advanced backup options</span>
 
-<span class="sd">    content()                            --  update the content of the subclient</span>
+<span class="sd">    content()                           --  update the content of the subclient</span>
 
-<span class="sd">    filter_content()                     --  update the filter of the subclient</span>
+<span class="sd">    filter_content()                    --  update the filter of the subclient</span>
 
-<span class="sd">    exception_content()                  --  update the exception of the subclient</span>
-<span class="sd">	</span>
-<span class="sd">    scan_type()                          --  update the scan type of the subclient</span>
-<span class="sd">    </span>
-<span class="sd">    trueup_option()                      --  enable/disable trueup option of the subclient</span>
-<span class="sd">    </span>
-<span class="sd">    trueup_days()                        --  update trueup after n days value of the subclient.</span>
+<span class="sd">    exception_content()                 --  update the exception of the subclient</span>
 
-<span class="sd">    find_all_versions()                  --  returns the dict containing list of all the backuped up</span>
-<span class="sd">                                                versions of specified file</span>
+<span class="sd">    scan_type()                         --  update the scan type of the subclient</span>
 
-<span class="sd">    backup()                             --  run a backup job for the subclient</span>
+<span class="sd">    trueup_option()                     --  enable/disable trueup option of the subclient</span>
+
+<span class="sd">    trueup_days()                       --  update trueup after **n** days value of the subclient</span>
+
+<span class="sd">    find_all_versions()                 --  returns the dict containing list of all the backed up</span>
+<span class="sd">    versions of specified file</span>
+
+<span class="sd">    backup()                            --  run a backup job for the subclient</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -94,10 +93,13 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">FileSystemSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+
         <span class="k">if</span> <span class="s1">&#39;impersonateUser&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_impersonateUser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;impersonateUser&#39;</span><span class="p">]</span>
+
         <span class="k">if</span> <span class="s1">&#39;fsSubClientProp&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;fsSubClientProp&#39;</span><span class="p">]</span>
+
         <span class="k">if</span> <span class="s1">&#39;content&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
 
@@ -122,25 +124,56 @@
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">subclient_json</span>
 
-    <span class="k">def</span> <span class="nf">_set_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
-                     <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
-                     <span class="n">filter_content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
-                     <span class="n">exception_content</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sets the subclient content / filter / exception content</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_fs_subclient_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON for the fsSubclientProp tag in the Subclient Properties JSON&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span>
+
+    <span class="nd">@_fs_subclient_prop</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">_fs_subclient_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the values of fsSubclientProp JSON.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                content         	(list)      --  list of subclient content</span>
+<span class="sd">                value   (dict)  --  dictionary consisting of the JSON attribute as the key</span>
+<span class="sd">                and the new data as its value</span>
 
-<span class="sd">                filter_content  	(list)      --  list of filter content</span>
-<span class="sd">				</span>
-<span class="sd">                exception_content	(list)		--	list of exception content</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if value is not of type dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">if</span> <span class="s1">&#39;enableOnePass&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;enableOnePass&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;isTurboSubclient&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;isTurboSubclient&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_set_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">filter_content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">exception_content</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the subclient content / filter / exception content.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content             (list)  --  list of subclient content</span>
+
+<span class="sd">                filter_content      (list)  --  list of filter content</span>
+
+<span class="sd">                exception_content   (list)  --  list of exception content</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span>
 
         <span class="k">if</span> <span class="n">filter_content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filter_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_content</span>
-        
+
         <span class="k">if</span> <span class="n">exception_content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">exception_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception_content</span>
 
@@ -156,7 +189,7 @@
                 <span class="s2">&quot;excludePath&quot;</span><span class="p">:</span> <span class="n">path</span>
             <span class="p">}</span>
             <span class="n">update_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">)</span>
-        
+
         <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">exception_content</span><span class="p">:</span>
             <span class="n">exception_dict</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;includePath&quot;</span><span class="p">:</span> <span class="n">path</span>
@@ -185,6 +218,12 @@
 
         <span class="k">if</span> <span class="s1">&#39;adhoc_backup&#39;</span> <span class="ow">in</span> <span class="n">options</span> <span class="ow">and</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;adhoc_backup&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">final_dict</span><span class="p">[</span><span class="s1">&#39;adHocBackup&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;adhoc_backup&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;inline_bkp_cpy&#39;</span> <span class="ow">in</span> <span class="n">options</span> <span class="ow">or</span> <span class="s1">&#39;skip_catalog&#39;</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+            <span class="n">final_dict</span><span class="p">[</span><span class="s1">&#39;dataOpt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;createBackupCopyImmediately&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;inline_bkp_cpy&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;skipCatalogPhaseForSnapBackup&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;skip_catalog&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="p">}</span>
 
         <span class="k">if</span> <span class="s1">&#39;adhoc_backup_contents&#39;</span> <span class="ow">in</span> <span class="n">options</span> <span class="ow">and</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;adhoc_backup_contents&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;adhoc_backup_contents&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
@@ -290,97 +329,107 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_content</span><span class="p">(</span><span class="n">exception_content</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient exception content should be a list value and not empty&#39;</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Subclient exception content should be a list value and not empty&#39;</span>
             <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">scan_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the appropriate scan type for this Subclient</span>
 
-<span class="sd">            Returns: int</span>
-<span class="sd">                1 - Recursive Scan</span>
-<span class="sd">                2 - Optimized Scan</span>
-<span class="sd">                3 - Change Journal Scan</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                int</span>
+<span class="sd">                    1   -   Recursive Scan</span>
+<span class="sd">                    2   -   Optimized Scan</span>
+<span class="sd">                    3   -   Change Journal Scan</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-    
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;scanOption&#39;</span><span class="p">]</span>
 
     <span class="nd">@scan_type</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">scan_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_type_value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified scan type to pass to the API to update the scan type of this  </span>
-<span class="sd">            File System Subclient.</span>
+        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified scan type to pass to the API</span>
+<span class="sd">            to update the scan type of this File System Subclient.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                scan_type_value (int)  --  scan type value as indicated below</span>
-<span class="sd">                1 - Recursive Scan</span>
-<span class="sd">                2 - Optimized Scan</span>
-<span class="sd">                3 - Change Journal Scan</span>
+<span class="sd">                scan_type_value     (int)   --  scan type value as indicated below</span>
+
+<span class="sd">                    1   -   Recursive Scan</span>
+<span class="sd">                    2   -   Optimized Scan</span>
+<span class="sd">                    3   -   Change Journal Scan</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if failed to update scan type of subclient</span>
 
 <span class="sd">                    if scan_type_value is invalid</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scan_type_value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">scan_type_value</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">scan_type_value</span> <span class="o">&lt;=</span><span class="mi">3</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scan_type_value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">scan_type_value</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">scan_type_value</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fsSubClientProp[&#39;scanOption&#39;]&quot;</span><span class="p">,</span> <span class="n">scan_type_value</span><span class="p">)</span>
-        <span class="k">else</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Invalid scan type&#39;</span>
-            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Invalid scan type&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">trueup_option</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Gets the value of TrueUp Option </span>
+        <span class="sd">&quot;&quot;&quot;Gets the value of TrueUp Option</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                true - if trueup is enabled on the subclient</span>
-<span class="sd">                false - if trueup is not enabled on the subclient</span>
+<span class="sd">                True    -   if trueup is enabled on the subclient</span>
+
+<span class="sd">                False   -   if trueup is not enabled on the subclient</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-    
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;isTrueUpOptionEnabledForFS&#39;</span><span class="p">]</span>
 
     <span class="nd">@trueup_option</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">trueup_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trueup_option_value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified scan type to pass to the API to update the scan type of this  </span>
-<span class="sd">            File System Subclient.</span>
+        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified scan type to pass to the API</span>
+<span class="sd">            to update the scan type of this File System Subclient.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                trueup_option_value (bool)  --  Specifies to enable or disable trueup                </span>
+<span class="sd">                trueup_option_value (bool)  --  Specifies to enable or disable trueup</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-       
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fsSubClientProp[&#39;isTrueUpOptionEnabledForFS&#39;]&quot;</span><span class="p">,</span> <span class="n">trueup_option_value</span><span class="p">)</span>
- 
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_fsSubClientProp[&#39;isTrueUpOptionEnabledForFS&#39;]&quot;</span><span class="p">,</span>
+            <span class="n">trueup_option_value</span>
+        <span class="p">)</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">trueup_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the trueup after n days value for this Subclient</span>
 
-<span class="sd">            Returns: int                </span>
+<span class="sd">            Returns: int</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-    
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;runTrueUpJobAfterDaysForFS&#39;</span><span class="p">]</span>
 
     <span class="nd">@trueup_days</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">trueup_days</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trueup_days_value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified trueup days to pass to the API to update the trueup after n days value of this  </span>
-<span class="sd">            File System Subclient.</span>
+        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified trueup days to pass to the API</span>
+<span class="sd">            to update the trueup after **n** days value of this File System Subclient.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                trueup_days_value (int)  --  run trueup after days</span>
-<span class="sd">              </span>
+<span class="sd">                trueup_days_value   (int)   --  run trueup after days</span>
+
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if failed to update trueup after n days of subclient</span>
 
 <span class="sd">                    if trueup_days_value is invalid</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trueup_days_value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fsSubClientProp[&#39;runTrueUpJobAfterDaysForFS&#39;]&quot;</span><span class="p">,</span> <span class="n">trueup_days_value</span><span class="p">)</span>
-        <span class="k">else</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Invalid trueup days&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_fsSubClientProp[&#39;runTrueUpJobAfterDaysForFS&#39;]&quot;</span><span class="p">,</span>
+                <span class="n">trueup_days_value</span>
             <span class="p">)</span>
-            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Invalid trueup days&#39;</span><span class="p">)</span>
+
 <div class="viewcode-block" id="FileSystemSubclient.find_all_versions"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.find_all_versions">[docs]</a>    <span class="k">def</span> <span class="nf">find_all_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Searches the content of a Subclient.</span>
 
@@ -410,14 +459,14 @@
 <span class="sd">            dict    -   dictionary of the specified file with list of all the file versions and</span>
 <span class="sd">                            additional metadata retrieved from browse</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">options</span> <span class="o">=</span> <span class="n">kwargs</span>
 
         <span class="n">options</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;all_versions&#39;</span>
-</div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_do_browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_do_browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FileSystemSubclient.backup"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;Incremental&quot;</span><span class="p">,</span>
@@ -425,7 +474,8 @@
                <span class="n">incremental_level</span><span class="o">=</span><span class="s1">&#39;BEFORE_SYNTH&#39;</span><span class="p">,</span>
                <span class="n">collect_metadata</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                <span class="n">on_demand_input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+               <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs a backup job for the subclient of the level specified.</span>
 
 <span class="sd">            Args:</span>
@@ -457,6 +507,8 @@
 <span class="sd">                            directive_file          :   path to the directive file</span>
 <span class="sd">                            adhoc_backup            :   if set triggers the adhoc backup job</span>
 <span class="sd">                            adhoc_backup_contents   :   sets the contents for adhoc backup</span>
+<span class="sd">                            inline_backup_copy      :   to run backup copy immediately(inline)</span>
+<span class="sd">                            skip_catalog            :   skip catalog for intellisnap operation</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this backup job</span>
@@ -468,6 +520,7 @@
 <span class="sd">                    if response is empty</span>
 
 <span class="sd">                    if response is not success</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">on_demand_input</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">on_demand_input</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
@@ -483,22 +536,30 @@
 
             <span class="n">advanced_options</span><span class="p">[</span><span class="s1">&#39;on_demand_input&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">on_demand_input</span>
 
-        <span class="k">if</span> <span class="n">advanced_options</span><span class="p">:</span>
-            <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span><span class="n">backup_level</span><span class="p">,</span> <span class="n">incremental_backup</span><span class="p">,</span> <span class="n">incremental_level</span><span class="p">,</span> <span class="n">advanced_options</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">advanced_options</span> <span class="ow">or</span> <span class="n">schedule_pattern</span><span class="p">:</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span>
+                <span class="n">backup_level</span><span class="p">,</span>
+                <span class="n">incremental_backup</span><span class="p">,</span>
+                <span class="n">incremental_level</span><span class="p">,</span>
+                <span class="n">advanced_options</span><span class="p">,</span>
+                <span class="n">schedule_pattern</span>
+            <span class="p">)</span>
 
-            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
+            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
 
-            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
                 <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">,</span> <span class="n">request_json</span>
             <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FileSystemSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="n">backup_level</span><span class="o">=</span><span class="n">backup_level</span><span class="p">,</span>
-                                                           <span class="n">incremental_backup</span><span class="o">=</span><span class="n">incremental_backup</span><span class="p">,</span>
-                                                           <span class="n">incremental_level</span><span class="o">=</span><span class="n">incremental_level</span><span class="p">,</span>
-                                                           <span class="n">collect_metadata</span><span class="o">=</span><span class="n">collect_metadata</span><span class="p">)</span>
-</div></div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FileSystemSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span>
+                <span class="n">backup_level</span><span class="o">=</span><span class="n">backup_level</span><span class="p">,</span>
+                <span class="n">incremental_backup</span><span class="o">=</span><span class="n">incremental_backup</span><span class="p">,</span>
+                <span class="n">incremental_level</span><span class="o">=</span><span class="n">incremental_level</span><span class="p">,</span>
+                <span class="n">collect_metadata</span><span class="o">=</span><span class="n">collect_metadata</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -534,7 +595,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

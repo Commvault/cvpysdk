@@ -1,0 +1,779 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.subclients.exchsubclient &#8212; Developer SDK - Python 11.12 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.subclients.exchsubclient</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on an Exchange Subclient.</span>
+
+<span class="sd">ExchangeSubclient is the only class defined in this file.</span>
+
+<span class="sd">ExchangeSubclient:  Derived class from Subclient Base class,  representing an Exchange Mailbox</span>
+<span class="sd">Agent subclient, and to perform operations on that subclient.</span>
+
+<span class="sd">ExchangeSubclient:</span>
+
+<span class="sd">    __new__()   --  Method to create object based on the backupset name</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">..client</span> <span class="k">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">..subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="ExchangeSubclient"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient">[docs]</a><span class="k">class</span> <span class="nc">ExchangeSubclient</span><span class="p">(</span><span class="n">Subclient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Subclient Base class, representing an Exchange subclient,</span>
+<span class="sd">        and to perform operations on that subclient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decides which subclient object needs to be created&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.exchange.usermailbox_subclient</span> <span class="k">import</span> <span class="n">UsermailboxSubclient</span>
+        <span class="kn">from</span> <span class="nn">.exchange.journalmailbox_subclient</span> <span class="k">import</span> <span class="n">JournalMailboxSubclient</span>
+        <span class="kn">from</span> <span class="nn">.exchange.contentstoremailbox_subclient</span> <span class="k">import</span> <span class="n">ContentStoreMailboxSubclient</span>
+        <span class="n">backupset_types</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;user mailbox&quot;</span><span class="p">:</span> <span class="n">UsermailboxSubclient</span><span class="p">,</span>
+            <span class="s2">&quot;journal mailbox&quot;</span><span class="p">:</span> <span class="n">JournalMailboxSubclient</span><span class="p">,</span>
+            <span class="s2">&quot;contentstore mailbox&quot;</span><span class="p">:</span> <span class="n">ContentStoreMailboxSubclient</span>
+        <span class="p">}</span>
+
+        <span class="n">backupset_name</span> <span class="o">=</span> <span class="n">backupset_object</span><span class="o">.</span><span class="n">backupset_name</span>
+
+        <span class="k">if</span> <span class="n">backupset_name</span> <span class="ow">in</span> <span class="n">backupset_types</span><span class="p">:</span>
+            <span class="n">subclient_type</span> <span class="o">=</span> <span class="n">backupset_types</span><span class="p">[</span><span class="n">backupset_name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient for this instance type is not yet implemented&#39;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">subclient_type</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_client_dict</span><span class="p">(</span><span class="n">client_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the client dict for the client object to be appended to member server.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_object   (object)    --  instance of the Client class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary for a single client to be associated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">client_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">client_dict</span>
+
+    <span class="k">def</span> <span class="nf">_member_servers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clients_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the proxy clients to be associated .</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                clients_list (list)    --  list of the clients to associated</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list consisting of all member servers to be associated</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of clients list argument is not list</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clients_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">member_servers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">clients_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">client</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+                    <span class="n">temp_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">temp_client</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">has_agent</span><span class="p">(</span><span class="s1">&#39;exchange mailbox (classic)&#39;</span><span class="p">):</span>
+                        <span class="n">client_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_dict</span><span class="p">(</span><span class="n">temp_client</span><span class="p">)</span>
+                        <span class="n">member_servers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client_dict</span><span class="p">)</span>
+
+                    <span class="k">del</span> <span class="n">temp_client</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">client</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">has_agent</span><span class="p">(</span><span class="s1">&#39;exchange mailbox (classic)&#39;</span><span class="p">):</span>
+                    <span class="n">client_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_dict</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+                    <span class="n">member_servers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client_dict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">member_servers</span>
+
+    <span class="k">def</span> <span class="nf">_content_indexing_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for  the content indexing options of ContentIndexing JSON&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content_indexing_option_json_</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;reanalyze&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;selectInactiveMailboxes&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;fileAnalytics&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;subClientBasedAnalytics&quot;</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_media_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter for  the media options of ContentIndexing JSON</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  media option need to be included</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -       generated media options JSON</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_media_option_json_</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;pickFailedItems&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pick_failed_items&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;pickFailedItemsOnly&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pick_only_failed_items&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streams&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;proxies&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;proxies&quot;</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_json_backupset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for the Exchange Mailbox backupset option in restore json&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_backupset_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+            <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_json_restore_exchange_restore_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            setter for  the Exchange Mailbox in place restore  option in restore json</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  restore option need to be included</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -       generated exchange restore options JSON</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_option_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;exchangeRestoreChoice&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;exchangeRestoreDrive&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;isJournalReport&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;journal_report&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;pstFilePath&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_json_out_of_place_destination_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for  the Exchange Mailbox out of place restore</span>
+<span class="sd">        option in restore json</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  restore option need to be included</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -       generated exchange restore options JSON</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out_of_place_destination_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;inPlace&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;destPath&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">)],</span>
+            <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_json_disk_restore_exchange_restore_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter for  the Exchange Mailbox Disk restore option</span>
+<span class="sd">        in restore json</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  restore option need to be included</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -       generated exchange restore options JSON</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_disk_option_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;exchangeRestoreChoice&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;exchangeRestoreDrive&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;diskFilePath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;isJournalReport&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;journal_report&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;pstFilePath&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_json_pst_restore_exchange_restore_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter for  the Exchange Mailbox PST restore option in restore json</span>
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  restore option need to be included</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -       generated exchange restore options JSON</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_pst_option_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;exchangeRestoreChoice&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;exchangeRestoreDrive&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;isJournalReport&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;journal_report&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;pstFilePath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;pstRestoreOption&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;limit_pst_size&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;pstSize&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pst_size&quot;</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_json_content_indexing_subtasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for the contentindexing subtask in restore JSON.</span>
+<span class="sd">        It is read only attribute&quot;&quot;&quot;</span>
+
+        <span class="n">_subtask_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">5020</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">_subtask_restore_json</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_pst_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_pst_restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare PST retsore Json with all getters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            _pst_restore_option - dictionary with all PST restore options</span>
+
+<span class="sd">            value:</span>
+<span class="sd">                paths                   (list)  --  list of paths of mailboxes/folders to restore</span>
+
+<span class="sd">                destination_client              --  client where the mailboxes needs to be restored</span>
+<span class="sd">                destination_path                --  PST path where the mailboxes needs to be</span>
+<span class="sd">                                                    restored</span>
+<span class="sd">                unconditional_overwrite (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+<span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
+<span class="sd">                                                    contentStore Mailbox</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">        returns:</span>
+<span class="sd">            request_json   -- complete json for performing PST Restore options</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">_pst_restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_pst_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">(</span><span class="n">_pst_restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_pst_restore_exchange_restore_option</span><span class="p">(</span><span class="n">_pst_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_backupset</span><span class="p">()</span>
+
+        <span class="n">_pst_restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span>
+
+        <span class="c1"># set the setters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="o">=</span><span class="n">_pst_restore_option</span><span class="p">)</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+            <span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;exchangeOption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_pst_option_restore_json</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s1">&#39;backupset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_backupset_json</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_disk_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_disk_restore_option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare disk retsore Json with all getters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            _disk_restore_option - dictionary with all disk restore options</span>
+
+<span class="sd">            value:</span>
+<span class="sd">                paths                   (list)  --  list of paths of mailboxes/folders to restore</span>
+
+<span class="sd">                destination_client              --  client where the mailboxes needs to be restored</span>
+<span class="sd">                destination_path                --  path where the mailboxes needs to be restored</span>
+<span class="sd">                unconditional_overwrite (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+<span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
+<span class="sd">                                                    contentStore Mailbox</span>
+<span class="sd">                    default: False</span>
+
+
+<span class="sd">        returns:</span>
+<span class="sd">            request_json        -complete json for performing disk Restore options</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">_disk_restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_disk_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_disk_restore_exchange_restore_option</span><span class="p">(</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_backupset</span><span class="p">()</span>
+        <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span>
+
+        <span class="c1"># set the setters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="o">=</span><span class="n">_disk_restore_option</span><span class="p">)</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+            <span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;exchangeOption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_disk_option_restore_json</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s1">&#39;backupset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_backupset_json</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_out_of_place_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_restore_option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare out of place retsore Json with all getters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            _restore_option - dictionary with all out of place restore options</span>
+
+<span class="sd">            value:</span>
+<span class="sd">                paths                   (list)  --  list of paths of mailboxes/folders to restore</span>
+
+<span class="sd">                destination_client              --  client where the mailboxes needs to be restored</span>
+<span class="sd">                destination_path                --  path where the mailboxes needs to be restored</span>
+<span class="sd">                unconditional_overwrite (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+<span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
+<span class="sd">                                                    contentStore Mailbox</span>
+<span class="sd">                    default: False</span>
+
+
+<span class="sd">        returns:</span>
+<span class="sd">            request_json        -  complete json for performing disk Restore options</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">_restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">(</span><span class="n">_restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_exchange_restore_option</span><span class="p">(</span><span class="n">_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_out_of_place_destination_option</span><span class="p">(</span><span class="n">_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_backupset</span><span class="p">()</span>
+        <span class="n">_restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span>
+
+        <span class="c1"># set the setters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="o">=</span><span class="n">_restore_option</span><span class="p">)</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+            <span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;exchangeOption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_option_restore_json</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+            <span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;destination&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_out_of_place_destination_json</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s1">&#39;backupset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_backupset_json</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_cleanup_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - JSON request to pass to the API</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_task</span><span class="p">,</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_backup_subtasks</span><span class="p">,</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="mi">15</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">request_json</span>
+
+<div class="viewcode-block" id="ExchangeSubclient.cleanup"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.cleanup">[docs]</a>    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs a cleanup job for the subclient .</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this backup job</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_json</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExchangeSubclient.restore_in_place"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">paths</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">journal_report</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the mailboxes/folders specified in the input paths list to the same location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                paths                   (list)  --  list of paths of mailboxes/folders to restore</span>
+
+<span class="sd">                overwrite               (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+<span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
+<span class="sd">                                                        contentStore Mailbox</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">paths</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;journal_report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">journal_report</span>
+
+        <span class="n">paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_restore_exchange_restore_option</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_json_backupset</span><span class="p">()</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;unconditional_overwrite&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">overwrite</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="o">=</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;associations&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclient_name</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;associations&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+            <span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+            <span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;exchangeOption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_option_restore_json</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s1">&#39;backupset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_backupset_json</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExchangeSubclient.out_of_place_restore"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore">[docs]</a>    <span class="k">def</span> <span class="nf">out_of_place_restore</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">paths</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">journal_report</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the mailboxes/folders specified in the input paths list to the same location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                paths                   (list)  --  list of paths of mailboxes/folders to restore</span>
+<span class="sd">                destination_client              --  client where the mailboxes needs to be restored</span>
+<span class="sd">                destination_path                --  path where the mailboxes needs to be restored</span>
+
+<span class="sd">                overwrite               (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+<span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
+<span class="sd">                                                    contentStore Mailbox</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">paths</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;journal_report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">journal_report</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;unconditional_overwrite&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">overwrite</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span>
+        <span class="c1"># restore_option[&#39;client&#39;] = destination_client</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;destination_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination_path</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_out_of_place_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExchangeSubclient.disk_restore"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.disk_restore">[docs]</a>    <span class="k">def</span> <span class="nf">disk_restore</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">paths</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">journal_report</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the mailboxes/folders specified in the input paths list to the same location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                paths                   (list)  --  list of paths of mailboxes/folders to restore</span>
+<span class="sd">                destination_client              --  client where the mailboxes needs to be restored</span>
+<span class="sd">                destination_path                --  path where the mailboxes needs to be restored</span>
+
+<span class="sd">                overwrite               (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+<span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
+<span class="sd">                                                    contentStore Mailbox</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">paths</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;journal_report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">journal_report</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;unconditional_overwrite&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">overwrite</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination_client</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;destination_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination_path</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_disk_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExchangeSubclient.pst_restore"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_restore">[docs]</a>    <span class="k">def</span> <span class="nf">pst_restore</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">paths</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="p">,</span>
+            <span class="n">pst_path</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">journal_report</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the Mailbox/Emails specified in the input paths list to the PST PATH location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                paths                   (list)  --  list of paths of mailboxes/folders to restore</span>
+
+<span class="sd">                overwrite               (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+<span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
+<span class="sd">                                                    contentStore Mailbox</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">paths</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;journal_report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">journal_report</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;unconditional_overwrite&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">overwrite</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination_client</span>
+        <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;destination_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pst_path</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_pst_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExchangeSubclient.subclient_content_indexing"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_content_indexing">[docs]</a>    <span class="k">def</span> <span class="nf">subclient_content_indexing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                   <span class="n">pick_failed_items</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                   <span class="n">pick_only_failed_items</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                   <span class="n">streams</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                                   <span class="n">proxies</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run content Indexing on Subclient .</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">               pick_failed_items</span>
+<span class="sd">                        default:False   (bool)  --  Pick fail items during Content Indexing</span>
+
+<span class="sd">                pick_only_failed_items  (bool)  --  Pick only fail items items during Content</span>
+<span class="sd">                                                    Indeixng</span>
+<span class="sd">                    default: False</span>
+
+<span class="sd">                streams                 (int)   --  Streams for Content Indexing job</span>
+
+<span class="sd">                    default: 4</span>
+
+<span class="sd">                proxies                 (list) --  provide the proxies to run CI</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this ContentIndexing job</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check if inputs are correct</span>
+
+        <span class="n">ci_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">pick_failed_items</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">pick_only_failed_items</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">ci_option</span><span class="p">[</span><span class="s1">&#39;pick_failed_items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pick_failed_items</span>
+        <span class="n">ci_option</span><span class="p">[</span><span class="s1">&#39;pick_only_failed_items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pick_only_failed_items</span>
+        <span class="n">ci_option</span><span class="p">[</span><span class="s1">&#39;streams&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">streams</span>
+        <span class="k">if</span> <span class="n">proxies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ci_option</span><span class="p">[</span><span class="s1">&#39;proxies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">member_servers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_member_servers</span><span class="p">(</span><span class="n">proxies</span><span class="p">)</span>
+            <span class="n">ci_option</span><span class="p">[</span><span class="s1">&#39;proxies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;memberServers&quot;</span><span class="p">:</span> <span class="n">member_servers</span>
+            <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_media_option_json</span><span class="p">(</span><span class="n">ci_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content_indexing_option_json</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_task</span><span class="p">,</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_content_indexing_subtasks</span><span class="p">,</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_media_option_json_</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;contentIndexingOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_indexing_option_json_</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;virtualServerRstOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;isBlockLevelReplication&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                <span class="p">},</span>
+                                <span class="s2">&quot;browseOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="p">{}</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

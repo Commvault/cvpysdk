@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Schedules &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Schedules &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -17,7 +17,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Services" href="services.html" />
-    <link rel="prev" title="Plan" href="plan.html" />
+    <link rel="prev" title="Policy" href="policy.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -35,6 +35,35 @@
   <div class="section" id="module-cvpysdk.schedules">
 <span id="schedules"></span><h1>Schedules<a class="headerlink" href="#module-cvpysdk.schedules" title="Permalink to this headline">¶</a></h1>
 <p>Main file for performing schedule related operations for client/agent/backupset/subclient.</p>
+<p>SchedulePattern: Class for creating the necessary pattern for a schedule creation/modification</p>
+<dl class="docutils">
+<dt>SchedulePattern:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(class_object)                          –  initialise object of the SchedulePattern</dt>
+<dd>class</dd>
+</dl>
+<p>_time_converter(_time_string, time_format)      – converts utc to epoch and vice versa</p>
+<dl class="docutils">
+<dt>_pattern_json(pattern_option_dict)              – forms the pattern json based on the</dt>
+<dd>dict provided</dd>
+</dl>
+<p>_one_time(pattern_dict)                         – sets the one time schedule pattern</p>
+<p>_daily(pattern_dict)                            – sets the daily schedule pattern</p>
+<p>_weekly(pattern_dict)                           – sets the weekly schedule pattern</p>
+<p>_monthly(pattern_dict)                          – sets the monthly schedule pattern</p>
+<p>_monthly_relative(pattern_dict)                 – set the monthly_relative schedule pattern</p>
+<p>_yearly(pattern_dict)                           – sets the yearly schedule pattern</p>
+<p>_yearly_relative(pattern_dict)                  – sets the yearly_relative schedule pattern</p>
+<p>_continuous(pattern_dict)                       – sets the continuous schedule pattern</p>
+<p>_automatic(pattern_dict)                        – sets the automatic schedule pattern</p>
+<dl class="last docutils">
+<dt>create_schedule_pattern(pattern_dict)           – creates a schedule pattern for the user</dt>
+<dd>given pattern</dd>
+<dt>create_schedule(task_req,pattern_dict)          – creates a scheduling request from the</dt>
+<dd>pattern provided</dd>
+</dl>
+</dd>
+</dl>
 <p>Schedules: Initializes instance of all schedules for a commcell entity.</p>
 <dl class="docutils">
 <dt>Schedules:</dt>
@@ -51,13 +80,7 @@
 <dl class="docutils">
 <dt>Schedule:</dt>
 <dd><p class="first">__init__(class_object)                          –  initialise object of the Schedule class</p>
-<p>_get_schedule_id_dict                           – Gets a schedule ID dict for the schedule</p>
 <p>_get_schedule_properties                        – get all schedule properties</p>
-<dl class="docutils">
-<dt>_pattern_json(pattern_option_dict)              – forms the pattern json based on the</dt>
-<dd>dict provided</dd>
-</dl>
-<p>_time_converter(_time_string, time_format)      – converts utc to epoch and vice versa</p>
 <p>schedule_freq_type                              – gets the schedule frequence type</p>
 <p>one_time                                        – gets the one time schedule pattern dict</p>
 <p>one_time(pattern_dict)                          – sets the one time schedule pattern</p>
@@ -66,12 +89,24 @@
 <p>weekly                                          – gets the weekly schedule pattern</p>
 <p>weekly(pattern_dict)                            – sets the weekly schedule pattern</p>
 <p>monthly                                         – gets the monthly schedule pattern</p>
+<p>monthly(pattern_dict)                           – gets the monthly schedule pattern</p>
+<p>monthly_relative                               – gets the monthly_relative schedule pattern</p>
+<p>monthly_relative(pattern_dict)                 – set the monthly_relative schedule pattern</p>
+<p>yearly                                         – gets the yearly schedule pattern</p>
+<p>yearly(pattern_dict)                           – sets the yearly schedule pattern</p>
+<p>yearly_relative                                – gets the yearly_relative schedule pattern</p>
+<p>yearly_relative(pattern_dict)                  – sets the yearly_relative schedule pattern</p>
+<p>continuous                                     – gets the continuous schedule pattern</p>
+<p>continuous(pattern_dict)                       – sets the continuous schedule pattern</p>
+<p>automatic                                      – gets the automatic schedule pattern</p>
+<p>automatic(pattern_dict)                        – sets the automatic schedule pattern</p>
 <p>active_start_date                               – gets the start date of schedule pattern</p>
 <p>active_start_date(active_start_date)            – sets the start date of schedule pattern</p>
 <p>active_start_time                               – gets the start time of schedule pattern</p>
 <p>active_start_time(active_start_time)            – sets the start time of schedule pattern</p>
 <p>enable()                                        – enables the schedule</p>
 <p>disable()                                        – disables the schedule</p>
+<p>run_now()                                       – Triggers the schedule immediately</p>
 <dl class="docutils">
 <dt>_modify_task_properties                         – modifies the schedule properties</dt>
 <dd>based on the setters</dd>
@@ -82,8 +117,25 @@
 </dd>
 </dl>
 <dl class="class">
+<dt id="cvpysdk.schedules.OperationType">
+<em class="property">class </em><code class="descclassname">cvpysdk.schedules.</code><code class="descname">OperationType</code><a class="reference internal" href="_modules/cvpysdk/schedules.html#OperationType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.OperationType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Operation Types supported to get schedules of particular optype</p>
+<dl class="attribute">
+<dt id="cvpysdk.schedules.OperationType.DATA_AGING">
+<code class="descname">DATA_AGING</code><em class="property"> = 'DATA_AGING'</em><a class="headerlink" href="#cvpysdk.schedules.OperationType.DATA_AGING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.schedules.OperationType.REPORTS">
+<code class="descname">REPORTS</code><em class="property"> = 'Reports'</em><a class="headerlink" href="#cvpysdk.schedules.OperationType.REPORTS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="cvpysdk.schedules.Schedule">
-<em class="property">class </em><code class="descclassname">cvpysdk.schedules.</code><code class="descname">Schedule</code><span class="sig-paren">(</span><em>class_object</em>, <em>schedule_name</em>, <em>schedule_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#Schedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.Schedule" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">cvpysdk.schedules.</code><code class="descname">Schedule</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>schedule_name</em>, <em>schedule_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#Schedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.Schedule" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for performing operations for a specific Schedule.</p>
 <dl class="attribute">
@@ -98,6 +150,76 @@
 <code class="descname">active_start_time</code><a class="headerlink" href="#cvpysdk.schedules.Schedule.active_start_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>gets the start time of the schedule
 :return: time in %H/%S (str)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.schedules.Schedule.automatic">
+<code class="descname">automatic</code><a class="headerlink" href="#cvpysdk.schedules.Schedule.automatic" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>gets the automatic schedule</dt>
+<dd><table class="first docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body"><p class="first">return a dict with the schedule pattern
+{</p>
+<blockquote>
+<div><p>min_interval_hours: minimum hours between jobs(int)
+min_interval_minutes: minimum minutes between jobs(int)
+max_interval_hours: maximum hours between jobs(int)
+max_interval_minutes: maximum minutes between jobs(int)
+min_sync_interval_hours: minimum sync hours</p>
+<blockquote>
+<div><p>between jobs(int)</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>min_sync_interval_minutes: minimum sync minutes</dt>
+<dd><p class="first last">between jobs(int)</p>
+</dd>
+</dl>
+<p>ignore_opwindow_past_maxinterval: (bool)
+wired_network_connection: (bool)
+min_network_bandwidth: (int) kbps
+specific_network: (dict){ip_address:(str),subnet:(int)}
+dont_use_metered_network: (bool)
+ac_power: (bool)
+stop_if_on_battery: (bool)
+stop_sleep_if_runningjob: (bool)
+cpu_utilization_below : (int)%
+cpu_utilization_above : (int)%</p>
+</div></blockquote>
+<p class="last">}</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="last">False: if schedule type is wrong</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.schedules.Schedule.continuous">
+<code class="descname">continuous</code><a class="headerlink" href="#cvpysdk.schedules.Schedule.continuous" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>gets the continuous schedule</dt>
+<dd><table class="first docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body"><p class="first">return a dict with the schedule pattern
+{</p>
+<blockquote class="last">
+<div><p>job_interval: interval between jobs in mins(int)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="last">}
+False: if schedule type is wrong</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -163,8 +285,35 @@
 {</p>
 <blockquote>
 <div><p>“active_start_time”: time_in_%H/%S (str),
-“repeat_months”: weeks_to_repeat (int)
-“onDay”: Day to run schedule (int)</p>
+“repeat_months”: months_to_repeat (int)
+“on_day”: Day to run schedule (int)</p>
+</div></blockquote>
+<p class="last">}</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="last">False: if schedule type is wrong</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.schedules.Schedule.monthly_relative">
+<code class="descname">monthly_relative</code><a class="headerlink" href="#cvpysdk.schedules.Schedule.monthly_relative" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>gets the monthly_relative schedule</dt>
+<dd><table class="first docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body"><p class="first">return a dict with the schedule pattern
+{</p>
+<blockquote>
+<div><p>“active_start_time”: time_in_%H/%S (str),
+“relative_time”: relative day of the schedule (str)’first’,’second’,..
+“relative_weekday”: Day to run schedule (str) ‘sunday’,’monday’…
+“repeat_months”: months_to_repeat</p>
 </div></blockquote>
 <p class="last">}</p>
 </td>
@@ -198,6 +347,13 @@
 <dd><p>Refresh the properties of the Schedule.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.schedules.Schedule.run_now">
+<code class="descname">run_now</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#Schedule.run_now"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.Schedule.run_now" title="Permalink to this definition">¶</a></dt>
+<dd><p>Triggers the schedule to run immediately</p>
+<p>Returns: job id</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="cvpysdk.schedules.Schedule.schedule_freq_type">
 <code class="descname">schedule_freq_type</code><a class="headerlink" href="#cvpysdk.schedules.Schedule.schedule_freq_type" title="Permalink to this definition">¶</a></dt>
@@ -222,11 +378,210 @@
 <p>False: if schedule type is wrong</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="cvpysdk.schedules.Schedule.yearly">
+<code class="descname">yearly</code><a class="headerlink" href="#cvpysdk.schedules.Schedule.yearly" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>gets the yearly schedule</dt>
+<dd><table class="first docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body"><p class="first">return a dict with the schedule pattern
+{</p>
+<blockquote>
+<div><p>“active_start_time”: time_in_%H/%S (str),
+“on_month”: month to run schedule (str) January, Febuary…
+“on_day”: Day to run schedule (int)</p>
+</div></blockquote>
+<p class="last">}</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="last">False: if schedule type is wrong</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.schedules.Schedule.yearly_relative">
+<code class="descname">yearly_relative</code><a class="headerlink" href="#cvpysdk.schedules.Schedule.yearly_relative" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>gets the yearly_relative schedule</dt>
+<dd><table class="first docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body"><p class="first">return a dict with the schedule pattern
+{</p>
+<blockquote>
+<div><p>“active_start_time”: time_in_%H/%S (str),
+“relative_time”: relative day of the schedule (str)’first’,’second’,..
+“relative_weekday”: Day to run schedule (str) ‘sunday’,’monday’…
+“on_month”: month to run the schedule(str) January, Febuary…</p>
+</div></blockquote>
+<p class="last">}</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="last">False: if schedule type is wrong</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.schedules.SchedulePattern">
+<em class="property">class </em><code class="descclassname">cvpysdk.schedules.</code><code class="descname">SchedulePattern</code><span class="sig-paren">(</span><em>schedule_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#SchedulePattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.SchedulePattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for getting the schedule pattern</p>
+<dl class="method">
+<dt id="cvpysdk.schedules.SchedulePattern.create_schedule">
+<code class="descname">create_schedule</code><span class="sig-paren">(</span><em>task_req</em>, <em>pattern_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#SchedulePattern.create_schedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.SchedulePattern.create_schedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a schedule task_req after including pattern
+:param task_req: task_req for immediate job operation to be converted to a schedule</p>
+<dl class="docutils">
+<dt>freq_type is mandatory, all other fields specified below can be skipped and system</dt>
+<dd>defaults will be set</dd>
+<dt>for one_time: {</dt>
+<dd><blockquote class="first">
+<div>“freq_type”: ‘one_time’,
+“active_start_date”: date_in_%m/%d/%y (str),
+“active_start_time”: time_in_%h:%m (str)</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for daily: {</dt>
+<dd><blockquote class="first">
+<div>“freq_type”: ‘daily’,
+“active_start_time”: time_in_%H/%S (str),
+“repeat_days”: days_to_repeat (int)</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for weekly: {</dt>
+<dd><blockquote class="first">
+<div>“freq_type”: ‘weekly’,
+“active_start_time”: time_in_%H/%S (str),
+“repeat_weeks”: weeks_to_repeat (int)
+“weekdays”: list of weekdays [‘Monday’,’Tuesday’]</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for monthly: {</dt>
+<dd><blockquote class="first">
+<div>“freq_type”: ‘monthly’,
+“active_start_time”: time_in_%H/%S (str),
+“repeat_months”: weeks_to_repeat (int)
+“on_day”: Day to run schedule (int)</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for monthly_relative:    {</dt>
+<dd><blockquote class="first">
+<div><p>“active_start_time”: time_in_%H/%S (str),
+“relative_time”: relative day of the schedule (str) ‘first’,</p>
+<blockquote>
+<div>‘second’,..</div></blockquote>
+<p>“relative_weekday”: Day to run schedule (str) ‘sunday’,’monday’…
+“repeat_months”: months_to_repeat</p>
+</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for yearly: {</dt>
+<dd><blockquote class="first">
+<div>“active_start_time”: time_in_%H/%S (str),
+“on_month”: month to run schedule (str) January, Febuary…
+“on_day”: Day to run schedule (int)</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for yearly_relative: {</dt>
+<dd><blockquote class="first">
+<div><p>“active_start_time”: time_in_%H/%S (str),
+“relative_time”: relative day of the schedule (str) ‘first’,</p>
+<blockquote>
+<div>‘second’,..</div></blockquote>
+<p>“relative_weekday”: Day to run schedule (str) ‘sunday’,’monday’…
+“on_month”: month to run the schedule(str) January, Febuary…</p>
+</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for continuous: {</dt>
+<dd><blockquote class="first">
+<div>job_interval: interval between jobs in mins(int)</div></blockquote>
+<p class="last">}</p>
+</dd>
+<dt>for automatic: {</dt>
+<dd><blockquote class="first">
+<div><p>min_interval_hours: minimum hours between jobs(int)
+min_interval_minutes: minimum minutes between jobs(int)
+max_interval_hours: maximum hours between jobs(int)
+max_interval_minutes: maximum minutes between jobs(int)
+min_sync_interval_hours: minimum sync hours</p>
+<blockquote>
+<div>between jobs(int)</div></blockquote>
+<dl class="docutils">
+<dt>min_sync_interval_minutes: minimum sync minutes</dt>
+<dd>between jobs(int)</dd>
+</dl>
+<p>ignore_opwindow_past_maxinterval: (bool)
+wired_network_connection: (bool)
+min_network_bandwidth: (int) kbps
+specific_network: (dict){ip_address:(str),subnet:(int)}
+dont_use_metered_network: (bool)
+ac_power: (bool)
+stop_if_on_battery: (bool)
+stop_sleep_if_runningjob: (bool)
+cpu_utilization_below : (int)%
+cpu_utilization_above : (int)%</p>
+</div></blockquote>
+<p class="last">}</p>
+</dd>
+</dl>
+<p>Sample Usage inside the individual operation function:
+Add a schedule_pattern parameter to the function and include the below line before making
+the sdk make_request call</p>
+<dl class="docutils">
+<dt>if schedule_pattern:</dt>
+<dd>request_json = SchedulePattern().create_schedule(task_req,schedule_pattern)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pattern_dict</strong> – schedule pattern to be merged with the task request</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">returns a schedule task request</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.schedules.SchedulePattern.create_schedule_pattern">
+<code class="descname">create_schedule_pattern</code><span class="sig-paren">(</span><em>pattern_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#SchedulePattern.create_schedule_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.SchedulePattern.create_schedule_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>calls the required type of schedule module and forms the pattern json
+:param pattern_dict:</p>
+<dl class="docutils">
+<dt>freq_type is mandatory, all other fields specified below can be skipped and system</dt>
+<dd>defaults will be set</dd>
+</dl>
+<p>for reference on pattern_dict check create_schedule</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">pattern which can be plugged into the create or modify task request to
+create or modify schedules</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="cvpysdk.schedules.Schedules">
-<em class="property">class </em><code class="descclassname">cvpysdk.schedules.</code><code class="descname">Schedules</code><span class="sig-paren">(</span><em>class_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#Schedules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.Schedules" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">cvpysdk.schedules.</code><code class="descname">Schedules</code><span class="sig-paren">(</span><em>class_object</em>, <em>operation_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/schedules.html#Schedules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.schedules.Schedules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for getting the schedules of a commcell entity.</p>
 <dl class="method">
@@ -304,7 +659,7 @@ if no schedule exists with the given name</dd>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
-      <li>Previous: <a href="plan.html" title="previous chapter">Plan</a></li>
+      <li>Previous: <a href="policy.html" title="previous chapter">Policy</a></li>
       <li>Next: <a href="services.html" title="next chapter">Services</a></li>
   </ul></li>
   </ul></li>
@@ -337,7 +692,7 @@ if no schedule exists with the given name</dd>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Commcell &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Commcell &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -56,8 +56,9 @@ is initialized for</p>
 and returns its response</p>
 <p>send_mail()                 –  sends an email to the specified user</p>
 <p>refresh()                   –  refresh the properties associated with the Commcell
-class instance</p>
-<p class="last">run_data_aging()             –  run data ageing from comcell level</p>
+class instance
+run_data_aging()            –  triggers data aging job from the commcell level</p>
+<p class="last">get_saml_token()            –  returns the SAML token for the currently logged-in user</p>
 </dd>
 </dl>
 <div class="section" id="commcell-instance-attributes">
@@ -75,6 +76,9 @@ class instance is initalized for</p>
 class instance is initalized for</p>
 <p><strong>webconsole_hostname</strong>     –  returns the host name of the <cite>webconsole</cite>,
 class instance is connected to</p>
+<p><strong>auth_token</strong>              –  returns the <cite>Authtoken</cite> for the current session to the commcell</p>
+<p><strong>commcell_username</strong>       –  returns the associated <cite>user</cite> name for the current session
+to the commcell</p>
 <p><strong>device_id</strong>               –  returns the id associated with the calling machine</p>
 <p><strong>clients</strong>                 –  returns the instance of the <cite>Clients</cite> class,
 to interact with the clients added on the Commcell</p>
@@ -96,34 +100,60 @@ to interact with the user groups added to the Commcell</p>
 to interact with the domains added to the Commcell</p>
 <p><strong>client_groups</strong>           –  returns the instance of the <cite>ClientGroups</cite> class,
 to interact with the client groups added to the Commcell</p>
-<p><strong>global_filters</strong>       –  returns the instance of the <cite>GlobalFilters</cite> class,
+<p><strong>global_filters</strong>          –  returns the instance of the <cite>GlobalFilters</cite> class,
 to interact with the global filters available on the Commcell</p>
-<p><strong>datacube</strong>            –  returns the instance of the <cite>Datacube</cite> class,
+<p><strong>datacube</strong>                –  returns the instance of the <cite>Datacube</cite> class,
 to interact with the datacube engine deployed on the Commcell</p>
-<p><strong>plans</strong>               –  returns the instance of the <cite>Plans</cite> class,
+<p><strong>plans</strong>                   –  returns the instance of the <cite>Plans</cite> class,
 to interact with the plans associated with the Commcell</p>
-<p><strong>job_controller</strong>      –  returns the instance of the <cite>JobController</cite> class,
+<p><strong>job_controller</strong>          –  returns the instance of the <cite>JobController</cite> class,
 to interact with all the jobs finished / running on the Commcell</p>
-<p><strong>users</strong>               –  returns the instance of the <cite>Users</cite> class,
+<p><strong>users</strong>                   –  returns the instance of the <cite>Users</cite> class,
 to interact with the users added to the Commcell</p>
-<p><strong>download_center</strong>     –  returns the instance of the <cite>DownloadCenter</cite> class,
+<p><strong>roles</strong>                   –  returns the instance of the <cite>Roles</cite> class,
+to interact with the roles added to the Commcell</p>
+<p><strong>download_center</strong>         –  returns the instance of the <cite>DownloadCenter</cite> class,
 to interact with the download center repositories deployed on the Commcell WebConsole</p>
-<p><strong>organizations</strong>       –  returns the instance of the <cite>Organizations</cite> class,
+<p><strong>organizations</strong>           –  returns the instance of the <cite>Organizations</cite> class,
 to interact with the organizations/companies added on the Commcell</p>
-<p><strong>storage_pools</strong>       –  returns the instance of the <cite>StoragePools</cite> class,
+<p><strong>storage_pools</strong>           –  returns the instance of the <cite>StoragePools</cite> class,
 to interact with the storage pools added to the Commcell Admin Console</p>
-<p><strong>monitoring_policies</strong>       –  returns the instance of the <cite>MonitoringPolicies</cite> class,
+<p><strong>monitoring_policies</strong>     –  returns the instance of the <cite>MonitoringPolicies</cite> class,
 to interact with the MonitoringPolicies added to the Commcell</p>
+<p><strong>array_management</strong>        –  returns the instance of the <cite>ArrayManagement</cite> class,
+to perform SNAP related operations on the Commcell</p>
+<p><strong>activity_control</strong>        –  returns the instance of the <cite>ActivityControl</cite> class,
+to interact with the Activity Control on the Commcell</p>
+<p><strong>event_viewer</strong>            –  returns the instance of the <cite>Events</cite> class,
+to interact with the Events associated on the Commcell</p>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.commcell.Commcell">
-<em class="property">class </em><code class="descclassname">cvpysdk.commcell.</code><code class="descname">Commcell</code><span class="sig-paren">(</span><em>webconsole_hostname</em>, <em>commcell_username</em>, <em>commcell_password=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">cvpysdk.commcell.</code><code class="descname">Commcell</code><span class="sig-paren">(</span><em>webconsole_hostname</em>, <em>commcell_username=None</em>, <em>commcell_password=None</em>, <em>authtoken=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for establishing a session to the Commcell via Commvault REST API.</p>
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.activity_control">
+<code class="descname">activity_control</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.activity_control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the ActivityControl class.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.alerts">
 <code class="descname">alerts</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.alerts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the Alerts class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.array_management">
+<code class="descname">array_management</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.array_management" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the ArrayManagement class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.auth_token">
+<code class="descname">auth_token</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.auth_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Authtoken for the current session to the Commcell.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -136,6 +166,12 @@ to interact with the MonitoringPolicies added to the Commcell</p>
 <dt id="cvpysdk.commcell.Commcell.clients">
 <code class="descname">clients</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.clients" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the Clients class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.commcell_username">
+<code class="descname">commcell_username</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.commcell_username" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the logged in user name</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -205,6 +241,27 @@ to interact with the MonitoringPolicies added to the Commcell</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.event_viewer">
+<code class="descname">event_viewer</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.event_viewer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Event Viewer class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.get_saml_token">
+<code class="descname">get_saml_token</code><span class="sig-paren">(</span><em>validity=30</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.get_saml_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.get_saml_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the SAML token for the currently logged-in user.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">validity    (int)   –  validity of the SAML token, <strong>in minutes</strong></p>
+<blockquote class="last">
+<div>default: 30</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>str     -   SAML token string received from the server</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.global_filters">
 <code class="descname">global_filters</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.global_filters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the GlobalFilters class.</p>
@@ -244,6 +301,12 @@ to interact with the MonitoringPolicies added to the Commcell</p>
 <dt id="cvpysdk.commcell.Commcell.plans">
 <code class="descname">plans</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.plans" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the Plans class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.policies">
+<code class="descname">policies</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.policies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Policies class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -294,9 +357,15 @@ in the arguments.</p>
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.roles">
+<code class="descname">roles</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.roles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Roles class.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="cvpysdk.commcell.Commcell.run_data_aging">
-<code class="descname">run_data_aging</code><span class="sig-paren">(</span><em>copy_name=None</em>, <em>storage_policy_name=None</em>, <em>is_granular=False</em>, <em>include_all=True</em>, <em>include_all_clients=False</em>, <em>select_copies=False</em>, <em>prune_selected_copies=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.run_data_aging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.run_data_aging" title="Permalink to this definition">¶</a></dt>
+<code class="descname">run_data_aging</code><span class="sig-paren">(</span><em>copy_name=None</em>, <em>storage_policy_name=None</em>, <em>is_granular=False</em>, <em>include_all=True</em>, <em>include_all_clients=False</em>, <em>select_copies=False</em>, <em>prune_selected_copies=False</em>, <em>schedule_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.run_data_aging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.run_data_aging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the Data Aging from Commcell,SP and copy level</p>
 </dd></dl>
 
@@ -308,13 +377,20 @@ in the arguments.</p>
 
 <dl class="method">
 <dt id="cvpysdk.commcell.Commcell.send_mail">
-<code class="descname">send_mail</code><span class="sig-paren">(</span><em>to_address</em>, <em>subject</em>, <em>body=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.send_mail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.send_mail" title="Permalink to this definition">¶</a></dt>
+<code class="descname">send_mail</code><span class="sig-paren">(</span><em>receivers</em>, <em>subject</em>, <em>body=None</em>, <em>copy_sender=False</em>, <em>is_html_content=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.send_mail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.send_mail" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends a mail to the specified email address from the email asscoiated to this user</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><p class="first">to_address      (str)   –  to address to whom the mail is to be sent</p>
+<dd><p class="first">receivers       (list)  –  list of email addresses to whom the email is to
+be sent</p>
 <p>subject         (str)   –  subject of the email that is to be sent to the user</p>
-<p class="last">body            (str)   –  email body that is to be sent to the user</p>
+<p>body            (str)   –  email body that is to be included in the email</p>
+<p>copy_sender     (bool)  –  copies the sender in the html report that is sent</p>
+<p>is_html_content (bool)  –  determines if the email body has html content</p>
+<blockquote class="last">
+<div><p>True    -   the email body has html content</p>
+<p>False   -   the email content is plain text</p>
+</div></blockquote>
 </dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
@@ -427,7 +503,7 @@ of the Commcell class, after the user was logged out.</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

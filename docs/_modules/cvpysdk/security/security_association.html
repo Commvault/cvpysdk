@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.security.security_association &#8212; Developer SDK - Python v11 documentation</title>
+    <title>cvpysdk.security.security_association &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -55,6 +55,9 @@
 
 <span class="sd">    _add_security_association() --  adds the security association with client or clientgroup</span>
 
+<span class="sd">    _security_association_json()--  generates security association blob with all</span>
+<span class="sd">                                    user-entity-role association</span>
+
 <span class="sd">    has_role()                  --  checks if specified role exists on commcell</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
@@ -88,6 +91,67 @@
             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_security_roles</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_security_association_json</span><span class="p">(</span><span class="n">entity_dictionary</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;handles three way associations (role-user-entities)</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entity_dictionary   --      combination of entity_type, entity names</span>
+<span class="sd">                                            and role</span>
+<span class="sd">                e.g.: entity_dict={</span>
+<span class="sd">                                &#39;assoc1&#39;:</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &#39;entity_type&#39;:[&#39;entity_name&#39;],</span>
+<span class="sd">                                        &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],</span>
+<span class="sd">                                        &#39;role&#39;: [&#39;role1&#39;]</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                &#39;assoc2&#39;:</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],</span>
+<span class="sd">                                        &#39;clientName&#39;: [&#39;Linux1&#39;],</span>
+<span class="sd">                                        &#39;role&#39;: [&#39;New1&#39;]</span>
+<span class="sd">                                        }</span>
+<span class="sd">                                    }</span>
+<span class="sd">                entity_type         --      key for the entity present in dictionary</span>
+<span class="sd">                                            on which user will have access</span>
+
+<span class="sd">                entity_name         --      Value of the key</span>
+
+<span class="sd">                role                --      role will remain role in dictionary</span>
+<span class="sd">                e.g.: {&quot;clientName&quot;:&quot;Linux1&quot;}</span>
+<span class="sd">                entity_type:    clientName, mediaAgentName, libraryName, userName,</span>
+<span class="sd">                                userGroupName, storagePolicyName, clientGroupName,</span>
+<span class="sd">                                schedulePolicyName, locationName, providerDomainName,</span>
+<span class="sd">                                alertName, workflowName, policyName, roleName</span>
+
+<span class="sd">                entity_name:    client name for entity_type &#39;clientName&#39;</span>
+<span class="sd">                                Media agent name for entitytype &#39;mediaAgentName&#39;</span>
+<span class="sd">                                similar for other entity_typees</span>
+
+<span class="sd">                request_type        --      decides whether to ADD, DELETE or</span>
+<span class="sd">                                            OVERWRITE user security association.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">complete_association</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">entity_key</span><span class="p">,</span> <span class="n">entity_value</span> <span class="ow">in</span> <span class="n">entity_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">each_entity_key</span> <span class="ow">in</span> <span class="n">entity_value</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">entity_value</span><span class="p">[</span><span class="n">each_entity_key</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">each_entity_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span>
+                        <span class="n">association_blob</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                                    <span class="n">each_entity_key</span><span class="p">:</span> <span class="n">element</span>
+                                <span class="p">}]</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;roleName&quot;</span><span class="p">:</span> <span class="n">entity_value</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                        <span class="n">complete_association</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">association_blob</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">complete_association</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all available security roles on this commcell.</span>
@@ -216,8 +280,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">role_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Security&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-</div></div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span> <span class="ow">and</span> <span class="n">role_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span> <span class="ow">and</span> <span class="n">role_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span></div></div>
 
 </pre></div>
 
@@ -254,7 +318,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

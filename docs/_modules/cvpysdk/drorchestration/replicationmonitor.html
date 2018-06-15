@@ -1,0 +1,385 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.drorchestration.replicationmonitor &#8212; Developer SDK - Python 11.12 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.drorchestration.replicationmonitor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing failover specific operations.</span>
+
+<span class="sd">ReplicationMonitor: Class for representing all the dr orchestration operations</span>
+<span class="sd">from Replication monitor</span>
+
+
+<span class="sd">ReplicationMonitor:</span>
+<span class="sd">    __init__(commcell_object,</span>
+<span class="sd">            replication_monitor_options)            -- Initialise object of ReplicationMonitor</span>
+
+<span class="sd">    __repr__()                                      -- Return the ReplicationMonitor name</span>
+
+<span class="sd">    testboot()                                      -- Call testboot operation</span>
+
+<span class="sd">    planned_failover()                              -- Call Planned failvoer operation</span>
+
+<span class="sd">    unplanned_failover()                            -- Call Unplanned Failover operation</span>
+
+<span class="sd">    failback()                                      -- Call failback operation</span>
+
+<span class="sd">    undo_failover()                                 -- Call UndoFailover operation</span>
+
+<span class="sd">    revert_failover()                               -- Call RevertFailover operation</span>
+
+<span class="sd">    point_in_time_failover()                        -- Call PointInTimeFailover operation</span>
+
+<span class="sd">    reverse_replication()                           -- Call ReverseReplication operation</span>
+
+<span class="sd">    validate_dr_orchestration_job(jobId)            -- Validate DR orchestration job Id</span>
+
+<span class="sd">    refresh()                                       -- Refresh the object properties</span>
+
+<span class="sd">    ##### internal methods #####</span>
+<span class="sd">    _get_replication_monitor()                      -- Gets replication monitor</span>
+
+<span class="sd">    ##### properties #####</span>
+<span class="sd">    _replication_Ids()                              -- Returns replication Ids list</span>
+
+<span class="sd">    replication_monitor_options()                   -- Returns replication monitor options</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.drorchestrationoperations</span> <span class="k">import</span> <span class="n">DROrchestrationOperations</span>
+
+
+<div class="viewcode-block" id="ReplicationMonitor"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor">[docs]</a><span class="k">class</span> <span class="nc">ReplicationMonitor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing DR orchestration operations on ReplicationMonitor.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">replication_monitor_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the ReplicationMonitor object.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">                input dict of replication monitor options</span>
+<span class="sd">                replication_monitor_options (json) -- replication monitor options</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;VirtualizationClient&quot;: &quot;&quot;,</span>
+<span class="sd">                    &quot;approvalRequired&quot;: False,</span>
+<span class="sd">                    &quot;skipDisableNetworkAdapter&quot;: False</span>
+<span class="sd">                    &quot;initiatedFromMonitor&quot;: True,</span>
+<span class="sd">                    &quot;vmName&quot;: &#39;DRVM1&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the ReplicationMonitor class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">##### local variables of these class ########</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_replication_monitor_options</span> <span class="o">=</span> <span class="n">replication_monitor_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+
+        <span class="c1"># create DROrchestrationOperations object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span> <span class="o">=</span> <span class="n">DROrchestrationOperations</span><span class="p">(</span><span class="n">commcell_object</span><span class="p">)</span>
+
+        <span class="c1">##### REST API URLs #####</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_REPLICATION_MONITOR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;REPLICATION_MONITOR&#39;</span><span class="p">]</span>
+
+        <span class="c1"># init local variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_replicationId</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+        <span class="c1"># set dr orchestration options property</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_replication_monitor_options</span><span class="p">[</span><span class="s1">&#39;replicationIds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replication_Ids</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">dr_orchestration_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">replication_monitor_options</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;&quot;ReplicationMonitor: instance for commcell: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_replication_Ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns replicationIds of the failover &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replicationId</span><span class="p">:</span>
+
+            <span class="n">vm_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">replication_monitor_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vmName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">vm_name</span><span class="p">:</span>
+
+                <span class="c1"># get the first VM if input vm doesnt exist</span>
+                <span class="n">vm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">replication_monitor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_replicationId</span> <span class="o">=</span> <span class="n">vm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;replicationId&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="c1"># iterate through all the vms</span>
+                <span class="k">for</span> <span class="n">_vm</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">replication_monitor</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">_vm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sourceName&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span>
+                            <span class="n">vm_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_replicationId</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">_vm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;replicationId&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replicationId</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">replication_monitor_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter replication monitor&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replication_monitor_options</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">replication_monitor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter replication monitor&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replication_monitor</span>
+
+<div class="viewcode-block" id="ReplicationMonitor.refresh"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the replication monitor.</span>
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_replication_monitor</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.testboot"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.testboot">[docs]</a>    <span class="k">def</span> <span class="nf">testboot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs testboot failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the Testboot job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">testboot</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.planned_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.planned_failover">[docs]</a>    <span class="k">def</span> <span class="nf">planned_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Planned failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the Planned Failover job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">planned_failover</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.unplanned_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.unplanned_failover">[docs]</a>    <span class="k">def</span> <span class="nf">unplanned_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs UnPlanned failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the Unplanned Failover job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">unplanned_failover</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.failback"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.failback">[docs]</a>    <span class="k">def</span> <span class="nf">failback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Failback operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">failback</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.undo_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.undo_failover">[docs]</a>    <span class="k">def</span> <span class="nf">undo_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Undo Failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">undo_failover</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.reverse_replication"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.reverse_replication">[docs]</a>    <span class="k">def</span> <span class="nf">reverse_replication</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Reverse Replication operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">reverse_replication</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.revert_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.revert_failover">[docs]</a>    <span class="k">def</span> <span class="nf">revert_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Revert Failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">revert_failover</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.point_in_time_failover"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.point_in_time_failover">[docs]</a>    <span class="k">def</span> <span class="nf">point_in_time_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs Revert Failover operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">point_in_time_failover</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ReplicationMonitor.validate_dr_orchestration_job"><a class="viewcode-back" href="../../../drorchestration/drorchestration.html#cvpysdk.drorchestration.replicationmonitor.ReplicationMonitor.validate_dr_orchestration_job">[docs]</a>    <span class="k">def</span> <span class="nf">validate_dr_orchestration_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobId</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Validates DR orchestration job of jobId</span>
+<span class="sd">            Args:</span>
+<span class="sd">                JobId: Job Id of the DR orchestration job</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean that represents whether the DR orchestration job finished successfully or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">                    If failover phase failed at any stage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">validate_dr_orchestration_job</span><span class="p">(</span><span class="n">jobId</span><span class="p">)</span></div>
+
+
+<span class="c1">#################### private functions #####################</span>
+
+    <span class="k">def</span> <span class="nf">_get_replication_monitor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets replication monitor options</span>
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns: Gets the Replication monitor options dict</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_REPLICATION_MONITOR</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;vApp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_replication_monitor</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;siteInfo&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

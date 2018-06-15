@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Instance &#8212; Developer SDK - Python v11 documentation</title>
+    <title>Instance &#8212; Developer SDK - Python 11.12 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -36,34 +36,29 @@
 <span id="instance"></span><h1>Instance<a class="headerlink" href="#module-cvpysdk.instance" title="Permalink to this headline">¶</a></h1>
 <p>Main file for performing instance operations.</p>
 <p>Instances and Instance are 2 classes defined in this file.</p>
-<p>Instances: Class for representing all the instances associated with a specific agent</p>
+<p>Instances:  Class for representing all the instances associated with a specific agent</p>
+<p>Instance:   Class for a single instance selected for an agent,
+and to perform operations on that instance</p>
 <dl class="docutils">
-<dt>Instance:  Class for a single instance selected for an agent,</dt>
-<dd>and to perform operations on that instance</dd>
 <dt>Instances:</dt>
-<dd><p class="first">__init__(agent_object)          –  initialize object of Instances class associated with
+<dd><p class="first">__init__(agent_object)          –  initialise object of Instances class associated with
 the specified agent</p>
 <p>__str__()                       –  returns all the instances associated with the agent</p>
 <p>__repr__()                      –  returns the string for the object of the Instances class</p>
+<p>__len__()                       –  returns the number of instances associated to the Agent</p>
+<p>__getitem__()                   –  returns the name of the instance for the given instance ID
+or the details for the given instance name</p>
 <p>_get_instances()                –  gets all the instances associated with the agent specified</p>
 <p>all_instances()                 –  returns the dict of all the instances</p>
 <p>has_instance(instance_name)     –  checks if a instance exists with the given name or not</p>
 <p>get(instance_name)              –  returns the Instance class object
 of the input backup set name</p>
-<dl class="docutils">
-<dt>add_sybase_instance(</dt>
-<dd>sybase_options</dd>
-</dl>
-<p>)                               –  To add sybase server instance</p>
+<p>add_sybase_instance()           –  To add sybase server instance</p>
 <p class="last">refresh()                       –  refresh the instances associated with the agent</p>
 </dd>
 <dt>Instance:</dt>
-<dd><dl class="first docutils">
-<dt>__init__(agent_object,</dt>
-<dd>instance_name,
-instance_id=None)      –  initialise object of Instance with the specified instance</dd>
-</dl>
-<p>name and id, and associated to the specified agent</p>
+<dd><p class="first">__init__()                      –  initialise object of Instance with the specified instance
+name and id, and associated to the specified agent</p>
 <p>__repr__()                      –  return the instance name, the object is associated with</p>
 <p>_get_instance_id()              –  method to get the instance id, if not specified in __init__</p>
 <p>_get_instance_properties()      –  method to get the properties of the instance</p>
@@ -75,8 +70,8 @@ and returns the restore job object</p>
 <p>_restore_browse_option_json()   –  setter for  browse option  property in restore</p>
 <p>_restore_commonOptions_json()   –  setter for common options property in restore</p>
 <p>_restore_destination_json()     –  setter for destination options property in restore</p>
-<p>_restore_fileoption_json()      – setter for file option property in restore</p>
-<p>_restore_destination_json()     – setter for destination property in restore</p>
+<p>_restore_fileoption_json()      –  setter for file option property in restore</p>
+<p>_restore_destination_json()     –  setter for destination property in restore</p>
 <p>_restore_json()                 –  returns the apppropriate JSON request to pass for either
 Restore In-Place or Out-of-Place operation</p>
 <p>_restore_in_place()             –  Restores the files/folders specified in the
@@ -101,49 +96,52 @@ restore json</p>
 <dl class="method">
 <dt id="cvpysdk.instance.Instance.browse">
 <code class="descname">browse</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance.browse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Browses the content of a Backupset.</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first docutils">
-<dt>Dictionary of browse options:</dt>
-<dd><dl class="first docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
-<dt>browse({</dt>
-<dd>‘path’: ‘c:hello’,
-‘show_deleted’: True,
-‘from_time’: ‘2014-04-20 12:00:00’,
-‘to_time’: ‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">})</p>
-</dd>
-</dl>
-<p class="last">(OR)</p>
-</dd>
-<dt>Keyword argument of browse options:</dt>
-<dd><dl class="first last docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
-<dt>browse(</dt>
-<dd>path=’c:hello’,
-show_deleted=True,
-from_time=‘2014-04-20 12:00:00’,
-to_time=‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">)</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="last">Refer self._default_browse_options for all the supported options</p>
-</dd>
-</dl>
-</div></blockquote>
+<dd><p>Browses the content of the Instance.</p>
 <dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>Dictionary of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>browse({</dt>
+<dd><p class="first">‘path’: ‘c:\hello’,</p>
+<p>‘show_deleted’: True,</p>
+<p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
+<p class="last">‘to_time’: ‘2016-04-21 12:00:00’</p>
+</dd>
+</dl>
+<p>})</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+<dt>Kwargs:</dt>
+<dd><dl class="first last docutils">
+<dt>Keyword argument of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>browse(</dt>
+<dd><p class="first">path=’c:hello’,</p>
+<p>show_deleted=True,</p>
+<p>from_time=‘2014-04-20 12:00:00’,</p>
+<p class="last">to_time=‘2016-04-21 12:00:00’</p>
+</dd>
+</dl>
+<p>)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
 <dt>Returns:</dt>
-<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
-<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+<dd><dl class="first last docutils">
+<dt>(list, dict)</dt>
+<dd><p class="first">list    -   List of only the file, folder paths from the browse response</p>
+<p class="last">dict    -   Dictionary of all the paths with additional metadata retrieved
+from browse operation</p>
+</dd>
+</dl>
 </dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
@@ -152,69 +150,74 @@ to_time=‘2016-04-21 12:00:00’</dd>
 </dl>
 </dd>
 </dl>
+<p>Refer <a class="reference external" href="https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565">default_browse_options</a> for all the supported options.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="cvpysdk.instance.Instance.find">
 <code class="descname">find</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance.find"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance.find" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Searches a file/folder in the backupset backup content,</dt>
-<dd><blockquote class="first">
-<div>and returns all the files matching the filters given.</div></blockquote>
-<dl class="last docutils">
+<dd><p>Searches a file/folder in the backed up content of the instance,
+and returns all the files matching the filters given.</p>
+<dl class="docutils">
 <dt>Args:</dt>
-<dd><dl class="first docutils">
-<dt>Dictionary of find options:</dt>
-<dd><dl class="first docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
-<dt>find({</dt>
-<dd>‘file_name’: ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.txt’,
-‘show_deleted’: True,
-‘from_time’: ‘2014-04-20 12:00:00’,
-‘to_time’: ‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">})</p>
-</dd>
-</dl>
-<p class="last">(OR)</p>
-</dd>
-<dt>Keyword argument of find options:</dt>
 <dd><dl class="first last docutils">
-<dt>Example:</dt>
-<dd><dl class="first docutils">
+<dt>Dictionary of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>find({</dt>
+<dd><p class="first">‘file_name’: ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.txt’,</p>
+<p>‘show_deleted’: True,</p>
+<p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
+<p class="last">‘to_time’: ‘2016-04-31 12:00:00’</p>
+</dd>
+</dl>
+<p>})</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+<dt>Kwargs:</dt>
+<dd><dl class="first last docutils">
+<dt>Keyword argument of browse options:</dt>
+<dd><p class="first">Example:</p>
+<blockquote class="last">
+<div><dl class="docutils">
 <dt>find(</dt>
-<dd>file_name=’<a href="#id3"><span class="problematic" id="id4">*</span></a>.txt’,
-show_deleted=True,
-from_time=2014-04-20 12:00:00,
-to_time=‘2016-04-21 12:00:00’</dd>
-</dl>
-<p class="last">)</p>
+<dd><p class="first">file_name=’<a href="#id3"><span class="problematic" id="id4">*</span></a>.txt’,</p>
+<p>show_deleted=True,</p>
+<p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
+<p class="last">to_time=‘2016-04-31 12:00:00’</p>
 </dd>
 </dl>
-</dd>
-</dl>
-<p>Refer self._default_browse_options for all the supported options</p>
-<dl class="last docutils">
-<dt>Additional options supported:</dt>
-<dd><p class="first">file_name       (str)   –   Find files with name</p>
-<p>file_size_gt    (int)   –   Find files with size greater than size</p>
-<p>file_size_lt    (int)   –   Find files with size lesser than size</p>
-<p class="last">file_size_et    (int)   –   Find files with size equal to size</p>
-</dd>
-</dl>
+<p>)</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
-<dd><p class="first">list - List of only the file, folder paths from the browse response</p>
-<p class="last">dict - Dictionary of all the paths with additional metadata retrieved from browse</p>
+<dd><dl class="first last docutils">
+<dt>(list, dict)</dt>
+<dd><p class="first">list    -   List of only the file, folder paths from the browse response</p>
+<p class="last">dict    -   Dictionary of all the paths with additional metadata retrieved
+from browse operation</p>
+</dd>
+</dl>
 </dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
 <dt>SDKException:</dt>
 <dd>if there are more than one backupsets in the instance</dd>
 </dl>
+</dd>
+</dl>
+<p>Refer <a class="reference external" href="https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565">default_browse_options</a> for all the supported options.</p>
+<dl class="docutils">
+<dt>Additional options supported:</dt>
+<dd><p class="first">file_name       (str)   –  Find files with name</p>
+<p>file_size_gt    (int)   –  Find files with size greater than size</p>
+<p>file_size_lt    (int)   –  Find files with size lesser than size</p>
+<p class="last">file_size_et    (int)   –  Find files with size equal to size</p>
 </dd>
 </dl>
 </dd></dl>
@@ -398,7 +401,7 @@ Args:</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
