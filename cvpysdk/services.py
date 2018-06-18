@@ -71,6 +71,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_MEDIA_AGENTS': '{0}V2/MediaAgents',
     'LIBRARY': '{0}Library',
+    'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
@@ -94,6 +95,7 @@ SERVICES_DICT_TEMPLATE = {
                             'backupsetId=%s&subclientId=%s'),
     'REPORT_SCHEDULES': '{0}/ScheduleReports',
     'OPTYPE_SCHEDULES': '{0}/Schedules?operationType=%s',
+    'COMMCELL_SCHEDULES': '{0}/Schedules',
     'SCHEDULE': '{0}Schedules/%s',
     'ENABLE_SCHEDULE': '{0}Schedules/task/Action/Enable',
     'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
@@ -118,6 +120,7 @@ SERVICES_DICT_TEMPLATE = {
     'SQL_RESTORE_OPTIONS': '{0}SQL/RestoreOptions',
 
     'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute',
+    'EXECUTE_QSCRIPT': '{0}Qcommand/qoperation execscript %s',
     'QCOMMAND': '{0}QCommand',
 
     'SOFTWARESTORE_DOWNLOADITEM': '{0}DownloadFile',
@@ -125,7 +128,9 @@ SERVICES_DICT_TEMPLATE = {
     'SOFTWARESTORE_GETPKGID': '{0}SoftwareStoreItem',
 
     'CREATE_TASK': '{0}CreateTask',
-    'ADD_SYBASE_INSTANCE': '{0}Instance',
+    'ADD_INSTANCE': '{0}Instance',
+    'MASKING_POLICY':'{0}MaskingPolicy',
+
 
     'GET_ANALYTICS_ENGINES': '{0}dcube/getAnalyticsEngine',
     'GET_ALL_DATASOURCES': '{0}dcube/GetDataSources?summary=1',
@@ -158,7 +163,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
-
+    'DRBACKUP':'{0}/CommServ/DRBackup',
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
     'METRICS': '{0}CommServ/MetricsReporting',
@@ -226,7 +231,15 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ACTIVITY_CONTROL': '{0}CommCell/ActivityControl',
     'SET_ACTIVITY_CONTROL': '{0}CommCell/ActivityControl/%s/Action/%s',
-    'SET_COMMCELL_PROPERTIES': '{0}Commcell/properties'
+    'SET_COMMCELL_PROPERTIES': '{0}Commcell/properties',
+
+    'OPERATION_WINDOW':'{0}OperationWindow',
+    'LIST_OPERATION_WINDOW':'{0}/OperationWindow/OpWindowList?clientId=%s',
+
+    'RELEASE_LICENSE':'{0}Client/License/Release',
+    'RECONFIGURE_LICENSE':'{0}Client/License/Reconfigure',
+    'LIST_LICENSES':'{0}Client/%s/License',
+    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s'
 }
 
 

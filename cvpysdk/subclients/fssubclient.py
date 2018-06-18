@@ -33,6 +33,22 @@ FileSystemSubclient:
 
     trueup_option()                     --  enable/disable trueup option of the subclient
 
+    backup_retention()                  -- 	enable/disable backup retention for the subclient
+
+    backup_retention_days()             -- 	set number of days for backup retention
+
+    archiver_retention()                --  enable/disable archiver_retention of the subclient.
+
+    archiver_retention_days()           --  set number of days for archiver retention
+
+    file_version()                      --  set version mode and no of version or days
+
+    disk_cleanup()                      --  enable/disable disk cleanup tab
+
+    disk_cleanup_rules()                --  update rules for disk_cleanup
+
+    backup_only_archiving_candidate     --  enable or disable backup only candidate on the subclient
+
     trueup_days()                       --  update trueup after **n** days value of the subclient
 
     find_all_versions()                 --  returns the dict containing list of all the backed up
@@ -48,6 +64,27 @@ from past.builtins import basestring
 
 from ..subclient import Subclient
 from ..exception import SDKException
+
+
+def _nested_dict(source, update_dict):
+    """
+    This function recursively update the source dictionary with new values.
+
+    Args:
+         source   (dict)  --  Original dictionary
+
+         update_dict   (dict)  --  The changes which are need to make
+
+    Return:
+        dict  --  modified source dictionary with updated values
+
+    """
+    for key, value in update_dict.items():
+        if isinstance(value, dict) and value:
+            source[key] = _nested_dict(source.get(key, {}), value)
+        else:
+            source[key] = value
+    return source
 
 
 class FileSystemSubclient(Subclient):
@@ -84,6 +121,7 @@ class FileSystemSubclient(Subclient):
                     "proxyClient": self._proxyClient,
                     "subClientEntity": self._subClientEntity,
                     "fsSubClientProp": self._fsSubClientProp,
+
                     "content": self._content,
                     "commonProperties": self._commonProperties,
                     "contentOperationType": 1
@@ -112,8 +150,7 @@ class FileSystemSubclient(Subclient):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
-        for key, value in value.items():
-            self._fsSubClientProp[key] = value
+        _nested_dict(self._fsSubClientProp, value)
 
         if 'enableOnePass' in self._fsSubClientProp:
             del self._fsSubClientProp['enableOnePass']
@@ -125,15 +162,14 @@ class FileSystemSubclient(Subclient):
                      content=None,
                      filter_content=None,
                      exception_content=None):
-        """Sets the subclient content / filter / exception content.
+        """Sets the subclient content / filter / exception content
 
             Args:
-                content             (list)  --  list of subclient content
+                content         	(list)      --  list of subclient content
 
-                filter_content      (list)  --  list of filter content
+                filter_content  	(list)      --  list of filter content
 
-                exception_content   (list)  --  list of exception content
-
+                exception_content	(list)		--	list of exception content
         """
         if content is None:
             content = self.content
@@ -189,8 +225,7 @@ class FileSystemSubclient(Subclient):
         if 'inline_bkp_cpy' in options or 'skip_catalog' in options:
             final_dict['dataOpt'] = {
                 'createBackupCopyImmediately': options.get('inline_bkp_cpy', False),
-                'skipCatalogPhaseForSnapBackup': options.get('skip_catalog', False)
-            }
+                'skipCatalogPhaseForSnapBackup': options.get('skip_catalog', False)}
 
         if 'adhoc_backup_contents' in options and options['adhoc_backup_contents'] is not None:
             if not isinstance(options['adhoc_backup_contents'], list):
@@ -232,8 +267,9 @@ class FileSystemSubclient(Subclient):
             self._set_content(content=subclient_content)
         else:
             raise SDKException(
-                'Subclient', '102', 'Subclient content should be a list value and not empty'
-            )
+                'Subclient',
+                '102',
+                'Subclient content should be a list value and not empty')
 
     @property
     def filter_content(self):
@@ -264,8 +300,9 @@ class FileSystemSubclient(Subclient):
             self._set_content(filter_content=value)
         else:
             raise SDKException(
-                'Subclient', '102', 'Subclient filter content should be a list value and not empty'
-            )
+                'Subclient',
+                '102',
+                'Subclient filter content should be a list value and not empty')
 
     @property
     def exception_content(self):
@@ -298,8 +335,7 @@ class FileSystemSubclient(Subclient):
             raise SDKException(
                 'Subclient',
                 '102',
-                'Subclient exception content should be a list value and not empty'
-            )
+                'Subclient exception content should be a list value and not empty')
 
     @property
     def scan_type(self):
@@ -366,6 +402,90 @@ class FileSystemSubclient(Subclient):
         )
 
     @property
+    def backup_retention(self):
+        """return if backup retention is enabled or not
+
+        Returns:
+                True    -   if backup_retention is enabled for the subclient
+
+                False   -   if backup_rentention is not enabled for the subclient
+
+        """
+
+        return self._fsSubClientProp['backupRetention']
+
+    @backup_retention.setter
+    def backup_retention(self, value):
+        """Creates the JSON with the specified Boolean variable to pass to the API
+            to update the backup_retention of this File System Subclient
+
+        Args:
+             value   (bool)  --  To enable or disable backup_retention.
+
+        """
+
+        if isinstance(value, bool):
+
+            if value:
+                new_value = {
+                    'extendStoragePolicyRetention': True,
+                    'backupRetention': True}
+            else:
+                new_value = {'backupRetention': False}
+            self._set_subclient_properties("_fs_subclient_prop", new_value)
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'argument should only be boolean')
+
+    @property
+    def backup_retention_days(self):
+        """return number of days for backup retention
+
+        Returns:
+                        (int)
+
+        """
+
+        return self._fsSubClientProp['afterDeletionKeepItemsForNDays']
+
+    @backup_retention_days.setter
+    def backup_retention_days(self, value):
+        """Creates the JSON with the specified backup_retention days to pass to the API
+            to update the retention for deleted item of this File System Subclient
+
+        Args:
+                value   (int)  --  To set extended retention days for deleted items
+
+                The value will be converted in years , months and days form on GUI.
+
+                To set infinite ,value should be -1
+
+        Raises:
+                SDKException:
+                    if failed to update days for deleted item retention for the subclient
+
+                    if value is invalid
+
+        """
+
+        if isinstance(value, int):
+            if value != -1:
+                new_value = {
+                    'afterDeletionKeepItemsForNDays': value,
+                    'backupRetentionMode': 1}
+            else:
+                new_value = {'afterDeletionKeepItemsForNDays': value}
+            self._set_subclient_properties("_fs_subclient_prop", new_value)
+
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'argument should only be boolean')
+
+    @property
     def trueup_days(self):
         """Gets the trueup after n days value for this Subclient
 
@@ -389,6 +509,7 @@ class FileSystemSubclient(Subclient):
                     if trueup_days_value is invalid
 
         """
+
         if isinstance(trueup_days_value, int):
             self._set_subclient_properties(
                 "_fsSubClientProp['runTrueUpJobAfterDaysForFS']",
@@ -396,6 +517,301 @@ class FileSystemSubclient(Subclient):
             )
         else:
             raise SDKException('Subclient', '102', 'Invalid trueup days')
+
+    @property
+    def archiver_retention(self):
+        """return the value of archiver retention or modified time retention
+
+          Returns:
+                True    -   if archiver or modified time retention is enabled for the subclient
+
+                False   -   if archiver or modified time retention is not enabled for the subclient
+
+
+        """
+
+        return self._fsSubClientProp['archiverRetention']
+
+    @archiver_retention.setter
+    def archiver_retention(self, value):
+        """
+        Creates the JSON with the specified Boolean variable to pass to the API
+            to update the archiver or modified time based retention of this File System Subclient
+
+        If archiver retention is enabled-
+                With backup retention, the object based retention is selected and
+                modified time based retention is selected.
+
+                Without backup retention, job based retention is selected
+        Args:
+            value  (bool)  --  To enable or disable job based retention or modified time retention
+
+
+
+        """
+        if isinstance(value, bool):
+
+            if value:
+                new_value = {
+                    'extendStoragePolicyRetention': True,
+                    'archiverRetention': True}
+            else:
+                new_value = {'archiverRetention': False}
+            self._set_subclient_properties("_fs_subclient_prop", new_value)
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'argument should only be boolean')
+
+    @property
+    def archiver_retention_days(self):
+        """return number of days for archiver or modified time  retention
+
+           Return:
+                                (int)
+        """
+
+        return self._fsSubClientProp['extendRetentionForNDays']
+
+    @archiver_retention_days.setter
+    def archiver_retention_days(self, value):
+        """
+        Creates the JSON with the specified archiver retention or modified time based retentiondays
+         to pass to the API to update the respected value of this File System Subclient
+
+        Args:
+                value  (int)  --   To update archiving retention or modified time based retention
+
+                               The value will be converted in years , months and days from on GUI.
+
+                               To set infinite value should be -1
+
+        Raises:
+                SDKException:
+                    if failed to update archiver retention days of subclient
+
+                    if value is invalid
+
+
+        """
+        if isinstance(value, int):
+            if value != -1:
+                new_value = {
+                    'extendRetentionForNDays': value,
+                    'archiverRetentionMode': 1}
+            else:
+                new_value = {'extendRetentionForNDays': value}
+            self._set_subclient_properties("_fs_subclient_prop", new_value)
+
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'argument should only be integer')
+
+    @property
+    def disk_cleanup(self):
+        """
+        return value of disk cleanup of the subclient
+
+         Returns:
+                True    -   if disk Cleanup is enabled for the subclient
+
+                False   -   if disk Cleanup is not enabled for the subclient
+
+
+        """
+        diskcleanup = None
+        if 'enableArchivingWithRules' in self._fsSubClientProp['diskCleanupRules']:
+            return self._fsSubClientProp['diskCleanupRules']['enableArchivingWithRules']
+
+        return diskcleanup
+
+    @disk_cleanup.setter
+    def disk_cleanup(self, value):
+        """
+        Creates the JSON with the specified Boolean to pass to the API
+            to update the disk cleanup option of this File System Subclient
+
+        Args:
+            value   (bool)  --  To enable or disbale disk cleanup
+
+        Raises:
+                SDKException:
+                    if failed to update the propety of subclient
+
+                    if value is invalid
+
+        """
+
+        if isinstance(value, bool):
+
+            self._set_subclient_properties(
+                "_fsSubClientProp['diskCleanupRules']['enableArchivingWithRules']", value)
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'argument should only be boolean')
+
+    @property
+    def disk_cleanup_rules(self):
+        """
+        return disk cleanup rules for this FileSystem Subclient
+
+        Return:
+            (dict)  --  disk clean up rules
+        """
+
+        return self._fsSubClientProp['diskCleanupRules']
+
+    @disk_cleanup_rules.setter
+    def disk_cleanup_rules(self, rules):
+        """
+        Creates the JSON with the specified dictionary value to pass to the API
+            to update the disk cleanup rules of this File System Subclient
+
+        Args:
+                        rules   (dict)  --  To update the rules Only need to send the value which need to be
+                        updated
+
+                        {'diskCleanupRules':{
+                'useNativeSnapshotToPreserveFileAccessTime': False,
+                'fileModifiedTimeOlderThan': 0,
+                'fileSizeGreaterThan': 1024,
+                'stubPruningOptions': 0, 0 to disable and 1,2 ,3 for different option
+
+                'afterArchivingRule': 1, - 1 for stub the file and 2 for delete the file
+
+                'stubRetentionDaysOld': 365,
+                'fileCreatedTimeOlderThan': 0,
+                'maximumFileSize': 0,
+                'fileAccessTimeOlderThan': 89,
+                'startCleaningIfLessThan': 50,
+                'enableRedundancyForDataBackedup': True,
+                 'stopCleaningIfupto': 80,
+
+                 'diskCleanupFileTypes': {{'fileTypes': ["%Text%", '%Image%']}
+
+                 or
+
+                 'diskCleanupFilesTypes':{} for no extension
+                }
+        Raises:
+                SDKException:
+                    if failed to update the property of the subclient
+
+                    if value is invalid
+
+
+        """
+
+        if isinstance(rules, dict):
+
+            self._set_subclient_properties("_fs_subclient_prop", rules)
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                "The parameter should be dictionary")
+
+    @property
+    def backup_only_archiving_candidate(self):
+        """
+            To get the value of backup only archiving candidate
+
+        Returns:
+                True    -   if backup only archiving candidate is enabled for the subclient
+
+                False   -   if backup only archiving candidate is not enabled for the subclient
+        """
+        return self._fsSubClientProp['backupFilesQualifiedForArchive']
+
+    @backup_only_archiving_candidate.setter
+    def backup_only_archiving_candidate(self, value):
+        """
+        Creates the JSON with the specified boolean value to pass to the API
+            to update the backup only archiving candidate of this File System Subclient
+
+        Args:
+            value   (bool)  --  Enable or disable the option
+
+        Raises:
+                SDKException:
+                    if failed to update the propety of subclient
+
+                    if value is invalid
+
+        """
+        if isinstance(value, bool):
+            self._set_subclient_properties(
+                "_fsSubClientProp['backupFilesQualifiedForArchive']", value)
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'The parameter must be boolean type')
+
+    @property
+    def file_version(self):
+        """
+
+        Returns:
+                        (dict)  --  file version mode
+        """
+        version = {}
+        version['Mode'] = self._fsSubClientProp['olderFileVersionsMode']
+        modes={1: self._fsSubClientProp['keepOlderVersionsForNDays'],
+			   2: self._fsSubClientProp['keepVersions'] }
+        version['DaysOrNumber'] = modes.get(version['Mode'])
+        return version
+
+    @file_version.setter
+    def file_version(self, value):
+        """
+            Creates the JSON with the specified dictionary to pass to the API
+            to update the version mode and the value of this File System Subclient
+
+        Args:
+             value   (dict)  --  format -{'Mode':value,'DaysOrNumber':value}
+
+                    Mode value 1- version based on modified time
+
+                                2- No of version
+
+                Example-
+                    To set version based on modified time to 2 years
+
+                    value={'Mode':1,'DaysOrNumber',730}
+
+                    To set Number of version to 10
+
+                    value={'Mode':2,'DaysOrNumber':10}
+        Raises:
+               SDKException:
+                    if failed to update the propety of subclient
+
+                    if value is invalid
+
+        """
+        if isinstance(value, dict):
+            if value['Mode'] == 1 or value['Mode'] == 2:
+                new_value = {'olderFileVersionsMode': value['Mode']}
+            else:
+                raise SDKException(
+                    'Subclient', '102', "File version mode can only be 1 or 2")
+            modes={1: 'keepOlderVersionsForNDays',
+				    2: 'keepVersions'}
+			
+            new_value[modes[value['Mode']]] = value['DaysOrNumber']
+           
+            self._set_subclient_properties("_fs_subclient_prop", new_value)
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                "Parameter need to be dictionary")
 
     def find_all_versions(self, *args, **kwargs):
         """Searches the content of a Subclient.
@@ -477,8 +893,14 @@ class FileSystemSubclient(Subclient):
                             inline_backup_copy      :   to run backup copy immediately(inline)
                             skip_catalog            :   skip catalog for intellisnap operation
 
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
             Returns:
-                object - instance of the Job class for this backup job
+                object - instance of the Job class for this backup job if its an immediate Job
+                         instance of the Schedule class for the backup job if its a scheduled Job
 
             Raises:
                 SDKException:
@@ -495,8 +917,9 @@ class FileSystemSubclient(Subclient):
 
             if not self.is_on_demand_subclient:
                 raise SDKException(
-                    'Subclient', '102', 'On Demand backup is not supported for this subclient'
-                )
+                    'Subclient',
+                    '102',
+                    'On Demand backup is not supported for this subclient')
 
             if not advanced_options:
                 advanced_options = {}

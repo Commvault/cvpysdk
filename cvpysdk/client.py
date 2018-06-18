@@ -142,13 +142,19 @@ Client
 
     restart_services()           --  executes the command on the client to restart the services
 
-    network()                    --  returns Network class object
-
     push_network_config()        --  performs a push network configuration on the client
 
     add_user_association()       --  adds the user associations on this client
 
     refresh()                    --  refresh the properties of the client
+
+    add_additional_setting()     --  adds registry key to the client property
+
+    delete_additional_setting()  --  deletes registry key from the client property
+
+    release_license()            --  releases a license from a client
+
+    reconfigure_client()         --  reapplies license to the client
 
 Client Attributes
 -----------------
@@ -213,9 +219,12 @@ Client Attributes
     client are running or not, and whether the CommServ is able to communicate with the client
 
 
-    set_encryption_prop ()       --    Set encryption properties on a client
+    **set_encryption_prop**         --    Set encryption properties on a client
 
-    set_dedup_prop()             --     Set DDB properties
+    **set_dedup_prop**              --     Set DDB properties
+
+    **consumed_licenses**           --  returns dictionary of all the license details
+    which is consumed by the client
 
 """
 
@@ -1118,6 +1127,7 @@ class Client(object):
         self._client_hostname = None
         self._job_results_directory = None
         self._log_directory = None
+        self._license_info = None
 
         self.refresh()
 
@@ -2831,3 +2841,264 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_additional_setting(self, category, key_name, data_type, value):
+        """Adds registry key to the client property
+
+            Args:
+                category        (str)            --  Category of registry key
+
+                key_name        (str)            --  Name of the registry key
+
+                data_type       (str)            --  Data type of registry key
+
+                    Accepted Values: BOOLEAN, INTEGER, STRING, MULTISTRING, ENCRYPTED
+
+                value           (str)            --  Value of registry key
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected"""
+
+        properties_dict = {
+            "registryKeys": [{"deleted": 0,
+                              "relativepath": category,
+                              "keyName": key_name,
+                              "isInheritedFromClientGroup": False,
+                              "type": data_type,
+                              "value": value,
+                              "enabled": 1}]
+        }
+        request_json = self._update_client_props_json(properties_dict)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    if response.json()['response'][0].get('errorCode', 0):
+                        error_message = response.json()['response'][0]['errorMessage']
+                        o_str = 'Failed to add registry key\nError: "{0}"'.format(
+                            error_message)
+                        raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def delete_additional_setting(self, category, key_name):
+        """Deletes registry key from the client property
+
+        Args:
+            category        (str)  --  Category of registry key
+
+            key_name        (str)  --  Name of the registry key
+
+        Raises:
+            SDKException:
+                if failed to delete
+
+                if response is empty
+
+                if response code is not as expected"""
+
+        properties_dict = {
+            "registryKeys": [{"deleted": 1,
+                              "relativepath": category,
+                              "keyName": key_name}]
+        }
+        request_json = self._update_client_props_json(properties_dict)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    if response.json()['response'][0].get('errorCode', 0):
+                        error_message = response.json()['response'][0]['errorMessage']
+                        o_str = 'Failed to delete registry key\nError: "{0}"'.format(
+                            error_message)
+                        raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def release_license(self, license_name=None):
+        """Releases a license from a client
+
+        Args:
+
+            license_name    (str)  --  Name of the license to be released.
+
+                Releases all the licenses in the client if no value is passed.
+
+                self.consumed_licenses() method will provide all the available
+
+                license details along with license_name.
+
+                default: None
+
+        Raises:
+            SDKException:
+                if failed to release license
+
+                if response is empty
+
+                if response code is not as expected
+
+        """
+        license_type_id = 0
+        app_type_id = 0
+        platform_type = 1
+        if not license_name is None:
+            if self.consumed_licenses.get(license_name):
+                license_type_id = self.consumed_licenses[license_name].get('licenseType')
+                app_type_id = self.consumed_licenses[license_name].get('appType')
+                platform_type = self.consumed_licenses[license_name].get('platformType')
+            else:
+                raise Exception(
+                    "Provided license name is not configured in the client")
+        request_json = {
+            "licensesInfo": [{
+                "platformType": platform_type,
+                "license": {
+                    "licenseType": license_type_id,
+                    "appType": app_type_id,
+                    "licenseName": license_name
+                }
+            }],
+            "clientEntity": {
+                "clientId": int(self.client_id)
+            }
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['RELEASE_LICENSE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    if response.json()['errorCode'] != 0:
+                        error_message = response.json()['errorMessage']
+                        o_str = 'Failed to release license.\nError: "{0}"'.format(
+                            error_message)
+                        raise SDKException('Client', '102', o_str)
+                    self._license_info = None
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def reconfigure_client(self):
+        """Reapplies license to the client
+
+            Raises:
+                SDKException:
+                    if failed to reconfigure client
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        """
+        request_json = {
+            "clientInfo": {
+                "clientId": int(self.client_id)
+            },
+            "platformTypes": [1]
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['RECONFIGURE_LICENSE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    if response.json()['errorCode'] != 0:
+                        error_message = response.json()['errorMessage']
+                        o_str = 'Failed to re-apply license.\nError: "{0}"'.format(
+                            error_message)
+                        raise SDKException('Client', '102', o_str)
+                    self._license_info = None
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def consumed_licenses(self):
+        """returns dictionary of all the license details which is consumed by the client
+
+            Returns:
+                dict - consisting of all licenses consumed by the client
+                    {
+                         "license_name_1": {
+                            "licenseType": license_type_id,
+
+                            "appType": app_type_id,
+
+                            "licenseName": license_name,
+
+                            "platformType": platform_type_id
+
+                        },
+
+                        "license_name_2": {
+
+                            "licenseType": license_type_id,
+
+                            "appType": app_type_id,
+
+                            "licenseName": license_name,
+
+                            "platformType": platform_type_id
+
+                        }
+
+                    }
+
+            Raises:
+                SDKException:
+                    if failed to get the licenses
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        """
+        if self._license_info is None:
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'GET', self._services['LIST_LICENSES'] % self.client_id
+            )
+            if flag:
+                if response.json():
+                    if 'errorCode' in response.json():
+                        error_message = response.json()['errorMessage']
+                        o_str = 'Failed to fetch license details.\nError: "{0}"'.format(
+                            error_message)
+                        raise SDKException('Client', '102', o_str)
+                    licenses_dict = {}
+                    for license_details in response.json().get('licensesInfo', []):
+                        if license_details.get('license'):
+                            licenses_dict[license_details['license'].get(
+                                'licenseName', "")] = license_details['license']
+                            licenses_dict[license_details['license'].get(
+                                'licenseName', "")]['platformType'] = license_details.get(
+                                    'platformType')
+                    self._license_info = licenses_dict
+                else:
+                    self._license_info = {}
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        return self._license_info

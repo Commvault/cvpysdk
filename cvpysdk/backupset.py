@@ -622,7 +622,16 @@ class Backupset(object):
             'restore_index': True,
             'vm_disk_browse': False,
             'filters': [],
-            '_subclient_id': 0
+            'job_id': 0,
+            'commcell_id': self._commcell_object.commcell_id,
+            'include_aged_data': False,
+            'include_hidden': False,
+            'include_running_jobs': False,
+            'vs_volume_browse': False,
+            'browse_view_name': 'VOLUMEVIEW',
+
+            '_subclient_id': 0,
+            '_raw_response': False
         }
 
     def __getattr__(self, attribute):
@@ -963,6 +972,28 @@ class Backupset(object):
 
                     request_json['queries'][0]['whereClause'].append(temp_dict)
 
+        if options['job_id'] is not 0:
+            request_json['advOptions']['advConfig'] = {
+                'browseAdvancedConfigBrowseByJob': {
+                    'commcellId': options['commcell_id'],
+                    'jobId': options['job_id']
+                }
+            }
+
+        if options['include_aged_data']:
+            request_json['options']['includeAgedData'] = True
+
+        if options['include_hidden']:
+            request_json['options']['includeHidden'] = True
+
+        if options['include_running_jobs']:
+            request_json['options']['includeRunningJobs'] = True
+
+        if options['vs_volume_browse']:
+            request_json['mode'] = 3
+            request_json['options']['vsVolumeBrowse'] = True
+            request_json['advOptions']['browseViewName'] = options['browse_view_name']
+
         return request_json
 
     def _process_browse_all_versions_response(self, result_set):
@@ -1025,7 +1056,7 @@ class Backupset(object):
 
             versions_list.append(paths_dict)
 
-        all_versions_dict = {}
+        all_versions_dict = dict()
         all_versions_dict[path] = versions_list
 
         return all_versions_dict
@@ -1070,6 +1101,9 @@ class Backupset(object):
             response_json = response.json()
             paths_dict = {}
             paths = []
+
+            if options['_raw_response']:
+                return [], response_json
 
             if response_json and 'browseResponses' in response_json:
 

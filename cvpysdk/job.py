@@ -28,6 +28,13 @@ JobController
 
     _get_jobs_list()            --  executes the request, and parses and returns the jobs response
 
+    _get_jobs_request_json(**options)
+                                --  Returns the request json for the jobs request
+
+    _modify_all_jobs(operation_type=None)
+                                --  executes a request on the server to suspend/resume/kill all
+                                        the jobs on the commserver.
+
     all_jobs()                  --  returns all the jobs on this commcell
 
     active_jobs()               --  returns the dict of active jobs and their details
@@ -36,6 +43,11 @@ JobController
 
     get()                       --  returns the Job class instance for the given job id
 
+    kill_all_jobs()             -- Kills all jobs on the commcell
+
+    resume_all_jobs()           -- Resumes all jobs on the commcell
+
+    suspend_all_jobs()          -- Suspends all jobs on the commcell
 
 Job
 ===
@@ -336,6 +348,68 @@ class JobController(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _modify_all_jobs(self, operation_type=None):
+        """ Executes a request on the server to suspend/resume/kill all the jobs on the commserver
+
+            Args:
+                operation_type     (str)   --  All jobs on commcell will be changed to this
+                                                    state.
+                                                    Options:
+                                                        suspend/resume/kill
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    - Invalid input is passed to the module
+
+                    - Failed to execute the api to modify jobs
+
+                    - Response is incorrect
+        """
+
+        job_map = {
+            'suspend': 'JOB_SUSPEND',
+            'resume': 'JOB_RESUME',
+            'kill': 'JOB_KILL'
+        }
+
+        if operation_type not in job_map:
+            raise SDKException('Job', '102', 'Invalid input')
+
+        request_json = {
+           "JobManager_PerformMultiCellJobOpReq": {
+              "jobOpReq": {
+                 "operationType": job_map[operation_type]
+              },
+              "message": "ALL_JOBS",
+              "operationDescription": "All jobs"
+           }
+        }
+
+        response = self._commcell_object._qoperation_execute(request_json)
+
+        if 'error' in response:
+            error_code = response['error'].get('errorCode')
+            if error_code != 0:
+                if 'errLogMessage' in response['error']:
+                    error_message = "Failed to {0} all jobs with error: [{1}]".format(
+                                operation_type, response['error']['errLogMessage']
+                            )
+
+                    raise SDKException(
+                        'Job',
+                        '102',
+                        'Error Code:"{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                    )
+                else:
+                    raise SDKException('Job',
+                                       '102',
+                                       "Failed to {0} all jobs".format(operation_type))
+        else:
+            raise SDKException('Response', '102')
+
     def all_jobs(self, client_name=None, lookup_time=5, job_filter=None, **options):
         """Returns the dict consisting of all the jobs executed on the Commcell within the number
             of hours specified in lookup time value.
@@ -568,6 +642,18 @@ class JobController(object):
             options['clients_list'] = options.get('clients_list', []) + [client_name]
 
         return self._get_jobs_list(**options)
+
+    def suspend_all_jobs(self):
+        """ Suspends all the jobs on the commserver """
+        self._modify_all_jobs('suspend')
+
+    def resume_all_jobs(self):
+        """ Resumes all the jobs on the commserver """
+        self._modify_all_jobs('resume')
+
+    def kill_all_jobs(self):
+        """ Kills all the jobs on the commserver """
+        self._modify_all_jobs('kill')
 
     def get(self, job_id):
         """Returns the job object for the given job id.

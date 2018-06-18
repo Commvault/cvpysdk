@@ -15,39 +15,47 @@ OracleInstance: Derived class from Instance Base class, representing an
 
 OracleInstance:
 
-    __init__()                  -- Constructor for the class
+    __init__()                          -- Constructor for the class
 
-    _get_browse_options         -- Method to get browse options for oracle instance
+    configure_data_masking_policy()     --  Method to configure data masking policy with given parameters
 
-    _process_browse_response    -- Method to process browse response
+    get_masking_policy_id()             --  Method to get policy id of given data masking policy
 
-    oracle_home()               -- Getter for $ORACLE_HOME of this instance
+    standalone_data_masking()           --  Method to launch standalone data masking job on given instance
 
-    version()                   -- Getter for oracle database version
+    delete_data_masking_policy()        --  Method to delete given data masking policy
 
-    is_catalog_enabled()        -- Getter to check if catalog is enabled for backups
+    _get_browse_options                 -- Method to get browse options for oracle instance
 
-    catalog_user()              -- Getter for getting catalog user
+    _process_browse_response            -- Method to process browse response
 
-    catalog_db()                -- Getter for catalog database name
+    oracle_home()                       -- Getter for $ORACLE_HOME of this instance
 
-    archive_log_dest()          -- Getter for archivelog destination
+    version()                           -- Getter for oracle database version
 
-    os_user()                   -- Getter for OS user owning oracle software
+    is_catalog_enabled()                -- Getter to check if catalog is enabled for backups
 
-    cmd_sp()                    -- Getter for command line storage policy
+    catalog_user()                      -- Getter for getting catalog user
 
-    log_sp()                    -- Getter for log storage policy
+    catalog_db()                        -- Getter for catalog database name
 
-    is_autobackup_on()          -- Getter to check if autobackup is enabled
+    archive_log_dest()                  -- Getter for archivelog destination
 
-    db_user()                   -- Getter for SYS database user name
+    os_user()                           -- Getter for OS user owning oracle software
 
-    tns_name()                  -- Getter for TNS connect string
+    cmd_sp()                            -- Getter for command line storage policy
 
-    dbid()                      -- Getter for getting DBID of database
+    log_sp()                            -- Getter for log storage policy
 
-    restore()                   -- Method to restore the instance
+    is_autobackup_on()                  -- Getter to check if autobackup is enabled
+
+    db_user()                           -- Getter for SYS database user name
+
+    tns_name()                          -- Getter for TNS connect string
+
+    dbid()                              -- Getter for getting DBID of database
+
+    restore()                           -- Method to restore the instance
 
 """
 from __future__ import unicode_literals
@@ -73,8 +81,225 @@ class OracleInstance(Instance):
             instance_id     --  id of the instance
 
         """
-        super(OracleInstance, self).__init__(agent_object, instance_name, instance_id)
+        super(OracleInstance, self).__init__(
+            agent_object, instance_name, instance_id)
         self._instanceprop = {}  # instance variable to hold instance properties
+
+    def configure_data_masking_policy(self, policy_name, table_list_of_dict):
+        """Method to configure data masking policy with given parameters
+        Args:
+            policy_name             (str)       -- string representing policy name
+            table_list_of_dict      list(dict)  -- list containing one dict item representing rules for single table
+            Sample  list
+            Tables:
+                    [
+                    {
+                    "name":"schema_name.table_name",
+                    "columns": [ {"name":"column_name", "type":"algorithm_type"}, "arguments":[list of strings]…]
+                    }
+                    ]
+                    Sample :
+                    [
+                    {
+                    "name":"HR.NUMNEW",
+                    "columns":[{"name":"N1","type":0},{"name":"N2","type":2,"arguments":["1000","2000"]}]
+                    },
+                    {
+                    "name":"HR.CHANGE",
+                    "columns":[{"name":"C1","type":1},{"name":"C2","type":1}]
+                    }
+                    ]
+            schema_name , table_name, column_name: str
+            Column type key in main dict takes list of dict as value :
+            This list of dict represents each column name and type of algorithm and arguments if any for that algorithm
+            arguments : list of strings
+
+            Choose appropriate algorithm type and pass necessary arguments based on column type
+
+            Algorithm       Arguments mandatory             Arguments Format        Algorithm type number
+
+            Shuffling           NA                              NA                      0
+            Numeric Range       [min, max]                  ["1000","2000"]             2
+            Numeric Variance    [variance percentage]           ["50"]                  3
+            FPE                 NA                              NA                      1
+            Fixed String        string_to_replace           ["string_to_replace"]       4
+
+
+            Supported Algorithms :
+
+            Column Type     Algorithms Supported
+
+            Numeric         Shuffling, FPE, Numeric Range, Numeric Variance
+            Char            Shuffling , FPE , Fixed String
+            Varchar         Shuffling , FPE , Fixed String
+
+        """
+        request_json = {
+            "opType": 2,
+            "policy": {
+                "association": {"instanceId": int(self.instance_id)},
+                "config": {"tables": table_list_of_dict},
+                "policy": {"policyName": policy_name}
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['MASKING_POLICY'], request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['errorMessage']
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating Data masking policy\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    return True
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
+    def get_masking_policy_id(self, policy_name):
+        """Method to get policy id of given data masking policy
+        Args:
+            policy_name          (str)       -- data masking policy name
+
+        Returns:
+            policy_id            (int)       -- data masking policy ID
+
+        """
+        instance_id = int(self.instance_id)
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['MASKING_POLICY'])
+        response_json = response.json()
+        policy_list = response_json["policies"]
+        policy_id = None
+        for i in policy_list:
+            pname = i["policy"]["policyName"]
+            associated_instance_id = i["association"]["instanceId"]
+            if (pname == policy_name) and (associated_instance_id == instance_id):
+                policy_id = int(i["policy"]["policyId"])
+                break
+            else:
+                continue
+        return policy_id
+
+    def delete_data_masking_policy(self, policy_name):
+        """Method to delete given data masking policy
+        Args:
+            policy_name         (str)       --  data masking policy name to be deleted
+
+        Returns:
+            bool                            -- returns true when deletion succeeds
+
+        Raises:
+            Exception
+
+                When deletion of policy fails
+
+                When Invalid policy name under given instance is provided
+        """
+        source_instance_id = int(self.instance_id)
+        policy_id = self.get_masking_policy_id(policy_name)
+        if policy_id is None:
+            raise SDKException(
+                'Instance', '102', "Invalid policy name under given instance. Validate the policy name")
+
+        request_json = {
+            "opType": 3,
+            "policy": {
+                "association": {"instanceId": source_instance_id},
+                "policy": {"policyId": policy_id, "policyName": policy_name}
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['MASKING_POLICY'], request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while deleting Data masking policy\nError')
+                else:
+                    return True
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
+    def standalone_data_masking(self, policy_name, destination_client=None, destination_instance=None):
+        """Method to launch standalone data masking job on given instance
+        Args:
+
+            policy_name          (str)       -- data masking policy name
+
+            destination_client   (str)       -- destination client in which destination instance exists
+
+            destination_instance (str)       -- destination instance to which masking to be applied
+
+        Returns:
+            object -- Job containing data masking job details
+
+
+        Raises:
+            SDKException
+                if policy ID retrieved is None
+
+        """
+        if destination_client is None:
+            destination_client = self._properties['instance']['clientName']
+        if destination_instance is None:
+            destination_instance = self.instance_name
+        destination_client_object = self._commcell_object.clients.get(
+            destination_client)
+        destination_agent_object = destination_client_object.agents.get(
+            'oracle')
+        destination_instance_object = destination_agent_object.instances.get(
+            destination_instance)
+        destination_instance_id = int(destination_instance_object.instance_id)
+        source_instance_id = int(self.instance_id)
+        policy_id = self.get_masking_policy_id(policy_name)
+        if policy_id is None:
+            raise SDKException(
+                'Instance', '102', "Invalid policy name under given instance. Validate the policy name")
+        request_json = self._restore_json(paths=r'/')
+        data_masking_options = {
+            "restoreOptions":
+            {
+                "destination":
+                    {
+                        "destClient": {"clientName": destination_client},
+                        "destinationInstance": {"clientName": destination_client, "instanceName": destination_instance, "instanceId": destination_instance_id}
+                    },
+                    "dbDataMaskingOptions":
+                    {
+                        "isStandalone": True,
+                        "enabled": True,
+                        "dbDMPolicy":
+                            {
+                                "association": {"instanceId": source_instance_id},
+                                "policy": {"policyId": policy_id, "policyName": policy_name}
+                            }
+                    }
+            }
+        }
+        request_json["taskInfo"]["subTasks"][0]["options"] = data_masking_options
+        return self._process_restore_response(request_json)
 
     def _get_oracle_restore_json(self, destination_client,
                                  instance_name, tablespaces,
@@ -96,7 +321,8 @@ class OracleInstance(Instance):
             raise TypeError('Expecting a list for tablespaces')
         destination_id = int(self._commcell_object.clients.get(
             destination_client).client_id)
-        tslist = ["SID: {0} Tablespace: {1}".format(instance_name, ts) for ts in tablespaces]
+        tslist = ["SID: {0} Tablespace: {1}".format(
+            instance_name, ts) for ts in tablespaces]
         restore_json = self._restore_json(paths=r'/')
         if common_options is not None:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
@@ -158,12 +384,14 @@ class OracleInstance(Instance):
                     return self._instanceprop['tablespaces']
                 elif "errorCode" in response_data:
                     error_message = response_data['errorMessage']
-                    o_str = 'Browse job failed\nError: "{0}"'.format(error_message)
+                    o_str = 'Browse job failed\nError: "{0}"'.format(
+                        error_message)
                     raise SDKException('Instance', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._commcell_object._update_response_(
+                response.text)
             raise SDKException('Response', '101', response_string)
 
     @property
@@ -208,7 +436,8 @@ class OracleInstance(Instance):
         try:
             return self._properties['oracleInstance']['catalogConnect']['userName']
         except KeyError as error_str:
-            raise SDKException('Instance', r'102', 'Catalog user not set - {}'.format(error_str))
+            raise SDKException('Instance', r'102',
+                               'Catalog user not set - {}'.format(error_str))
 
     @property
     def catalog_db(self):
@@ -370,7 +599,7 @@ class OracleInstance(Instance):
         """
         return self.subclients.get(subclient_name).backup(r'full')
 
-    def restore(self, destination_client=None, common_options = None, oracle_options=None):
+    def restore(self, destination_client=None, common_options=None, oracle_options=None):
         """
         Method to restore the entire database using latest backup
 

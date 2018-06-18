@@ -33,6 +33,9 @@ Commcell:
 
     _qoperation_execute()       --  runs the qoperation execute rest api on specified input xml
 
+    _qoperation_execscript()    --  runs the qoperation execute script rest api with
+    specified arguements
+
     logout()                    --  logs out the user associated with the current instance
 
     request()                   --  runs an input HTTP request on the API specified,
@@ -45,6 +48,10 @@ Commcell:
     run_data_aging()            --  triggers data aging job from the commcell level
 
     get_saml_token()            --  returns the SAML token for the currently logged-in user
+
+    add_additional_setting()    --  adds registry key to the commserve property
+
+    delete_additional_setting() --  deletes registry key from the commserve property
 
 
 Commcell instance Attributes
@@ -65,6 +72,8 @@ Commcell instance Attributes
 
     **commserv_version**        --  returns the ContentStore version installed on the `CommServ`,
     class instance is initalized for
+
+    **commcell_id**             --  returns the `CommCell` ID
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
     class instance is connected to
@@ -136,6 +145,9 @@ Commcell instance Attributes
     **monitoring_policies**     --  returns the instance of the `MonitoringPolicies` class,
     to interact with the MonitoringPolicies added to the Commcell
 
+    **operation_window**        -- returns the instance of the 'OperationWindow' class,
+    to interact with the opeartion windows of commcell
+
     **array_management**        --  returns the instance of the `ArrayManagement` class,
     to perform SNAP related operations on the Commcell
 
@@ -144,6 +156,12 @@ Commcell instance Attributes
 
     **event_viewer**            --  returns the instance of the `Events` class,
     to interact with the Events associated on the Commcell
+
+    **disasterrecovery**    -- returns the instance of the 'DisasterRecovery' class,
+    to run disaster recovery backup , restore operations.
+
+    **commserv_client**         --  returns the client object associated with the
+    commserver
 
 """
 
@@ -168,8 +186,6 @@ from .client import Clients
 from .alert import Alerts
 from .storage import MediaAgents
 from .storage import DiskLibraries
-from .storage import StoragePolicies
-from .storage import SchedulePolicies
 from .security.usergroup import UserGroups
 from .domains import Domains
 from .workflow import WorkFlows
@@ -187,9 +203,12 @@ from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
 from .policy import Policies
 from .schedules import SchedulePattern
+from .schedules import Schedule
 from .activitycontrol import ActivityControl
 from .eventviewer import Events
 from .array_management import ArrayManagement
+from .disasterrecovery import DisasterRecovery
+from .operation_window import OperationWindow
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -327,9 +346,11 @@ class Commcell(object):
         self._commserv_guid = None
         self._commserv_version = None
 
+        self._id = None
         self._clients = None
         self._media_agents = None
         self._workflows = None
+        self._disaster_recovery = None
         self._alerts = None
         self._disk_libraries = None
         self._storage_policies = None
@@ -351,6 +372,8 @@ class Commcell(object):
         self._events = None
         self._monitoring_policies = None
         self._array_management = None
+        self._operation_window = None
+        self._commserv_client = None
 
         self.refresh()
 
@@ -424,11 +447,14 @@ class Commcell(object):
         del self._events
         del self._monitoring_policies
         del self._array_management
+        del self._operation_window
+        del self._commserv_client
 
         del self._web_service
         del self._cvpysdk_object
         del self._device_id
         del self._services
+        del self._disaster_recovery
         del self
 
     def _get_commserv_details(self):
@@ -459,6 +485,7 @@ class Commcell(object):
                     self._commserv_name = response.json()['commcell']['commCellName']
                     self._commserv_timezone_name = response.json()['csTimeZone']['TimeZoneName']
                     self._commserv_version = response.json()['currentSPVersion']
+                    self._id = response.json()['commcell']['commCellId']
 
                     self._commserv_timezone = re.search(
                         r'\(.*', response.json()['timeZone']
@@ -497,6 +524,39 @@ class Commcell(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def commcell_id(self):
+        """Returns the ID of the CommCell."""
+        return self._id
+
+    def _qoperation_execscript(self, arguments):
+        """Makes a qoperation execute rest api call
+
+            Args:
+                arguments     (str)   --  arguements that is to be passed
+
+            Returns:
+                dict    -   json response received from the server
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QSCRIPT'] % arguments)
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
 
     @property
     def commserv_guid(self):
@@ -561,8 +621,6 @@ class Commcell(object):
             return self._clients
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def media_agents(self):
@@ -574,8 +632,6 @@ class Commcell(object):
             return self._media_agents
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def workflows(self):
@@ -587,8 +643,6 @@ class Commcell(object):
             return self._workflows
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def alerts(self):
@@ -600,8 +654,6 @@ class Commcell(object):
             return self._alerts
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def disk_libraries(self):
@@ -613,34 +665,16 @@ class Commcell(object):
             return self._disk_libraries
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def storage_policies(self):
         """Returns the instance of the StoragePolicies class."""
-        try:
-            if self._storage_policies is None:
-                self._storage_policies = StoragePolicies(self)
-
-            return self._storage_policies
-        except AttributeError:
-            return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
+        return self.policies.storage_policies
 
     @property
     def schedule_policies(self):
         """Returns the instance of the SchedulePolicies class."""
-        try:
-            if self._schedule_policies is None:
-                self._schedule_policies = SchedulePolicies(self)
-
-            return self._schedule_policies
-        except AttributeError:
-            return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
+        return self.policies.schedule_policies
 
     @property
     def policies(self):
@@ -652,8 +686,6 @@ class Commcell(object):
             return self._policies
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def user_groups(self):
@@ -665,8 +697,6 @@ class Commcell(object):
             return self._user_groups
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def domains(self):
@@ -678,8 +708,6 @@ class Commcell(object):
             return self._domains
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def client_groups(self):
@@ -691,8 +719,6 @@ class Commcell(object):
             return self._client_groups
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def global_filters(self):
@@ -704,8 +730,6 @@ class Commcell(object):
             return self._global_filters
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def datacube(self):
@@ -717,8 +741,6 @@ class Commcell(object):
             return self._datacube
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def plans(self):
@@ -730,8 +752,6 @@ class Commcell(object):
             return self._plans
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def job_controller(self):
@@ -743,8 +763,6 @@ class Commcell(object):
             return self._job_controller
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def users(self):
@@ -756,8 +774,6 @@ class Commcell(object):
             return self._users
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def roles(self):
@@ -769,8 +785,6 @@ class Commcell(object):
             return self._roles
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def download_center(self):
@@ -782,8 +796,6 @@ class Commcell(object):
             return self._download_center
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def organizations(self):
@@ -795,8 +807,6 @@ class Commcell(object):
             return self._organizations
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def storage_pools(self):
@@ -808,8 +818,6 @@ class Commcell(object):
             return self._storage_pools
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def monitoring_policies(self):
@@ -821,8 +829,16 @@ class Commcell(object):
             return self._monitoring_policies
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
+
+    @property
+    def operation_window(self):
+        """Returns the instance of the OperationWindow class."""
+        try:
+            if self._operation_window is None:
+                self._operation_window = OperationWindow(self)
+            return self._operation_window
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def activity_control(self):
@@ -834,8 +850,6 @@ class Commcell(object):
             return self._activity_control
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def event_viewer(self):
@@ -847,8 +861,6 @@ class Commcell(object):
             return self._events
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     @property
     def array_management(self):
@@ -860,8 +872,25 @@ class Commcell(object):
             return self._array_management
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
+
+    @property
+    def disasterrecovery(self):
+        """Returns the instance of the DisasterRecovery class."""
+        try:
+            if self._disaster_recovery is None:
+                self._disaster_recovery = DisasterRecovery(self)
+
+            return self._disaster_recovery
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def commserv_client(self):
+        """Returns the instance of the Client class for the CommServ client."""
+        if self._commserv_client is None:
+            self._commserv_client = self.clients.get(self._commserv_name)
+
+        return self._commserv_client
 
     def logout(self):
         """Logs out the user associated with the current instance."""
@@ -1003,7 +1032,9 @@ class Commcell(object):
         self._events = None
         self._monitoring_policies = None
         self._array_management = None
-
+        self._disaster_recovery = None
+        self._operation_window = None
+        self._commserv_client = None
         self._get_commserv_details()
 
     def run_data_aging(
@@ -1075,7 +1106,7 @@ class Commcell(object):
         }
 
         if schedule_pattern:
-            request_json = SchedulePattern().create_schedule(request_json,schedule_pattern)
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json
@@ -1093,7 +1124,7 @@ class Commcell(object):
                     raise SDKException('Commcell', '105', o_str)
 
                 elif "taskId" in response.json():
-                    pass
+                    return Schedule(self, schedule_id=response.json()['taskId'])
 
                 else:
                     raise SDKException('Commcell', '105')
@@ -1140,3 +1171,58 @@ class Commcell(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_additional_setting(self, category, key_name, data_type, value):
+        """Adds registry key to the commserve property.
+
+            Args:
+                category    (str)   --  Category of registry key
+
+                key_name    (str)   --  Name of the registry key
+
+                data_type   (str)   --  Data type of registry key
+
+                    Accepted Values:
+                        - BOOLEAN
+                        - INTEGER
+                        - STRING
+                        - MULTISTRING
+                        - ENCRYPTED
+
+                value   (str)   --  Value of registry key
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        """
+        self.commserv_client.add_additional_setting(category, key_name, data_type, value)
+
+    def delete_additional_setting(self, category, key_name):
+        """Deletes registry key from the commserve property.
+
+            Args:
+                category    (str)   --  Category of registry key
+
+                key_name    (str)   --  Name of the registry key
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to delete
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        """
+        self.commserv_client.delete_additional_setting(category, key_name)

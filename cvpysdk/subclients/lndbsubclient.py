@@ -387,3 +387,58 @@ class LNDbSubclient(Subclient):
             lndb_restore_options=lndb_restore_options)
 
         return self._process_restore_response(request_json)
+
+    def backup(self,
+               backup_level="Incremental",
+               incremental_backup=False,
+               incremental_level='BEFORE_SYNTH',
+               schedule_pattern=None):
+
+        """Returns the JSON request to pass to the API as per the options selected by the user.
+
+                    Args:
+                        backup_level        (str)   --  level of backup the user wish to run
+
+                            Full / Incremental / Differential / Synthetic_full
+
+                        incremental_backup  (bool)  --  run incremental backup
+
+                            only applicable in case of Synthetic_full backup
+
+                        incremental_level   (str)   --  run incremental backup before/after synthetic full
+
+                            BEFORE_SYNTH / AFTER_SYNTH
+
+                            only applicable in case of Synthetic_full backup
+
+                        advanced_options   (dict)  --  advanced backup options to be included while
+                        making the request
+
+                            default: None
+
+                    Returns:
+                        dict    -   JSON request to pass to the API
+
+        """
+
+        if schedule_pattern:
+            request_json = self._backup_json(
+                backup_level,
+                incremental_backup,
+                incremental_level,
+                schedule_pattern=schedule_pattern)
+
+            backup_service = self._commcell_object._services['CREATE_TASK']
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', backup_service, request_json
+            )
+
+        else:
+            return super(LNDbSubclient, self).backup(
+                backup_level=backup_level,
+                incremental_backup=incremental_backup,
+                incremental_level=incremental_level)
+
+        return self._process_backup_response(flag, response)
+

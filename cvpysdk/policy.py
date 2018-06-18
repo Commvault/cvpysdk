@@ -17,6 +17,8 @@ from __future__ import unicode_literals
 from .exception import SDKException
 
 from .policies.configuration_policies import ConfigurationPolicies
+from .policies.storage_policies import StoragePolicies
+from .policies.schedule_policies import SchedulePolicies
 
 
 class Policies:
@@ -44,14 +46,31 @@ class Policies:
     def refresh(self):
         """Refresh all the Policies associated with the Commcell."""
         self._configuration_policies = None
+        self._storage_policies = None
+        self._schedule_policies = None
 
     @property
     def configuration_policies(self):
         """Returns the instance of the ConfigurationPolicies class."""
-        try:
-            if self._configuration_policies is None:
-                self._configuration_policies = ConfigurationPolicies(self._commcell_object)
+        if self._configuration_policies is None:
+            self._configuration_policies = ConfigurationPolicies(self._commcell_object)
 
-            return self._configuration_policies
-        except SDKException:
-            return None
+        return self._configuration_policies
+
+
+    @property
+    def storage_policies(self):
+        """Returns the instance of the StoragePolicies class."""
+        if self._storage_policies is None:
+            self._storage_policies = StoragePolicies(self._commcell_object)
+
+        return self._storage_policies
+
+
+    @property
+    def schedule_policies(self):
+        """Returns the instance of the SchedulePolicies class."""
+        if self._schedule_policies is None:
+            self._schedule_policies = SchedulePolicies(self._commcell_object)
+
+        return self._schedule_policies

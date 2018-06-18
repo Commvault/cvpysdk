@@ -31,9 +31,12 @@ PostgresSubclient:
 
     _get_postgres_restore_json_FS()      --  returns the restore request json for FSBased restore
 
-    restore_postgres_server()       --  runs the restore job for postgres instance with a specified backupset and subclient
+    restore_postgres_server()            --  runs the restore job for postgres instance with a specified backupset and subclient
 
+PostgresSubclient instance Attributes
+=====================================
 
+    **content**                          --  returns all the databases in the content of postgres subclient
 """
 from __future__ import unicode_literals
 
@@ -122,7 +125,14 @@ class PostgresSubclient(DatabaseSubclient):
     @property
     def content(self):
         """Treats the subclient content as a property of the Subclient class."""
-        return self._content
+        content = self._content
+        database_list = list()
+        for database in content:
+            if database.get('postgreSQLContent'):
+                if database['postgreSQLContent'].get('databaseName'):
+                    database_list.append(database[
+                        'postgreSQLContent']['databaseName'].lstrip("/"))
+        return database_list
 
     @content.setter
     def content(self, value):
@@ -334,3 +344,4 @@ class PostgresSubclient(DatabaseSubclient):
             bkpset_name, database_list, destination_client, destination_instance_name)
 
         return self._process_restore_response(restore_json)
+

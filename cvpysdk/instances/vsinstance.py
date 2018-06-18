@@ -60,9 +60,9 @@ class VirtualServerInstance(Instance):
             from .virtualserver.fusioncomputeinstance import FusionComputeInstance
             return object.__new__(FusionComputeInstance)
 
-        elif instance_name == hv_type.AZURE_V2.value.lower():
-            from .virtualserver.azureRMinstance import AzureRMInstance
-            return object.__new__(AzureRMInstance)
+        elif instance_name == hv_type.ORACLE_VM.value.lower():
+            from .virtualserver.oraclevminstance import OracleVMInstance
+            return object.__new__(OracleVMInstance)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.

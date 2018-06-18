@@ -585,8 +585,8 @@ class Organization:
                 self._email_domain_names = organization['emailDomainNames']
                 self._domain_name = organization['shortName']['domainName']
 
-                self._auth_code = organization_properties['authCode']
                 self._is_auth_code_enabled = organization_properties['enableAuthCodeGen']
+                self._auth_code = organization_properties.get('authCode')
 
                 self._machine_count = organization_properties['totalMachineCount']
                 self._user_count = organization_properties['userCount']

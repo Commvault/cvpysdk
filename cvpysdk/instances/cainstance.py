@@ -11,7 +11,9 @@
 CloudAppsInstance is the only class defined in this file.
 
 CloudAppsInstance:  Derived class from Instance Base class, representing a
-                        cloud apps instance, and to perform operations on that instance
+cloud apps instance, and to perform operations on that instance
+
+**Note:** GoogleInstance class is used for OneDrive as well.
 
 CloudAppsInstance:
 
@@ -56,7 +58,9 @@ class CloudAppsInstance(Instance):
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
-            3: SalesforceInstance
+            3: SalesforceInstance,
+            # OneDrive Instance, GoogleInstance class is used for OneDrive instance too.
+            7: GoogleInstance,
         }
 
         commcell_object = agent_object._commcell_object
@@ -67,7 +71,7 @@ class CloudAppsInstance(Instance):
         if response.json() and "instanceProperties" in response.json():
             properties = response.json()["instanceProperties"][0]
         else:
-            raise SDKException('Instance', '102', 'Failed to get the properties of the Instance')
+            raise SDKException('Instance', '105')
 
         cloud_apps_instance_type = properties['cloudAppsInstance']['instanceType']
 

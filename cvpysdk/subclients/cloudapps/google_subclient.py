@@ -11,7 +11,7 @@
 GoogleSubclient is the only class defined in this file.
 
 GoogleSubclient:    Derived class from CloudAppsSubclient Base class, representing a
-                        GMail/GDrive subclient, and to perform operations on that subclient
+GMail/GDrive/OneDrive subclient, and to perform operations on that subclient
 
 GoogleSubclient:
 
@@ -23,11 +23,11 @@ GoogleSubclient:
 
     restore_out_of_place()              --  runs out-of-place restore for the subclient
 
+    discover()                          --  runs user discovery on subclient
+
 """
 
 from __future__ import unicode_literals
-
-from past.builtins import basestring
 
 from ...exception import SDKException
 
@@ -35,7 +35,7 @@ from ..casubclient import CloudAppsSubclient
 
 
 class GoogleSubclient(CloudAppsSubclient):
-    """Derived class from Subclient Base class, representing a CloudApps subclient,
+    """Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient,
         and to perform operations on that subclient."""
 
     def _get_subclient_properties(self):
@@ -125,7 +125,8 @@ class GoogleSubclient(CloudAppsSubclient):
             restore_data_and_acl=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None):
+            to_time=None,
+            to_disk=False):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -157,6 +158,8 @@ class GoogleSubclient(CloudAppsSubclient):
 
                     default: None
 
+                to_disk             (bool)       --  If True, restore to disk will be performed
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -173,6 +176,7 @@ class GoogleSubclient(CloudAppsSubclient):
                     if response is empty
 
                     if response is not success
+
         """
         self._instance_object._restore_association = self._subClientEntity
 
@@ -185,4 +189,60 @@ class GoogleSubclient(CloudAppsSubclient):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
+            to_disk=to_disk
         )
+
+    def discover(self, discover_type='USERS'):
+        """This method discovers the users/groups on Google GSuite Account/OneDrive
+
+                Args:
+
+                    discover_type (str)  --  Type of discovery
+
+                        Valid Values are
+
+                        -   USERS
+                        -   GROUPS
+
+                        Default: USERS
+
+                Returns:
+
+                    List (list)  --  List of users on GSuite account
+
+                Raises:
+                    SDKException:
+                        if response is empty
+
+                        if response is not success
+
+
+        """
+
+        if discover_type.upper() == 'USERS':
+            disc_type = 10
+        elif discover_type.upper() == 'GROUPS':
+            disc_type = 5
+        _get_users = self._services['GET_CLOUDAPPS_USERS'] % (self._instance_object.instance_id,
+                                                              self._client_object.client_id,
+                                                              disc_type)
+
+        flag, response = self._cvpysdk_object.make_request('GET', _get_users)
+
+        if flag:
+            if response.json() and "scDiscoveryContent" in response.json():
+                self._discover_properties = response.json()[
+                    "scDiscoveryContent"][0]
+
+                if "contentInfo" in self._discover_properties:
+                    self._contentInfo = self._discover_properties["contentInfo"]
+
+                user_list = []
+
+                for user in self._contentInfo:
+                    user_list.append(user['contentName'])
+                return user_list
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

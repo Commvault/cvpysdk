@@ -10,19 +10,22 @@
 
 GoogleInstance is the only class defined in this file.
 
-GoogleInstance:     Derived class from CloudAppsInstance Base class, representing a
-                        Google (GMail/GDrive) instance, and to perform operations on that instance
+GoogleInstance: Derived class from CloudAppsInstance Base class, representing a
+Google (GMail/GDrive) and OneDrive instance,
+and to perform operations on that instance
 
 GoogleInstance:
 
     _get_instance_properties()  --  Instance class method overwritten to add cloud apps
-                                        instance properties as well
+    instance properties as well
+
+    restore_out_of_place()      --  runs out-of-place restore for the instance
 
 """
 
 from __future__ import unicode_literals
 from past.builtins import basestring
-
+from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
 
 
@@ -40,16 +43,22 @@ class GoogleInstance(CloudAppsInstance):
 
         """
         super(GoogleInstance, self)._get_instance_properties()
-
+        # Common properties for Google and OneDrive
         self._ca_instance_type = None
         self._manage_content_automatically = None
         self._auto_discovery_enabled = None
+        self._auto_discovery_mode = None
+        self._proxy_client = None
+
+        # Google instance related properties
         self._app_email_id = None
         self._google_admin_id = None
         self._service_account_key_file = None
         self._app_client_id = None
-        self._proxy_client = None
 
+        # OneDrive instance related properties
+        self._client_id = None
+        self._tenant = None
         if 'cloudAppsInstance' in self._properties:
             cloud_apps_instance = self._properties['cloudAppsInstance']
             self._ca_instance_type = cloud_apps_instance['instanceType']
@@ -59,10 +68,20 @@ class GoogleInstance(CloudAppsInstance):
 
                 self._manage_content_automatically = ginstance['manageContentAutomatically']
                 self._auto_discovery_enabled = ginstance['isAutoDiscoveryEnabled']
+                self._auto_discovery_mode = ginstance['autoDiscoveryMode']
                 self._app_email_id = ginstance['appEmailId']
                 self._google_admin_id = ginstance['emailId']
                 self._service_account_key_file = ginstance['appKey']
                 self._app_client_id = ginstance['appClientId']
+
+            if 'oneDriveInstance' in cloud_apps_instance:
+                onedrive_instance = cloud_apps_instance['oneDriveInstance']
+
+                self._manage_content_automatically = onedrive_instance['manageContentAutomatically']
+                self._auto_discovery_enabled = onedrive_instance['isAutoDiscoveryEnabled']
+                self._auto_discovery_mode = onedrive_instance['autoDiscoveryMode']
+                self._client_id = onedrive_instance['clientId']
+                self._tenant = onedrive_instance['tenant']
 
             if 'generalCloudProperties' in cloud_apps_instance:
                 self._proxy_client = cloud_apps_instance[
@@ -70,17 +89,18 @@ class GoogleInstance(CloudAppsInstance):
 
     @property
     def ca_instance_type(self):
-        """Treats the CloudApps instance type as a read-only attribute."""
+        """Returns the CloudApps instance type"""
         if self._ca_instance_type == 1:
             return 'GMAIL'
         elif self._ca_instance_type == 2:
             return 'GDRIVE'
-        else:
-            return self._ca_instance_type
+        elif self._ca_instance_type == 7:
+            return 'ONEDRIVE'
+        return self._ca_instance_type
 
     @property
     def manage_content_automatically(self):
-        """Treats the CloudApps Manage Content Automatically property as a read-only attribute."""
+        """Returns the CloudApps Manage Content Automatically property"""
         return self._manage_content_automatically
 
     @property
@@ -89,28 +109,43 @@ class GoogleInstance(CloudAppsInstance):
         return self._auto_discovery_enabled
 
     @property
+    def auto_discovery_mode(self):
+        """Returns the Auto discovery mode property"""
+        return self._auto_discovery_mode
+
+    @property
     def app_email_id(self):
-        """Treats the service account mail id as a read-only attribute."""
+        """Returns the service account mail id"""
         return self._app_email_id
 
     @property
     def google_admin_id(self):
-        """Treats the Google admin mail id as a read-only attribute."""
+        """Returns the Google admin mail id"""
         return self._google_admin_id
 
     @property
     def key_file_path(self):
-        """Treats the service account key file path as a read-only attribute."""
+        """Returns the service account key file path"""
         return self._service_account_key_file
 
     @property
     def google_client_id(self):
-        """Treats the service account client id as a read-only attribute."""
+        """Returns the service account client id"""
         return self._app_client_id
 
     @property
+    def onedrive_client_id(self):
+        """Returns the OneDrive app client id"""
+        return self._client_id
+
+    @property
+    def onedrive_tenant(self):
+        """Returns the OneDrive tenant id"""
+        return self._tenant
+
+    @property
     def proxy_client(self):
-        """Treats the proxy client name to this instance as a read-only attribute."""
+        """Returns the proxy client name to this instance"""
         return self._proxy_client
 
     def restore_out_of_place(
@@ -122,7 +157,8 @@ class GoogleInstance(CloudAppsInstance):
             restore_data_and_acl=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None):
+            to_time=None,
+            to_disk=False):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -153,6 +189,8 @@ class GoogleInstance(CloudAppsInstance):
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
+
+                to_disk             (bool)       --  If True, restore to disk will be performed
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -205,14 +243,22 @@ class GoogleInstance(CloudAppsInstance):
             from_time=from_time,
             to_time=to_time,
         )
+        dest_user_account = destination_path
+        rest_different_account = True
+        restore_to_google = True
+
+        if to_disk:
+            dest_user_account = ''
+            rest_different_account = False
+            restore_to_google = False
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]['cloudAppsRestoreOptions'] = {
-            "instanceType": self._ca_instance_type,
-            "googleRestoreOptions": {
-                "strDestUserAccount": destination_path,
-                "folderGuid": "",
-                "restoreToDifferentAccount": True,
-                "restoreToGoogle": True
-            }
+                "instanceType": self._ca_instance_type,
+                "googleRestoreOptions": {
+                    "strDestUserAccount": dest_user_account,
+                    "folderGuid": "",
+                    "restoreToDifferentAccount": rest_different_account,
+                    "restoreToGoogle": restore_to_google
+                }
         }
         return self._process_restore_response(request_json)

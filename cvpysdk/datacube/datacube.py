@@ -42,7 +42,8 @@ from ..exception import SDKException
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
-                of the Commcell class, after the user was logged out.
+of the Commcell class, after the user was logged out.
+
 """
 
 
@@ -62,8 +63,14 @@ class Datacube(object):
         """
         self._commcell_object = commcell_object
 
-        self._ANALYTICS_ENGINES = self._commcell_object._services['GET_ANALYTICS_ENGINES']
-        self._ALL_DATASOURCES = self._commcell_object._services['GET_ALL_DATASOURCES']
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
+        self._ANALYTICS_ENGINES = self._services['GET_ANALYTICS_ENGINES']
+        self._ALL_DATASOURCES = self._services['GET_ALL_DATASOURCES']
+        self._GET_JDBC_DRIVERS = None
+
         self._analytics_engines = self._get_analytics_engines()
         self._datasources = None
 
@@ -85,12 +92,11 @@ class Datacube(object):
 
             Args:
                 response    (object)    --  response class object,
-                                                received upon running an API request,
-                                                using the `requests` python package
+
+                received upon running an API request, using the `requests` python package
+
         """
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
     def _get_analytics_engines(self):
         """Gets the list all the analytics engines associated with the datacube.
@@ -108,9 +114,7 @@ class Datacube(object):
                     if response is not success
 
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._ANALYTICS_ENGINES
-        )
+        flag, response = self._cvpysdk_object.make_request('GET', self._ANALYTICS_ENGINES)
 
         if flag:
             if response.json() and 'listOfCIServer' in response.json():
@@ -135,8 +139,6 @@ class Datacube(object):
             return self._datasources
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-        except SDKException:
-            return None
 
     def get_jdbc_drivers(self, analytics_engine):
         """Gets the list all jdbc_drivers associated with the datacube.
@@ -163,13 +165,11 @@ class Datacube(object):
             if engine["clientName"] == analytics_engine
         ).next()
 
-        self._GET_JDBC_DRIVERS = self._commcell_object._services['GET_JDBC_DRIVERS'] % (
+        self._GET_JDBC_DRIVERS = self._services['GET_JDBC_DRIVERS'] % (
             self.analytics_engines[engine_index]["cloudID"]
         )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._GET_JDBC_DRIVERS
-        )
+        flag, response = self._cvpysdk_object.make_request('GET', self._GET_JDBC_DRIVERS)
 
         if flag:
             if response.json() and 'drivers' in response.json():

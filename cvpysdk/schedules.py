@@ -237,13 +237,13 @@ class SchedulePattern(object):
         else:
 
             if pattern_option_dict['freq_type'] == 'One_Time':
-                default_start_time = str(datetime.utcnow().strftime('%H:%M'))
+                default_start_time = str(datetime.now().strftime('%H:%M'))
 
             else:
                 default_start_time = '09:00'
 
             _active_start_date = pattern_option_dict.get('active_start_date', str(
-                datetime.utcnow().strftime('%m/%d/%Y')))
+                datetime.now().strftime('%m/%d/%Y')))
             _active_start_time = pattern_option_dict.get('active_start_time', default_start_time)
 
             self._pattern = {
@@ -257,7 +257,8 @@ class SchedulePattern(object):
                     '%m/%d/%Y %H:%M'),
                 'freq_recurrence_factor': pattern_option_dict.get('freq_recurrence_factor', 0),
                 'freq_interval': pattern_option_dict.get('freq_interval', 0),
-                'freq_relative_interval': pattern_option_dict.get('freq_relative_interval', 0)
+                'freq_relative_interval': pattern_option_dict.get('freq_relative_interval', 0),
+                'timeZone': {'TimeZoneName': pattern_option_dict.get('time_zone', '')}
             }
 
     def _one_time(self, pattern_dict):
@@ -678,6 +679,10 @@ class SchedulePattern(object):
         freq_type is mandatory, all other fields specified below can be skipped and system
                                                                             defaults will be set
 
+        with the same dict, pass
+        time_zone: Time Zone Name(default is taken as COmmServe Time Zone)
+            Common Time Zones examples -- 'CommServe Time Zone', 'Client Time Zone', 'UTC'
+
         for one_time: {
                                  "freq_type": 'one_time',
                                  "active_start_date": date_in_%m/%d/%y (str),
@@ -832,6 +837,9 @@ class Schedules(object):
             elif operation_type == OperationType.DATA_AGING:
                 self._SCHEDULES = class_object._services['OPTYPE_SCHEDULES'] % (operation_type)
                 self._repr_str = "Dataging in Commcell: {0}".format(class_object.commserv_name)
+            elif not operation_type:
+                self._SCHEDULES = class_object._services['COMMCELL_SCHEDULES']
+                self._repr_str = "Schedules in Commcell: {0}".format(class_object.commserv_name)
             else:
                 raise SDKException('Schedules', '103')
 
@@ -955,11 +963,12 @@ class Schedules(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    def has_schedule(self, schedule_name):
+    def has_schedule(self, schedule_name=None, schedule_id=None):
         """Checks if a schedule exists for the commcell entity with the input schedule name.
 
             Args:
                 schedule_name (str)  --  name of the schedule
+                schedule_id (int) -- id of the schedule
 
             Returns:
                 bool - boolean output whether the schedule exists for the commcell entity or not
@@ -968,16 +977,30 @@ class Schedules(object):
                 SDKException:
                     if type of the schedule name argument is not string
         """
-        if not isinstance(schedule_name, basestring):
+        if not schedule_name and not schedule_id:
+            raise SDKException(
+                'Schedules', '102', 'Either Schedule Name or Schedule Id is needed')
+
+        if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
 
-        return self.schedules and schedule_name.lower() in self.schedules
+        if schedule_id and not isinstance(schedule_id,int):
+            raise SDKException('Schedules', '102')
 
-    def get(self, schedule_name):
+        if not schedule_id:
+            return self.schedules and schedule_name.lower() in self.schedules
+        else:
+            for subtask_name,subtask_dict in self.schedules.items():
+                if subtask_dict['task_id'] == schedule_id:
+                    return True
+            return False
+
+    def get(self, schedule_name=None, schedule_id=None):
         """Returns a schedule object of the specified schedule name.
 
             Args:
                 schedule_name (str)  --  name of the Schedule
+                schedule_id (int) -- id of the schedule
 
             Returns:
                 object - instance of the schedule class for the given schedule name
@@ -988,37 +1011,56 @@ class Schedules(object):
 
                     if no schedule exists with the given name
         """
-        if not isinstance(schedule_name, basestring):
+        if not schedule_name and not schedule_id:
+            raise SDKException(
+                'Schedules', '102', 'Either Schedule Name or Schedule Id is needed')
+
+        if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
+
+        if schedule_name and not isinstance(schedule_name, basestring):
+            raise SDKException('Schedules', '102')
+
         else:
-            schedule_name = schedule_name.lower()
+            if schedule_name:
+                schedule_name = schedule_name.lower()
+                schedule_id = self.schedules[schedule_name]['task_id']
 
-            if self.has_schedule(schedule_name):
+            if self.has_schedule(schedule_id=schedule_id):
                 return Schedule(
-                    self._commcell_object, schedule_name,
-                    self.schedules[schedule_name]['task_id']
-
+                    self.class_object, schedule_id=schedule_id
                 )
 
             raise SDKException(
                 'Schedules', '102', 'No Schedule exists with name: {0}'.format(schedule_name))
 
-    def delete(self, schedule_name):
+    def delete(self, schedule_name=None, schedule_id=None):
         """deletes the specified schedule name.
 
                     Args:
                         schedule_name (str)  --  name of the Schedule
+                        schedule_id (int) -- id of the schedule
 
                     Raises:
                         SDKException:
                             if type of the schedule name argument is not string
                             if no schedule exists with the given name
         """
-        if not isinstance(schedule_name, basestring):
+        if not schedule_name and not schedule_id:
+            raise SDKException(
+                'Schedules', '102', 'Either Schedule Name or Schedule Id is needed')
+
+        if schedule_id and not isinstance(schedule_id,int):
+            raise SDKException('Schedules', '102')
+
+        if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
         else:
-            schedule_name = schedule_name.lower()
-            if self.has_schedule(schedule_name):
+            if schedule_name:
+                schedule_name = schedule_name.lower()
+                schedule_id = self.schedules[schedule_name]['task_id']
+
+            if self.has_schedule(schedule_id=schedule_id):
                 request_json = {
                     "TMMsg_TaskOperationReq":
                         {
@@ -1027,7 +1069,7 @@ class Schedules(object):
                                 [
                                     {
                                         "_type_": 69,
-                                        "taskId": self.schedules[schedule_name]['task_id']
+                                        "taskId": schedule_id
                                     }
                                 ]
                         }
@@ -1059,8 +1101,8 @@ class Schedules(object):
                     raise SDKException('Schedules', '102', exception_message)
             else:
                 raise SDKException(
-                    'Schedules', '102', 'No schedule exists with name: {0}'.format(
-                        schedule_name)
+                    'Schedules', '102', 'No schedule exists for: {0}'.format(
+                        schedule_id)
                 )
 
     def refresh(self):
@@ -1071,7 +1113,9 @@ class Schedules(object):
 class Schedule(object):
     """Class for performing operations for a specific Schedule."""
 
-    def __init__(self, commcell_object, schedule_name, schedule_id):
+
+    def __init__(self, class_object, schedule_name=None, schedule_id=None):
+
         """Initialise the Schedule class instance.
 
             Args:
@@ -1086,10 +1130,27 @@ class Schedule(object):
             Returns:
                 object - instance of the Schedule class
         """
-        self._commcell_object = commcell_object
-        self.schedule_name = schedule_name.lower()
 
-        self.schedule_id = schedule_id
+        from .commcell import Commcell
+        self.class_object = class_object
+
+        if isinstance(class_object, Commcell):
+            self._commcell_object = class_object
+        else:
+            self._commcell_object = class_object._commcell_object
+        self.schedule_name = ''
+
+        if not schedule_name and not schedule_id:
+            raise SDKException(
+                'Schedules', '102', 'Either Schedule Name or Schedule Id is needed')
+
+        if schedule_name:
+            self.schedule_name = schedule_name.lower()
+
+        if schedule_id:
+            self.schedule_id = schedule_id
+        else:
+            self.schedule_id = self._get_schedule_id()
 
         self._SCHEDULE = self._commcell_object._services['SCHEDULE'] % (
             self.schedule_id)
@@ -1141,7 +1202,28 @@ class Schedule(object):
         self.refresh()
 
     def _get_subtask_id(self):
+        """
+        Gets the subtask id for the schedule
+        :return: Subtask id (int)
+        """
         return self._sub_task_option['subTaskId']
+
+    @property
+    def subtask_id(self):
+        """
+        Property which returns subtask id of the schedule
+        :return: Subtask id (int)
+        """
+        return self._get_subtask_id()
+
+    def _get_schedule_id(self):
+        """
+        Gets a schedule ID dict for the schedule
+        :return:
+            int - schedule ID
+        """
+        schedules = Schedules(self.class_object)
+        return schedules.get(self.schedule_name).schedule_id
 
     def _get_schedule_properties(self):
         """Gets the properties of this Schedule.
@@ -1169,6 +1251,7 @@ class Schedule(object):
 
                 for subtask in _task_info['subTasks']:
                     self._sub_task_option = subtask['subTask']
+                    self.schedule_name = self._sub_task_option['subTaskName']
                     if 'operationType' in subtask['subTask']:
                         self.operation_type = subtask['subTask']['operationType']
                     else:

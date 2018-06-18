@@ -269,7 +269,7 @@ class LNDBInstance(Instance):
 
         self._commonoption_restore_json = {
             "doNotReplayTransactLogs": value.get('common_options_dict').get(
-                'disableReplication', False
+                'doNotReplayTransactLogs', False
             ),
             "clusterDBBackedup": value.get('common_options_dict').get(
                 'clusterDBBackedup', False

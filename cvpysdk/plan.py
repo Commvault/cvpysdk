@@ -653,11 +653,8 @@ class Plan(object):
                         )
 
                     if 'localUserGroup' in plan_properties['autoCreatedEntities']:
-                        self._commcell_object.user_groups.refresh()
-                        self._user_group = self._commcell_object.user_groups.get(
-                            plan_properties['autoCreatedEntities']['localUserGroup'][
-                                'userGroupName']
-                        )
+                        self._user_group = plan_properties['autoCreatedEntities'][
+                            'localUserGroup']['userGroupName']
 
                 if 'storagePolicy' in plan_properties['storage']:
                     self._child_policies['storagePolicy'] = plan_properties['storage'][

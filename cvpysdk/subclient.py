@@ -99,6 +99,8 @@ Subclient:
     restore_out_of_place()      --  Restores the files/folders specified in the input paths list
     to the input client, at the specified destionation location
 
+    set_backup_nodes()          -- Set Backup Nodes for NFS Share Pseudo client's subclient.
+
     find_latest_job()           --  Finds the latest job for the subclient
     which includes current running job also.
 
@@ -120,6 +122,7 @@ from .job import JobController
 from .schedules import Schedules
 from .exception import SDKException
 from .schedules import SchedulePattern
+from .schedules import Schedule
 
 install_aliases()
 
@@ -179,6 +182,7 @@ class Subclients(object):
         self._default_subclient = None
 
         from .subclients.fssubclient import FileSystemSubclient
+        from .subclients.bigdataappssubclient import BigDataAppsSubclient
         from .subclients.vssubclient import VirtualServerSubclient
         from .subclients.casubclient import CloudAppsSubclient
         from .subclients.sqlsubclient import SQLServerSubclient
@@ -192,7 +196,9 @@ class Subclients(object):
         from .subclients.mysqlsubclient import MYSQLSubclient
         from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
         from .subclients.postgressubclient import PostgresSubclient
+        from .subclients.informixsubclient import InformixSubclient
 
+        globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
         globals()['FileSystemSubclient'] = FileSystemSubclient
         globals()['VirtualServerSubclient'] = VirtualServerSubclient
         globals()['CloudAppsSubclient'] = CloudAppsSubclient
@@ -207,10 +213,12 @@ class Subclients(object):
         globals()['MYSQLSubclient'] = MYSQLSubclient
         globals()['ExchangeDatabaseSubclient'] = ExchangeDatabaseSubclient
         globals()['PostgresSubclient'] = PostgresSubclient
+        globals()['InformixSubclient'] = InformixSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._subclients_dict = {
+            'big data apps': BigDataAppsSubclient,
             'file system': FileSystemSubclient,
             'virtual server': VirtualServerSubclient,
             'cloud apps': CloudAppsSubclient,
@@ -224,7 +232,8 @@ class Subclients(object):
             "exchange mailbox": ExchangeSubclient,
             'mysql': MYSQLSubclient,
             'exchange database': ExchangeDatabaseSubclient,
-            'postgresql': PostgresSubclient
+            'postgresql': PostgresSubclient,
+            'informix': InformixSubclient
         }
 
         # sql server subclient type dict
@@ -987,7 +996,9 @@ class Subclient(object):
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                object - instance of the Job class for this restore job
+                object - instance of the Job class for this backup job if its an immediate Job
+                        instance of the Schedule class for the backup job if its a scheduled Job
+
 
             Raises:
                 SDKException:
@@ -1002,6 +1013,8 @@ class Subclient(object):
                 if "jobIds" in response.json():
                     return Job(self._commcell_object,
                                response.json()['jobIds'][0])
+                elif "taskId" in response.json():
+                    return Schedule(self._commcell_object, schedule_id=response.json()['taskId'])
                 elif "errorCode" in response.json():
                     o_str = 'Initializing backup failed\nError: "{0}"'.format(
                         response.json()['errorMessage']
@@ -1015,7 +1028,6 @@ class Subclient(object):
                 '101',
                 self._update_response_(
                     response.text))
-
 
     def _backup_json(self,
                      backup_level,
@@ -1629,7 +1641,8 @@ class Subclient(object):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None):
+            fs_options=None,
+            schedule_pattern=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -1660,8 +1673,14 @@ class Subclient(object):
                                                 specified file
                         versions            : list of version numbers to be backed up
 
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
             Returns:
-                object - instance of the Job class for this restore job
+                object - instance of the Job class for this restore job if its an immediate Job
+                         instance of the Schedule class for this restore job if its a scheduled Job
 
             Raises:
                 SDKException:
@@ -1682,7 +1701,8 @@ class Subclient(object):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options
+            fs_options=fs_options,
+            schedule_pattern=schedule_pattern
         )
 
     def restore_out_of_place(
@@ -1695,7 +1715,8 @@ class Subclient(object):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None):
+            fs_options=None,
+            schedule_pattern = None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1739,8 +1760,14 @@ class Subclient(object):
                         versions            : list of version numbers to be backed up
                         media_agent         : Media Agent need to be used for Browse and restore
 
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
             Returns:
-                object - instance of the Job class for this restore job
+                object - instance of the Job class for this restore job if its an immediate Job
+                         instance of the Schedule class for this restore job if its a scheduled Job
 
             Raises:
                 SDKException:
@@ -1767,8 +1794,51 @@ class Subclient(object):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options
+            fs_options=fs_options,
+            schedule_pattern = schedule_pattern
         )
+
+    def set_backup_nodes(
+            self,
+            data_access_nodes):
+        
+        """" Sets the the backup nodes for NFS share subclient.
+            
+            Args:
+                data_access_nodes(list)    -- the list of data access nodes to be set
+                                                as backup nodes for NFS share subclient.
+            
+            Returns nothing if the operation is successful.
+            
+            Raises SDK Exception : 
+                if unable to update the backup nodes for the subclient.
+    
+        """
+        
+        data_access_nodes_json = []
+        for access_node in data_access_nodes:
+            data_access_nodes_json.append({"clientName" : access_node})
+        
+        request_json = {
+            "subClientProperties": {
+                "fsSubClientProp": {
+                    "backupConfiguration" : {
+                        "backupDataAccessNodes" : data_access_nodes_json
+                    }
+                }
+            }
+        }
+        
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._SUBCLIENT, request_json)
+
+        output = self._process_update_response(flag, response)
+
+        if output[0]:
+            return
+        else:
+            o_str = 'Failed to update properties of subclient\nError: "{0}"'
+            raise SDKException('Subclient', '102', o_str.format(output[2]))
 
     def find_latest_job(
             self,

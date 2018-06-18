@@ -119,7 +119,8 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Input date is incorrect',
-        '104': 'Instance Level Browse is not supported. Instance should have a single backupset'
+        '104': 'Instance Level Browse is not supported. Instance should have a single backupset',
+        '105': 'Could not fetch instance property'
     },
     'Subclient': {
         '101': 'Data type of the input(s) is not valid',
@@ -281,6 +282,12 @@ EXCEPTION_DICT = {
     'Snap': {
         '101': 'Volume id is not set, Failed to perform Snap Operation',
         '102': 'Failed to run the job for Snap Operation',
+    },
+    'OperationWindow': {
+        '101': 'Failed to create a operation window',
+        '102': '',
+        '103': 'Failed to delete the operation window',
+        '104': 'Failed to list operation windows'
     }
 }
 

@@ -38,7 +38,14 @@ Instances:
     get(instance_name)              --  returns the Instance class object
     of the input backup set name
 
+    add_informix_instance()         --  adds new Informix Instance to given Client
+
+    delete()                        --  deletes the instance specified by the instance_name
+    from the agent.
+
     add_sybase_instance()           --  To add sybase server instance
+
+    add_big_data_apps_instance()    --  To add an instance with the big data apps agent specified
 
     refresh()                       --  refresh the instances associated with the agent
 
@@ -72,6 +79,7 @@ Instance:
 
     _restore_destination_json()     --  setter for destination property in restore
 
+    _restore_volume_rst_option_json()  --  setter for the volumeRst restore option in restore JSON
 
     _restore_json()                 --  returns the apppropriate JSON request to pass for either
     Restore In-Place or Out-of-Place operation
@@ -109,6 +117,7 @@ from .job import Job
 from .subclient import Subclients
 from .constants import AppIDAType
 from .exception import SDKException
+from .schedules import SchedulePattern, Schedule
 
 
 class Instances(object):
@@ -149,6 +158,7 @@ class Instances(object):
         from .instances.mysqlinstance import MYSQLInstance
         from .instances.lndbinstance import LNDBInstance
         from .instances.postgresinstance import PostgreSQLInstance
+        from .instances.informixinstance import InformixInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -162,7 +172,8 @@ class Instances(object):
             'sap for oracle': SAPOracleInstance,
             'mysql': MYSQLInstance,
             'notes database': LNDBInstance,
-            'postgresql': PostgreSQLInstance
+            'postgresql': PostgreSQLInstance,
+            'informix': InformixInstance
         }
 
     def __str__(self):
@@ -336,6 +347,192 @@ class Instances(object):
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
             )
 
+    def add_informix_instance(self, informix_options):
+        """Adds new Informix Instance to given Client
+            Args:
+                Dictionary of informix instance creation options:
+                    Example:
+                       informix_options = {
+                            'instance_name': 'ol_informix1210',
+                            'onconfig_file': 'onconfig.ol_informix1210',
+                            'sql_host_file': 'C:\\IBM\\etc\\sqlhosts.ol_informix1210',
+                            'informix_dir': 'C:\\IBM',
+                            'user_name':'informix',
+                            'domain_name':'test_vm',
+                            'password':'commvault!12',
+                            'storage_policy':'gk_pg_policy',
+                            'description':'created from automation'
+                        }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in informix options
+
+                    if Informix instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        """
+        if None in informix_options.values():
+            raise SDKException(
+                'Instance',
+                '102',
+                "One of the informix parameter is None so cannot proceed with instance creation")
+
+        if self.has_instance(informix_options["instance_name"]):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    informix_options["instance_name"])
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                informix_options["storage_policy"]):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    informix_options["storage_policy"])
+            )
+        password = b64encode(informix_options["password"].encode()).decode()
+
+        request_json = {
+            "instanceProperties": {
+                "description": informix_options['description'],
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": informix_options["instance_name"],
+                    "appName": "Informix Database"
+                },
+                "informixInstance": {
+                    "onConfigFile": informix_options["onconfig_file"],
+                    "sqlHostfile": informix_options["sql_host_file"],
+                    "informixDir": informix_options["informix_dir"],
+                    "informixUser": {
+                        "password": password,
+                        "domainName": informix_options["domain_name"],
+                        "userName": informix_options["user_name"]
+                    },
+                    "informixStorageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": informix_options["storage_policy"]
+                        },
+                        "deDuplicationOptions": {},
+                        "logBackupStoragePolicy": {
+                            "storagePolicyName": informix_options["storage_policy"]
+                        },
+                        "commandLineStoragePolicy": {
+                            "storagePolicyName": informix_options["storage_policy"]
+                        }
+                    }
+                }
+            }
+        }
+
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'].get('errorCode')
+
+                if error_code != 0:
+                    error_string = response.json()['response'].get('errorString')
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    if 'entity' in response.json()['response']:
+                        self.refresh()
+                        return self._instances_dict[self._agent_object.agent_name](
+                            self._agent_object,
+                            response.json()['response']['entity'].get('instanceName'),
+                            response.json()['response']['entity'].get('instanceId')
+                        )
+                    else:
+                        raise SDKException(
+                            'Instance',
+                            '102',
+                            'Unable to get instance name and id'
+                        )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def delete(self, instance_name):
+        """Deletes the instance specified by the instance_name from the agent.
+
+            Args:
+                instance_name (str)  --  name of the instance to remove from the agent
+
+            Raises:
+                SDKException:
+                    if type of the instance name argument is not string
+
+                    if failed to delete instance
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no instance exists with the given name
+        """
+        if not isinstance(instance_name, basestring):
+            raise SDKException('Instance', '101')
+        else:
+            instance_name = instance_name.lower()
+
+        if self.has_instance(instance_name):
+            delete_instance_service = self._commcell_object._services['INSTANCE'] % (
+                self._instances.get(instance_name)
+            )
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'DELETE', delete_instance_service
+            )
+
+            if flag:
+                if response.json():
+                    if 'response' in response.json():
+                        response_value = response.json()['response'][0]
+                        error_code = str(response_value.get('errorCode'))
+                        error_message = None
+
+                        if 'errorString' in response_value:
+                            error_message = response_value['errorString']
+
+                        if error_message:
+                            o_str = 'Failed to delete instance\nError: "{0}"'
+                            raise SDKException('Instance', '102', o_str.format(error_message))
+                        else:
+                            if error_code == '0':
+                                # initialize the instances again
+                                # so the instance object has all the instances
+                                self.refresh()
+                            else:
+                                o_str = ('Failed to delete instance with Error Code: "{0}"\n'
+                                         'Please check the documentation for '
+                                         'more details on the error')
+                                raise SDKException('Instance', '102', o_str.format(error_code))
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        else:
+            raise SDKException(
+                'Instance', '102', 'No Instance exists with name: {0}'.format(instance_name)
+            )
+
+
     def add_sybase_instance(self, sybase_options):
         """
             Method to Add new Sybase Instance to given Client
@@ -423,7 +620,7 @@ class Instances(object):
         }
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['ADD_SYBASE_INSTANCE'], request_json
+            'POST', self._services['ADD_INSTANCE'], request_json
         )
         if flag:
             if response.json() and 'response' in response.json():
@@ -447,6 +644,105 @@ class Instances(object):
                         self._agent_object, instance_name, instance_id
                     )
 
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_big_data_apps_instance(self, distributed_options):
+
+        """
+            Method to add big data apps instance to the given client.
+
+            distributed_options {
+                "instanceName": "ClusterInstance"
+                "MasterNode" : $MASTER_NODE$ (Optional based on cluster Type. If not present set it to "")
+                "dataAccessNodes": [
+                    {
+                        "clientName": "DataClient1"
+                    }
+                ]
+            }
+
+            Raises:
+                SDKException:
+                    if None value in Distributed options
+                    if Big Data Apps instance with same name already exists
+                    if cannot retrieve cluster type from default Instance
+        """
+        if None in distributed_options.values():
+            raise SDKException(
+                'Instance',
+                '102',
+                "One of the distributed parameter is None so cannot proceed with instance creation")
+
+        if self.has_instance(distributed_options["instanceName"]):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    distributed_options["instanceName"])
+            )
+
+        """
+            Get Cluster Type from Default Instance to assign it to the New Instance.
+            Atleast one instance should be present in the client.
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._INSTANCES)
+        if flag:
+            if response.json() and "instanceProperties" in response.json():
+                clusterProperties = response.json()["instanceProperties"][0]
+                clusterType = clusterProperties["distributedClusterInstance"]["clusterType"]
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientId": int(self._client_object.client_id),
+                    "clientName": self._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": distributed_options["instanceName"],
+                },
+                "distributedClusterInstance": {
+                    "clusterType": clusterType,
+                    "instance": {
+                        "instanceName": distributed_options["instanceName"]
+                    },
+                    "clusterConfig": {
+                        "uxfsConfig": {
+                            "coordinatorNode": {
+                                "clientName": distributed_options["MasterNode"]
+                            }
+                        }
+                    },
+                    "dataAccessNodes": {
+                        "dataAccessNodes": distributed_options["dataAccessNodes"]
+                    }
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_INSTANCE'], request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    instance_name = response.json(
+                    )['response']['entity']['instanceName']
+                    self.refresh()
+                    return self.get(instance_name)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -657,6 +953,10 @@ class Instance(object):
             if response.json():
                 if "jobIds" in response.json():
                     return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                elif "taskId" in response.json():
+                    return Schedule(self._commcell_object, schedule_id=response.json()['taskId'])
+
                 elif "errorCode" in response.json():
                     error_message = response.json()['errorMessage']
 
@@ -774,6 +1074,7 @@ class Instance(object):
         self._impersonation_json(restore_option)
         self._restore_destination_json(restore_option)
         self._restore_fileoption_json(restore_option)
+        self._restore_volume_rst_option_json(restore_option)
 
         request_json = {
             "taskInfo": {
@@ -789,12 +1090,50 @@ class Instance(object):
                             "commonOptions": self._commonoption_restore_json,
                             "destination": self._destination_restore_json,
                             "fileOption": self._fileoption_restore_json,
-                            "sharePointRstOption": self._restore_sharepoint_json
+                            "sharePointRstOption": self._restore_sharepoint_json,
+                            "volumeRstOption": self._volume_restore_json
                         }
                     }
                 }]
             }
         }
+
+        if restore_option.get('schedule_pattern') is not None:
+            request_json = SchedulePattern().create_schedule(request_json,
+                                                             restore_option['schedule_pattern'])
+
+        if "multinode_restore" in restore_option:
+                    
+            self._destination_restore_json["destinationInstance"] = {
+                "instanceName": restore_option.get('destination_instance', self.instance_name)
+            }
+            
+            self._destination_restore_json["noOfStreams"] = restore_option.get('no_of_streams', 2)
+            
+            self._distributed_restore_json = {
+                "distributedRestore": True,
+                "dataAccessNodes": {
+                    "dataAccessNodes": restore_option.get('data_access_nodes', [])
+                },
+                "isMultiNodeRestore": True,
+                "backupConfiguration": {
+                    "backupDataAccessNodes": restore_option.get('data_access_nodes', [])
+                }
+            }
+
+            self._qr_restore_option = {
+                "destAppTypeId":  restore_option.get('destination_appTypeId', 64)
+            }
+            
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["adminOpts"] = {
+                "contentIndexingOption": {
+                    "subClientBasedAnalytics": False
+                }
+            }
+            
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = self._destination_restore_json
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["distributedAppsRestoreOptions"] = self._distributed_restore_json
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["qrOption"] = self._qr_restore_option
 
         return request_json
 
@@ -806,7 +1145,8 @@ class Instance(object):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None):
+            fs_options=None,
+            schedule_pattern=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -843,7 +1183,8 @@ class Instance(object):
                         versions            : list of version numbers to be backed up
 
             Returns:
-                object - instance of the Job class for this restore job
+                object - instance of the Job class for this restore job if its an immediate Job
+                         instance of the Schedule class for this restore job if its a scheduled Job
 
             Raises:
                 SDKException:
@@ -872,7 +1213,8 @@ class Instance(object):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options)
+            fs_options=fs_options,
+            schedule_pattern=schedule_pattern)
 
         return self._process_restore_response(request_json)
 
@@ -886,7 +1228,8 @@ class Instance(object):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None):
+            fs_options=None,
+            schedule_pattern=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -931,7 +1274,8 @@ class Instance(object):
                         media_agent         : Media Agent need to be used for Browse and restore
 
             Returns:
-                object - instance of the Job class for this restore job
+                object - instance of the Job class for this restore job if its an immediate Job
+                         instance of the Schedule class for this restore job if its a scheduled Job
 
             Raises:
                 SDKException:
@@ -983,7 +1327,8 @@ class Instance(object):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            restore_option=fs_options
+            restore_option=fs_options,
+            schedule_pattern=schedule_pattern
         )
 
         return self._process_restore_response(request_json)
@@ -1183,7 +1528,7 @@ class Instance(object):
         self._browse_restore_json = {
             "listMedia": False,
             "useExactIndex": False,
-            "noImage": False,
+            "noImage": value.get("no_image", False),
             "commCellId": 2,
             "mediaOption": {
                 "mediaAgent": {
@@ -1200,7 +1545,7 @@ class Instance(object):
                 "drivePool": {}
             },
             "backupset": {
-                "clientName": value.get("client_name", ""),
+                "clientName": self._agent_object._client_object.client_name,
                 "appName": self._agent_object.agent_name
             },
             "timeZone": {
@@ -1208,6 +1553,11 @@ class Instance(object):
             },
             "timeRange": time_range_dict
         }
+
+        if "browse_job_id" in value:
+            self._browse_restore_json["browseJobId"] = value.get("browse_job_id", False)
+            self._browse_restore_json["browseJobCommCellId"] = value.get(
+                "commcell_id", self._commcell_object.commcell_id )
 
     def _restore_common_options_json(self, value):
         """setter for  the Common options of in restore JSON"""
@@ -1229,7 +1579,8 @@ class Instance(object):
             "restoreACLs": value.get("restore_ACL", True),
             "stripLevelType": value.get("striplevel_type", 0),
             "allVersion": value.get("all_versions", False),
-            "unconditionalOverwrite": value.get("unconditional_overwrite", False)
+            "unconditionalOverwrite": value.get("unconditional_overwrite", False),
+            "includeAgedData": value.get("include_aged_data", False)
         }
 
     def _restore_destination_json(self, value):
@@ -1252,6 +1603,16 @@ class Instance(object):
         self._fileoption_restore_json = {
             "sourceItem": value.get("paths", []),
             "browseFilters": value.get("browse_filters", [])
+        }
+
+    def _restore_volume_rst_option_json(self, value):
+        """setter for the volumeRst restore option in restore JSON"""
+        if not isinstance(value, dict):
+            raise SDKException('Instance', '101')
+
+        self._volume_restore_json = {
+            "volumeLeveRestore": value.get("volume_level_restore", False),
+            "volumeLevelRestoreType": value.get("volume_level_restore_type", "PHYSICAL_VOLUME")
         }
 
     @property

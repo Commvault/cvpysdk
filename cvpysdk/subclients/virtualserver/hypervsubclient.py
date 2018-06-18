@@ -35,6 +35,7 @@ from enum import Enum
 from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
+from .vmwaresubclient import VMWareVirtualServerSubclient
 
 
 
@@ -60,6 +61,22 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         """
         name = "name"
         datastore = "DestinationPath"
+
+
+    def _get_guest_os(self, os_name):
+        """
+        stores all the XML tag for OS
+        """
+
+        _os_name_dict ={
+            "2012" : "windows8Server64Guest"
+        }
+
+        for os in _os_name_dict.keys():
+            if os in os_name:
+                return _os_name_dict[os]
+
+        raise SDKException('Subclient', '102', "Input parameter specified is incorrect" )
 
     def disk_restore(self,
                      vm_name,
@@ -357,6 +374,137 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             add_to_failover=add_to_failover,
             in_place=True
         )
+
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_vmware(
+            self,
+            vcenter_client,
+            destination_os_name,
+            vm_to_restore=None,
+            esx_host=None,
+            datastore=None,
+            overwrite=True,
+            power_on=True,
+            copy_precedence=0,
+            disk_option='Original',
+            transport_mode='Auto',
+            proxy_client=None,
+            destination_network = None
+            ):
+        """
+        This converts the Hyperv VM to VMware
+        Args:
+                vm_to_restore          (dict)  --  dict containing the VM name(s) to restore as
+                                                   keys and the new VM name(s) as their values.
+                                                   Input empty string for default VM name for
+                                                   restored VM.
+                                                    default: {}
+
+                vcenter_client    (basestring) -- name of the vcenter client
+                                                  where the VM should be
+                                                    restored.
+
+                esx_host          (basestring) -- destination esx host
+                                                    restores to the source VM
+                                                    esx if this value is not
+                                                    specified
+
+                datastore         (basestring) -- datastore where the
+                                                  restored VM should be located
+                                                  restores to the source VM
+                                                  datastore if this value is
+                                                  not specified
+
+                overwrite         (bool)       -- overwrite the existing VM
+                                                  default: True
+
+                power_on          (bool)       -- power on the  restored VM
+                                                  default: True
+
+                copy_precedence   (int)        -- copy precedence value
+                                                  default: 0
+
+                disk_option       (basestring) -- disk provisioning for the
+                                                  restored vm
+                                                  Options for input are: 'Original',
+                                                  'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
+                                                  default: Original
+
+                transport_mode    (basestring) -- transport mode to be used for
+                                                  the restore.
+                                                  Options for input are: 'Auto', 'SAN', 'Hot Add',
+                                                  'NBD', 'NBD SSL'
+                                                  default: Auto
+
+                proxy_client      (basestring) -- destination proxy client
+
+                destination_network (basestring)-- destiantion network to which VM has to be connected
+
+                destiantion_os      (base string)- os of source VM
+
+
+
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
+        restore_option = {}
+
+        # check mandatory input parameters are correct
+        if not (isinstance(vcenter_client, basestring) and
+                isinstance(destination_network, basestring)):
+            raise SDKException('Subclient', '101')
+
+        #getting all dummy objects for new client
+
+        subclient = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = subclient._backupset_object._instance_object
+        disk_option_value = subclient._disk_option[disk_option]
+        transport_mode_value = subclient._transport_mode[transport_mode]
+        esx_server = instance.server_host_name[0]
+
+        #setting restore vms
+        vm_list = None
+        if vm_to_restore:
+            vm_list = list(vm_to_restore.keys())
+
+
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=datastore,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            vm_to_restore=self._set_vm_to_restore(vm_list),
+            disk_option=disk_option_value,
+            transport_mode=transport_mode_value,
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            destination_os_name=self._get_guest_os(destination_os_name)
+        )
+
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
