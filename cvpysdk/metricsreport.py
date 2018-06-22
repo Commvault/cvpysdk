@@ -346,7 +346,7 @@ class _Metrics(object):
         # reset upload now flag
         self._metrics_config['config']['uploadNow'] = 0
 
-    def wait_for_download_completion(self, timeout=150):
+    def wait_for_download_completion(self, timeout=300):
         """
         Waits for Metrics collection to complete for maximum of seconds given in timeout
 
