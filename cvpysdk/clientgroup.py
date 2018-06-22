@@ -36,6 +36,11 @@ ClientGroups:
 
     has_clientgroup()          -- checks if a client group exists with the given name or not
 
+    create_smart_rule()        -- Create rules required for smart client group creation
+    based on input parameters
+
+    merge_smart_rules()       -- Merge multiple rules into (SCG) rule to create smart client group
+
     add(clientgroup_name)      -- adds a new client group to the commcell
 
     get(clientgroup_name)      -- returns the instance of the ClientGroup class,
@@ -282,13 +287,240 @@ class ClientGroups(object):
 
         return self._clientgroups and clientgroup_name.lower() in self._clientgroups
 
-    def add(self,
-            clientgroup_name,
-            clients=[],
-            clientgroup_description="",
-            enable_backup=True,
-            enable_restore=True,
-            enable_data_aging=True):
+    def create_smart_rule(self,
+                          filter_rule='OS Type',
+                          filter_condition='equal to',
+                          filter_value='Windows',
+                          value='1'):
+        """Create/Prepare rules required for smart client group creation based on input parameters
+
+            Args:
+                filter_rule (str)      --  Rule selection to match specific criterion
+
+                filter_condition (str) --  Filter value between selections in rule
+
+                filter_value(str)     --   Value of rule criterion
+
+                value(str)            --   value required to create rule
+
+            Returns:
+                    dict    -   consists of single rule based on inputs
+                {
+                    "rule": {
+                        "filterID": 100,
+                        "secValue": 'Windows',
+                        "propID": 8,
+                        "propType": 4,
+                        "value": '1'
+                    }
+                }
+        """
+
+        filter_dict = {
+            'equal to': 100,
+            'not equal': 101,
+            'any in selection': 108,
+            'not in selection': 109,
+            'is true': 1,
+            'is false': 2,
+            'contains': 10,
+            }
+        prop_id_dict = {
+            'Name': 1,
+            'Client': 2,
+            'Agents Installed': 3,
+            'Associated Client Group': 4,
+            'Timezone': 5,
+            'Hostname': 6,
+            'Client Version': 7,
+            'OS Type': 8,
+            'Package Installed': 9,
+            'Client offline (days)': 10,
+            'User as client owner': 11,
+            'Local user group as client owner': 12,
+            'External group as client owner': 13,
+            'Associated library name': 14,
+            'OS Version': 15,
+            'Product Version': 16,
+            'Client Version Same as CS Version': 17,
+            'Days since client created': 18,
+            'Days since last backup': 19,
+            'SnapBackup clients': 20,
+            'Clients with attached storages': 21,
+            'Case manager hold clients': 22,
+            'MediaAgents for clients in group': 23,
+            'Client acts as proxy': 24,
+            'Backup activity enabled': 25,
+            'Restore activity enabled': 26,
+            'Client online (days)': 27,
+            'Inactive AD user as client owner': 28,
+            'Client excluded from SLA report': 29,
+            'Client uses storage policy': 30,
+            'Client is not ready': 31,
+            'Associated Storage Policy': 32,
+            'MediaAgent has Lucene Index Roles': 33,
+            'Client associated with plan': 34,
+            'Client by Schedule Interval': 35,
+            'Client needs Updates': 36,
+            'Subclient Name': 37,
+            'CommCell Psuedo Client': 38,
+            'Client Description': 39,
+            'Clients discovered using VSA Subclient': 40,
+            'Clients with no Archive Data': 41,
+            'User Client Provider Associations': 42,
+            'User Group Client Provider Associations': 43,
+            'Company Client Provider Associations': 44,
+            'Clients Meet SLA': 45,
+            'Index Servers': 46,
+            'Clients with OnePass enabled': 49,
+            'Clients by Role': 50,
+            'Clients by Permission': 51,
+            'User description contains': 52,
+            'User Group description contains': 53,
+            'Content Analyzer Cloud': 54,
+            'Company Installed Client Associations': 55,
+            'Client Online in Last 30 Days': 56,
+            'Clients With Subclients Having Associated Storage Policy': 60,
+            'Clients With Improperly Deconfigured Subclients': 61,
+            'Strikes count': 62,
+            'Clients With Backup Schedule': 63,
+            'Clients With Long Running Jobs': 64,
+            'Clients With Synthetic Full Backup N Days': 67,
+            'MediaAgents for clients in group list': 70,
+            'Associated Client Group List': 71,
+            'Timezone List': 72,
+            'MediaAgent has Lucene Index Role List': 73,
+            'Associated Storage Policy List': 74,
+            'Timezone Region List': 75,
+            'Clients With Encryption': 80,
+            'Client CIDR Address Range': 81,
+            'HAC Cluster': 85,
+            }
+        ptype_dict = {
+            'Name': 2,
+            'Client': 4,
+            'Agents Installed': 6,
+            'Associated Client Group': 4,
+            'Timezone': 4,
+            'Hostname': 2,
+            'Client Version': 4,
+            'OS Type': 4,
+            'Package Installed': 6,
+            'Client offline (days)': 3,
+            'User as client owner': 2,
+            'Local user group as client owner': 2,
+            'External group as client owner': 2,
+            'Associated library name': 2,
+            'OS Version': 2,
+            'Product Version': 2,
+            'Client Version Same as CS Version': 1,
+            'Days since client created': 3,
+            'Days since last backup': 3,
+            'SnapBackup clients': 1,
+            'Clients with attached storages': 1,
+            'Case manager hold clients': 1,
+            'MediaAgents for clients in group': 2,
+            'Client acts as proxy': 1,
+            'Backup activity enabled': 1,
+            'Restore activity enabled': 1,
+            'Client online (days)': 3,
+            'Inactive AD user as client owner': 1,
+            'Client excluded from SLA report': 1,
+            'Client uses storage policy': 2,
+            'Client is not ready': 1,
+            'Associated Storage Policy': 4,
+            'MediaAgent has Lucene Index Roles': 4,
+            'Client associated with plan': 2,
+            'Client by Schedule Interval': 4,
+            'Client needs Updates': 1,
+            'Subclient Name': 2,
+            'CommCell Psuedo Client': 1,
+            'Client Description': 2,
+            'Clients discovered using VSA Subclient': 6,
+            'Clients with no Archive Data': 1,
+            'User Client Provider Associations': 2,
+            'User Group Client Provider Associations': 2,
+            'Company Client Provider Associations': 4,
+            'Clients Meet SLA': 4,
+            'Index Servers': 1,
+            'Clients with OnePass enabled': 1,
+            'Clients by Role': 4,
+            'Clients by Permission': 4,
+            'User description contains': 2,
+            'User Group description contains': 2,
+            'Content Analyzer Cloud': 1,
+            'Company Installed Client Associations': 4,
+            'Client Online in Last 30 Days': 1,
+            'Clients With Subclients Having Associated Storage Policy': 1,
+            'Clients With Improperly Deconfigured Subclients': 1,
+            'Strikes count': 3,
+            'Clients With Backup Schedule': 1,
+            'Clients With Long Running Jobs': 3,
+            'Clients With Synthetic Full Backup N Days': 3,
+            'MediaAgents for clients in group list': 7,
+            'Associated Client Group List': 7,
+            'Timezone List': 7,
+            'MediaAgent has Lucene Index Role List': 7,
+            'Associated Storage Policy List': 7,
+            'Timezone Region List': 7,
+            'Clients With Encryption': 1,
+            'Client CIDR Address Range': 10,
+            'HAC Cluster': 1,
+            }
+
+        rule_mk = {
+                    "rule": {
+                        "filterID": filter_dict[filter_condition],
+                        "secValue": filter_value,
+                        "propID": prop_id_dict[filter_rule],
+                        "propType": ptype_dict[filter_rule],
+                        "value": value
+                    }
+            }
+
+        return rule_mk
+
+    def merge_smart_rules(self, rule_list, op_value='all', scg_op='all'):
+        """Merge multiple rules into (SCG) rule to create smart client group.
+
+            Args:
+                rule_list (list)  --  List of smart rules to be added in rule group
+
+                op_value (str)--     condition to apply between smart rules
+                ex: all, any,not any
+
+                scg_op (str)--       condition to apply between smart rule groups (@group level)
+
+            Returns:
+               scg_rule (dict)    -   Rule group to create smart client group
+
+        """
+
+        op_dict = {
+            'all': 0,
+            'any': 1,
+            'not any': 2
+        }
+        scg_rule = {
+            "op": op_dict[scg_op],
+            "rules": [
+            ]
+        }
+        rules_dict = {
+            "rule": {
+                "op": op_dict[op_value],
+                "rules": [
+                ]
+            }
+        }
+
+        for each_rule in rule_list:
+            rules_dict["rule"]["rules"].append(each_rule)
+
+        scg_rule["rules"].append(rules_dict)
+        return scg_rule
+
+    def add(self, clientgroup_name, clients=[], **kwargs):
         """Adds a new Client Group to the Commcell.
 
             Args:
@@ -297,19 +529,25 @@ class ClientGroups(object):
                 clients                 (str/list)   --  ',' separated string of client names,
                                                              or a list of clients,
                                                              to be added under client group
-                    default: []
+                                                            default: []
 
-                clientgroup_description (str)        --  description of the client group
-                    default: ""
+                ** kwargs               (dict)       -- Key value pairs for supported arguments
 
-                enable_backup           (bool)       --  enable or disable backup
-                    default: True
+                Supported:
 
-                enable_restore          (bool)       --  enable or disable restore
-                    default: True
+                    clientgroup_description (str)        --  description of the client group
+                                                                default: ""
 
-                enable_data_aging       (bool)       --  enable or disable data aging
-                    default: True
+                    enable_backup           (bool)       --  enable or disable backup
+                                                                default: True
+
+                    enable_restore          (bool)       --  enable or disable restore
+                                                                default: True
+
+                    enable_data_aging       (bool)       --  enable or disable data aging
+                                                                default: True
+                    scg_rule                (dict)       --  scg_rule required to create smart
+                                                                client group
 
             Returns:
                 object - instance of the ClientGroup class created by this method
@@ -327,7 +565,7 @@ class ClientGroups(object):
                     if client group already exists with the given name
         """
         if not (isinstance(clientgroup_name, basestring) and
-                isinstance(clientgroup_description, basestring)):
+                isinstance(kwargs.get('clientgroup_description', ''), basestring)):
             raise SDKException('ClientGroup', '101')
 
         if not self.has_clientgroup(clientgroup_name):
@@ -343,24 +581,30 @@ class ClientGroups(object):
             for client in clients:
                 clients_list.append({'clientName': client})
 
+            smart_client_group = bool(kwargs.get('scg_rule'))
+            if kwargs.get('scg_rule') is None:
+                kwargs['scg_rule'] = {}
+
             request_json = {
                 "clientGroupOperationType": 1,
                 "clientGroupDetail": {
-                    "description": clientgroup_description,
+                    "description": kwargs.get('clientgroup_description', ''),
+                    "isSmartClientGroup": smart_client_group,
+                    "scgRule": kwargs.get('scg_rule'),
                     "clientGroupActivityControl": {
                         "activityControlOptions": [
                             {
                                 "activityType": 1,
                                 "enableAfterADelay": False,
-                                "enableActivityType": enable_backup
+                                "enableActivityType": kwargs.get('enable_backup', True)
                             }, {
                                 "activityType": 16,
                                 "enableAfterADelay": False,
-                                "enableActivityType": enable_data_aging
+                                "enableActivityType": kwargs.get('enable_data_aging', True)
                             }, {
                                 "activityType": 2,
                                 "enableAfterADelay": False,
-                                "enableActivityType": enable_restore
+                                "enableActivityType": kwargs.get('enable_restore', True)
                             }
                         ]
                     },
