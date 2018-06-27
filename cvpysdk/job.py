@@ -1048,6 +1048,12 @@ class Job(object):
         """Treats the job full details as a read-only attribute."""
         self.is_finished
         return self._details
+    
+    @property
+    def size_of_application(self):
+        """Treats the size of application as a read-only attribute."""
+        if 'sizeOfApplication' in self._summary:
+            return self._summary['sizeOfApplication']
 
     def pause(self, wait_for_job_to_pause=False):
         """Suspends the job.
