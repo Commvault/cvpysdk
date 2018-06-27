@@ -1932,3 +1932,148 @@ class Subclient(object):
         """Refresh the properties of the Subclient."""
         self._get_subclient_properties()
         self.schedules = Schedules(self)
+
+    @property
+    def software_compression(self):
+        """Returns the value of Software Compression settings on the Subclient."""
+        mapping = {
+            0: 'ON_CLIENT',
+            1: 'ON_MEDIAAGENT',
+            2: 'USE_STORAGE_POLICY_SETTINGS',
+            4: 'OFF'
+        }
+        return mapping[self._commonProperties['storageDevice']['softwareCompression']]
+
+    @software_compression.setter
+    def software_compression(self, value):
+        """Sets the software compression of the subclient as the value provided as input.
+
+            Args:
+                value   (str)   --  software compression setting
+
+                Valid values are:
+
+                -   ON_CLIENT
+                -   ON_MEDIAAGENT
+                -   USE_STORAGE_POLICY_SETTINGS
+                -   OFF
+
+            Raises:
+                SDKException:
+                    if failed to update software compression of subclient
+
+                    if the type of value input is not string
+
+        """
+        if isinstance(value, basestring):
+            self._set_subclient_properties(
+                "_commonProperties['storageDevice']['softwareCompression']", value)
+
+        else:
+            raise SDKException(
+                'Subclient', '101')
+
+    @property
+    def encryption_flag(self):
+        """Returns the value of encryption flag settings on the Subclient."""
+        mapping = {
+            0: 'ENC_NONE',
+            1: 'ENC_MEDIA_ONLY',
+            2: 'ENC_NETWORK_AND_MEDIA',
+            3: 'ENC_NETWORK_ONLY'
+        }
+        return mapping[self._commonProperties['encryptionFlag']]
+
+    @encryption_flag.setter
+    def encryption_flag(self, value):
+        """Sets the encryption Flag of the subclient as the value provided as input.
+
+            Args:
+                value   (str)   --  encryption flag value
+
+                Valid values are:
+
+                -   ENC_NONE
+                -   ENC_MEDIA_ONLY
+                -   ENC_NETWORK_AND_MEDIA
+                -   ENC_NETWORK_ONLY
+
+            Raises:
+                SDKException:
+                    if failed to update encryption Flag of subclient
+
+                    if the type of value input is not string
+
+        """
+
+        if isinstance(value, basestring):
+            self._set_subclient_properties(
+                "_commonProperties['encryptionFlag']", value)
+
+        else:
+            raise SDKException(
+                'Subclient', '101')
+
+    @property
+    def deduplication_options(self):
+        """Returns the value of deduplication options settings on the Subclient."""
+        mapping_dedupe = {
+            0: "False",
+            1: "True",
+        }
+        mapping_signature = {
+            1: "ON_CLIENT",
+            2: "ON_MEDIA_AGENT"
+        }
+        dedupe_options =  self._commonProperties['storageDevice']['deDuplicationOptions']
+        if "enableDeduplication" in dedupe_options:
+            if dedupe_options['enableDeduplication'] == 0:
+                return mapping_dedupe[dedupe_options['enableDeduplication']]
+            else:
+                if 'generateSignature' in dedupe_options:
+                    return mapping_signature[dedupe_options['generateSignature']]
+
+
+    @deduplication_options.setter
+    def deduplication_options(self, enable_dedupe, gen_signature=None):
+        """Sets the deDuplication options of the subclient as the value provided as input.
+
+            Args:
+                enable_dedupe   (bool)  --  to enable or disable deduplication
+                                            (True / False)
+
+                gen_signature   (str)   --  where to generate signature
+
+                    Valid Values are:
+
+                    -   ON_CLIENT
+                    -   ON_MEDIA_AGENT
+
+            Raises:
+                SDKException:
+                    if failed to update deDuplication Options of subclient
+
+                    if the type of value input is not correct
+
+        """
+
+        if enable_dedupe is True:
+            if gen_signature is not None:
+                self._set_subclient_properties(
+                    "_commonProperties['storageDevice']['deDuplicationOptions']",
+                    {
+                        "enableDeduplication": enable_dedupe,
+                        "generateSignature": gen_signature
+                    }
+                )
+            else:
+                raise SDKException(
+                    'Subclient', '102', "Input data is not correct")
+        else:
+            self._set_subclient_properties(
+                "_commonProperties['storageDevice']['deDuplicationOptions']",
+                {
+                    "enableDeduplication": enable_dedupe,
+                }
+            )
+
