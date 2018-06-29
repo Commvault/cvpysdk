@@ -1716,7 +1716,7 @@ class Subclient(object):
             from_time=None,
             to_time=None,
             fs_options=None,
-            schedule_pattern = None):
+            schedule_pattern=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1795,40 +1795,40 @@ class Subclient(object):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            schedule_pattern = schedule_pattern
+            schedule_pattern=schedule_pattern
         )
 
     def set_backup_nodes(
             self,
             data_access_nodes):
-        
+
         """" Sets the the backup nodes for NFS share subclient.
-            
+
             Args:
                 data_access_nodes(list)    -- the list of data access nodes to be set
                                                 as backup nodes for NFS share subclient.
-            
+
             Returns nothing if the operation is successful.
-            
-            Raises SDK Exception : 
+
+            Raises SDK Exception :
                 if unable to update the backup nodes for the subclient.
-    
+
         """
-        
+
         data_access_nodes_json = []
         for access_node in data_access_nodes:
-            data_access_nodes_json.append({"clientName" : access_node})
-        
+            data_access_nodes_json.append({"clientName": access_node})
+
         request_json = {
             "subClientProperties": {
                 "fsSubClientProp": {
-                    "backupConfiguration" : {
-                        "backupDataAccessNodes" : data_access_nodes_json
+                    "backupConfiguration": {
+                        "backupDataAccessNodes": data_access_nodes_json
                     }
                 }
             }
         }
-        
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._SUBCLIENT, request_json)
 
@@ -2011,43 +2011,58 @@ class Subclient(object):
                 "_commonProperties['encryptionFlag']", value)
 
         else:
-            raise SDKException(
-                'Subclient', '101')
+            raise SDKException('Subclient', '101')
 
     @property
     def deduplication_options(self):
         """Returns the value of deduplication options settings on the Subclient."""
         mapping_dedupe = {
-            0: "False",
-            1: "True",
+            0: False,
+            1: True,
         }
         mapping_signature = {
             1: "ON_CLIENT",
             2: "ON_MEDIA_AGENT"
         }
-        dedupe_options =  self._commonProperties['storageDevice']['deDuplicationOptions']
+
+        dedupe_options = self._commonProperties['storageDevice']['deDuplicationOptions']
+
         if "enableDeduplication" in dedupe_options:
             if dedupe_options['enableDeduplication'] == 0:
                 return mapping_dedupe[dedupe_options['enableDeduplication']]
             else:
                 if 'generateSignature' in dedupe_options:
-                    return mapping_signature[dedupe_options['generateSignature']]
-
+                    try:
+                        return mapping_signature[dedupe_options['generateSignature']]
+                    except KeyError:
+                        return dedupe_options['generateSignature']
 
     @deduplication_options.setter
-    def deduplication_options(self, enable_dedupe, gen_signature=None):
-        """Sets the deDuplication options of the subclient as the value provided as input.
+    def deduplication_options(self, enable_dedupe):
+        """Enables / Disables the deduplication options of the Subclient.
 
             Args:
-                enable_dedupe   (bool)  --  to enable or disable deduplication
-                                            (True / False)
+                enable_dedupe   (tuple)     --  to enable or disable deduplication
 
-                gen_signature   (str)   --  where to generate signature
+                    tuple:
+                        **bool**    -   boolean flag to specify whether to
+                        enable / disable deduplication
 
-                    Valid Values are:
+                        **str**     -   where to generate the signature at
 
-                    -   ON_CLIENT
-                    -   ON_MEDIA_AGENT
+                            Valid Values are:
+
+                            -   ON_CLIENT
+                            -   ON_MEDIA_AGENT
+
+
+                    e.g.:
+
+                        >>> subclient.deduplication_options = (False, None)
+
+                        >>> subclient.deduplication_options = (True, "ON_CLIENT")
+
+                        >>> subclient.deduplication_options = (True, "ON_MEDIA_AGENT")
 
             Raises:
                 SDKException:
@@ -2056,14 +2071,13 @@ class Subclient(object):
                     if the type of value input is not correct
 
         """
-
-        if enable_dedupe is True:
-            if gen_signature is not None:
+        if enable_dedupe[0] is True:
+            if enable_dedupe[1] is not None:
                 self._set_subclient_properties(
                     "_commonProperties['storageDevice']['deDuplicationOptions']",
                     {
-                        "enableDeduplication": enable_dedupe,
-                        "generateSignature": gen_signature
+                        "enableDeduplication": enable_dedupe[0],
+                        "generateSignature": enable_dedupe[1]
                     }
                 )
             else:
@@ -2073,7 +2087,6 @@ class Subclient(object):
             self._set_subclient_properties(
                 "_commonProperties['storageDevice']['deDuplicationOptions']",
                 {
-                    "enableDeduplication": enable_dedupe,
+                    "enableDeduplication": enable_dedupe[0],
                 }
             )
-
