@@ -1798,23 +1798,21 @@ class Subclient(object):
             schedule_pattern=schedule_pattern
         )
 
-    def set_backup_nodes(
-            self,
-            data_access_nodes):
-
-        """" Sets the the backup nodes for NFS share subclient.
+    def set_backup_nodes(self, data_access_nodes):
+        """Sets the the backup nodes for NFS share subclient.
 
             Args:
-                data_access_nodes(list)    -- the list of data access nodes to be set
-                                                as backup nodes for NFS share subclient.
+                data_access_nodes   (list)  --  the list of data access nodes to be set
+                as backup nodes for NFS share subclient
 
-            Returns nothing if the operation is successful.
+            Returns:
+                None    -   if the operation is successful
 
-            Raises SDK Exception :
-                if unable to update the backup nodes for the subclient.
+            Raises:
+                SDKException:
+                    if unable to update the backup nodes for the subclient
 
         """
-
         data_access_nodes_json = []
         for access_node in data_access_nodes:
             data_access_nodes_json.append({"clientName": access_node})
@@ -1829,8 +1827,7 @@ class Subclient(object):
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._SUBCLIENT, request_json)
+        flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
 
         output = self._process_update_response(flag, response)
 
@@ -1942,7 +1939,11 @@ class Subclient(object):
             2: 'USE_STORAGE_POLICY_SETTINGS',
             4: 'OFF'
         }
-        return mapping[self._commonProperties['storageDevice']['softwareCompression']]
+
+        try:
+            return mapping[self._commonProperties['storageDevice']['softwareCompression']]
+        except KeyError:
+            return self._commonProperties['storageDevice']['softwareCompression']
 
     @software_compression.setter
     def software_compression(self, value):
@@ -1967,11 +1968,10 @@ class Subclient(object):
         """
         if isinstance(value, basestring):
             self._set_subclient_properties(
-                "_commonProperties['storageDevice']['softwareCompression']", value)
-
+                "_commonProperties['storageDevice']['softwareCompression']", value
+            )
         else:
-            raise SDKException(
-                'Subclient', '101')
+            raise SDKException('Subclient', '101')
 
     @property
     def encryption_flag(self):
@@ -1982,7 +1982,11 @@ class Subclient(object):
             2: 'ENC_NETWORK_AND_MEDIA',
             3: 'ENC_NETWORK_ONLY'
         }
-        return mapping[self._commonProperties['encryptionFlag']]
+
+        try:
+            return mapping[self._commonProperties['encryptionFlag']]
+        except KeyError:
+            return self._commonProperties['encryptionFlag']
 
     @encryption_flag.setter
     def encryption_flag(self, value):
@@ -2007,9 +2011,7 @@ class Subclient(object):
         """
 
         if isinstance(value, basestring):
-            self._set_subclient_properties(
-                "_commonProperties['encryptionFlag']", value)
-
+            self._set_subclient_properties("_commonProperties['encryptionFlag']", value)
         else:
             raise SDKException('Subclient', '101')
 
@@ -2081,8 +2083,7 @@ class Subclient(object):
                     }
                 )
             else:
-                raise SDKException(
-                    'Subclient', '102', "Input data is not correct")
+                raise SDKException('Subclient', '102', "Input data is not correct")
         else:
             self._set_subclient_properties(
                 "_commonProperties['storageDevice']['deDuplicationOptions']",
