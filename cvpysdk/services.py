@@ -82,6 +82,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
+    'MODIFY_ALERT': '{0}AlertRule/%s/Action/Modify',
     'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
     'ENABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Enable',
     'DISABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Disable',
@@ -174,6 +175,7 @@ SERVICES_DICT_TEMPLATE = {
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
     'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
+    'PROTECTED_VMS' : "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
 
     'USERS': '{0}User',
     'USER': '{0}User/%s?Level=50',
@@ -216,6 +218,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_DR_GROUP': '{0}DRGroups/%s',
     'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
     'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
+    'REVERSE_REPLICATION_TASK':  '{0}Replications/Monitors/streaming/Operation',
+    'REPLICATION_MONITOR':  '{0}Replications/Monitors/streaming?subclientId=0',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
@@ -239,7 +243,11 @@ SERVICES_DICT_TEMPLATE = {
     'RELEASE_LICENSE':'{0}Client/License/Release',
     'RECONFIGURE_LICENSE':'{0}Client/License/Reconfigure',
     'LIST_LICENSES':'{0}Client/%s/License',
-    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s'
+    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s',
+
+    'IDENTITY_APPS': '{0}ThirdParty/App',
+
+    'GLOBAL_PARAM': '{0}/setGlobalParam'
 }
 
 

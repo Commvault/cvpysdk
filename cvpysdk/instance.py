@@ -1,3 +1,5 @@
+# FIXME:https://engweb.commvault.com/engtools/defect/215340
+# FIXME:https://engweb.commvault.com/engtools/defect/215230
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -46,6 +48,16 @@ Instances:
     add_sybase_instance()           --  To add sybase server instance
 
     add_big_data_apps_instance()    --  To add an instance with the big data apps agent specified
+
+    add_s3_instance()               --  Method to add a new s3 instance
+
+    add_azure_instance()            --  Method to add a new azure instance
+
+    add_oraclecloud_instance()      --  Method to add a new oracle cloud instance
+
+    add_openstack_instance()        --  Method to add a new openstack instance
+
+    delete_cloud_apps_instance()    --  Method to delete an instance from cloud apps agent
 
     refresh()                       --  refresh the instances associated with the agent
 
@@ -532,7 +544,6 @@ class Instances(object):
                 'Instance', '102', 'No Instance exists with name: {0}'.format(instance_name)
             )
 
-
     def add_sybase_instance(self, sybase_options):
         """
             Method to Add new Sybase Instance to given Client
@@ -650,7 +661,6 @@ class Instances(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_big_data_apps_instance(self, distributed_options):
-
         """
             Method to add big data apps instance to the given client.
 
@@ -747,6 +757,574 @@ class Instances(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_s3_instance(self,
+                        instance_name,
+                        access_node,
+                        storage_policy,
+                        accesskey,
+                        secretkey,
+                        description=None,
+                        number_of_streams=None):
+        """ Method to add new S3 cloud apps instance to given client.
+
+        Args :
+
+            instance_name            (str)         --     name of the instance to be added
+
+            access_node              (str)         --     name of the backup client to be
+                associated with this instance
+
+            storage_policy           (str)         --     name of the storage policy to be
+                associated with this instance
+
+            accesskey                (str)         --     access key of the account to be
+                associated with this instance
+
+            secretkey                (str)         --     secret key of the account to be
+                associated with this instance
+
+            description              (str)         --     description of this instance
+
+            number_of_streams        (int)         --     number of data backup streams
+
+        Returns :
+
+            None
+
+        Raises:
+                SDKException:
+
+                    if S3 instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+
+        """
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(instance_name)
+            )
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(storage_policy)
+            )
+
+        request_json = {
+            "instanceProperties": {
+                "description": description,
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": self._agent_object.agent_name,
+                },
+                "cloudAppsInstance": {
+                    "instanceType": 5,
+                    "s3Instance": {
+                        "accessKeyId": accesskey,
+                        "secretAccessKey": secretkey,
+                        "hostURL": "s3.amazonaws.com"
+                    },
+                    "generalCloudProperties": {
+                        "numberOfBackupStreams": number_of_streams,
+                        "proxyServers": [
+                            {
+                                "clientName": access_node
+                            }
+                        ],
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    instance_name = response.json()['response']['entity']['instanceName']
+                    instance_id = response.json()['response']['entity']['instanceId']
+                    agent_name = self._agent_object.agent_name
+                    return self._instances_dict[agent_name](
+                        self._agent_object, instance_name, instance_id
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def add_azure_instance(self,
+                           instance_name,
+                           access_node,
+                           storage_policy,
+                           accountname,
+                           accesskey,
+                           description=None,
+                           number_of_streams=None):
+        """ Method to add new Azure cloud apps instance to given client.
+
+        Args :
+
+            instance_name            (str)         --     name of the instance to be added
+
+            access_node              (str)         --     name of the backup client to be
+                associated with this instance
+
+            storage_policy           (str)         --     name of the storage policy to be
+                associated with this instance
+
+            accountname              (str)         --     name of the account to be
+                associated with this instance
+
+            accesskey                (str)         --     access key of the account to be
+                associated with this instance
+
+            description              (str)         --     description of this instance
+
+            number_of_streams        (int)         --     number of data backup streams
+
+        Returns :
+
+            None
+
+        Raises:
+                SDKException:
+
+                    if Azure instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+
+        """
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(instance_name)
+
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(storage_policy)
+            )
+
+        request_json = {
+            "instanceProperties": {
+                "description": description,
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": self._agent_object.agent_name,
+                },
+                "cloudAppsInstance": {
+                    "instanceType": 6,
+
+                    "generalCloudProperties": {
+                        "numberOfBackupStreams": number_of_streams,
+                        "proxyServers": [
+                            {
+                                "clientName": access_node
+                            }
+                        ],
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy
+                            }
+                        }
+                    },
+                    "azureInstance": {
+                        "accountName": accountname,
+                        "accessKey": accesskey,
+                        "hostURL": "blob.core.windows.net"
+                    },
+                }
+            }
+        }
+
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    instance_name = response.json()['response']['entity']['instanceName']
+                    instance_id = response.json()['response']['entity']['instanceId']
+                    agent_name = self._agent_object.agent_name
+                    return self._instances_dict[agent_name](
+                        self._agent_object, instance_name, instance_id
+                    )
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def add_oraclecloud_instance(self,
+                                 instance_name,
+                                 access_node,
+                                 storage_policy,
+                                 endpointurl,
+                                 username,
+                                 password,
+                                 description=None,
+                                 number_of_streams=None):
+        """ Method to add new Oracle cloud apps instance to given client.
+
+        Args :
+
+            instance_name            (str)         --     name of the instance to be added
+
+            access_node              (str)         --     name of the backup client to be
+                associated with this instance
+
+            storage_policy           (str)         --     name of the storage policy to be
+                associated with this instance
+
+            endpointurl              (str)         --     endpoint url of the account to
+                be associated with this instance
+
+            username                 (str)         --     username of the account to be
+                associated with this instance
+
+            password                 (str)         --     password of the account to be
+                associated with this instance
+
+            description              (str)         --     description of this instance
+
+            number_of_streams        (int)         --     number of data backup streams
+
+        Returns :
+
+            None
+
+        Raises:
+                SDKException:
+
+                    if oracle instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+
+        """
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(instance_name)
+
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(storage_policy)
+            )
+        password = b64encode(password.encode()).decode()
+        request_json = {
+            "instanceProperties": {
+                "description": description,
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": self._agent_object.agent_name,
+                },
+                "cloudAppsInstance": {
+                    "instanceType": 14,
+
+                    "generalCloudProperties": {
+                        "numberOfBackupStreams": number_of_streams,
+                        "proxyServers": [
+                            {
+                                "clientName": access_node
+                            }
+                        ],
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy
+                            }
+                        }
+                    },
+                    "oraCloudInstance": {
+                        "endpointURL": endpointurl,
+                        "user": {
+                            "password": password,
+                            "userName": username
+                        }
+                    }
+                }
+            }
+        }
+
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    instance_name = response.json()['response']['entity']['instanceName']
+                    instance_id = response.json()['response']['entity']['instanceId']
+                    agent_name = self._agent_object.agent_name
+                    return self._instances_dict[agent_name](
+                        self._agent_object, instance_name, instance_id
+                    )
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def add_openstack_instance(self,
+                               instance_name,
+                               access_node,
+                               storage_policy,
+                               server_name,
+                               username,
+                               apikey,
+                               description=None,
+                               number_of_streams=None):
+        """ Method to add new Openstack cloud apps instance to given client.
+
+        Args :
+
+            instance_name            (str)         --     name of the instance to be added
+
+            access_node              (str)         --     name of the backup client to be
+                associated with this instance
+
+            storage_policy           (str)         --     name of the storage policy to be
+                associated with this instance
+
+            server_name              (str)         --     auth url or server name of the
+                account to be associated with this instance
+
+            username                 (str)         --     username of the account to be
+                associated with this instance
+
+            apikey                   (str)         --     API key of the account to be
+                associated with this instance
+
+            description              (str)         --     description of this instance
+
+            number_of_streams        (int)         --     number of data backup streams
+
+        Returns :
+
+            None
+
+        Raises:
+                SDKException:
+
+                    if openstack instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+
+        """
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(instance_name)
+
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(storage_policy)
+            )
+
+        apikey = b64encode(apikey.encode()).decode()
+        request_json = {
+            "instanceProperties": {
+                "description": description,
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": self._agent_object.agent_name,
+                },
+                "cloudAppsInstance": {
+                    "instanceType": 15,
+
+                    "generalCloudProperties": {
+                        "numberOfBackupStreams": number_of_streams,
+                        "proxyServers": [
+                            {
+                                "clientName": access_node
+                            }
+                        ],
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy
+                            }
+                        }
+                    },
+                    "openStackInstance": {
+                        "serverName": server_name,
+                        "credentials": {
+                            "password": apikey,
+                            "userName": username
+                        }
+                    }
+                }
+            }
+        }
+
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(
+                            error_string)
+                    )
+                else:
+                    instance_name = response.json()['response']['entity']['instanceName']
+                    instance_id = response.json()['response']['entity']['instanceId']
+                    agent_name = self._agent_object.agent_name
+                    return self._instances_dict[agent_name](
+                        self._agent_object, instance_name, instance_id
+                    )
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def delete_cloud_apps_instance(self, instance_name):
+        """ Deletes the instance from the cloud apps agent.
+
+        Args :
+            instance_name       (str)      --     name of the instance to be deleted
+
+        Returns :
+            None
+
+        Raises :
+            SDKException:
+
+                    if the specified instance doesn't exist
+                    if the agent type is other than cloud apps
+
+        """
+        if not self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" doesnot exist.'.format(instance_name)
+
+            )
+
+        if self._agent_object.agent_name != 'cloud apps':
+            raise SDKException(
+                'Instance',
+                '102',
+                'Delete cannot be performed on the instance of agent "{0}"'.format(
+                    self._agent_object.agent_name)
+            )
+        if not isinstance(instance_name, basestring):
+            raise SDKException('Instance', '101')
+        else:
+            instance_name = instance_name.lower()
+
+        if self.has_instance(instance_name):
+            delete_instance_service = self._commcell_object._services['INSTANCE'] % (
+                self._instances[instance_name]
+            )
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'DELETE', delete_instance_service
+            )
+
+            if flag:
+                if response.json():
+                    if 'response' in response.json():
+                        response_value = response.json()['response'][0]
+                        error_code = str(response_value['errorCode'])
+                        error_message = None
+
+                        if 'errorString' in response_value:
+                            error_message = response_value['errorString']
+
+                        if error_message:
+                            o_str = 'Failed to delete instance\nError: "{0}"'
+                            raise SDKException('Instance', '102', o_str.format(error_message))
+                        else:
+                            if error_code == '0':
+                                # initialize the backupsets again
+                                # so the backupsets object has all the backupsets
+                                self.refresh()
+                            else:
+                                o_str = ('Failed to delete instance with error code: "{0}"\n'
+                                         'Please check the documentation for '
+                                         'more details on the error').format(error_code)
+                                raise SDKException('Instance', '102', o_str)
+                    else:
+                        error_code = response.json()['errorCode']
+                        error_message = response.json()['errorMessage']
+                        o_str = 'Failed to delete instance\nError: "{0}"'.format(error_message)
+                        raise SDKException('Instance', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        else:
+            raise SDKException(
+                'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
+            )
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
@@ -1075,6 +1653,7 @@ class Instance(object):
         self._restore_destination_json(restore_option)
         self._restore_fileoption_json(restore_option)
         self._restore_volume_rst_option_json(restore_option)
+        self._sync_restore_option_json(restore_option)
 
         request_json = {
             "taskInfo": {
@@ -1103,13 +1682,13 @@ class Instance(object):
                                                              restore_option['schedule_pattern'])
 
         if "multinode_restore" in restore_option:
-                    
+
             self._destination_restore_json["destinationInstance"] = {
                 "instanceName": restore_option.get('destination_instance', self.instance_name)
             }
-            
+
             self._destination_restore_json["noOfStreams"] = restore_option.get('no_of_streams', 2)
-            
+
             self._distributed_restore_json = {
                 "distributedRestore": True,
                 "dataAccessNodes": {
@@ -1122,18 +1701,23 @@ class Instance(object):
             }
 
             self._qr_restore_option = {
-                "destAppTypeId":  restore_option.get('destination_appTypeId', 64)
+                "destAppTypeId": restore_option.get('destination_appTypeId', 64)
             }
-            
+
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["adminOpts"] = {
                 "contentIndexingOption": {
                     "subClientBasedAnalytics": False
                 }
             }
-            
+
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = self._destination_restore_json
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["distributedAppsRestoreOptions"] = self._distributed_restore_json
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["qrOption"] = self._qr_restore_option
+
+        if "sync_restore" in restore_option:
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["syncOption"] = self._sync_restore_json
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]["includeMetaData"] = True
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"]["inPlace"] = True
 
         return request_json
 
@@ -1181,6 +1765,8 @@ class Instance(object):
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
                         versions            : list of version numbers to be backed up
+                        validate_only       : To validate data backed up for restore
+
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -1272,6 +1858,8 @@ class Instance(object):
                                                 specified file
                         versions            : list of version numbers to be backed up
                         media_agent         : Media Agent need to be used for Browse and restore
+                        validate_only       : To validate data backed up for restore
+                        
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -1557,7 +2145,7 @@ class Instance(object):
         if "browse_job_id" in value:
             self._browse_restore_json["browseJobId"] = value.get("browse_job_id", False)
             self._browse_restore_json["browseJobCommCellId"] = value.get(
-                "commcell_id", self._commcell_object.commcell_id )
+                "commcell_id", self._commcell_object.commcell_id)
 
     def _restore_common_options_json(self, value):
         """setter for  the Common options of in restore JSON"""
@@ -1580,7 +2168,8 @@ class Instance(object):
             "stripLevelType": value.get("striplevel_type", 0),
             "allVersion": value.get("all_versions", False),
             "unconditionalOverwrite": value.get("unconditional_overwrite", False),
-            "includeAgedData": value.get("include_aged_data", False)
+            "includeAgedData": value.get("include_aged_data", False),
+            "validateOnly": value.get("validate_only",False)
         }
 
     def _restore_destination_json(self, value):
@@ -1613,6 +2202,18 @@ class Instance(object):
         self._volume_restore_json = {
             "volumeLeveRestore": value.get("volume_level_restore", False),
             "volumeLevelRestoreType": value.get("volume_level_restore_type", "PHYSICAL_VOLUME")
+        }
+
+    def _sync_restore_option_json(self, value):
+        """setter for the Sync. Restore option in restore JSON"""
+        if not isinstance(value, dict):
+            raise SDKException('Instance', '101')
+
+        self._sync_restore_json = {
+            "PreserveModifiedFiles": True,
+            "isMigration": True,
+            "isSyncRestore": True,
+            "paths": value.get("sync_option_paths")
         }
 
     @property

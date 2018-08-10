@@ -82,11 +82,17 @@ class InternetOptions(object):
         if not flag:
             raise SDKException('Response', '101', response.text)
 
-    def set_internet_gateway_client(self, client_name=None):
+    def set_internet_gateway_client(self,
+                                    client_name=None,
+                                    cloud_metrics=True,
+                                    private_metrics=True
+                                    ):
         """
         set internet gateway with the client name provided.
         Args:
-            client_name (str): client to be used as internet gateway
+            client_name     (str): client to be used as internet gateway
+            cloud_metrics  (bool): True to enable gateway for cloud metrics
+            private_metrics(bool): True to enable gateway for Private metrics
         Raises:
             SDKException:
                 if client doesnt exist in CommServe
@@ -97,6 +103,14 @@ class InternetOptions(object):
         self._config['proxyType'] = 2
         self._config['proxyClient']['clientId'] = clientid
         self._config['proxyClient']['clientName'] = client_name
+        if cloud_metrics:
+            self._config['useInternetGatewayPublic'] = True
+        else:
+            self._config['useInternetGatewayPublic'] = False
+        if private_metrics:
+            self._config['useInternetGatewayPrivate'] = True
+        else:
+            self._config['useInternetGatewayPrivate'] = False
         self._save_config()
 
     def set_metrics_internet_gateway(self):

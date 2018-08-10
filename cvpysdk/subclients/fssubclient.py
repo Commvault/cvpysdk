@@ -51,10 +51,21 @@ FileSystemSubclient:
 
     trueup_days()                       --  update trueup after **n** days value of the subclient
 
+    generate_signature_on_ibmi()        --  enable or disable signature generation on ibmi
+
+    object_level_backup()               --  enable or disable object level backup for ibmi subclient
+
     find_all_versions()                 --  returns the dict containing list of all the backed up
     versions of specified file
-
+	
+    block_level_backup_option            -- Enable/Disable Blocklevel Option on subclient
+        
+    create_file_level_index_option       -- Enable/Disable Metadata collection Option on subclient
+	
     backup()                            --  run a backup job for the subclient
+
+    restore_out_of_place()              --  Restores the files/folders specified in the input paths list
+                                            to the input client, at the specified destionation location
 
 """
 
@@ -235,7 +246,38 @@ class FileSystemSubclient(Subclient):
                 'selectedAdHocPaths': options['adhoc_backup_contents']
             }
 
+        if 'use_multi_stream' in options and options['use_multi_stream']:
+
+            multi_stream_opts = {
+                'useMultiStream': options.get('use_multi_stream', False),
+                'useMaximumStreams': options.get('use_maximum_streams', True),
+                'maxNumberOfStreams': options.get('max_number_of_streams', 1)
+            }
+
+            if 'dataOpt' in final_dict and isinstance(final_dict['dataOpt'], dict):
+                final_dict['dataOpt'].update(multi_stream_opts)
+            else:
+                final_dict['dataOpt'] = multi_stream_opts
+
         return final_dict
+
+    @property
+    def _vlr_restore_options_dict(self):
+        """ Constructs volume level Restore Dictionary"""
+
+        physical_volume = 'PHYSICAL_VOLUME'
+        vlr_options_dict = {
+            "volumeRstOption": {
+                "volumeLeveRestore": True,
+                "volumeLevelRestoreType": physical_volume
+            },
+            "virtualServerRstOption": {
+                "isDiskBrowse": False,
+                "isVolumeBrowse": True,
+                "isBlockLevelReplication": False
+            }
+        }
+        return vlr_options_dict
 
     @property
     def content(self):
@@ -438,6 +480,59 @@ class FileSystemSubclient(Subclient):
                 'Subclient',
                 '102',
                 'argument should only be boolean')
+
+    @property
+    def block_level_backup_option(self):
+        """Gets the block level option 
+
+            Returns:
+                true - if blocklevel is enabled on the subclient
+                false - if blocklevel is not enabled on the subclient
+        """
+
+        return self._fsSubClientProp['blockLevelBackup']
+
+
+    @block_level_backup_option.setter
+    def block_level_backup_option(self, block_level_backup_value):
+        """Creates the JSON with the specified blocklevel flag
+            to pass to the API to update the blocklevel of this
+            File System Subclient.
+
+            Args:
+                block_level_backup_value (bool)  --  Specifies to enable or disable blocklevel option
+        """
+
+        self._set_subclient_properties(
+            "_fsSubClientProp['blockLevelBackup']",
+            block_level_backup_value)
+
+    @property
+    def create_file_level_index_option(self):
+        """Gets the value of Metadata collection Option
+
+            Returns:
+                true - if metadata collection is enabled on the subclient
+                false - if metadata collection is not enabled on the subclient
+        """
+
+        return self._fsSubClientProp['createFileLevelIndexDuringBackup']
+
+    @create_file_level_index_option.setter
+    def create_file_level_index_option(self, create_file_level_index_value):
+        """Creates the JSON with the specified scan type
+            to pass to the API to update the Metadata collection of this
+            File System Subclient.
+
+            Args:
+                create_file_level_index_value (bool)  --  Specifies to enable or disable metadata collection
+        """
+
+        self._set_subclient_properties(
+            "_fsSubClientProp['createFileLevelIndexDuringBackup']",
+            create_file_level_index_value)
+
+
 
     @property
     def backup_retention_days(self):
@@ -813,6 +908,56 @@ class FileSystemSubclient(Subclient):
                 '102',
                 "Parameter need to be dictionary")
 
+    @property
+    def generate_signature_on_ibmi(self):
+        """Gets the value of generate signature on ibmi option for IBMi subclient.
+
+            Returns:
+                False   -   if signature generation on IBMi is enabled on the subclient
+
+                True    -   if signature generation on IBMi is not enabled on the subclient
+        """
+
+        return bool(self._fsSubClientProp.get('genSignatureOnIBMi'))
+
+    @generate_signature_on_ibmi.setter
+    def generate_signature_on_ibmi(self, generate_signature_value):
+        """Updates the generate signature property value on ibmi subclient.
+
+            Args:
+                generate_signature_value (int)  --  Specifies to enable or disable signature generation on IBMi
+        """
+
+        self._set_subclient_properties(
+            "_fsSubClientProp['genSignatureOnIBMi']",
+            generate_signature_value
+        )
+
+    @property
+    def object_level_backup(self):
+        """Gets the value of object level backup option for IBMi subclient.
+
+            Returns:
+                True    -   if object level backup is enabled on the subclient
+
+                False   -   if object level backup is not enabled on the subclient
+        """
+
+        return self._fsSubClientProp.get('backupAsObjects')
+
+    @object_level_backup.setter
+    def object_level_backup(self, object_level_value):
+        """Update the object level backup property for an IBMi subclient.
+
+            Args:
+                object_level_value (bool)  --  Specifies to enable or disable object level backup on IBMi
+        """
+
+        self._set_subclient_properties(
+            "_fsSubClientProp['backupAsObjects']",
+            object_level_value
+        )
+
     def find_all_versions(self, *args, **kwargs):
         """Searches the content of a Subclient.
 
@@ -950,3 +1095,121 @@ class FileSystemSubclient(Subclient):
             )
 
         return self._process_backup_response(flag, response)
+
+    def restore_out_of_place(
+            self,
+            client,
+            destination_path,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            fs_options=None):
+        """Restores the files/folders specified in the input paths list to the input client,
+            at the specified destionation location.
+
+            Args:
+                client                (str/object) --  either the name of the client or
+                                                           the instance of the Client
+
+                destination_path      (str)        --  full path of the restore location on client
+
+                paths                 (list)       --  list of full paths of
+                                                           files/folders to restore
+
+                overwrite             (bool)       --  unconditional overwrite files during restore
+                    default: True
+
+                restore_data_and_acl  (bool)       --  restore data and ACL files
+                    default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                fs_options      (dict)          -- dictionary that includes all advanced options
+                    options:
+                        preserve_level      : preserve level option to set in restore
+                        proxy_client        : proxy that needed to be used for restore
+                        impersonate_user    : Impersonate user options for restore
+                        impersonate_password: Impersonate password option for restore
+                                                in base64 encoded form
+                        all_versions        : if set to True restores all the versions of the
+                                                specified file
+                        versions            : list of version numbers to be backed up
+                        media_agent         : Media Agent need to be used for Browse and restore
+                        is_vlr_restore      : sets if the restore job is to be triggered as vlr
+                        validate_only       : To validate data backed up for restore
+                        
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if client is not a string or Client instance
+
+                    if destination_path is not a string
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+        """
+        self._backupset_object._instance_object._restore_association = self._subClientEntity
+
+        # check to find whether file level Restore/ Volume level restore for blocklvel.
+
+        if fs_options is not None and fs_options.get('is_vlr_restore', False):
+            if not (isinstance(paths, list) and
+                    isinstance(overwrite, bool) and
+                    isinstance(restore_data_and_acl, bool)):
+                raise SDKException('Subclient', '101')
+
+            paths = self._filter_paths(paths)
+
+            if paths == []:
+                raise SDKException('Subclient', '104')
+
+            request_json = self._restore_json(
+                client=client,
+                paths=paths,
+                overwrite=overwrite,
+                restore_data_and_acl=restore_data_and_acl,
+                copy_precedence=copy_precedence,
+                from_time=from_time,
+                to_time=to_time,
+                destPath=destination_path,
+                fs_options=fs_options)
+
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(self._vlr_restore_options_dict)
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'][0] = \
+                                                                                        destination_path
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['inPlace'] = False
+
+            return self._process_restore_response(request_json)
+
+        else:
+            return super(FileSystemSubclient, self).restore_out_of_place(client=client,
+                                                                         destination_path=destination_path,
+                                                                         paths=paths,
+                                                                         overwrite=overwrite,
+                                                                         restore_data_and_acl=restore_data_and_acl,
+                                                                         copy_precedence=copy_precedence,
+                                                                         from_time=from_time,
+                                                                         to_time=to_time,
+                                                                         fs_options=fs_options)

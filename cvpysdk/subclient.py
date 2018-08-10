@@ -1,3 +1,4 @@
+#FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -1108,7 +1109,7 @@ class Subclient(object):
             Returns:
                 (dict)  -   generated advanced options dict
         """
-        return {}
+        return options
 
     @property
     def _json_task(self):
@@ -1672,6 +1673,13 @@ class Subclient(object):
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
                         versions            : list of version numbers to be backed up
+                        validate_only       : To validate data backed up for restore
+
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 
@@ -1759,6 +1767,13 @@ class Subclient(object):
                                                 specified file
                         versions            : list of version numbers to be backed up
                         media_agent         : Media Agent need to be used for Browse and restore
+                        validate_only       : To validate data backed up for restore
+
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 

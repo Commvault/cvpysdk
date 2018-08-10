@@ -204,35 +204,30 @@ class DROrchestrationOperations(object):
         initiatedFrom = self.dr_orchestration_options.get(
             "initiatedfromMonitor", False)
 
+        _dr_orchestration_json = {
+            "operationType": int(self.dr_orchestration_options.get("DROrchestrationType")),
+            "initiatedfromMonitor": initiatedFrom,
+            "advancedOptions": {
+                "skipDisableNetworkAdapter": self.dr_orchestration_options.get("skipDisableNetworkAdapter", False)
+            }
+        }
+
         # if initiated from monitor set To True
         if initiatedFrom:
 
-            _dr_orchestration_json = {
-                "operationType": int(self.dr_orchestration_options.get("DROrchestrationType")),
-                "initiatedfromMonitor": True,
-                "advancedOptions": {
-                    "skipDisableNetworkAdapter": self.dr_orchestration_options.get("skipDisableNetworkAdapter", False)
-                },
-                "replicationInfo": {
-                    "replicationId": {
-                        "val": self.dr_orchestration_options.get("replicationIds", 0)
+            _dr_orchestration_json.update({
+                    "replicationInfo": {
+                        "replicationId": self.dr_orchestration_options.get("replicationIds", [0])
                     }
-                }
-
-            }
+            })
 
         else:
-            _dr_orchestration_json = {
-                "operationType": int(self.dr_orchestration_options.get("DROrchestrationType")),
-                "initiatedfromMonitor": False,
-                "advancedOptions": {
-                    "skipDisableNetworkAdapter": self.dr_orchestration_options.get("skipDisableNetworkAdapter", False)
-                },
+            _dr_orchestration_json.update({
                 "vApp": {
                     "vAppId": int(self.dr_orchestration_options.get("failoverGroupId")),
                     "vAppName": self.dr_orchestration_options.get("failoverGroupName")
                 }
-            }
+            })
 
         return _dr_orchestration_json
 

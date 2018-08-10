@@ -55,10 +55,6 @@ FailoverGroups:
                 failover_group_options)         -- Sets failover machines in the failover group
                                                     options dict
 
-
-    _prepare_clients_for_failover_group(
-        failover_group_options)                 -- Prepare clients while failover group creation
-
     _prepare_add_failover_group_json(
                 failover_group_options)         -- Constructs failover group json to create
                                                     failover group in the commcell
@@ -415,7 +411,12 @@ class FailoverGroups(object):
             err_msg = 'No virtualization clients setup on this Commcell'
             raise SDKException('FailoverGroup', '102', err_msg)
 
-        v_client = list(virtualization_clients.keys())[0]
+        # get the first source virtualization client if not supplied in input test case
+        if 'VirtualizationClient' not in failover_group_options:
+            v_client = list(virtualization_clients.keys())[0]
+
+        else:
+            v_client = virtualization_clients.get(failover_group_options.get("VirtualizationClient")).get("hostName")
 
         failover_group_options["VirtualizationClient"] = {
             "clientName": v_client,
@@ -596,50 +597,6 @@ class FailoverGroups(object):
 
         return failover_group_json
 
-    def _prepare_clients_for_failover_group(self, failover_group_options):
-        """ Prepare clients for constructing failover group json
-        while creating new failover group
-
-        Args: input dict of failover group options
-                failover_group_options (json) -- failover group options for creating group
-                {
-                    "failoverGroupName": "FailoverAutomation-vApp",
-                    "failoverGroupVMs": "DRautoVM1, DRautoVM2",
-                    "VirtualizationClient": "vsa-vc6.testlab.commvault.com",
-                    "approvalRequired": false,
-                    "initiatedFromMonitor": false
-                }
-
-        Returns:
-
-        Raises:
-            SDKException:
-                if proper inputs are not provided
-        """
-        if not isinstance(failover_group_options, dict):
-            raise SDKException('FailoverGroup', '101')
-
-        if 'machines' not in failover_group_options:
-            raise SDKException('FailoverGroup', '101')
-
-        machines = []
-        if 'failoverGroupVMs' not in failover_group_options:
-            # get first VM
-            machines.append(failover_group_options["machines"][0])
-
-        else:
-
-            # iterarte over input VMs
-            for vm in failover_group_options.get(
-                    "failoverGroupVMs").split(","):
-
-                vm = vm.strip()
-                # iterate over all machines
-                for machine in failover_group_options["machines"]:
-                    if vm == machine['client']['clientName']:
-                        machines.append(machine)
-
-        return machines
 
     def _prepare_client_list_for_failover_group_json(
             self, failover_group_options):
@@ -671,11 +628,8 @@ class FailoverGroups(object):
 
         clients = []
 
-        machines = self._prepare_clients_for_failover_group(
-            failover_group_options)
-
         # iterate over all machines
-        for machine in machines:
+        for machine in failover_group_options.get("machines"):
             client = {}
 
             client["GUID"] = machine['client']['GUID']
@@ -716,12 +670,9 @@ class FailoverGroups(object):
         if 'machines' not in failover_group_options:
             raise SDKException('FailoverGroup', '101')
 
-        machines = self._prepare_clients_for_failover_group(
-            failover_group_options)
-
         vm_sequences = []
 
-        for machine in machines:
+        for machine in failover_group_options.get("machines"):
             vm_sequence = {}
             vm_sequence["copyPrecedence"] = 0
             vm_sequence["replicationId"] = machine['replicationId']

@@ -111,12 +111,13 @@ class ReplicationMonitor(object):
         if not self._replicationId:
 
             vm_name = self.replication_monitor_options.get("vmName", "")
+            _rep_Ids = []
 
             if not vm_name:
 
                 # get the first VM if input vm doesnt exist
                 vm = self.replication_monitor[0]
-                self._replicationId = vm.get('replicationId', 0)
+                _rep_Ids.append(vm.get('replicationId', 0))
 
             else:
 
@@ -125,7 +126,9 @@ class ReplicationMonitor(object):
 
                     if str(_vm.get("sourceName")).lower() == str(
                             vm_name).lower():
-                        self._replicationId = int(_vm.get("replicationId", 0))
+                        _rep_Ids.append(_vm.get("replicationId", 0))
+
+            self._replicationId = _rep_Ids
 
         return self._replicationId
 
@@ -297,7 +300,7 @@ class ReplicationMonitor(object):
             'GET', self._REPLICATION_MONITOR)
 
         if flag:
-            if response.json() and 'vApp' in response.json():
+            if response.json():
                 self._replication_monitor = response.json()['siteInfo']
             else:
                 raise SDKException('Response', '102')

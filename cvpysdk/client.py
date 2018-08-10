@@ -156,6 +156,8 @@ Client
 
     reconfigure_client()         --  reapplies license to the client
 
+    push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
+
 Client Attributes
 -----------------
 
@@ -243,6 +245,7 @@ import requests
 from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
+from .deployment.install import Install
 
 from .network import Network
 
@@ -3034,6 +3037,45 @@ class Client(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def push_servicepack_and_hotfix(
+            self,
+            reboot_client=False,
+            run_db_maintenance=True):
+        """triggers installation of service pack and hotfixes
+
+        Args:
+            reboot_client (bool)            -- boolean to specify whether to reboot the client
+            or not
+
+                default: False
+
+            run_db_maintenance (bool)      -- boolean to specify whether to run db
+            maintenance not
+
+                default: True
+
+        Returns:
+            object - instance of the Job class for this download job
+
+        Raises:
+                SDKException:
+                    if Download job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another download job is already running
+
+        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
+
+        """
+        install = Install(self._commcell_object)
+        return install.push_servicepack_and_hotfix(
+                                    client_computers=[self.client_name],
+                                    reboot_client=reboot_client,
+                                    run_db_maintenance=run_db_maintenance)
 
     @property
     def consumed_licenses(self):

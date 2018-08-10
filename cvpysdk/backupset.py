@@ -17,6 +17,7 @@ and to perform operations on that backup set
 
 
 Backupsets:
+===========
     __init__(class_object)          -- initialise object of Backupsets class associated with
     the specified agent/instance
 
@@ -49,6 +50,7 @@ Backupsets:
 
 
 Backupset:
+==========
     __init__()                      -- initialise object of Backupset with the specified backupset
     name and id, and associated to the specified instance
 
@@ -90,6 +92,12 @@ Backupset:
     find()                          -- find content in the backupset
 
     refresh()                       -- refresh the properties of the backupset
+
+
+Backupset instance Attributes
+-----------------------------
+    **guid**                        -- treats the backupset GUID as a property
+    of the Backupset class
 
 """
 
@@ -990,7 +998,7 @@ class Backupset(object):
             request_json['options']['includeRunningJobs'] = True
 
         if options['vs_volume_browse']:
-            request_json['mode'] = 3
+            request_json['mode']['mode'] = 3
             request_json['options']['vsVolumeBrowse'] = True
             request_json['advOptions']['browseViewName'] = options['browse_view_name']
 
@@ -1225,6 +1233,15 @@ class Backupset(object):
     def plan(self):
         """Treats the backupset plan as a property of the Backupset class."""
         return self._plan
+
+    @property
+    def guid(self):
+        """Treats the backupset GUID as a property of the Backupset class."""
+        if self._properties.get('backupSetEntity'):
+            if self._properties['backupSetEntity'].get('backupsetGUID'):
+                return self._properties['backupSetEntity']['backupsetGUID']
+            raise SDKException('Backupset', '102', 'Backupset GUID not found')
+        raise SDKException('Backupset', '102', 'Backupset entity not found')
 
     @backupset_name.setter
     def backupset_name(self, value):

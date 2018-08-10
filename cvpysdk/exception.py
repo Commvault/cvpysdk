@@ -1,3 +1,4 @@
+#FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -120,7 +121,9 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Input date is incorrect',
         '104': 'Instance Level Browse is not supported. Instance should have a single backupset',
-        '105': 'Could not fetch instance property'
+        '105': 'Could not fetch instance property',
+        '106': 'Invalid policy name under given instance. Validate the policy name'
+
     },
     'Subclient': {
         '101': 'Data type of the input(s) is not valid',
@@ -154,7 +157,10 @@ EXCEPTION_DICT = {
         '104': 'Type of library should either be the DiskLibrary class instance or string',
         '105': 'No storage policies exist for this user',
         '106': 'Failed to run the backup copy job',
-        '107': 'Failed to run the deferred catalog job'
+        '107': 'Failed to run the deferred catalog job',
+        '108': 'Failed to run the DDB move job',
+        '109': 'Failed to run the DDB verification job',
+        '110': 'Input data is not correct'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',
@@ -288,6 +294,30 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to delete the operation window',
         '104': 'Failed to list operation windows'
+    },
+    'IdentityManagement': {
+        '101': 'Failed to retreive apps',
+        '102': 'App not found',
+        '103': 'Failed to configure identity app',
+    },
+    'CommCellMigration': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Please specify all the required inputs',
+        '104': 'Please give appropriate input(s)'
+    },
+    'Download': {
+        '101': 'Failed to execute the download Job',
+        '102': 'service_pack version argument is missing in the method call'
+    },
+    'Install': {
+        '101': 'Insufficient parameters are given',
+        '102': 'Invalid client name is given',
+        '103': 'Invalid client group name is given',
+        '104': 'Installation failed please check the logs',
+        '105': 'please provide the features to be installed',
+        '106': 'please provide the client details',
+        '107': 'Failed to execute Install job'
     }
 }
 

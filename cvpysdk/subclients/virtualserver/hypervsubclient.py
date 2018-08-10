@@ -61,6 +61,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         """
         name = "name"
         datastore = "DestinationPath"
+        new_name = "new_name"
 
 
     def _get_guest_os(self, os_name):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=W0104
+# pylint: disable=W0104, R0205, R1710
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -42,6 +42,8 @@ JobController
     finished_jobs()             --  retutns the dict of finished jobs and their details
 
     get()                       --  returns the Job class instance for the given job id
+
+    modify_jobmanagement_options -- executes a request to modify job management options on commcell
 
     kill_all_jobs()             -- Kills all jobs on the commcell
 
@@ -379,13 +381,13 @@ class JobController(object):
             raise SDKException('Job', '102', 'Invalid input')
 
         request_json = {
-           "JobManager_PerformMultiCellJobOpReq": {
-              "jobOpReq": {
-                 "operationType": job_map[operation_type]
-              },
-              "message": "ALL_JOBS",
-              "operationDescription": "All jobs"
-           }
+            "JobManager_PerformMultiCellJobOpReq": {
+                "jobOpReq": {
+                    "operationType": job_map[operation_type]
+                },
+                "message": "ALL_JOBS",
+                "operationDescription": "All jobs"
+            }
         }
 
         response = self._commcell_object._qoperation_execute(request_json)
@@ -395,8 +397,8 @@ class JobController(object):
             if error_code != 0:
                 if 'errLogMessage' in response['error']:
                     error_message = "Failed to {0} all jobs with error: [{1}]".format(
-                                operation_type, response['error']['errLogMessage']
-                            )
+                        operation_type, response['error']['errLogMessage']
+                    )
 
                     raise SDKException(
                         'Job',
@@ -671,6 +673,47 @@ class JobController(object):
         """
         return Job(self._commcell_object, job_id)
 
+    def modify_jobmanagement_options(self, property_name, property_value):
+        """ Executes a request to modify job management options on commcell
+
+            Args:
+                property_name (str)   --  property Name to modify/update in Job Management
+
+                propery_value (str)   --  property Value to modify/update in Job Management
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    - Failed to execute the api to modify property
+
+                    - response is empty
+
+        """
+
+        request_json = {
+            "name": property_name,
+            "value": property_value
+        }
+
+        response = self._commcell_object._set_gxglobalparam_value(request_json)
+
+        if 'errorCode' in response:
+            error_code = str(response['errorCode'])
+            if error_code != '0':
+                error_message = "Failed to modify {0} with error: [{1}]".format(
+                    property_name, response['errorMessage']
+                )
+
+                raise SDKException(
+                    'Job',
+                    '102',
+                    'Error Code:"{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                )
+        else:
+            raise SDKException('Response', '102')
+
 
 class Job(object):
     """Class for performing client operations for a specific client."""
@@ -783,7 +826,7 @@ class Job(object):
 
         if flag:
             if response.json():
-                if response.json()['totalRecordsWithoutPaging'] == 0:
+                if response.json().get('totalRecordsWithoutPaging', 0) == 0:
                     raise SDKException('Job', '104')
 
                 if 'jobs' in response.json():
@@ -1048,7 +1091,7 @@ class Job(object):
         """Treats the job full details as a read-only attribute."""
         self.is_finished
         return self._details
-    
+
     @property
     def size_of_application(self):
         """Treats the size of application as a read-only attribute."""

@@ -245,7 +245,6 @@ class LNDbSubclient(Subclient):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None,
             common_options_dict=None,
             lndb_restore_options=None):
         """Restores the files/folders specified in the input paths list to the input client,
@@ -284,24 +283,6 @@ class LNDbSubclient(Subclient):
 
                     default: None
 
-                fs_options      (dict)          -- dictionary that includes all advanced options
-                    options:
-                        preserve_level      : preserve level option to set in restore
-
-                        proxy_client        : proxy that needed to be used for restore
-
-                        impersonate_user    : Impersonate user options for restore
-
-                        impersonate_password: Impersonate password option for restore
-                        in base64 encoded form
-
-                        all_versions        : if set to True restores all the versions of the
-                        specified file
-
-                        versions            : list of version numbers to be backed up
-
-                        media_agent         : Media Agent need to be used for Browse and restore
-
                 common_options_dict (dict)          -- dictionary for all the common options
                     options:
                         unconditionalOverwrite              :   overwrite the files during restore
@@ -327,7 +308,7 @@ class LNDbSubclient(Subclient):
                     Disaster Recovery special options:
                         skipErrorsAndContinue               :   enables a data recovery operation
                         to continue despite media errors
-                        
+
                         disasterRecovery                    :   run disaster recovery
 
                 lndb_restore_options    (dict)          -- dictionary for all options specific
@@ -382,7 +363,6 @@ class LNDbSubclient(Subclient):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options,
             common_options_dict=common_options_dict,
             lndb_restore_options=lndb_restore_options)
 

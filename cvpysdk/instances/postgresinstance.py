@@ -14,6 +14,7 @@ PostgreSQLInstance: Derived class from Instance Base class, representing a postg
                        and to perform operations on that instance
 
 PostgreSQLInstance:
+===================
 
     _get_postgres_restore_json()    --  returns the restore request json for FSBased restore
 
@@ -21,18 +22,21 @@ PostgreSQLInstance:
     restore_postgres_server()       --  runs the restore job for postgres instance
 
 PostgreSQLInstance instance Attributes
-==================================
+======================================
 
-    **postgres_bin_directory**           --  returns the `postgres_bin_directory` of postgres server
+    **postgres_bin_directory**           --  returns the postgres bin directory of postgres server
 
-    **postgres_archive_log_directory**   --  returns the `postgres_archive_log_directory`
-                                                of postgres server
+    **postgres_archive_log_directory**   --  returns the postgres archive log directory
+    of postgres server
 
-    **postgres_server_user_name**        --  returns the `postgres_server_user_name`
-                                                of postgres server
+    **postgres_server_user_name**        --  returns the postgres server user name
+    of postgres server
 
-    **postgres_server_port_number**      --  returns the `postgres_server_port_number`
-                                                of postgres server
+    **postgres_server_port_number**      --  returns the postgres server port number
+    of postgres server
+
+    **maintenance_database**             --  returns the maintenance database associated with
+    postgres server
 
 """
 
@@ -58,9 +62,9 @@ class PostgreSQLInstance(Instance):
         super(
             PostgreSQLInstance,
             self).__init__(
-            agent_object,
-            instance_name,
-            instance_id)
+                agent_object,
+                instance_name,
+                instance_id)
         self.backup_object = None
         self.backupset_object = None
         self.sub_client_object = None
@@ -199,3 +203,13 @@ class PostgreSQLInstance(Instance):
             'Instance',
             '105',
             "Could not fetch the port Number.")
+
+    @property
+    def maintenance_database(self):
+        """Returns the maintenance database associated with postgres server"""
+        if self._properties['postGreSQLInstance'].get('MaintainenceDB'):
+            return self._properties['postGreSQLInstance']['MaintainenceDB']
+        raise SDKException(
+            'Instance',
+            '105',
+            "Could not fetch maintenance database.")

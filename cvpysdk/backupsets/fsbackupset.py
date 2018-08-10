@@ -69,6 +69,8 @@ class FSBackupset(Backupset):
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
                         versions            : list of version numbers to be backed up
+                        validate_only       : To validate data backed up for restore
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -147,6 +149,8 @@ class FSBackupset(Backupset):
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
                         versions            : list of version numbers to be backed up
+                        validate_only       : To validate data backed up for restore
+
 
             Returns:
                 object - instance of the Job class for this restore job

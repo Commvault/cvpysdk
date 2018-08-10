@@ -1,3 +1,4 @@
+#FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -76,6 +77,32 @@ class OracleSubclient(DatabaseSubclient):
         )
         return request_json
 
+    def _get_subclient_properties(self):
+        """Gets the subclient  related properties of Oracle subclient.
+
+        """
+
+        if not bool(self._subclient_properties):
+            super(OracleSubclient, self)._get_subclient_properties()
+
+        if 'oracleSubclientProp' in self._subclient_properties:
+            self._oracleSubclientProp = self._subclient_properties['oracleSubclientProp']
+
+    def _get_subclient_properties_json(self):
+        """get the all subclient related properties of this subclient.
+           Returns:
+                dict - all subclient properties put inside a dict
+        """
+        subclient_json = {
+            "subClientProperties":
+                {
+                    "subClientEntity": self._subClientEntity,
+                    "commonProperties": self._commonProperties,
+                    "oracleSubclientProp": self._oracleSubclientProp
+                }
+        }
+        return subclient_json
+
     @property
     def data_sp(self):
         """
@@ -84,7 +111,19 @@ class OracleSubclient(DatabaseSubclient):
         Returns:
             string - string representing data storage policy
         """
-        return self._commonProperties['storageDevice']['dataBackupStoragePolicy']['storagePolicyName']
+        return self._commonProperties['storageDevice'][
+            'dataBackupStoragePolicy']['storagePolicyName']
+
+    @property
+    def is_table_browse_enabled(self):
+        """
+        Getter to check whether the subclient has table browse enabled
+
+        Returns:
+            Bool - True if table browse is enabled on the subclient. Else False
+        """
+        # return self._oracleSubclientProp['enableTableBrowse']
+        return self._subclient_properties['oracleSubclientProp']['enableTableBrowse']
 
     @property
     def is_snapenabled(self):
@@ -93,8 +132,32 @@ class OracleSubclient(DatabaseSubclient):
 
         Returns:
             Bool - True if snap is enabled on the subclient. Else False
+
         """
-        return self._commonProperties['snapCopyInfo']['isSnapBackupEnabled']
+        return self._subclient_properties['commonProperties']['snapCopyInfo']['isSnapBackupEnabled']
+
+    def enable_table_browse(self):
+        """
+        Enables Table Browse for the subclient.
+
+        Raises:
+            SDKException:
+                if failed to enable tablebrowse for subclient
+
+        """
+
+        self._set_subclient_properties("_oracleSubclientProp['enableTableBrowse']", True)
+
+    def disable_table_browse(self):
+        """Disables Table Browse for the subclient.
+            Raises:
+                SDKException:
+                        if failed to disable tablebrowse for subclient
+        """
+
+        self._set_subclient_properties(
+            "_oracleSubclientProp['enableTableBrowse']", False
+        )
 
     @property
     def find(self, *args, **kwargs):
@@ -135,16 +198,78 @@ class OracleSubclient(DatabaseSubclient):
         )
         return self._process_backup_response(flag, response)
 
-    def restore(self, common_options=None,
-                destination_client=None,
-                oracle_options=None):
-        """
-        Method to restore the entire database using latest backup
+    def inline_backupcopy(self, backup_level=InstanceBackupType.FULL.value):
+        """Method to perform inline backupcopy on an oracle subclient
 
         Args:
-            destination_client (str) -- destination client name
-            common_options (str) -- common options to be passed on for restore
+            backup_level (str)  -- Level of backup. Can be full or incremental
+                default: full
+
+        Returns:
+            object -- instance of Job class
+
+        Raises:
+            SDKException:
+                if backup level is incorrect
+
+                if response is empty
+
+                if response does not succeed
+
+        """
+        if backup_level not in ['full', 'incremental']:
+            raise SDKException(r'Subclient', r'103')
+
+        backupcopy_level = 1
+
+        backup_opts = {
+            "dataOpt": {
+                "skipCatalogPhaseForSnapBackup": True,
+                "createBackupCopyImmediately": True,
+                "useCatalogServer": True,
+                "followMountPoints": True,
+                "enableIndexCheckPointing": True,
+                "backupCopyType": 2,
+                "enforceTransactionLogUsage": True,
+                "skipConsistencyCheck": False,
+                "collectVMGranularRecoveryMetadataForBkpCopy": False,
+                "createNewIndex": False,
+                "verifySynthFull": True
+            }
+        }
+
+        request_json = self._backup_json(
+            backupcopy_level,
+            incremental_backup=False,
+            incremental_level=backupcopy_level,
+            advanced_options=backup_opts,
+            schedule_pattern=None)
+
+        backup_service = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', backup_service, request_json
+        )
+        return self._process_backup_response(flag, response)
+
+    def restore(
+            self,
+            files=None,
+            destination_client=None,
+            common_options=None,
+            browse_option=None,
+            oracle_options=None):
+        """Method to restore the entire/partial database using latest backup/backupcopy
+
+        Args:
+            files (dict) -- dictionary containing file options
                 default -- None
+            destination_client (str) -- destination client name
+                default -- None
+            common_options (dict) -- common options to be passed on for restore
+                default -- None
+
+            browse_option (dict) : dictionary containing browse options
+
             oracle_options (dict): dictionary containing other oracle options
                 default -- By default it restores the controlfile and datafiles
                                 from latest backup
@@ -157,10 +282,13 @@ class OracleSubclient(DatabaseSubclient):
                             "recoverFrom": 3,
                             "restoreData": True,
                             "restoreFrom": 3
+
                         }
+
         Returns:
             object -- Job containing restore details
+
         """
-        return self._backupset_object._instance_object.restore(destination_client,
-                                                               common_options,
+        return self._backupset_object._instance_object.restore(files, destination_client,
+                                                               common_options, browse_option,
                                                                oracle_options)

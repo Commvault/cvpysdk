@@ -151,7 +151,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             power_on=power_on,
             disk_option=disk_option_value,
             transport_mode=transport_mode_value,
-            copy_preecedence=copy_precedence
+            copy_precedence=copy_precedence
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -169,7 +169,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=0,
             disk_option='Original',
             transport_mode='Auto',
-            proxy_client=None
+            proxy_client=None,
+            source_ip=None,
+            destination_ip=None
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -212,6 +214,10 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                                       default: Auto
 
                 proxy_client      (basestring)    --  destination proxy client
+
+                source_ip           (basestring)    --  IP of the source VM
+
+                destination_ip      (basestring)    --  IP of the destination VM
 
 
 
@@ -267,7 +273,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             transport_mode=self._transport_mode[transport_mode],
             copy_precedence=copy_precedence,
             volume_level_restore=1,
-            source_item=[]
+            source_item=[],
+            source_ip=source_ip,
+            destination_ip=destination_ip
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

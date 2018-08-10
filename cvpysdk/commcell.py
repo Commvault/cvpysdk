@@ -36,6 +36,8 @@ Commcell:
     _qoperation_execscript()    --  runs the qoperation execute script rest api with
     specified arguements
 
+    _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)
+
     logout()                    --  logs out the user associated with the current instance
 
     request()                   --  runs an input HTTP request on the API specified,
@@ -53,6 +55,11 @@ Commcell:
 
     delete_additional_setting() --  deletes registry key from the commserve property
 
+    download_software()         --  triggers the Download Software job with the given options
+
+    push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
+
+    install_software()              -- triggers the install Software job with the given options
 
 Commcell instance Attributes
 ============================
@@ -163,6 +170,11 @@ Commcell instance Attributes
     **commserv_client**         --  returns the client object associated with the
     commserver
 
+    **identity_management**     --  returns the instance of the 'IdentityManagementApps
+    class to perform identity management operations on the commcell class
+
+    **Commcell_Migration**      --  returns the instance of the 'CommCellMigration' class,
+    to interact with the Commcell Export & Import on the Commcell
 """
 
 from __future__ import absolute_import
@@ -209,7 +221,10 @@ from .eventviewer import Events
 from .array_management import ArrayManagement
 from .disasterrecovery import DisasterRecovery
 from .operation_window import OperationWindow
-
+from .identity_management import IdentityManagementApps
+from .commcell_migration import CommCellMigration
+from .deployment.download import Download
+from .deployment.install import Install
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -374,6 +389,8 @@ class Commcell(object):
         self._array_management = None
         self._operation_window = None
         self._commserv_client = None
+        self._identity_management = None
+        self._commcell_migration = None
 
         self.refresh()
 
@@ -449,12 +466,14 @@ class Commcell(object):
         del self._array_management
         del self._operation_window
         del self._commserv_client
+        del self._identity_management
 
         del self._web_service
         del self._cvpysdk_object
         del self._device_id
         del self._services
         del self._disaster_recovery
+        del self._commcell_migration
         del self
 
     def _get_commserv_details(self):
@@ -525,6 +544,25 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    @staticmethod
+    def _convert_days_to_epoch(days):
+        """
+        convert the days to epoch time stamp
+        Args:
+            days: Number of days to convert
+
+        Returns:
+            from_time : days - now  . start time in unix format
+            to_time   : now . end time in unix format
+        """
+        import datetime
+        import time
+        now = datetime.datetime.now()
+        then = now - datetime.timedelta(days=days)
+        start_dt = time.mktime(then.timetuple())
+        end_dt = time.mktime(now.timetuple())
+        return start_dt, end_dt
+
     @property
     def commcell_id(self):
         """Returns the ID of the CommCell."""
@@ -557,6 +595,34 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def _set_gxglobalparam_value(self, request_json):
+        """ Updates GXGlobalParam table (Commcell level configuration parameters)
+
+            Args:
+                request_json (str)   --  request json that is to be passed
+
+            Returns:
+                dict                --   json response received from the server
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GLOBAL_PARAM'], request_json
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def commserv_guid(self):
@@ -885,12 +951,34 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def identity_management(self):
+        """Returns the instance of the IdentityManagementApps class."""
+        try:
+            if self._identity_management is None:
+                self._identity_management = IdentityManagementApps(self)
+
+            return self._identity_management
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def commserv_client(self):
         """Returns the instance of the Client class for the CommServ client."""
         if self._commserv_client is None:
             self._commserv_client = self.clients.get(self._commserv_name)
 
         return self._commserv_client
+
+    @property
+    def commcell_migration(self):
+        """Returns the instance of the CommcellMigration class"""
+        try:
+            if self._commcell_migration is None:
+                self._commcell_migration = CommCellMigration(self)
+
+            return self._commcell_migration
+        except AttributeError:
+            return  USER_LOGGED_OUT_MESSAGE
 
     def logout(self):
         """Logs out the user associated with the current instance."""
@@ -1035,6 +1123,8 @@ class Commcell(object):
         self._disaster_recovery = None
         self._operation_window = None
         self._commserv_client = None
+        self._identity_management
+        self._commcell_migration = None
         self._get_commserv_details()
 
     def run_data_aging(
@@ -1226,3 +1316,234 @@ class Commcell(object):
 
         """
         self.commserv_client.delete_additional_setting(category, key_name)
+
+    def protected_vms(self, days):
+        """
+        Returns all the protected VMs for the particular client for passed days
+        Args:
+            days: Protected VMs for days
+                ex: if value is 30 , returns VM prtected in past 30 days
+
+        Returns:
+                vm_dict -  all properties of VM prtotected for passed days
+
+        """
+
+        from_time, to_time = self._convert_days_to_epoch(days)
+        self._PROTECTED_VMS = self._services['PROTECTED_VMS'] % (from_time, to_time)
+        flag, response = self._cvpysdk_object.make_request(
+            'GET',
+            self._PROTECTED_VMS
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def download_software(self,
+                          options=None,
+                          os_list=None,
+                          service_pack=None):
+        """Downloads the os packages on the commcell
+
+            Args:
+
+                options      (enum)            --  Download option to download software
+
+                os_list      (list of enum)    --  list of windows/unix packages to be downloaded
+
+                service_pack (int)             --  service pack to be downloaded
+
+            Returns:
+                object - instance of the Job class for this download job
+
+            Raises:
+                SDKException:
+                    if Download job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another download job is running
+
+            Usage:
+
+            -   if download_software is not given any parameters it takes default value of latest
+                service pack for options and downloads WINDOWS_64 package
+
+                >>> commcell_obj.download_software()
+
+            -   DownloadOptions and DownloadPackages enum is used for providing input to the
+                download software method, it can be imported by
+
+                >>> from cvpysdk.deployment.deploymentconstants import DownloadOptions
+                    from cvpysdk.deployment.deploymentconstants import DownloadPackages
+
+            -   sample method calls for different options, for latest service pack
+
+                >>> commcell_obj.download_software(
+                        options=DownloadOptions.lATEST_SERVICEPACK.value,
+                        os_list=[DownloadPackages.WINDOWS_64.value]
+                        )
+
+            -   For Latest hotfixes for the installed service pack
+
+                >>> commcell_obj.download_software(
+                        options='DownloadOptions.lATEST_HOTFIXES.value',
+                        os_list=[DownloadPackages.WINDOWS_64.value,
+                                DownloadPackages.UNIX_LINUX64.value]
+                        )
+
+            -   For service pack and hotfixes
+
+                >>> commcell_obj.download_software(
+                        options='DownloadOptions.SERVICEPACK_AND_HOTFIXES.value',
+                        os_list=[DownloadPackages.UNIX_MAC.value],
+                        service_pack=13
+                        )
+
+                    **NOTE:** service_pack parameter must be specified for third option
+
+        """
+        download = Download(self)
+        return download.download_software(
+                                    options=options,
+                                    os_list=os_list,
+                                    service_pack=service_pack)
+
+    def push_servicepack_and_hotfix(
+            self,
+            client_computers=None,
+            client_computer_groups=None,
+            all_client_computers=False,
+            all_client_computer_groups=False,
+            reboot_client=False,
+            run_db_maintenance=True):
+        """triggers installation of service pack and hotfixes
+
+        Args:
+            client_computers    (list)      -- Client machines to install service pack on
+
+            client_computer_groups (list)   -- Client groups to install service pack on
+
+            all_client_computers (bool)     -- boolean to specify whether to install on all client
+            computers or not
+
+                default: False
+
+            all_client _computer_groups (bool) -- boolean to specify whether to install on all
+            client computer groups or not
+
+                default: False
+
+            reboot_client (bool)            -- boolean to specify whether to reboot the client
+            or not
+
+                default: False
+
+            run_db_maintenance (bool)      -- boolean to specify whether to run db
+            maintenance not
+
+                default: True
+
+        Returns:
+            object - instance of the Job class for this download job
+
+        Raises:
+                SDKException:
+                    if Download job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another download job is already running
+
+        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
+
+        """
+        install = Install(self)
+        return install.push_servicepack_and_hotfix(
+                                    client_computers=client_computers,
+                                    client_computer_groups=client_computer_groups,
+                                    all_client_computers=all_client_computers,
+                                    all_client_computer_groups=all_client_computer_groups,
+                                    reboot_client=reboot_client,
+                                    run_db_maintenance=run_db_maintenance)
+
+    def install_software(
+            self,
+            client_computers=None,
+            windows_features=None,
+            unix_features=None,
+            username=None,
+            password=None):
+        """
+        Installs the selected features in the selected clients
+        Args:
+
+            client_computers    (list)      -- list of hostnames/IP address to install the
+            features on
+
+                default : None
+
+            windows_features (list of enum) -- list of windows features to be installed
+
+                default : None
+
+            unix_features (list of enum)    -- list of unix features to be installed
+
+                default : None
+
+            username    (str)               -- username of the machine to install features on
+
+                default : None
+
+            password    (str)               -- base64 encoded password
+
+                default : None
+
+        Returns:
+                object - instance of the Job class for this install_software job
+
+        Raises:
+            SDKException:
+                if install job failed
+
+                if response is empty
+
+                if response is not success
+
+        Usage:
+
+            -   UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing
+                input to the install_software method, it can be imported by
+
+                >>> from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
+                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
+
+            -   sample method call
+
+                >>> commcell_obj.install_software(
+                                client_computers=[win_machine1, win_machine2],
+                                windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
+                                unix_features=None,
+                                username='username',
+                                password='password')
+
+                    **NOTE:** Either Unix or Windows clients_computers should be chosen and
+                    not both
+
+        """
+        install = Install(self)
+        return install.install_software(
+            client_computers=client_computers,
+            windows_features=windows_features,
+            unix_features=unix_features,
+            username=username,
+            password=password)

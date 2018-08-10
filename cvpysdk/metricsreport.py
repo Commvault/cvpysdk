@@ -406,7 +406,7 @@ class _Metrics(object):
         raise TimeoutError("Upload process didn't complete after {0} seconds".format(timeout))
 
     def wait_for_uploadnow_completion(self,
-                                      download_timeout=150,
+                                      download_timeout=300,
                                       collection_timeout=400,
                                       upload_timeout=120):
         """

@@ -400,7 +400,8 @@ class InformixInstance(Instance):
         if value.get('to_time'):
             restore_time_dict['timeValue'] = value.get('to_time')
         last_log_number = 0
-        last_log_number = value.get('upto_log', 0)
+        if value.get('upto_log'):
+            last_log_number = value.get('upto_log')
         self.informix_restore_json = {
             "restoreOnConfigFile": True,
             "informixRestoreOptionType": value.get("restore_option_type", 0),
@@ -418,6 +419,11 @@ class InformixInstance(Instance):
 
     def _restore_destination_option_json(self, value):
         """setter for  the destination restore option in restore JSON"""
+        instance_id = ""
+        if value.get("dest_client_name") and value.get("dest_instance_name"):
+            instance_id = self._commcell_object.clients.get(
+                value.get("dest_client_name")).agents.get(
+                    'informix').instances.all_instances[value.get("dest_instance_name")]
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
         self._destination_restore_json = {
@@ -426,5 +432,6 @@ class InformixInstance(Instance):
             },
             "destinationInstance": {
                 "instanceName": value.get("dest_instance_name", ""),
+                "instanceId": int(instance_id)
             }
         }

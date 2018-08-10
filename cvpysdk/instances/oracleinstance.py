@@ -1,3 +1,4 @@
+#FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -17,11 +18,11 @@ OracleInstance:
 
     __init__()                          -- Constructor for the class
 
-    configure_data_masking_policy()     --  Method to configure data masking policy with given parameters
+    configure_data_masking_policy()     --  Method to configure data masking policy
 
     get_masking_policy_id()             --  Method to get policy id of given data masking policy
 
-    standalone_data_masking()           --  Method to launch standalone data masking job on given instance
+    standalone_data_masking()           --  Method to launch standalone data masking job on instance
 
     delete_data_masking_policy()        --  Method to delete given data masking policy
 
@@ -88,21 +89,24 @@ class OracleInstance(Instance):
     def configure_data_masking_policy(self, policy_name, table_list_of_dict):
         """Method to configure data masking policy with given parameters
         Args:
-            policy_name             (str)       -- string representing policy name
-            table_list_of_dict      list(dict)  -- list containing one dict item representing rules for single table
+            policy_name         (str)   --  string representing policy name
+            table_list_of_dict  list(dict)  -- list containing one dict item representing
+                                                rules for single table
             Sample  list
             Tables:
                     [
                     {
                     "name":"schema_name.table_name",
-                    "columns": [ {"name":"column_name", "type":"algorithm_type"}, "arguments":[list of strings]…]
+                    "columns": [ {"name":"column_name", "type":"algorithm_type"},
+                                "arguments":[list of strings]…]
                     }
                     ]
                     Sample :
                     [
                     {
                     "name":"HR.NUMNEW",
-                    "columns":[{"name":"N1","type":0},{"name":"N2","type":2,"arguments":["1000","2000"]}]
+                    "columns":[{"name":"N1","type":0},{"name":"N2","type":2,
+                    "arguments":["1000","2000"]}]
                     },
                     {
                     "name":"HR.CHANGE",
@@ -111,12 +115,14 @@ class OracleInstance(Instance):
                     ]
             schema_name , table_name, column_name: str
             Column type key in main dict takes list of dict as value :
-            This list of dict represents each column name and type of algorithm and arguments if any for that algorithm
+            This list of dict represents each column name and type of algorithm
+            and arguments if any for that algorithm
             arguments : list of strings
 
-            Choose appropriate algorithm type and pass necessary arguments based on column type
+            Choose appropriate algorithm type and pass necessary arguments based
+            on column type
 
-            Algorithm       Arguments mandatory             Arguments Format        Algorithm type number
+            Algorithm       Arguments mandatory       Arguments Format        Algorithm type number
 
             Shuffling           NA                              NA                      0
             Numeric Range       [min, max]                  ["1000","2000"]             2
@@ -211,7 +217,8 @@ class OracleInstance(Instance):
         policy_id = self.get_masking_policy_id(policy_name)
         if policy_id is None:
             raise SDKException(
-                'Instance', '102', "Invalid policy name under given instance. Validate the policy name")
+                'Instance',
+                '106')
 
         request_json = {
             "opType": 3,
@@ -242,15 +249,22 @@ class OracleInstance(Instance):
             raise SDKException('Response', '101',
                                self._update_response_(response.text))
 
-    def standalone_data_masking(self, policy_name, destination_client=None, destination_instance=None):
+    def standalone_data_masking(
+            self,
+            policy_name,
+            destination_client=None,
+            destination_instance=None):
         """Method to launch standalone data masking job on given instance
+
         Args:
 
             policy_name          (str)       -- data masking policy name
 
-            destination_client   (str)       -- destination client in which destination instance exists
+            destination_client   (str)       -- destination client in which destination
+            instance exists
 
-            destination_instance (str)       -- destination instance to which masking to be applied
+            destination_instance (str)       -- destination instance to which masking
+            to be applied
 
         Returns:
             object -- Job containing data masking job details
@@ -276,49 +290,67 @@ class OracleInstance(Instance):
         policy_id = self.get_masking_policy_id(policy_name)
         if policy_id is None:
             raise SDKException(
-                'Instance', '102', "Invalid policy name under given instance. Validate the policy name")
+                'Instance',
+                '106')
         request_json = self._restore_json(paths=r'/')
         data_masking_options = {
-            "restoreOptions":
-            {
-                "destination":
-                    {
-                        "destClient": {"clientName": destination_client},
-                        "destinationInstance": {"clientName": destination_client, "instanceName": destination_instance, "instanceId": destination_instance_id}
-                    },
-                    "dbDataMaskingOptions":
-                    {
-                        "isStandalone": True,
-                        "enabled": True,
-                        "dbDMPolicy":
-                            {
-                                "association": {"instanceId": source_instance_id},
-                                "policy": {"policyId": policy_id, "policyName": policy_name}
-                            }
-                    }
-            }
-        }
+            "restoreOptions": {
+                "destination": {
+                    "destClient": {
+                        "clientName": destination_client},
+                    "destinationInstance": {
+                        "clientName": destination_client,
+                        "instanceName": destination_instance,
+                        "instanceId": destination_instance_id}},
+                "dbDataMaskingOptions": {
+                    "isStandalone": True,
+                    "enabled": True,
+                    "dbDMPolicy": {
+                        "association": {
+                            "instanceId": source_instance_id},
+                        "policy": {
+                            "policyId": policy_id,
+                            "policyName": policy_name}}}}}
         request_json["taskInfo"]["subTasks"][0]["options"] = data_masking_options
         return self._process_restore_response(request_json)
 
     def _get_oracle_restore_json(self, destination_client,
                                  instance_name, tablespaces,
+                                 files, browse_option,
                                  common_options, oracle_options):
         """
         Gets the basic restore JSON from base class and modifies it for oracle
 
-        Returns: dict -- JSON formatted options to restore the oracle database
-
         Args:
-            destination_client (str) -- Destination client name
-            instance_name (str) -- instance name to restore
-            tablespaces (list) -- tablespace name list
-            common_options (dict) --  dict containing common options
-            oracle_options (dict) --  dict containing other oracle options
+            destination_client  (str)   --  Destination client name
+
+            instance_name   (str)   --  instance name to restore
+
+            tablespaces (list)  --  tablespace name list
+
+            files   (dict)  --  fileOptions
+
+            browse_option   (dict)  --  dict containing browse options
+
+            common_options  (dict)  --  dict containing common options
+
+            oracle_options  (dict)  --  dict containing other oracle options
+
+        Returns:
+            (dict) -- JSON formatted options to restore the oracle database
+
+        Raises:
+            TypeError:
+                if tablespace is passed as a list
+                if files is not passed as a dictionary
 
         """
         if not isinstance(tablespaces, list):
             raise TypeError('Expecting a list for tablespaces')
+        if files is not None:
+            if not isinstance(files, dict):
+                raise TypeError('Expecting a dict for files')
+
         destination_id = int(self._commcell_object.clients.get(
             destination_client).client_id)
         tslist = ["SID: {0} Tablespace: {1}".format(
@@ -327,10 +359,19 @@ class OracleInstance(Instance):
         if common_options is not None:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
                 "commonOptions"] = common_options
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["oracleOpt"] = oracle_options
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {
-            "sourceItem": tslist
-        }
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "oracleOpt"] = oracle_options
+        if files is None:
+            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {
+                "sourceItem": tslist
+            }
+        else:
+            restore_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]["fileOption"] = files
+
+        if browse_option is not None:
+            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "browseOption"] = browse_option
         return restore_json
 
     def _get_browse_options(self):
@@ -599,29 +640,46 @@ class OracleInstance(Instance):
         """
         return self.subclients.get(subclient_name).backup(r'full')
 
-    def restore(self, destination_client=None, common_options=None, oracle_options=None):
+    def restore(
+            self,
+            files=None,
+            destination_client=None,
+            common_options=None,
+            browse_option=None,
+            oracle_options=None):
         """
-        Method to restore the entire database using latest backup
+        Method to restore full/partial database using latest backup or backup copy
 
         Args:
-            destination_client (str) -- destination client name
-            common_options(dict): dictionary containing common options
-                default -- None
-            oracle_options (dict): dictionary containing other oracle options
-                default -- By default it restores the controlfile and datafiles
-                                from latest backup
-                Example: {
-                            "resetLogs": 1,
-                            "switchDatabaseMode": True,
-                            "noCatalog": True,
-                            "restoreControlFile": True,
-                            "recover": True,
-                            "recoverFrom": 3,
-                            "restoreData": True,
-                            "restoreFrom": 3
-                        }
+            files   (dict)    --  fileOption for restore
+            destination_client  (str)    --  destination client name
+
+            common_options  dict)    --  dictionary containing common options
+                default:    None
+
+            browse_option   (dict)  --  dictionary containing browse options
+
+            oracle_options (dict) --    dictionary containing other oracle options
+                default:    By default it restores the controlfile and datafiles from latest backup
+
+            Example: {
+            "resetLogs": 1,
+            "switchDatabaseMode": True,
+            "noCatalog": True,
+            "restoreControlFile": True,
+            "recover": True,
+            "recoverFrom": 3,
+            "restoreData": True,
+            "restoreFrom": 3
+            }
+
         Returns:
-            object -- Job containing restore details
+            object  --  Job containing restore details
+
+        Raises:
+            TypeError   --  If the oracle options is not a dict
+            SDKException    --  If destination_client can't be set
+
         """
         if oracle_options is None:
             oracle_options = {
@@ -648,6 +706,8 @@ class OracleInstance(Instance):
             options = self._get_oracle_restore_json(destination_client=destination_client,
                                                     instance_name=self.instance_name,
                                                     tablespaces=self.tablespaces,
+                                                    files=files,
+                                                    browse_option=browse_option,
                                                     common_options=common_options,
                                                     oracle_options=oracle_options)
             return self._process_restore_response(options)

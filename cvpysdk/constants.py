@@ -29,6 +29,7 @@ class HypervisorType(Enum):
     AZURE_V2 = "Azure Resource Manager"
     FUSION_COMPUTE = "FusionCompute"
     ORACLE_VM = "OracleVM"
+    ORACLE_CLOUD = "Oracle Cloud"
 
 
 class AppIDAType(Enum):

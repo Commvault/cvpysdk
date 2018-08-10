@@ -163,6 +163,9 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.oraclevmsubclient import OracleVMVirtualServerSubclient
             return object.__new__(OracleVMVirtualServerSubclient)
 
+        elif instance_name == hv_type.ORACLE_CLOUD.value.lower():
+            from .virtualserver.oraclecloudsubclient import OracleCloudVirtualServerSubclient
+            return object.__new__(OracleCloudVirtualServerSubclient)
 
         else:
             raise SDKException(
@@ -198,7 +201,8 @@ class VirtualServerSubclient(Subclient):
         self.filter_types = {
             '1': 'Datastore',
             '2': 'Virtual Disk Name/Pattern',
-            '3': 'Virtual Device Node'
+            '3': 'Virtual Device Node',
+            '4': 'Repository'
         }
 
         self._disk_option = {
@@ -226,7 +230,7 @@ class VirtualServerSubclient(Subclient):
         """
         name = "name"
         datastore = "Datastore"
-        newName = "newName"
+        new_name = "new_name"
 
     @property
     def content(self):
@@ -313,6 +317,7 @@ class VirtualServerSubclient(Subclient):
                 filters = subclient_diskfilter['filters']
 
                 for child in filters:
+                    filter_type_id = str(child['filterType'])
                     filter_type = self.filter_types[str(child['filterType'])]
                     vm_id = child['vmGuid'] if 'vmGuid' in child else None
                     filter_name = child['filter']
@@ -320,13 +325,16 @@ class VirtualServerSubclient(Subclient):
                     temp_dict = {
                         'filter': filter_name,
                         'filterType': filter_type,
-                        'vmGuid': vm_id
+                        'vmGuid': vm_id,
+                        'filterTypeId': filter_type_id
                     }
 
                     vm_diskfilter.append(temp_dict)
         else:
             vm_diskfilter = self._vmDiskFilter
 
+        if len(vm_diskfilter) == 0:
+            vm_diskfilter = None
         return vm_diskfilter
 
     @property
@@ -645,18 +653,29 @@ class VirtualServerSubclient(Subclient):
         }
         return subclient_json
 
-    def _disk_dict_pattern(self, name, datastore, newName):
+    def _disk_dict_pattern(self, name, datastore, new_name=None):
         """
-        set the disk dictionary of the hyperviosr
-        :param name:  name of the disk
-        :param datastore: destiantion path of the disk needs to be restored
-        :return:  disk dictionary
+        set the disk dictionary of the hypervisor
+
+        Args:
+                name            (str)       --  name of the disk
+
+                datastore       (str)       --  datastore where the disk has to be restored
+
+                new_name        (str)       --  new name of the disk
+
+            Returns:
+        
+                disk dictionary(dict)       -- Dictionary with key name, new name , datastore and corresponding 
         """
+
+        if not new_name:
+            new_name = name
 
         temp_disk_dict = {}
         temp_disk_dict[self.disk_pattern.name.value] = name
         temp_disk_dict[self.disk_pattern.datastore.value] = datastore
-        temp_disk_dict[self.disk_pattern.newName.value] = newName
+        temp_disk_dict[self.disk_pattern.new_name.value] = new_name
         return temp_disk_dict
 
     def _json_vcenter_instance(self, value):
@@ -712,6 +731,27 @@ class VirtualServerSubclient(Subclient):
 
         return nics_list
 
+    def _json_vmip_advanced_restore_options(self, value):
+        """
+            Setting IP for destination vm
+        """
+        vmip = []
+        vm_ip = {
+            "sourceIP": value.get("source_ip"),
+            "sourceSubnet": value.get("source_subnet", "*.*.*.*"),
+            "sourceGateway": value.get("source_gateway", "*.*.*.*"),
+            "destinationIP": value.get("destination_ip"),
+            "destinationSubnet": value.get("destination_subnet", "*.*.*.*"),
+            "destinationGateway": value.get("destination_subnet", "*.*.*.*"),
+            "primaryDNS": value.get("primary_dns", ""),
+            "alternateDNS": value.get("alternate_dns", ""),
+            "primaryWins": value.get("primare_wins", ""),
+            "altenameWins": value.get("alternate_wins", ""),
+            "useDhcp": False
+        }
+        vmip.append(vm_ip)
+        return vmip
+
     def _json_restore_diskLevelVMRestoreOption(self, value):
         """setter for  the disk Level VM Restore Option    in restore json"""
 
@@ -747,7 +787,8 @@ class VirtualServerSubclient(Subclient):
             "newName": value.get("new_name", ""),
             "esxHost": value.get("esx_host", ""),
             "name": value.get("name", ""),
-            "nics": value.get("nics", ""),
+            "nics": value.get("nics", []),
+            "vmIPAddressOptions": value.get("vm_ip_address_options", []),
             "FolderPath": value.get("FolderPath", ""),
             "ResourcePool": value.get("ResourcePool", "")
         }
@@ -1040,7 +1081,8 @@ class VirtualServerSubclient(Subclient):
             from_date=0,
             to_date=0,
             copy_precedence=0,
-            vm_files_browse=False):
+            vm_files_browse=False,
+            media_agent=""):
         """Gets the content of the backup for this subclient
                 at the path specified in the time range specified.
 
@@ -1077,6 +1119,9 @@ class VirtualServerSubclient(Subclient):
 
                     copy_precedence     (int)   --  copy precedence to be used
                                                     for browsing
+    
+                    media_agent         (str)   --  Browse MA via with Browse has to hapeen . 
+                                                    It can be MA different than Storage Policy MA
 
                 Returns:
                     list - list of all folders or files with their full paths
@@ -1106,7 +1151,7 @@ class VirtualServerSubclient(Subclient):
         browse_content = super(VirtualServerSubclient, self).browse(
             show_deleted=show_deleted_files, restore_index=restore_index, vm_disk_browse=vm_disk_browse,
             from_time=from_date, to_time=to_date, copy_precedence=copy_precedence,
-            path=vm_path, vs_file_browse=vm_files_browse)
+            path=vm_path, vs_file_browse=vm_files_browse,media_agent=media_agent)
 
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
@@ -1114,7 +1159,8 @@ class VirtualServerSubclient(Subclient):
                           show_deleted_files=True,
                           restore_index=True,
                           from_date=0,
-                          to_date=0):
+                          to_date=0,
+                          copy_precedence=0):
         """Browses the Disks of a Virtual Machine.
 
             Args:
@@ -1139,6 +1185,9 @@ class VirtualServerSubclient(Subclient):
                                                if not specified
                                                default: 0
 
+                copy_precedence     (int)   --  copy precedence to be used
+                                                    for browsing
+
             Returns:
                 list - list of all folders or files with their full paths
                        inside the input path
@@ -1155,7 +1204,7 @@ class VirtualServerSubclient(Subclient):
                     if response is not success
         """
         browse_content = self.browse_in_time(
-            vm_path, show_deleted_files, restore_index, True, from_date, to_date
+            vm_path, show_deleted_files, restore_index, True, from_date, to_date, copy_precedence
         )
 
         paths_list = []
@@ -1163,7 +1212,7 @@ class VirtualServerSubclient(Subclient):
             if any(path.lower().endswith(Ext) for Ext in self.diskExtension):
                 paths_list.append(path)
 
-            elif os.path.splitext(path)[1] == "" and None in self.diskExtension:
+            elif os.path.splitext(path)[1] == "" and "none" in self.diskExtension:
                 paths_list.append(path)
 
         paths_dict = {}
@@ -1171,7 +1220,7 @@ class VirtualServerSubclient(Subclient):
         for path in browse_content[1]:
             if any(path.lower().endswith(Ext) for Ext in self.diskExtension):
                 paths_dict[path] = browse_content[1][path]
-            elif os.path.splitext(path)[1] == "" and None in self.diskExtension:
+            elif os.path.splitext(path)[1] == "" and "none" in self.diskExtension:
                 # assuming it as Fusion compute kind of hypervisors
                 paths_dict[path] = browse_content[1][path]
 
@@ -1183,11 +1232,12 @@ class VirtualServerSubclient(Subclient):
     def guest_files_browse(
             self,
             vm_path='\\',
-            show_deleted_files=True,
+            show_deleted_files=False,
             restore_index=True,
             from_date=0,
             to_date=0,
-            copy_precedence=0):
+            copy_precedence=0,
+            media_agent=""):
         """Browses the Files and Folders inside a Virtual Machine in the time
            range specified.
 
@@ -1221,6 +1271,9 @@ class VirtualServerSubclient(Subclient):
                 copy_precedence     (int)   --  copy precedence to be used
                                                     for browsing
 
+                media_agent         (str)   --  Browse MA via with Browse has to hapeen . 
+                                                    It can be MA different than Storage Policy MA
+
             Returns:
                 list - list of all folders or files with their full paths
                        inside the input path
@@ -1244,7 +1297,7 @@ class VirtualServerSubclient(Subclient):
         """
         return self.browse_in_time(
             vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
-            vm_files_browse=True)
+            vm_files_browse=True,media_agent=media_agent)
 
     def _check_folder_in_browse(
             self,
@@ -1252,7 +1305,8 @@ class VirtualServerSubclient(Subclient):
             _folder_to_restore,
             from_date,
             to_date,
-            copy_precedence):
+            copy_precedence,
+            media_agent):
         """
         Check if the particular folder is present in browse of the subclient
         in particular VM
@@ -1279,6 +1333,9 @@ class VirtualServerSubclient(Subclient):
             copy_precedence     (int)   --  copy precedence to be used
                                                     for browsing
 
+            media_agent         (str)   --  Browse MA via with Browse has to hapeen .
+                                                    It can be MA different than Storage Policy MA
+
         exception:
             raise exception
                 if folder is not present in browse
@@ -1292,7 +1349,7 @@ class VirtualServerSubclient(Subclient):
         _source_path = r'\\'.join([_vm_id, _folder_to_restore])
 
         _browse_files, _browse_files_dict = self.guest_files_browse(
-            _source_path, from_date=from_date, to_date=to_date, copy_precedence=copy_precedence)
+            _source_path, from_date=from_date, to_date=to_date, copy_precedence=copy_precedence,media_agent=media_agent)
 
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split("\\")[-1]
@@ -1317,7 +1374,8 @@ class VirtualServerSubclient(Subclient):
                            from_date=0,
                            to_date=0,
                            show_deleted_files=True,
-                           fbr_ma=None):
+                           fbr_ma=None,
+                           browse_ma=""):
         """perform Guest file restore of the provided path
 
         Args:
@@ -1347,6 +1405,8 @@ class VirtualServerSubclient(Subclient):
                                             if not specified default: 0
 
             fbr_ma              (basestring)    --  FRE MA used for browsing Unix VMs
+
+            browse_ma            (basestring)    --  MA for browsing
 
          Raises:
                 SDKException:
@@ -1401,7 +1461,8 @@ class VirtualServerSubclient(Subclient):
                                              "%s" % _each_folder,
                                              from_date,
                                              to_date,
-                                             copy_precedence))
+                                             copy_precedence,
+                                             media_agent=browse_ma))
 
         # set the browse options
         _file_restore_option["disk_browse"] = False
@@ -1416,6 +1477,7 @@ class VirtualServerSubclient(Subclient):
         # set the browse option
         _file_restore_option["copy_precedence_applicable"] = True
         _file_restore_option["copy_precedence"] = copy_precedence
+        _file_restore_option["media_agent"] = browse_ma
 
         # prepare and execute the Json
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
@@ -1767,8 +1829,12 @@ class VirtualServerSubclient(Subclient):
             if ((restore_option["in_place"]) or ("datastore" not in restore_option)):
                 restore_option["datastore"] = data["advanced_data"]["browseMetaData"][
                                              "virtualServerMetaData"]["datastore"]
+            name = disk.split('\\')[-1]
+            new_name_prefix = restore_option.get("disk_name_prefix")
+            new_name = data["name"] if new_name_prefix is None \
+                else new_name_prefix + "_" + data["name"]
             _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1],
-                                                     restore_option["datastore"])
+                                                     restore_option["datastore"], new_name)
             vm_disks.append(_disk_dict)
         if not vm_disks:
             raise SDKException('Subclient', 104)
@@ -1777,7 +1843,10 @@ class VirtualServerSubclient(Subclient):
         # prepare nics info json
         nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
         restore_option["nics"] = nics_list
-
+        if "source_ip" in restore_option and "destination_ip" in restore_option:
+            if restore_option["source_ip"] and restore_option["destination_ip"]:
+                vm_ip = self._json_vmip_advanced_restore_options(restore_option)
+                restore_option["vm_ip_address_options"] = vm_ip
         if restore_option["in_place"]:
             if "hyper" in restore_option["destination_instance"]:
                 restore_option["client_name"] = vs_metadata['esxHost']

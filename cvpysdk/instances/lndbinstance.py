@@ -23,8 +23,8 @@ from ..instance import Instance
 
 
 class LNDBInstance(Instance):
-    """Derived class from Backupset Base class, representing a fs backupset,
-        and to perform operations on that backupset."""
+    """Derived class from Instance Base class, representing an LNDB instance,
+        and to perform operations on that instance."""
 
     def restore_in_place(
             self,
@@ -34,7 +34,6 @@ class LNDBInstance(Instance):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None,
             common_options_dict=None,
             lndb_restore_options=None):
         """Restores the files/folders specified in the input paths list to the same location.
@@ -60,12 +59,6 @@ class LNDBInstance(Instance):
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
-
-                fs_options      (dict)          -- dictionary that includes all advanced options
-                    options:
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-                        versions            : list of version numbers to be backed up
 
                 common_options_dict (dict)          -- dictionary for all the common options
                     options:
@@ -115,19 +108,22 @@ class LNDBInstance(Instance):
 
                     if response is not success
         """
-        self._restore_association['backupsetName'] = list(self.backupsets._backupset.keys())[0]
+        self._restore_association = self.backupsets.get(
+            list(self.backupsets.all_backupsets)[0]
+        )._backupset_association
 
-        return self._restore_in_place(
+        request_json = self._restore_json(
             paths=paths,
             overwrite=overwrite,
             restore_data_and_acl=restore_data_and_acl,
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options,
             common_options_dict=common_options_dict,
             lndb_restore_options=lndb_restore_options
         )
+
+        return self._process_restore_response(request_json)
 
     def restore_out_of_place(
             self,
@@ -176,22 +172,6 @@ class LNDBInstance(Instance):
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
-
-                fs_options      (dict)             -- dictionary that includes all advanced options
-                    options:
-                        preserve_level          : preserve level option to set in restore
-
-                        proxy_client            : proxy that needed to be used for restore
-
-                        impersonate_user        : Impersonate user options for restore
-
-                        impersonate_password    : Impersonate password option for restore
-                        in base64 encoded form
-
-                        all_versions            : if set to True restores all the versions of the
-                        specified file
-
-                        versions                : list of version numbers to be backed up
 
                  common_options_dict (dict)          -- dictionary for all the common options
                     options:
@@ -245,9 +225,11 @@ class LNDBInstance(Instance):
 
                     if response is not success
         """
-        self._restore_association['backupsetName'] = list(self.backupsets._backupset.keys())[0]
+        self._restore_association = self.backupsets.get(
+            list(self.backupsets.all_backupsets)[0]
+        )._backupset_association
 
-        return self._restore_out_of_place(
+        request_json = self._restore_json(
             client=client,
             destination_path=destination_path,
             paths=paths,
@@ -256,10 +238,11 @@ class LNDBInstance(Instance):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options,
             common_options_dict=common_options_dict,
             lndb_restore_options=lndb_restore_options
         )
+
+        return self._process_restore_response(request_json)
 
     def _restore_common_options_json(self, value):
         """setter for  the Common options of in restore JSON"""
