@@ -771,7 +771,7 @@ class FileSystemSubclient(Subclient):
                         rules   (dict)  --  To update the rules Only need to send the value which need to be
                         updated
 
-                        {'diskCleanupRules':{
+                        {
                 'useNativeSnapshotToPreserveFileAccessTime': False,
                 'fileModifiedTimeOlderThan': 0,
                 'fileSizeGreaterThan': 1024,
@@ -787,7 +787,7 @@ class FileSystemSubclient(Subclient):
                 'enableRedundancyForDataBackedup': True,
                  'stopCleaningIfupto': 80,
 
-                 'diskCleanupFileTypes': {{'fileTypes': ["%Text%", '%Image%']}
+                 'diskCleanupFileTypes': {'fileTypes': ["%Text%", '%Image%']}
 
                  or
 
@@ -801,10 +801,9 @@ class FileSystemSubclient(Subclient):
 
 
         """
-
         if isinstance(rules, dict):
-
-            self._set_subclient_properties("_fs_subclient_prop", rules)
+            value = {'diskCleanupRules':rules}
+            self._set_subclient_properties("_fs_subclient_prop", value)
         else:
             raise SDKException(
                 'Subclient',

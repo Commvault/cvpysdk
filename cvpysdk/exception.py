@@ -120,7 +120,7 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Input date is incorrect',
-        '104': 'Instance Level Browse is not supported. Instance should have a single backupset',
+        '104': 'File/Folder(s) to restore list is empty',
         '105': 'Could not fetch instance property',
         '106': 'Invalid policy name under given instance. Validate the policy name'
 

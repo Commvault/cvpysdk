@@ -95,5 +95,5 @@ class FusionComputeInstance(VirtualServerInstance):
         """return the Fusion compute VRM  associated with the PseudoClient"""
         #return self._server_name
         # TODO will change with Praveen Form(rsn)
-        return ["172.16.61.139"]
+        return ["172.24.20.146"]
         #for now to move on hard coed it

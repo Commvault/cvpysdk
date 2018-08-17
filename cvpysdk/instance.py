@@ -2172,6 +2172,19 @@ class Instance(object):
             "validateOnly": value.get("validate_only",False)
         }
 
+        _advance_fs_keys = ["restoreDataInsteadOfStub",
+                            "restoreOnlyStubExists",
+                            "overwriteFiles",
+                            "doNotOverwriteFileOnDisk",
+                            "disableStubRestore"]
+
+        if "fs_options" in value:
+            _fs_option_value = value["fs_options"]
+            if  _fs_option_value is not None:
+                for _key in _advance_fs_keys:
+                    if _key in _fs_option_value:
+                        self._commonoption_restore_json[_key] = _fs_option_value[_key]
+
     def _restore_destination_json(self, value):
         """setter for  the destination restore option in restore JSON"""
         if not isinstance(value, dict):

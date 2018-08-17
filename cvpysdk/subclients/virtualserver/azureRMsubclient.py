@@ -51,11 +51,11 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      storage_account=None,
                                      proxy_client=None,
                                      restore_new_name=None,
-                                     overwrite=False,
+                                     overwrite=True,
                                      power_on=False,
                                      instance_size=None,
-                                     createPublicIP=True,
-                                     restoreAsManagedVM=True,
+                                     public_ip=False,
+                                     restore_as_managed=False,
                                      copy_precedence=0,
                                      restore_option=None):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
@@ -127,8 +127,8 @@ class AzureRMSubclient(VirtualServerSubclient):
             datastore=storage_account,
             client_name=proxy_client,
             in_place=False,
-            createPublicIP=createPublicIP,
-            restoreAsManagedVM=restoreAsManagedVM,
+            createPublicIP=public_ip,
+            restoreAsManagedVM=restore_as_managed,
             instanceSize=instance_size,
             restore_new_name=restore_new_name
         )
@@ -141,9 +141,9 @@ class AzureRMSubclient(VirtualServerSubclient):
     def full_vm_restore_in_place(self,
                                  vm_to_restore=None,
                                  overwrite=True,
-                                 power_on=False,
-                                 createPublicIP=True,
-                                 restoreAsManagedVM=True,
+                                 power_on=True,
+                                 public_ip=False,
+                                 restore_as_managed=False,
                                  copy_precedence=0):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
@@ -189,8 +189,8 @@ class AzureRMSubclient(VirtualServerSubclient):
             power_on=power_on,
             copy_precedence=copy_precedence,
             volume_level_restore=1,
-            createPublicIP=createPublicIP,
-            restoreAsManagedVM=restoreAsManagedVM,
+            createPublicIP=public_ip,
+            restoreAsManagedVM=restore_as_managed,
             in_place=True
         )
         request_json = self._prepare_fullvm_restore_json(restore_option)
