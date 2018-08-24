@@ -628,8 +628,6 @@ class DiskLibraries(object):
         if not isinstance(library_name, basestring):
             raise SDKException('Storage', '101')
 
-        library_name = library_name.lower()
-
         if not self.has_library(library_name):
             raise SDKException('Storage',
                                '102',

@@ -79,6 +79,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
     'SCHEDULE_POLICY': '{0}SchedulePolicy',
     'MEDIA_AGENT': '{0}MediaAgent/%s',
+    'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
@@ -247,7 +248,9 @@ SERVICES_DICT_TEMPLATE = {
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 
-    'GLOBAL_PARAM': '{0}/setGlobalParam'
+    'GLOBAL_PARAM': '{0}/setGlobalParam',
+    
+    'SNAP_OPERATIONS': '{0}/Snaps/Operations'
 }
 
 

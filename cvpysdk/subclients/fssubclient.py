@@ -57,11 +57,11 @@ FileSystemSubclient:
 
     find_all_versions()                 --  returns the dict containing list of all the backed up
     versions of specified file
-	
+
     block_level_backup_option            -- Enable/Disable Blocklevel Option on subclient
-        
+
     create_file_level_index_option       -- Enable/Disable Metadata collection Option on subclient
-	
+
     backup()                            --  run a backup job for the subclient
 
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
@@ -483,7 +483,7 @@ class FileSystemSubclient(Subclient):
 
     @property
     def block_level_backup_option(self):
-        """Gets the block level option 
+        """Gets the block level option
 
             Returns:
                 true - if blocklevel is enabled on the subclient
@@ -856,8 +856,10 @@ class FileSystemSubclient(Subclient):
         """
         version = {}
         version['Mode'] = self._fsSubClientProp['olderFileVersionsMode']
-        modes={1: self._fsSubClientProp['keepOlderVersionsForNDays'],
-			   2: self._fsSubClientProp['keepVersions'] }
+        modes = {
+            1: self._fsSubClientProp['keepOlderVersionsForNDays'],
+            2: self._fsSubClientProp['keepVersions']
+        }
         version['DaysOrNumber'] = modes.get(version['Mode'])
         return version
 
@@ -895,11 +897,13 @@ class FileSystemSubclient(Subclient):
             else:
                 raise SDKException(
                     'Subclient', '102', "File version mode can only be 1 or 2")
-            modes={1: 'keepOlderVersionsForNDays',
-				    2: 'keepVersions'}
-			
+            modes = {
+                1: 'keepOlderVersionsForNDays',
+                2: 'keepVersions'
+            }
+
             new_value[modes[value['Mode']]] = value['DaysOrNumber']
-           
+
             self._set_subclient_properties("_fs_subclient_prop", new_value)
         else:
             raise SDKException(
@@ -1150,7 +1154,7 @@ class FileSystemSubclient(Subclient):
                         media_agent         : Media Agent need to be used for Browse and restore
                         is_vlr_restore      : sets if the restore job is to be triggered as vlr
                         validate_only       : To validate data backed up for restore
-                        
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1193,7 +1197,7 @@ class FileSystemSubclient(Subclient):
                 from_time=from_time,
                 to_time=to_time,
                 destPath=destination_path,
-                fs_options=fs_options)
+                restore_option=fs_options)
 
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(self._vlr_restore_options_dict)
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'][0] = \

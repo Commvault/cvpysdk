@@ -25,6 +25,8 @@ ArrayManagement:
 
     revert()                    --  Method for revert operation
 
+    reconcile()                     --  Method for recon operation
+
 """
 
 from __future__ import unicode_literals
@@ -47,8 +49,15 @@ class ArrayManagement(object):
         """
 
         self._commcell_object = commcell_object
+        self._SNAP_OPS = self._commcell_object._services['SNAP_OPERATIONS']
 
-    def _snap_operation(self, operation, volume_id, client_name=None, mountpath=None):
+    def _snap_operation(self,
+                        operation,
+                        volume_id=None,
+                        client_name=None,
+                        mountpath=None,
+                        control_host=None,
+                        reconcile=False):
         """ Common Method for Snap Operations
 
             Args :
@@ -61,35 +70,75 @@ class ArrayManagement(object):
 
                 MountPath    (str)        -- MountPath for Snap operation, default: None
 
+                control_host (int)        -- Control host for the Snap recon operation,
+                defaullt: None
+                
+                reconcile    (bool)       -- Uses Reconcile json if true
+
             Return :
 
                 object : Job object of Snap Operation job
         """
 
-        if volume_id is None:
-            raise SDKException('Snap', '101')
         if client_name is None:
-            client_id = ""
+            client_id = 0
         else:
-            client_id = self._commcell_object.clients.get(client_name).client_id
+            client_id = int(self._commcell_object.clients.get(client_name).client_id)
 
-        xml = """
-        <EVGui_SnapBackupOperationRequest CopyId="0" operation="{0}">
-            <volumes volumeId="{1}" commCellId="2" doVSSProtection="0" destClientId="{2}" destPath="{3}"
-        serverType="0">
-                <userCredentials />
-            </volumes>
-        </EVGui_SnapBackupOperationRequest>""".format(operation, volume_id, client_id, mountpath)
+        if reconcile:
+            request_json = {
+                "reserveField": 0,
+                "doVSSProtection": 0,
+                "serverName": "",
+                "controlHostId": control_host,
+                "CopyId": 0,
+                "smArrayId": "",
+                "destClientId": 0,
+                "destPath": "",
+                "serverType": 0,
+                "operation": operation,
+                "userCredentials": {},
+                "scsiServer": {
+                    "_type_": 3
+                }
+            }
 
-        response_json = self._commcell_object._qoperation_execute(xml)
+        else:
+            request_json = {
+                "reserveField": 0,
+                "serverType": 0,
+                "operation": operation,
+                "userCredentials": {},
+                "volumes": [
+                    {
+                        "doVSSProtection": 1,
+                        "destClientId": client_id,
+                        "destPath": mountpath,
+                        "serverType": 0,
+                        "volumeId": volume_id,
+                        "flags": 0,
+                        "commCellId": 2,
+                        "serverName": "",
+                        "userCredentials": {}
+                        }
+                    ],
+                "scsiServer": {
+                    "_type_": 3
+                    }
+                }
 
-        if "jobId" in response_json:
-            return Job(self._commcell_object, response_json['jobId'])
-        elif "errorCode" in response_json:
-            error_message = response_json['errorMessage']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._SNAP_OPS, request_json)
 
-            o_str = 'job for Snap Operation failed\nError: "{0}"'.format(error_message)
-            raise SDKException('Snap', '102', o_str)
+        if flag:
+            if response.json():
+                if "jobId" in response.json():
+                    return Job(self._commcell_object, response.json()['jobId'])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'job for Snap Operation failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Snap', '102', o_str)
         else:
             raise SDKException('Snap', '102')
 
@@ -132,3 +181,12 @@ class ArrayManagement(object):
                 volume_id    (int)        -- volume id of the snap backup job
         """
         return self._snap_operation(3, volume_id)
+
+    def reconcile(self, control_host):
+        """ Runs Reconcile Snap of the given control host id
+
+            Args:
+
+                control_host    (int)        -- control host id of the array
+        """
+        return self._snap_operation(7, control_host=control_host, reconcile=True)

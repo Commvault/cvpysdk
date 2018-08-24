@@ -14,36 +14,32 @@ PostgresSubclient: Derived class from Subclient Base class, representing a HANA 
                         and to perform operations on that subclient
 
 PostgresSubclient:
+==================
+
     _backup_request_json()               --  prepares the json for the backup request
 
-    _get_subclient_properties()          --  gets the subclient  related properties of File System subclient.
+    _get_subclient_properties()          --  gets the subclient related properties of
+    PostgreSQL subclient
 
-    _get_subclient_properties_json()     --  gets all the subclient  related properties of File System subclient.
+    _get_subclient_properties_json()     --  gets all the subclient related properties of
+    PostgreSQL subclient
 
-    content()                            --  update the content of the subclient
+    backup()                             --  Runs a backup job for the subclient of the
+    level specified
 
-    log_backup_storage_policy()          --  updpates the log backup storage policy for this
-                                                subclient
+    restore_postgres_server()            --  Method to restore the Postgres server
 
-    backup()                             --  run a backup job for the subclient
 
-    _get_postgres_restore_json()         --  returns the restore request json for DumpBased restore
-
-    _get_postgres_restore_json_FS()      --  returns the restore request json for FSBased restore
-
-    restore_postgres_server()            --  runs the restore job for postgres instance with a specified backupset and subclient
 
 PostgresSubclient instance Attributes
 =====================================
 
-    **content**                          --  returns all the databases in the content of postgres subclient
+    **content**                          --  returns list of databases which are part
+    of subclient content
+
 """
 from __future__ import unicode_literals
-
-from ..subclient import Subclients
-
 from .dbsubclient import DatabaseSubclient
-
 from ..exception import SDKException
 
 
@@ -57,27 +53,52 @@ class PostgresSubclient(DatabaseSubclient):
 
         Args:
             backupset_object  (object)  -- instance of the Backupset class
+
             subclient_name    (str)     -- name of the subclient
+
             subclient_id      (str)     -- id of the subclient
+
         """
         super(PostgresSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
         self._postgres_properties = {}
+        self._postgres_browse_options = None
+        self._postgres_destination = None
+        self._postgres_file_options = None
+        self._postgres_restore_options = None
+
+    @property
+    def content(self):
+        """returns list of databases which are part of subclient content"""
+        self._content = None
+        if not self.is_default_subclient:
+            if 'content' in self._subclient_properties:
+                self._content = self._subclient_properties['content']
+        if not self._content is None:
+            database_list = list()
+            for database in self._content:
+                if database.get('postgreSQLContent'):
+                    if database['postgreSQLContent'].get('databaseName'):
+                        database_list.append(database[
+                            'postgreSQLContent']['databaseName'].lstrip("/"))
+            return database_list
 
     def _backup_request_json(
             self,
             backup_level,
             backup_prefix=None):
         """
-        Returns the JSON request to pass to the API as per the options selected by the user.
+        prepares the json for the backup request
 
             Args:
                 backup_level   (list)  --  level of backup the user wish to run
                         Full / Incremental / Differential
+
                 backup_prefix   (str)   --  the prefix that the user wish to add to the backup
 
             Returns:
                 dict - JSON request to pass to the API
+
         """
         request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
         hana_options = {
@@ -92,18 +113,16 @@ class PostgresSubclient(DatabaseSubclient):
         return request_json
 
     def _get_subclient_properties(self):
-        """Gets the subclient  related properties of Postgres subclient.
+        """gets the subclient related properties of PostgreSQL subclient.
 
         """
-        super(DatabaseSubclient, self)._get_subclient_properties()
-        if (self.subclient_name != "default"):
-            if 'content' in self._subclient_properties:
-                self._content = self._subclient_properties['content']
-        else:
-            self._content = None
+        super(PostgresSubclient, self)._get_subclient_properties()
+        if 'postgreSQLSubclientProp' not in self._subclient_properties:
+            self._subclient_properties['postgreSQLSubclientProp'] = {}
+        self._postgres_properties = self._subclient_properties['postgreSQLSubclientProp']
 
     def _get_subclient_properties_json(self):
-        """get the all subclient related properties of this subclient.
+        """gets all the subclient related properties of PostgreSQL subclient.
 
            Returns:
                 dict - all subclient properties put inside a dict
@@ -112,6 +131,7 @@ class PostgresSubclient(DatabaseSubclient):
         subclient_json = {
             "subClientProperties":
                 {
+                    "postgreSQLSubclientProp": self._postgres_properties,
                     "impersonateUser": self._impersonateUser,
                     "proxyClient": self._proxyClient,
                     "subClientEntity": self._subClientEntity,
@@ -122,72 +142,6 @@ class PostgresSubclient(DatabaseSubclient):
         }
         return subclient_json
 
-    @property
-    def content(self):
-        """Treats the subclient content as a property of the Subclient class."""
-        content = self._content
-        database_list = list()
-        for database in content:
-            if database.get('postgreSQLContent'):
-                if database['postgreSQLContent'].get('databaseName'):
-                    database_list.append(database[
-                        'postgreSQLContent']['databaseName'].lstrip("/"))
-        return database_list
-
-    @content.setter
-    def content(self, value):
-        """Sets the content of the subclient as the value provided as input.
-
-            Raises:
-                SDKException:
-                    if failed to update content of subclient
-
-                    if the type of value input is not list
-
-                    if value list is empty
-        """
-
-        raise SDKException(
-            'Subclient',
-            '102',
-            ('Updating Postgres subclient Content is not allowed. ')
-        )
-
-    @property
-    def browse(self):
-        raise AttributeError("'{0}' object has no attribute '{1}'".format(
-            self.__class__.__name__,
-            'browse'
-        ))
-
-    @property
-    def browse_in_time(self):
-        raise AttributeError("'{0}' object has no attribute '{1}'".format(
-            self.__class__.__name__,
-            'browse_in_time'
-        ))
-
-    @property
-    def find(self):
-        raise AttributeError("'{0}' object has no attribute '{1}'".format(
-            self.__class__.__name__,
-            'find'
-        ))
-
-    @property
-    def restore_in_place(self):
-        raise AttributeError("'{0}' object has no attribute '{1}'".format(
-            self.__class__.__name__,
-            'restore_in_place'
-        ))
-
-    @property
-    def restore_out_of_place(self):
-        raise AttributeError("'{0}' object has no attribute '{1}'".format(
-            self.__class__.__name__,
-            'restore_out_of_place'
-        ))
-
     def backup(
             self,
             backup_level="Differential",
@@ -197,6 +151,7 @@ class PostgresSubclient(DatabaseSubclient):
             Args:
                 backup_level        (str)   --  level of backup the user wish to run
                         Full / Incremental / Differential
+
                     default: Differential
 
                 backup_prefix       (str)   --  the prefix that the user wish to add to the backup
@@ -212,6 +167,7 @@ class PostgresSubclient(DatabaseSubclient):
                     if response is empty
 
                     if response is not success
+
         """
         backup_level = backup_level.lower()
 
@@ -220,128 +176,95 @@ class PostgresSubclient(DatabaseSubclient):
 
         if backup_prefix is None:
             return super(PostgresSubclient, self).backup(backup_level)
-
-        else:
-            request_json = self._backup_request_json(
-                backup_level, backup_prefix)
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._commcell_object._services['CREATE_TASK'], request_json
-            )
-            return self._process_backup_response(flag, response)
-
-    def _get_postgres_browse_options(self, destination_client, bkpset_name):
-        self._postgres_browse_options = {
-            "backupset": {
-                "clientName": destination_client,
-                "backupsetName": bkpset_name
-            },
-            "timeRange": {}
-        }
-        return self._postgres_browse_options
-
-    def _get_postgres_destination(
-            self, destination_client, destination_instance_name):
-        self._postgres_destination = {
-            "destinationInstance": {
-                "clientName": destination_client,
-                "instanceName": destination_instance_name,
-                "appName": "PostgreSQL"
-            },
-            "destClient": {
-                "clientName": destination_client
-            }
-        }
-        return self._postgres_destination
-
-    def _get_postgres_file_options(self, database_list):
-        self._postgres_file_options = {
-            "sourceItem": database_list
-        }
-        return self._postgres_file_options
-
-    def _get_postgres_restore_options(self, bkp_set_flag):
-        self._postgres_restore_options = {
-            "restoreToSameServer": False,
-            "tableLevelRestore": False,
-            "instanceRestore": False,
-            "fsBackupSetRestore": bkp_set_flag,
-            "isCloneRestore": False,
-            "refTime": {}
-        }
-        return self._postgres_restore_options
-
-    def _get_postgres_restore_json(
-            self, bkpset_name, database_list, destination_client, destination_instance_name):
-        """Generates the JSON input required to run Postgres DumpBased Backupset and return the generated JSON
-
-            Args:
-                bkpset_name (str)  --  Name of the backup set
-                database_list (List) -- List of databases that have t be restored
-                destination_client (str) -- Name of the destination client to which the data should be restored
-                destination_instance_name (str) -- Name of the desired instance in the destination client
-            Returns:
-                JSON  -   JSON required to run the restore job
-
-        """
-        # if bkpset_name.lower() == "fsbasedbackupset":
-        #     database_list = ["/data"]
-
-        """Generates the JSON input required to run Postgres DumpBased Backupset and return the generated JSON
-
-            Args:
-                bkpset_name (str)  --  Name of the backup set
-                subclient_name (str) -- Name of the subclient
-                database_list (List) -- List of databases that have t be restored
-                destination_client (str) -- Name of the destination client to which the data should be restored
-                destination_instance_name (str) -- Name of the desired instance in the destination client
-            Returns:
-                JSON  -   JSON required to run the restore job
-
-        """
-        if (bkpset_name.lower() == "fsbasedbackupset"):
-            bkp_set_flag = True
-        else:
-            bkp_set_flag = False
-        basic_postgres_options = {
-            "browseOption": self._get_postgres_browse_options(destination_client, bkpset_name),
-            "destination": self._get_postgres_destination(destination_client, destination_instance_name),
-            "fileOption": self._get_postgres_file_options(database_list),
-            "postgresRstOption": self._get_postgres_restore_options(bkp_set_flag),
-            "copy_precedence": None
-        }
-
-        restore_json = self._restore_json(paths=r'/')
-
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"] = basic_postgres_options
-        db_options = {}
-        return restore_json
+        request_json = self._backup_request_json(
+            backup_level, backup_prefix)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['CREATE_TASK'], request_json
+        )
+        return self._process_backup_response(flag, response)
 
     def restore_postgres_server(
-            self, database_list, destination_client, destination_instance_name):
+            self,
+            database_list=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            clone_env=False,
+            clone_options=None):
         """
         Method to restore the Postgres server
 
-        Args:
-        bkpsetName (str) -- BackupSet name
-        database_list (List) -- List of databases
-        destination_client (str) -- Destination Client name
-        destination_instance_name (str) -- Destination Instance name
+            Args:
 
-        Returns:
-            object -- Job containing restore details
+                database_list               (List) -- List of databases
+
+                dest_client_name            (str)  -- Destination Client name
+
+                dest_instance_name          (str)  -- Destination Instance name
+
+                copy_precedence             (int)  -- Copy precedence associted with storage
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                clone_env                   (bool)  --  boolean to specify whether the database
+                should be cloned or not
+
+                    default: False
+
+                clone_options               (dict)  --  clone restore options passed in a dict
+
+                    default: None
+
+                    Accepted format: {
+                                        "stagingLocaion": "/gk_snap",
+                                        "forceCleanup": True,
+                                        "port": "5595",
+                                        "libDirectory": "/opt/PostgreSQL/9.6/lib",
+                                        "isInstanceSelected": True,
+                                        "reservationPeriodS": 3600,
+                                        "user": "postgres",
+                                        "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
+                                     }
+
+            Returns:
+                object -- Job containing restore details
+
         """
+        backup_set_object = self._backupset_object
+        instance_object = backup_set_object._instance_object
+        if dest_client_name is None:
+            dest_client_name = instance_object._agent_object._client_object.client_name
 
-        if destination_client is None:
-            destination_client = self._properties[r"subclient"][r"instance"][r"clientName"]
+        if dest_instance_name is None:
+            dest_instance_name = instance_object.instance_name
 
-        if destination_instance_name is None:
-            destination_instance_name = self._properties[r"subclient"][r"instanceName"]
-        self._backupset_object._instance_object._restore_association = self._subClientEntity
+        backupset_name = backup_set_object.backupset_name
 
-        bkpset_name = self._backupset_object.backupset_name
+        if backupset_name.lower() == "fsbasedbackupset":
+            backupset_flag = True
+            database_list = ["/data"]
+        else:
+            backupset_flag = False
 
-        restore_json = self._get_postgres_restore_json(
-            bkpset_name, database_list, destination_client, destination_instance_name)
-
-        return self._process_restore_response(restore_json)
-
+        instance_object._restore_association = self._subClientEntity
+        return instance_object.restore_in_place(
+            database_list,
+            dest_client_name,
+            dest_instance_name,
+            backupset_name,
+            backupset_flag,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            clone_env=clone_env,
+            clone_options=clone_options)

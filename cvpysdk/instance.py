@@ -1799,7 +1799,7 @@ class Instance(object):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options,
+            restore_option=fs_options,
             schedule_pattern=schedule_pattern)
 
         return self._process_restore_response(request_json)
@@ -1859,7 +1859,7 @@ class Instance(object):
                         versions            : list of version numbers to be backed up
                         media_agent         : Media Agent need to be used for Browse and restore
                         validate_only       : To validate data backed up for restore
-                        
+
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -2169,7 +2169,7 @@ class Instance(object):
             "allVersion": value.get("all_versions", False),
             "unconditionalOverwrite": value.get("unconditional_overwrite", False),
             "includeAgedData": value.get("include_aged_data", False),
-            "validateOnly": value.get("validate_only",False)
+            "validateOnly": value.get("validate_only", False)
         }
 
         _advance_fs_keys = ["restoreDataInsteadOfStub",

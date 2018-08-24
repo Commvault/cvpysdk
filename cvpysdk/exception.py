@@ -160,7 +160,8 @@ EXCEPTION_DICT = {
         '107': 'Failed to run the deferred catalog job',
         '108': 'Failed to run the DDB move job',
         '109': 'Failed to run the DDB verification job',
-        '110': 'Input data is not correct'
+        '110': 'Input data is not correct',
+        "111": 'Failed to update copy property'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',
@@ -286,8 +287,7 @@ EXCEPTION_DICT = {
         '102': ''
     },
     'Snap': {
-        '101': 'Volume id is not set, Failed to perform Snap Operation',
-        '102': 'Failed to run the job for Snap Operation',
+        '102': 'Failed to run the job for Snap Operation'
     },
     'OperationWindow': {
         '101': 'Failed to create a operation window',

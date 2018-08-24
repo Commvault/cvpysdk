@@ -17,6 +17,7 @@ Subclient: Base class consisting of all the common properties and operations for
 
 
 Subclients:
+===========
     __init__(class_object)      --  initialise object of subclients object associated with
     the specified backup set/instance.
 
@@ -48,6 +49,7 @@ Subclients:
 
 
 Subclient:
+==========
     __init__()                  --  initialise instance of the Subclient class,
     associated to the specified backupset
 
@@ -106,6 +108,16 @@ Subclient:
     which includes current running job also.
 
     refresh()                   --  refresh the properties of the subclient
+
+
+Subclient Instance Attributes:
+==============================
+
+    **snapshot_engine_name**    --  returns snapshot engine name associated
+    with the subclient
+
+    **is_default_subclient**    --  returns True if the subclient is default
+    subclient else returns False
 
 """
 
@@ -1178,9 +1190,22 @@ class Subclient(object):
     def is_intelli_snap_enabled(self):
         """Treats the is intelli snap enabled as a read-only attribute."""
         if 'snapCopyInfo' in self._commonProperties:
-            snap_copy_info = self._commonProperties['snapCopyInfo']
-            if 'isSnapBackupEnabled' in snap_copy_info:
-                return bool(snap_copy_info['isSnapBackupEnabled'])
+            snap_copy_info = self._commonProperties.get('snapCopyInfo')
+            return snap_copy_info.get('isSnapBackupEnabled')
+
+    @property
+    def snapshot_engine_name(self):
+        """returns snapshot engine name associated with the subclient"""
+        if self.is_intelli_snap_enabled:
+            if 'snapCopyInfo' in self._commonProperties:
+                snap_copy_info = self._commonProperties.get('snapCopyInfo', "")
+                if 'snapToTapeSelectedEngine' in snap_copy_info:
+                    if 'snapShotEngineName' in snap_copy_info.get('snapToTapeSelectedEngine', ""):
+                        return snap_copy_info['snapToTapeSelectedEngine'].get('snapShotEngineName', "")
+        raise SDKException(
+            'Subclient',
+            '102',
+            'Cannot fetch snap engine name.')
 
     @property
     def is_on_demand_subclient(self):
@@ -1289,6 +1314,12 @@ class Subclient(object):
             return int(
                 self._commonProperties['readBuffersize']
             )
+
+    @property
+    def is_default_subclient(self):
+        """Returns True if the subclient is default
+        subclient else returns False"""
+        return self._commonProperties.get('isDefaultSubclient')
 
     @read_buffer_size.setter
     def read_buffer_size(self, value):
@@ -1425,7 +1456,7 @@ class Subclient(object):
         self._set_subclient_properties(
             "_commonProperties['enableBackup']", False)
 
-    def enable_intelli_snap(self, snap_engine_name):
+    def enable_intelli_snap(self, snap_engine_name, proxy_options=None):
         """Enables Intelli Snap for the subclient.
 
             Args:
@@ -1444,6 +1475,20 @@ class Subclient(object):
                 "snapShotEngineName": snap_engine_name
             }
         }
+        
+        if "snap_proxy" in proxy_options:
+            properties_dict["snapToTapeProxyToUse"] = {
+                "clientName": proxy_options["snap_proxy"]
+                }
+
+        if "backupcopy_proxy" in proxy_options:
+            properties_dict["useSeparateProxyForSnapToTape"] = True
+            properties_dict["separateProxyForSnapToTape"] = {
+                "clientName": proxy_options["backupcopy_proxy"]
+                }
+
+        if "use_source_if_proxy_unreachable" in proxy_options:
+            properties_dict["snapToTapeProxyToUseSource"] = True
 
         self._set_subclient_properties(
             "_commonProperties['snapCopyInfo']", properties_dict)
