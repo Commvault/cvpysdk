@@ -1,4 +1,4 @@
-#FIXME:https://engweb.commvault.com/engtools/defect/215340
+# FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -236,7 +236,8 @@ class Subclients(object):
             'virtual server': VirtualServerSubclient,
             'cloud apps': CloudAppsSubclient,
             'sql server': SQLServerSubclient,
-            'ndmp': NASSubclient,
+            'nas': NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
+            'ndmp': NASSubclient,       # SP12 and above honors NDMP as the Agent Name
             'sap hana': SAPHANASubclient,
             'oracle': OracleSubclient,
             'notes database': LNDbSubclient,
@@ -1475,7 +1476,7 @@ class Subclient(object):
                 "snapShotEngineName": snap_engine_name
             }
         }
-        
+
         if "snap_proxy" in proxy_options:
             properties_dict["snapToTapeProxyToUse"] = {
                 "clientName": proxy_options["snap_proxy"]

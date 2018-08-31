@@ -170,7 +170,7 @@ class Roles(object):
                     if role already exists on the commcell
 
          """
-        if(permission_list=="" and categoryname_list == "" ):
+        if(permission_list == "" and categoryname_list == ""):
             raise SDKException('Role', '102', "empty role can not be created!!  "
                                               "either permission_list or categoryname_list "
                                               "should have some value! ")
@@ -178,13 +178,12 @@ class Roles(object):
             raise SDKException('Role', '101')
         if self.has_role(rolename):
             raise SDKException('Role', '102',
-                               "Role {0} already exists on this commcell.".\
-                               format(rolename))
+                               "Role {0} already exists on this commcell.".format(rolename))
 
         arr = [{"permissionName": permission} for permission in permission_list]
         if categoryname_list:
             for catname in categoryname_list:
-                cat_blob={"categoryName":catname}
+                cat_blob = {"categoryName":catname}
                 arr.append(cat_blob)
 
         request_json = {
@@ -217,7 +216,6 @@ class Roles(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-
         self.refresh()
         return self.get(rolename)
 
@@ -234,8 +232,7 @@ class Roles(object):
         """
         if not self.has_role(role_name):
             raise SDKException(
-                'Role', '102', "Role {0} doesn't exists on this commcell.".format\
-                    (role_name)
+                'Role', '102', "Role {0} doesn't exists on this commcell.".format(role_name)
             )
 
         return Role(self._commcell_object, role_name, self._roles[role_name.lower()])
@@ -258,12 +255,10 @@ class Roles(object):
         """
         if not self.has_role(role_name):
             raise SDKException(
-                'Role', '102', "Role {0} doesn't exists on this commcell.".format\
-                    (role_name)
+                'Role', '102', "Role {0} doesn't exists on this commcell.".format(role_name)
             )
 
-        delete_role = self._commcell_object._services['ROLE'] % (self._roles\
-                                                                [role_name.lower()])
+        delete_role = self._commcell_object._services['ROLE'] % (self._roles[role_name.lower()])
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'DELETE', delete_role
@@ -284,6 +279,7 @@ class Roles(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+        self.refresh()
 
     def refresh(self):
         """Refresh the list of Roles on this commcell."""
@@ -321,6 +317,7 @@ class Role(object):
         self._role_description = ''
         self._role_status = True
         self._security_associations = {}
+        self._role_permissions = {}
         self._get_role_properties()
 
     def __repr__(self):
@@ -351,14 +348,25 @@ class Role(object):
                 self._role_id = role_properties['role'].get('roleId')
                 self._role_name = role_properties['role'].get('roleName')
                 self._role_status = role_properties['role']['flags'].get('disabled')
+                category_list = []
+                permission_list = []
 
+                if 'categoryPermission' in role_properties:
+                    for associations in role_properties['categoryPermission'].get(
+                            'categoriesPermissionList', []):
+                        if 'permissionName' in associations:
+                            permission_list.append(associations['permissionName'])
+                        else:
+                            category_list.append(associations['categoryName'])
+
+                self._role_permissions = {
+                    'permission_list': permission_list,
+                    'category_list': category_list
+                }
                 if 'securityAssociations' in role_properties:
-
-                    for association in role_properties['securityAssociations']. \
-                            get('associations', []):
-
+                    for association in role_properties['securityAssociations'].get(
+                            'associations', []):
                         user_or_group = association['userOrGroup'][0]
-
                         if 'userName' in user_or_group:
                             name = user_or_group['userName']
                         elif 'userGroupName' in user_or_group:
@@ -379,12 +387,10 @@ class Role(object):
 
                         if 'categoryPermission' in properties:
                             permissions = properties['categoryPermission']
-                            permission_list = permissions['categoriesPermissionList']\
-                                [0]
+                            permission_list = permissions['categoriesPermissionList'][0]
                             permission = permission_list['permissionName']
                         elif 'permissions' in properties:
-                            permission = properties['permissions'][0]\
-                                ['permissionName']
+                            permission = properties['permissions'][0]['permissionName']
                         elif 'role' in properties:
                             role = properties['role']['roleName']
 
@@ -402,7 +408,7 @@ class Role(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _update_role_props(self, properties_dict):
+    def _update_role_props(self, properties_dict, name_val=None):
         """Updates the properties of this role
 
             Args:
@@ -422,13 +428,22 @@ class Role(object):
 
                     if response is not success
         """
-        request_json = {
-            "roles": [{
-                "role": {
-                    "roleName": self.role_name
-                }
-            }]
-        }
+        if name_val:
+            request_json = {
+                "roles": [{
+                    "role": {
+                        "roleName": name_val
+                    }
+                }]
+            }
+        else:
+            request_json = {
+                "roles": [{
+                    "role": {
+                        "roleName": self.role_name
+                    }
+                }]
+            }
 
         if "description" in properties_dict:
             request_json['roles'][0].update(properties_dict)
@@ -438,7 +453,6 @@ class Role(object):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._request_role, request_json
         )
-
         if flag:
             if response.json():
                 error_code = -1
@@ -454,6 +468,7 @@ class Role(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+        self.refresh()
 
     def associate_user(self, rolename, username):
         """Updates the user who can manage this role with the permission provided
@@ -474,13 +489,11 @@ class Role(object):
             raise SDKException('Role', '101')
         if not self._commcell_object.roles.has_role(rolename):
             raise SDKException(
-                'Role', '102', "Role {0} doesn't exists on this commcell.".format\
-                    (rolename)
+                'Role', '102', "Role {0} doesn't exists on this commcell.".format(rolename)
             )
         if not self._commcell_object.users.has_user(username):
             raise SDKException(
-                'User', '102', "User {0} doesn't exists on this commcell.".format\
-                    (username)
+                'User', '102', "User {0} doesn't exists on this commcell.".format(username)
             )
 
         request_json = {
@@ -542,13 +555,12 @@ class Role(object):
             raise SDKException('Role', '101')
         if not self._commcell_object.roles.has_role(rolename):
             raise SDKException(
-                'User', '102', "Role {0} doesn't exists on this commcell.".format\
-                    (rolename)
+                'User', '102', "Role {0} doesn't exists on this commcell.".format(rolename)
             )
         if not self._commcell_object.user_groups.has_user_group(usergroupname):
             raise SDKException(
-                'UserGroup', '102', "UserGroup {0} doesn't exists on this commcell."\
-                    .format(usergroupname)
+                'UserGroup', '102', "UserGroup {0} doesn't exists on this commcell.".format(
+                    usergroupname)
             )
 
         request_json = {
@@ -625,17 +637,16 @@ class Role(object):
             "ADD":2,
             "DELETE": 3
         }
-        if(permission_list=="" and categoryname_list == "" ):
+        if(permission_list == "" and categoryname_list == ""):
             raise SDKException('Role', '102', "Capabilties can not be modified!!  "
                                               "either permission_list or categoryname_list "
                                               "should have some value! ")
-        capability_arr=[]
+        capability_arr = []
         if permission_list:
-            capability_arr = [{"permissionName": permission} for permission \
-                              in permission_list]
+            capability_arr = [{"permissionName": permission} for permission in permission_list]
         if categoryname_list:
             for catname in categoryname_list:
-                cat_blob={"categoryName":catname}
+                cat_blob = {"categoryName":catname}
                 capability_arr.append(cat_blob)
 
         request_json = {
@@ -644,8 +655,7 @@ class Role(object):
                     "roleName": self.role_name
                 },
                 "categoryPermission": {
-                    "categoriesPermissionOperationType":update_role_request\
-                        [request_type.upper()],
+                    "categoriesPermissionOperationType" : update_role_request[request_type.upper()],
                     "categoriesPermissionList": capability_arr
                 }
             }]
@@ -682,7 +692,8 @@ class Role(object):
         """Sets the value for role_name with the parameter provided
 
         """
-        self._role_name = val
+        self._update_role_props(properties_dict={}, name_val=val)
+
 
     @property
     def role_id(self):

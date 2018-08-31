@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=R1705, R0205
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -227,6 +228,8 @@ Client Attributes
 
     **consumed_licenses**           --  returns dictionary of all the license details
     which is consumed by the client
+
+    **cvd_port**                    -- returns cvd port of the client
 
 """
 
@@ -561,9 +564,10 @@ class Clients(object):
                 None    -   if no client has the same hostname as the given input
 
         """
-        for client in self.all_clients:
-            if hostname.lower() == self.all_clients[client]['hostname']:
-                return client
+        if self.all_clients:
+            for client in self.all_clients:
+                if hostname.lower() == self.all_clients[client]['hostname']:
+                    return client
 
     def _get_hidden_client_from_hostname(self, hostname):
         """Checks if hidden client associated given hostname exists and returns the hidden client
@@ -578,9 +582,10 @@ class Clients(object):
                 None    -   if no client has the same hostname as the given input
 
         """
-        for hidden_client in self.hidden_clients:
-            if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
-                return hidden_client
+        if self.hidden_clients:
+            for hidden_client in self.hidden_clients:
+                if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
+                    return hidden_client
 
     @property
     def all_clients(self):
@@ -640,22 +645,24 @@ class Clients(object):
         return self._virtualization_clients
 
     def has_client(self, client_name):
-        """Checks if a client exists in the commcell with the input client name.
+        """Checks if a client exists in the commcell with the given client name / hostname.
 
             Args:
-                client_name (str)  --  name of the client
+                client_name     (str)   --  name / hostname of the client
 
             Returns:
-                bool - boolean output whether the client exists in the commcell or not
+                bool    -   boolean output whether the client exists in the commcell or not
 
             Raises:
                 SDKException:
                     if type of the client name argument is not string
+
         """
         if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
 
-        return self.all_clients and client_name.lower() in self.all_clients
+        return ((self.all_clients and client_name.lower() in self.all_clients) or
+                self._get_client_from_hostname(client_name) is not None)
 
     def has_hidden_client(self, client_name):
         """Checks if a client exists in the commcell with the input client name as a hidden client.
@@ -665,7 +672,7 @@ class Clients(object):
 
             Returns:
                 bool - boolean output whether the client exists in the commcell or not as a hidden
-                        client
+                client
 
             Raises:
                 SDKException:
@@ -674,7 +681,8 @@ class Clients(object):
         if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
 
-        return self.hidden_clients and client_name.lower() in self.hidden_clients
+        return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
+                self._get_hidden_client_from_hostname(client_name) is not None)
 
     def add_vmware_client(
             self,
@@ -949,7 +957,7 @@ class Clients(object):
             compare specified name with host names of existing clients
 
             Args:
-                name (str)  --  name of the client
+                name (str)  --  name / hostname of the client
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -968,25 +976,22 @@ class Clients(object):
             client_id = None
 
             if self.has_client(name):
-                client_name = name
-            elif self._get_client_from_hostname(name) is not None:
-                client_name = self._get_client_from_hostname(name)
+                client_from_hostname = self._get_client_from_hostname(name)
             elif self.has_hidden_client(name):
-                client_name = name
-            elif self._get_hidden_client_from_hostname(name) is not None:
-                client_name = self._get_hidden_client_from_hostname(name)
-
-            if client_name is not None:
-                try:
-                    client_id = self.all_clients[client_name]['id']
-                except KeyError:
-                    client_id = self.hidden_clients[client_name]['id']
-
-                return Client(self._commcell_object, client_name, client_id)
+                client_from_hostname = self._get_hidden_client_from_hostname(name)
             else:
                 raise SDKException(
-                    'Client', '102', 'No client exists with name: {0}'.format(name)
+                    'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
                 )
+
+            client_name = name if client_from_hostname is None else client_from_hostname
+
+            try:
+                client_id = self.all_clients[client_name]['id']
+            except KeyError:
+                client_id = self.hidden_clients[client_name]['id']
+
+            return Client(self._commcell_object, client_name, client_id)
 
     def delete(self, client_name):
         """Deletes the client from the commcell.
@@ -1131,6 +1136,7 @@ class Client(object):
         self._job_results_directory = None
         self._log_directory = None
         self._license_info = None
+        self._cvd_port = None
 
         self.refresh()
 
@@ -1168,7 +1174,7 @@ class Client(object):
                 os_info = self._properties['client']['osInfo']
                 processor_type = os_info['OsDisplayInfo']['ProcessorType']
                 os_name = os_info['OsDisplayInfo']['OSName']
-
+                self._cvd_port = self._properties['client']['cvdPort']
                 self._os_info = '{0} {1} {2}  --  {3}'.format(
                     processor_type,
                     os_info['Type'],
@@ -2877,7 +2883,7 @@ class Client(object):
                               "enabled": 1}]
         }
         request_json = self._update_client_props_json(properties_dict)
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
+        flag, response = self._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
         if flag:
@@ -2891,8 +2897,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def delete_additional_setting(self, category, key_name):
         """Deletes registry key from the client property
@@ -2916,7 +2921,7 @@ class Client(object):
                               "keyName": key_name}]
         }
         request_json = self._update_client_props_json(properties_dict)
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
+        flag, response = self._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
 
@@ -2931,8 +2936,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def release_license(self, license_name=None):
         """Releases a license from a client
@@ -2961,7 +2965,8 @@ class Client(object):
         license_type_id = 0
         app_type_id = 0
         platform_type = 1
-        if not license_name is None:
+
+        if license_name is not None:
             if self.consumed_licenses.get(license_name):
                 license_type_id = self.consumed_licenses[license_name].get('licenseType')
                 app_type_id = self.consumed_licenses[license_name].get('appType')
@@ -2982,7 +2987,7 @@ class Client(object):
                 "clientId": int(self.client_id)
             }
         }
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
+        flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['RELEASE_LICENSE'], request_json
         )
 
@@ -2998,8 +3003,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def reconfigure_client(self):
         """Reapplies license to the client
@@ -3019,7 +3023,7 @@ class Client(object):
             },
             "platformTypes": [1]
         }
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
+        flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['RECONFIGURE_LICENSE'], request_json
         )
 
@@ -3035,8 +3039,7 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def push_servicepack_and_hotfix(
             self,
@@ -3073,9 +3076,10 @@ class Client(object):
         """
         install = Install(self._commcell_object)
         return install.push_servicepack_and_hotfix(
-                                    client_computers=[self.client_name],
-                                    reboot_client=reboot_client,
-                                    run_db_maintenance=run_db_maintenance)
+            client_computers=[self.client_name],
+            reboot_client=reboot_client,
+            run_db_maintenance=run_db_maintenance
+        )
 
     @property
     def consumed_licenses(self):
@@ -3119,7 +3123,7 @@ class Client(object):
 
         """
         if self._license_info is None:
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
+            flag, response = self._cvpysdk_object.make_request(
                 'GET', self._services['LIST_LICENSES'] % self.client_id
             )
             if flag:
@@ -3141,6 +3145,11 @@ class Client(object):
                 else:
                     self._license_info = {}
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('Response', '101', self._update_response_(response.text))
         return self._license_info
+
+    @property
+    def cvd_port(self):
+        """Returns CVD port of the client"""
+
+        return self._cvd_port

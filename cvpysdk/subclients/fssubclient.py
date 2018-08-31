@@ -62,6 +62,8 @@ FileSystemSubclient:
 
     create_file_level_index_option       -- Enable/Disable Metadata collection Option on subclient
 
+    system_state_option					--	Enable/Disable System state option for the subclient
+
     backup()                            --  run a backup job for the subclient
 
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
@@ -579,6 +581,25 @@ class FileSystemSubclient(Subclient):
                 'Subclient',
                 '102',
                 'argument should only be boolean')
+
+    @property
+    def system_state_option(self):
+        """Checks whether the system state option is enabled
+
+        Returns:
+            True    -   if system state property is enabled for the subclient
+
+            False   -   if system state property is not enabled for the subclient
+		"""
+        return self._fsSubClientProp['backupSystemState']
+
+    @system_state_option.setter
+    def system_state_option(self, backup_system_state):
+        """
+        Enables the system state property for the subclient
+        """
+        self._set_subclient_properties("_fsSubClientProp['backupSystemState']",
+                                        backup_system_state )
 
     @property
     def trueup_days(self):

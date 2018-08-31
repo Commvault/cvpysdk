@@ -161,7 +161,8 @@ class Backupsets(object):
 
         self._backupsets_dict = {
             'file system': FSBackupset,
-            'nas': NASBackupset,
+            'nas': NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
+            'ndmp': NASBackupset,       # SP12 and above honors NDMP as the Agent Name
             'sap hana': HANABackupset,
             'cloud apps': CloudAppsBackupset
         }

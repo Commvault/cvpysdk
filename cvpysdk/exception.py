@@ -306,6 +306,14 @@ EXCEPTION_DICT = {
         '103': 'Please specify all the required inputs',
         '104': 'Please give appropriate input(s)'
     },
+    'NetworkTopology': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
+    'Certificates': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
     'Download': {
         '101': 'Failed to execute the download Job',
         '102': 'service_pack version argument is missing in the method call'

@@ -6,14 +6,15 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""File for operating on a NAS Backupset
+"""Module for performing operations on a Backupset for the **NAS / NDMP** Agent.
 
 NASBackupset is the only class defined in this file.
 
-NASBackupset: Derived class from Backupset Base class, representing a nas backupset,
-                        and to perform operations on that subclient
+NASBackupset: Derived class from Backupset Base class, representing a **NAS / NDMP** backupset,
+and to perform operations on that subclient
 
 NASBackupset:
+
     _get_backupset_properties()     --  gets the properties of this subclient
 
     set_image_backupset()           --  sets this backupset as image backupset
@@ -27,8 +28,10 @@ from ..exception import SDKException
 
 
 class NASBackupset(FSBackupset):
-    """Derived class from Backupset Base class, representing a nas backupset,
-        and to perform operations on that backupset."""
+    """Derived class from Backupset Base class, representing a **NAS / NDMP** backupset,
+        and to perform operations on that backupset.
+
+    """
 
     def _get_backupset_properties(self):
         """Derived class from Backupset Base class, representing a nas backupset,

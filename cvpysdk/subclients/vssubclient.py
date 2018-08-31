@@ -1661,7 +1661,7 @@ class VirtualServerSubclient(Subclient):
         vm_to_restore = list(set(self._vm_names_browse) & set(_temp_res_list))
 
         if not vm_to_restore:
-            raise SDKException('Subclient', 104)
+            raise SDKException('Subclient', '104')
 
         return vm_to_restore
 
@@ -1763,7 +1763,7 @@ class VirtualServerSubclient(Subclient):
         restore_option["backupset_client_name"] = client.client_name
 
         if not subclient:
-            raise SDKException('Subclient', 104)
+            raise SDKException('Subclient', '104')
 
         return subclient
 
@@ -1837,7 +1837,7 @@ class VirtualServerSubclient(Subclient):
                                                      restore_option["datastore"], new_name)
             vm_disks.append(_disk_dict)
         if not vm_disks:
-            raise SDKException('Subclient', 104)
+            raise SDKException('Subclient', '104')
         restore_option["disks"] = vm_disks
 
         # prepare nics info json

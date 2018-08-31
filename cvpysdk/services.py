@@ -250,7 +250,13 @@ SERVICES_DICT_TEMPLATE = {
 
     'GLOBAL_PARAM': '{0}/setGlobalParam',
     
-    'SNAP_OPERATIONS': '{0}/Snaps/Operations'
+    'SNAP_OPERATIONS': '{0}/Snaps/Operations',
+
+    'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
+    'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',
+    'PUSH_TOPOLOGY': '{0}FirewallTopology/%s/Push',
+
+    'CERTIFICATES': '{0}CommServ/Certificates'
 }
 
 
