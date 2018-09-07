@@ -89,42 +89,46 @@ Job
 Job instance Attributes
 -----------------------
 
-**job.is_finished**         --  specifies whether the job is finished or not    (True / False)
+**job.is_finished**                 --  specifies whether the job is finished or not    (True / False)
 
-**job.client_name**         --  returns the name of the client, job is running for
+**job.client_name**                 --  returns the name of the client, job is running for
 
-**job.agent_name**          --  returns the name of the agent, job is running for
+**job.agent_name**                  --  returns the name of the agent, job is running for
 
-**job.instance_name**       --  returns the name of the instance, job is running for
+**job.instance_name**               --  returns the name of the instance, job is running for
 
-**job.backupset_name**      --  returns the name of the backupset, job is running for
+**job.backupset_name**              --  returns the name of the backupset, job is running for
 
-**job.subclient_name**      --  returns the name of the subclient, job is running for
+**job.subclient_name**              --  returns the name of the subclient, job is running for
 
-**job.status**              --  returns the current status of the job
+**job.status**                      --  returns the current status of the job
 
-                                    (Completed / Suspended / Waiting / ... / etc.)
+                                            (Completed / Suspended / Waiting / ... / etc.)
 
 
-**job.job_id**              --  returns the id of the job
+**job.job_id**                      --  returns the id of the job
 
-**job.job_type**            --  returns the type of the job
+**job.job_type**                    --  returns the type of the job
 
-**job.backup_level**        --  returns the backup level (if applicable), otherwise None
+**job.backup_level**                --  returns the backup level (if applicable), otherwise None
 
-**job.start_time**          --  returns the start time of the job
+**job.start_time**                  --  returns the start time of the job
 
-**job.end_time**            --  returns the end time of the job
+**job.end_time**                    --  returns the end time of the job
 
-**job.delay_reason**        --  reason why the job was delayed
+**job.delay_reason**                --  reason why the job was delayed
 
-**job.pending_reason**      --  reason if job went into pending state
+**job.pending_reason**              --  reason if job went into pending state
 
-**job.phase**               --  returns the current phase of the job
+**job.phase**                       --  returns the current phase of the job
 
-**job.summary**             --  returns the dictionary consisting of the full summary of the job
+**job.summary**                     --  returns the dictionary consisting of the full summary of the job
 
-**job.details**             --  returns the dictionary consisting of the full details of the job
+**job.details**                     --  returns the dictionary consisting of the full details of the job
+
+**job.num_of_files_transferred**    -- returns the current number of files transferred for the job.
+
+**job.state**                       -- returns the current state of the job.
 
 """
 
@@ -774,6 +778,8 @@ class Job(object):
         self._phase = None
         self._summary = None
         self._details = None
+        self._num_of_files_transferred = None
+        self._state = None
 
         self.refresh()
 
@@ -1097,6 +1103,18 @@ class Job(object):
         """Treats the size of application as a read-only attribute."""
         if 'sizeOfApplication' in self._summary:
             return self._summary['sizeOfApplication']
+
+    @property
+    def num_of_files_transferred(self):
+        """Treats the number of files transferred as a read-only attribute."""
+        self.is_finished
+        return self._details['jobDetail']['progressInfo']['numOfFilesTransferred']
+
+    @property
+    def state(self):
+        """Treats the job state as a read-only attribute."""
+        self.is_finished
+        return self._details['jobDetail']['progressInfo']['state']
 
     def pause(self, wait_for_job_to_pause=False):
         """Suspends the job.

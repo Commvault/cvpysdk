@@ -1,4 +1,4 @@
-#FIXME:https://engweb.commvault.com/engtools/defect/215340
+# FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -16,19 +16,35 @@ OracleSubclient: Derived class from DatabaseSubclient Base class, representing a
                         and to perform operations on that subclient
 
 OracleSubclient:
-    __init__()                          -- constructor for the class
+    __init__()                          --  constructor for the class
 
-    data_sp()                           -- Getters and setters for data storage policy
+    _get_subclient_properties()         --  gets the subclient related properties of
+                                            Oracle subclient
 
-    _get_oracle_restore_json            -- Method to get restore JSON for an oracle instance
+    _get_subclient_properties_json()    --  returns subclient property json for oracle
 
-    _oracle_cumulative_backup_json      -- Get cumulative backup JSON for oracle instance
+    data()                              --  Getter and Setter for enabling data mode in oracle
 
-    is_snapenabled()                    -- Check if intellisnap has been enabled in the subclient
+    selective_online_full()             --  Getter and Setter to enable selective online option
 
-    backup                              -- Method to backup database
+    data_stream()                       --  Getter and Setter for data stream
 
-    restore                             -- Method to restore databases
+    backup_archive_log()                --  Getter ans Setter for enaling/disabling
+                                            archive log mode
+
+    archive_files_per_bfs()             --  Getter and Setter for archive files per BFS
+
+    data_sp()                           --  Getters and setters for data storage policy
+
+    _get_oracle_restore_json            --  To get restore JSON for an oracle instance
+
+    _oracle_cumulative_backup_json      --  Get cumulative backup JSON for oracle instance
+
+    is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient
+
+    backup                              --  Backup database
+
+    restore                             --  Restore databases
 
 """
 from __future__ import unicode_literals
@@ -54,11 +70,12 @@ class OracleSubclient(DatabaseSubclient):
         """
         super(OracleSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
-        self._oracle_properties = {}
+        self._get_subclient_properties()
+        #self._oracle_properties = {}
 
     def _oracle_cumulative_backup_json(self):
         """
-        Method to add oracle options to oracle backup
+        Adds oracle options to oracle backup
 
         Returns:
             dict    -- dict containing request JSON
@@ -79,17 +96,13 @@ class OracleSubclient(DatabaseSubclient):
 
     def _get_subclient_properties(self):
         """Gets the subclient  related properties of Oracle subclient.
-
         """
-
         if not bool(self._subclient_properties):
             super(OracleSubclient, self)._get_subclient_properties()
-
-        if 'oracleSubclientProp' in self._subclient_properties:
-            self._oracleSubclientProp = self._subclient_properties['oracleSubclientProp']
+        self._oracle_subclient_properties = self._subclient_properties.get("oracleSubclientProp")
 
     def _get_subclient_properties_json(self):
-        """get the all subclient related properties of this subclient.
+        """returns subclient property json for oracle
            Returns:
                 dict - all subclient properties put inside a dict
         """
@@ -98,10 +111,124 @@ class OracleSubclient(DatabaseSubclient):
                 {
                     "subClientEntity": self._subClientEntity,
                     "commonProperties": self._commonProperties,
-                    "oracleSubclientProp": self._oracleSubclientProp
+                    "oracleSubclientProp": self._oracle_subclient_properties
                 }
         }
         return subclient_json
+
+    @property
+    def data(self):
+        """
+        Getter to fetch if data enabled in oracle subclient or not
+
+            Returns:
+                bool     --  True if data is enabled on the subclient. Else False
+
+        """
+        return self._oracle_subclient_properties.get("data")
+
+    @data.setter
+    def data(self, data):
+        """
+        Enables  data for oracle subclient
+
+            Args:
+                data      (bool) --   True if data to be enabled on the subclient. Else False
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['data']", data)
+
+    @property
+    def backup_archive_log(self):
+        """
+        Getter to fetch if archive log backup enabled or not
+
+            Returns:
+                    bool     --  True if archivelog is enabled on the subclient. Else False
+
+        """
+        return self._oracle_subclient_properties.get("backupArchiveLog")
+
+    @backup_archive_log.setter
+    def backup_archive_log(self, backup_archive_log):
+        """
+        Setter to enable backup archive log in oracle subclient
+
+            Args:
+                backup_archive_log    (bool)    --  True if archive log to be enabled
+                                                    on the subclient.Else False
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['backupArchiveLog']", backup_archive_log)
+
+    @property
+    def selective_online_full(self):
+        """
+        Getter to fetch if selective online full enabled or not
+
+            Returns:
+                    bool     --  True if selective online is enabled on the subclient. Else False
+
+        """
+        return self._oracle_subclient_properties.get("selectiveOnlineFull")
+
+    @selective_online_full.setter
+    def selective_online_full(self, selective_online_full):
+        """
+        Setter to enable backup archive log in oracle subclient
+
+            Args:
+                selective_online_full    (bool)    --  True if selective online to be enabled
+                                                        on the subclient.Else False
+        """
+        self.backup_archive_log = True
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['selectiveOnlineFull']", selective_online_full)
+
+    @property
+    def archive_files_per_bfs(self):
+        """
+        Getter to fetch archive files per BFS
+
+            Returns:
+                    (int)    --     value for archive files per BFS
+        """
+        return self._oracle_subclient_properties.get("archiveFilesPerBFS")
+
+    @archive_files_per_bfs.setter
+    def archive_files_per_bfs(self, archive_files_per_bfs=32):
+        """
+        Setter to set parameter  archive files per BFS
+
+            Args:
+               archive_files_per_bfs    (int)    --     value for archive files per BFS
+                                                        default : 32
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['archiveFilesPerBFS']", archive_files_per_bfs)
+
+    @property
+    def data_stream(self):
+        """
+        Getter to fetch data stream count
+
+            Returns:
+                    int     --  data backup stream count at subclient level
+
+        """
+        return self._oracle_subclient_properties.get("dataThresholdStreams")
+
+    @data_stream.setter
+    def data_stream(self, data_stream=1):
+        """
+        Setter to set data backup stream count at subclient level
+
+            Args:
+                data_stream    (int)    --  data backup stream count at subclient level
+                                            default = 1
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['dataThresholdStreams']", data_stream)
 
     @property
     def data_sp(self):
@@ -122,7 +249,7 @@ class OracleSubclient(DatabaseSubclient):
         Returns:
             Bool - True if table browse is enabled on the subclient. Else False
         """
-        # return self._oracleSubclientProp['enableTableBrowse']
+        # return self._oracle_subclient_properties['enableTableBrowse']
         return self._subclient_properties['oracleSubclientProp']['enableTableBrowse']
 
     @property
@@ -146,7 +273,7 @@ class OracleSubclient(DatabaseSubclient):
 
         """
 
-        self._set_subclient_properties("_oracleSubclientProp['enableTableBrowse']", True)
+        self._set_subclient_properties("_oracle_subclient_properties['enableTableBrowse']", True)
 
     def disable_table_browse(self):
         """Disables Table Browse for the subclient.
@@ -156,7 +283,7 @@ class OracleSubclient(DatabaseSubclient):
         """
 
         self._set_subclient_properties(
-            "_oracleSubclientProp['enableTableBrowse']", False
+            "_oracle_subclient_properties['enableTableBrowse']", False
         )
 
     @property
@@ -199,7 +326,7 @@ class OracleSubclient(DatabaseSubclient):
         return self._process_backup_response(flag, response)
 
     def inline_backupcopy(self, backup_level=InstanceBackupType.FULL.value):
-        """Method to perform inline backupcopy on an oracle subclient
+        """Performs inline backupcopy on an oracle subclient
 
         Args:
             backup_level (str)  -- Level of backup. Can be full or incremental
@@ -258,7 +385,7 @@ class OracleSubclient(DatabaseSubclient):
             common_options=None,
             browse_option=None,
             oracle_options=None):
-        """Method to restore the entire/partial database using latest backup/backupcopy
+        """Performs restore the entire/partial database using latest backup/backupcopy
 
         Args:
             files (dict) -- dictionary containing file options
@@ -287,7 +414,6 @@ class OracleSubclient(DatabaseSubclient):
 
         Returns:
             object -- Job containing restore details
-
         """
         return self._backupset_object._instance_object.restore(files, destination_client,
                                                                common_options, browse_option,

@@ -86,29 +86,26 @@ class PostgresSubclient(DatabaseSubclient):
     def _backup_request_json(
             self,
             backup_level,
-            backup_prefix=None):
+            inc_with_data=False):
         """
         prepares the json for the backup request
 
             Args:
-                backup_level   (list)  --  level of backup the user wish to run
+                backup_level        (list)  --  level of backup the user wish to run
                         Full / Incremental / Differential
 
-                backup_prefix   (str)   --  the prefix that the user wish to add to the backup
+                inc_with_data       (bool)  --  flag to determine if the incremental backup
+                includes data or not
 
             Returns:
                 dict - JSON request to pass to the API
 
         """
         request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
-        hana_options = {
-            "hanaOptions": {
-                "backupPrefix": str(backup_prefix)
-            }
-        }
-        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
-            hana_options
-        )
+
+        if "incremental" in backup_level.lower() and inc_with_data:
+            request_json["taskInfo"]["subTasks"][0]["options"][
+                "backupOpts"]['incrementalDataWithLogs'] = True
 
         return request_json
 
@@ -145,17 +142,17 @@ class PostgresSubclient(DatabaseSubclient):
     def backup(
             self,
             backup_level="Differential",
-            backup_prefix=None):
+            inc_with_data=False):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
                 backup_level        (str)   --  level of backup the user wish to run
-                        Full / Incremental / Differential
+                        Full / Incremental / Differential / Synthetic_full
 
                     default: Differential
 
-                backup_prefix       (str)   --  the prefix that the user wish to add to the backup
-                    default: None
+                inc_with_data       (bool)  --  flag to determine if the incremental backup
+                includes data or not
 
             Returns:
                 object - instance of the Job class for this backup job
@@ -171,13 +168,13 @@ class PostgresSubclient(DatabaseSubclient):
         """
         backup_level = backup_level.lower()
 
-        if backup_level not in ['full', 'incremental', 'differential']:
+        if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
             raise SDKException('Subclient', '103')
 
-        if backup_prefix is None:
+        if not inc_with_data:
             return super(PostgresSubclient, self).backup(backup_level)
         request_json = self._backup_request_json(
-            backup_level, backup_prefix)
+            backup_level, inc_with_data)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['CREATE_TASK'], request_json
         )
@@ -192,7 +189,10 @@ class PostgresSubclient(DatabaseSubclient):
             from_time=None,
             to_time=None,
             clone_env=False,
-            clone_options=None):
+            clone_options=None,
+            media_agent=None,
+            table_level_restore=False,
+            staging_path=None):
         """
         Method to restore the Postgres server
 
@@ -236,6 +236,19 @@ class PostgresSubclient(DatabaseSubclient):
                                         "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
                                      }
 
+                media_agent             (str)   --  media agent name
+
+                    default: None
+
+                table_level_restore     (bool)  --  boolean to specify if the restore operation
+                is table level
+
+                    default: False
+
+                staging_path            (str)   --  staging path location for table level restore
+
+                    default: None
+
             Returns:
                 object -- Job containing restore details
 
@@ -252,7 +265,8 @@ class PostgresSubclient(DatabaseSubclient):
 
         if backupset_name.lower() == "fsbasedbackupset":
             backupset_flag = True
-            database_list = ["/data"]
+            if database_list is None:
+                database_list = ["/data"]
         else:
             backupset_flag = False
 
@@ -267,4 +281,7 @@ class PostgresSubclient(DatabaseSubclient):
             from_time=from_time,
             to_time=to_time,
             clone_env=clone_env,
-            clone_options=clone_options)
+            clone_options=clone_options,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            staging_path=staging_path)

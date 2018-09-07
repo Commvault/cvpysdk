@@ -113,11 +113,13 @@ Subclient:
 Subclient Instance Attributes:
 ==============================
 
-    **snapshot_engine_name**    --  returns snapshot engine name associated
+    **snapshot_engine_name**            --  returns snapshot engine name associated
     with the subclient
 
-    **is_default_subclient**    --  returns True if the subclient is default
+    **is_default_subclient**            --  returns True if the subclient is default
     subclient else returns False
+
+    **is_blocklevel_backup_enabled**    --  returns True if block level backup is enabled
 
 """
 
@@ -1193,6 +1195,12 @@ class Subclient(object):
         if 'snapCopyInfo' in self._commonProperties:
             snap_copy_info = self._commonProperties.get('snapCopyInfo')
             return snap_copy_info.get('isSnapBackupEnabled')
+
+    @property
+    def is_blocklevel_backup_enabled(self):
+        """returns True if block level backup is enabled else returns false"""
+        return self._subclient_properties.get(
+            'postgreSQLSubclientProp', {}).get('isUseBlockLevelBackup', False) == 1
 
     @property
     def snapshot_engine_name(self):

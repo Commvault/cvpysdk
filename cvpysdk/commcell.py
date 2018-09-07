@@ -1387,14 +1387,14 @@ class Commcell(object):
             -   sample method calls for different options, for latest service pack
 
                 >>> commcell_obj.download_software(
-                        options=DownloadOptions.lATEST_SERVICEPACK.value,
+                        options=DownloadOptions.LATEST_SERVICEPACK.value,
                         os_list=[DownloadPackages.WINDOWS_64.value]
                         )
 
             -   For Latest hotfixes for the installed service pack
 
                 >>> commcell_obj.download_software(
-                        options='DownloadOptions.lATEST_HOTFIXES.value',
+                        options='DownloadOptions.LATEST_HOTFIXES.value',
                         os_list=[DownloadPackages.WINDOWS_64.value,
                                 DownloadPackages.UNIX_LINUX64.value]
                         )

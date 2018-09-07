@@ -1,4 +1,4 @@
-#FIXME:https://engweb.commvault.com/engtools/defect/215340
+# FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -16,47 +16,57 @@ OracleInstance: Derived class from Instance Base class, representing an
 
 OracleInstance:
 
-    __init__()                          -- Constructor for the class
+    __init__()                          --  Constructor for the class
 
-    configure_data_masking_policy()     --  Method to configure data masking policy
+    _get_instance_properties()          --  gets the properties of this instance
 
-    get_masking_policy_id()             --  Method to get policy id of given data masking policy
+    _get_instance_properties_json()     --  gets all the instance related properties
+                                            of Oracle instance
 
-    standalone_data_masking()           --  Method to launch standalone data masking job on instance
+    configure_data_masking_policy()     --  Configures data masking
+                                            policy with given parameters
 
-    delete_data_masking_policy()        --  Method to delete given data masking policy
+    get_masking_policy_id()             --  To get policy id of
+                                            given data masking policy
 
-    _get_browse_options                 -- Method to get browse options for oracle instance
+    standalone_data_masking()           --  Launch standalone data masking
+                                            job on given instance
 
-    _process_browse_response            -- Method to process browse response
+    delete_data_masking_policy()        --  Deletes given data masking policy
 
-    oracle_home()                       -- Getter for $ORACLE_HOME of this instance
+    _get_browse_options                 --  To get browse options for oracle instance
 
-    version()                           -- Getter for oracle database version
+    _process_browse_response            --  To process browse response
 
-    is_catalog_enabled()                -- Getter to check if catalog is enabled for backups
+    log_stream()                        --  Getter for fetching archive log stream count
 
-    catalog_user()                      -- Getter for getting catalog user
+    oracle_home()                       --  Getter for $ORACLE_HOME of this instance
 
-    catalog_db()                        -- Getter for catalog database name
+    version()                           --  Getter for oracle database version
 
-    archive_log_dest()                  -- Getter for archivelog destination
+    is_catalog_enabled()                --  Getter to check if catalog is enabled for backups
 
-    os_user()                           -- Getter for OS user owning oracle software
+    catalog_user()                      --  Getter for getting catalog user
 
-    cmd_sp()                            -- Getter for command line storage policy
+    catalog_db()                        --  Getter for catalog database name
 
-    log_sp()                            -- Getter for log storage policy
+    archive_log_dest()                  --  Getter for archivelog destination
 
-    is_autobackup_on()                  -- Getter to check if autobackup is enabled
+    os_user()                           --  Getter for OS user owning oracle software
 
-    db_user()                           -- Getter for SYS database user name
+    cmd_sp()                            --  Getter for command line storage policy
 
-    tns_name()                          -- Getter for TNS connect string
+    log_sp()                            --  Getter for log storage policy
 
-    dbid()                              -- Getter for getting DBID of database
+    is_autobackup_on()                  --  Getter to check if autobackup is enabled
 
-    restore()                           -- Method to restore the instance
+    db_user()                           --  Getter for SYS database user name
+
+    tns_name()                          --  Getter for TNS connect string
+
+    dbid()                              --  Getter for getting DBID of database
+
+    restore()                           --  Performs restore on the instance
 
 """
 from __future__ import unicode_literals
@@ -84,10 +94,62 @@ class OracleInstance(Instance):
         """
         super(OracleInstance, self).__init__(
             agent_object, instance_name, instance_id)
-        self._instanceprop = {}  # instance variable to hold instance properties
+        self._get_instance_properties()
+
+    def _get_instance_properties(self):
+        """Gets the properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        super(OracleInstance, self)._get_instance_properties()
+        self._instanceprop = self._properties['oracleInstance']
+
+    def _get_instance_properties_json(self):
+        """ Gets all the instance related properties of Informix instance.
+
+           Returns:
+                dict - all instance properties put inside a dict
+
+        """
+        instance_json = {
+            "instanceProperties":
+                {
+                    "instance": self._instance,
+                    "oracleInstance": self._instanceprop
+                }
+        }
+        return instance_json
+
+    @property
+    def log_stream(self):
+        """
+        Getter to fetch log stream count at instance level
+
+            Returns:
+                    int     --  log stream count atinstance level
+
+        """
+        return self._instanceprop.get("numberOfArchiveLogBackupStreams")
+
+    @log_stream.setter
+    def log_stream(self, log_stream=1):
+        """
+        Setter to set log stream count at instance level
+
+            Args:
+                log_stream    (int)    --  log stream count at instance level
+                                           default = 1
+        """
+        self._set_instance_properties(
+            "_instanceprop['numberOfArchiveLogBackupStreams']", log_stream)
 
     def configure_data_masking_policy(self, policy_name, table_list_of_dict):
-        """Method to configure data masking policy with given parameters
+        """Configures data masking policy with given parameters
         Args:
             policy_name         (str)   --  string representing policy name
             table_list_of_dict  list(dict)  -- list containing one dict item representing
@@ -174,7 +236,7 @@ class OracleInstance(Instance):
                                self._update_response_(response.text))
 
     def get_masking_policy_id(self, policy_name):
-        """Method to get policy id of given data masking policy
+        """Returns policy id of given data masking policy
         Args:
             policy_name          (str)       -- data masking policy name
 
@@ -199,7 +261,7 @@ class OracleInstance(Instance):
         return policy_id
 
     def delete_data_masking_policy(self, policy_name):
-        """Method to delete given data masking policy
+        """Deletes given data masking policy
         Args:
             policy_name         (str)       --  data masking policy name to be deleted
 
@@ -254,7 +316,7 @@ class OracleInstance(Instance):
             policy_name,
             destination_client=None,
             destination_instance=None):
-        """Method to launch standalone data masking job on given instance
+        """Launch standalone data masking job on given instance
 
         Args:
 
@@ -293,25 +355,27 @@ class OracleInstance(Instance):
                 'Instance',
                 '106')
         request_json = self._restore_json(paths=r'/')
+        destination_instance_json = {
+            "clientName": destination_client,
+            "instanceName": destination_instance,
+            "instanceId": destination_instance_id
+        }
         data_masking_options = {
-            "restoreOptions": {
-                "destination": {
-                    "destClient": {
-                        "clientName": destination_client},
-                    "destinationInstance": {
-                        "clientName": destination_client,
-                        "instanceName": destination_instance,
-                        "instanceId": destination_instance_id}},
-                "dbDataMaskingOptions": {
-                    "isStandalone": True,
-                    "enabled": True,
-                    "dbDMPolicy": {
-                        "association": {
-                            "instanceId": source_instance_id},
-                        "policy": {
-                            "policyId": policy_id,
-                            "policyName": policy_name}}}}}
-        request_json["taskInfo"]["subTasks"][0]["options"] = data_masking_options
+            "isStandalone": True,
+            "enabled": True,
+            "dbDMPolicy": {
+                "association": {
+                    "instanceId": source_instance_id},
+                "policy": {
+                    "policyId": policy_id,
+                    "policyName": policy_name}}}
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["destination"]["destClient"]["clientName"] = destination_client
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["destination"]["destinationInstance"] = destination_instance_json
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["dbDataMaskingOptions"] = data_masking_options
+        del request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"]
         return self._process_restore_response(request_json)
 
     def _get_oracle_restore_json(self, destination_client,
@@ -375,7 +439,7 @@ class OracleInstance(Instance):
         return restore_json
 
     def _get_browse_options(self):
-        """Method to return the database instance properties for browse and restore"""
+        """Returns the database instance properties for browse and restore"""
         return {
             "path": "/",
             "entity": {
@@ -648,7 +712,7 @@ class OracleInstance(Instance):
             browse_option=None,
             oracle_options=None):
         """
-        Method to restore full/partial database using latest backup or backup copy
+        Perform restore full/partial database using latest backup or backup copy
 
         Args:
             files   (dict)    --  fileOption for restore

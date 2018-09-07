@@ -2697,30 +2697,35 @@ class Client(object):
             self._network = None
 
     def set_encryption_property(self,
-                                value,
+                                enc_setting="USE_SPSETTINGS",
                                 key=None,
                                 key_len=None):
         """updates encryption properties on client
+
         Args:
-            value   (str)   --  enable(True) or disable (False) encryption
-            key     (str)   --  cipher type
-            key_len  (str)   --  cipher key length
 
+            enc_setting (str)   --  sets encryption level on client
+                                    (USE_SPSETTINGS / OFF/ ON_CLIENT)
+            default : USE_SPSETTINGS
 
-            to enable encryption : give value, key, key_len params
-            to disable: give value param
+            key         (str)   --  cipher type
+
+            key_len     (str)   --  cipher key length
+
+            to enable encryption    : client_object.set_encryption_property("ON_CLIENT", "TwoFish", "256")
+            to disable encryption   : client_object.set_encryption_property("OFF")
 
         """
-
         client_props = self._properties['clientProps']
-
-        if value is True:
-            client_props['CipherType'] = key
-            client_props['EnableEncryption'] = value
-            client_props['EncryptKeyLength'] = int(key_len)
-
+        if enc_setting is not None:
+            client_props['encryptionSettings'] = enc_setting
+            if enc_setting is "ON_CLIENT":
+                if not (isinstance(key, basestring) and isinstance(key_len, basestring)):
+                    raise SDKException('Client', '101')
+                client_props['CipherType'] = key
+                client_props['EncryptKeyLength'] = int(key_len)
         else:
-            client_props['EnableEncryption'] = value
+            raise SDKException('Response', '102')
 
         request_json = self._update_client_props_json(client_props)
 
@@ -2785,7 +2790,6 @@ class Client(object):
                                 32768
                                 65536
                                 131072
-
 
         """
         if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):

@@ -207,7 +207,7 @@ class PostgreSQLInstance(Instance):
 
         self.postgres_restore_json = self._postgres_restore_options = {
             "restoreToSameServer": False,
-            "tableLevelRestore": False,
+            "tableLevelRestore": value.get("table_level_restore", False),
             "instanceRestore": False,
             "fsBackupSetRestore": value.get("backupset_flag", ""),
             "isCloneRestore": value.get("clone_env", False),
@@ -223,6 +223,16 @@ class PostgreSQLInstance(Instance):
             self.postgres_restore_json["fromTime"] = time_value
             self.postgres_restore_json["pointOfTime"] = time_value
 
+        if value.get("table_level_restore"):
+            self.postgres_restore_json["stagingPath"] = value.get("staging_path", "")
+            self.postgres_restore_json["auxilaryMap"] = []
+            database_list = []
+            for table_path in value.get("paths"):
+                database_list.append(table_path.split('/')[1])
+            database_list = set(database_list)
+            for database_name in database_list:
+                self.postgres_restore_json["auxilaryMap"].append({"sourceDB": database_name})
+
     def restore_in_place(
             self,
             path,
@@ -235,7 +245,10 @@ class PostgreSQLInstance(Instance):
             from_time=None,
             to_time=None,
             clone_env=False,
-            clone_options=None):
+            clone_options=None,
+            media_agent=None,
+            table_level_restore=False,
+            staging_path=None):
         """Restores the postgres data/log files specified in the input paths
         list to the same location.
 
@@ -289,6 +302,19 @@ class PostgreSQLInstance(Instance):
                                         "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
                                      }
 
+                media_agent             (str)   --  media agent name
+
+                    default: None
+
+                table_level_restore     (bool)  --  boolean to specify if the restore operation
+                is table level
+
+                    default: False
+
+                staging_path            (str)   --  staging path location for table level restore
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -321,6 +347,9 @@ class PostgreSQLInstance(Instance):
             from_time=from_time,
             to_time=to_time,
             clone_env=clone_env,
-            clone_options=clone_options)
+            clone_options=clone_options,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            staging_path=staging_path)
 
         return self._process_restore_response(request_json)

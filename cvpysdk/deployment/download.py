@@ -93,7 +93,7 @@ class Download(object):
             -   For Latest hotfixes for the installed service pack
 
                 >>> commcell_obj.download_software(
-                        options='DownloadOptions.lATEST_HOTFIXES.value',
+                        options='DownloadOptions.LATEST_HOTFIXES.value',
                         os_list=[DownloadPackages.WINDOWS_64.value,
                                 DownloadPackages.UNIX_LINUX64.value]
                         )
@@ -121,7 +121,7 @@ class Download(object):
                 'isSpDelayedDays': True,
                 'isHotfixesDownload': False
             }
-        elif DownloadOptions.lATEST_HOTFIXES.value == options:
+        elif DownloadOptions.LATEST_HOTFIXES.value == options:
             self.update_option = {
                 'SPName': 'hotfix',
                 'IsSPName': False,
