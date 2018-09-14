@@ -19,11 +19,18 @@ Requirements
 Installing CVPySDK
 ------------------
 
+CVPySDK can be installed directly from PyPI using pip:
+
+    >>> pip install cvpysdk
+
+
 CVPySDK is available on GitHub `here <https://github.com/CommvaultEngg/cvpysdk>`_
 
-It can be installed from source. After downloading, from within the ``cvpysdk`` directory, execute::
+It can also be installed from source.
 
-    python setup.py install
+After downloading, from within the ``cvpysdk`` directory, execute:
+
+    >>> python setup.py install
 
 
 Using CVPySDK
@@ -107,9 +114,9 @@ On Windows, if CVPySDK was installed using an ``.exe`` or ``.msi``
 installer, simply use the uninstall feature of "**Add/Remove Programs**" in the
 Control Panel.
 
-Alternatively, you can uninstall using the **pip** command::
+Alternatively, you can uninstall using the **pip** command:
 
-	pip uninstall cvpysdk
+    >>> pip uninstall cvpysdk
 
 
 Subclient Support
@@ -125,7 +132,7 @@ Subclient operations are currently supported for the following Agents:
 
 #. SQL Server
 
-#. NAS
+#. NAS / NDMP
 
 #. SAP HANA
 
@@ -134,6 +141,20 @@ Subclient operations are currently supported for the following Agents:
 #. Sybase
 
 #. SAP ORACLE
+
+#. Exchange Database
+
+#. Exchange Mailbox
+
+#. Informix
+
+#. Notes Database
+
+#. MySQL
+
+#. PostgreS
+
+#. Big Data Apps
 
 
 Documentation
@@ -155,14 +176,21 @@ Contribution Guidelines
 
 Pull Requests
 *************
-- CVPySDK has 3 branches, namely:
+- CVPySDK has 2 active branches, namely:
     - **master**
     - **dev**
-    - **test**
+
+    * where the other branches refer to the already released code / branched code, which may only get some bug-fixes, with no active development
+        - SP7
+        - SP8
+        - SP9
+        - SP10
+        - SP11
+        - SP12
+        - SP13
 
 - The contributor should *Fork* the **dev** branch, and make their changes on top of it, and open a *Pull Request*
-- The **test** branch will Synced with the **dev** branch after every **n** commits, depending on the commit size
-- The **master** branch will then be updated with the **test** branch, once everything is verified
+- The **master** branch will then be updated with the **dev** branch, once everything is verified
 
  **Note:** The SDK team will not accept any *Pull Requests* on the **master** branch
 

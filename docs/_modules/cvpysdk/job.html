@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.job &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.job &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -61,6 +61,13 @@
 
 <span class="sd">    _get_jobs_list()            --  executes the request, and parses and returns the jobs response</span>
 
+<span class="sd">    _get_jobs_request_json(**options)</span>
+<span class="sd">                                --  Returns the request json for the jobs request</span>
+
+<span class="sd">    _modify_all_jobs(operation_type=None)</span>
+<span class="sd">                                --  executes a request on the server to suspend/resume/kill all</span>
+<span class="sd">                                        the jobs on the commserver.</span>
+
 <span class="sd">    all_jobs()                  --  returns all the jobs on this commcell</span>
 
 <span class="sd">    active_jobs()               --  returns the dict of active jobs and their details</span>
@@ -69,6 +76,13 @@
 
 <span class="sd">    get()                       --  returns the Job class instance for the given job id</span>
 
+<span class="sd">    modify_jobmanagement_options -- executes a request to modify job management options on commcell</span>
+
+<span class="sd">    kill_all_jobs()             -- Kills all jobs on the commcell</span>
+
+<span class="sd">    resume_all_jobs()           -- Resumes all jobs on the commcell</span>
+
+<span class="sd">    suspend_all_jobs()          -- Suspends all jobs on the commcell</span>
 
 <span class="sd">Job</span>
 <span class="sd">===</span>
@@ -369,6 +383,68 @@
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_modify_all_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Executes a request on the server to suspend/resume/kill all the jobs on the commserver</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                operation_type     (str)   --  All jobs on commcell will be changed to this</span>
+<span class="sd">                                                    state.</span>
+<span class="sd">                                                    Options:</span>
+<span class="sd">                                                        suspend/resume/kill</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    - Invalid input is passed to the module</span>
+
+<span class="sd">                    - Failed to execute the api to modify jobs</span>
+
+<span class="sd">                    - Response is incorrect</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">job_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;suspend&#39;</span><span class="p">:</span> <span class="s1">&#39;JOB_SUSPEND&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;resume&#39;</span><span class="p">:</span> <span class="s1">&#39;JOB_RESUME&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;kill&#39;</span><span class="p">:</span> <span class="s1">&#39;JOB_KILL&#39;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">operation_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">job_map</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Invalid input&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+           <span class="s2">&quot;JobManager_PerformMultiCellJobOpReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+              <span class="s2">&quot;jobOpReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                 <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="n">job_map</span><span class="p">[</span><span class="n">operation_type</span><span class="p">]</span>
+              <span class="p">},</span>
+              <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;ALL_JOBS&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;operationDescription&quot;</span><span class="p">:</span> <span class="s2">&quot;All jobs&quot;</span>
+           <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_qoperation_execute</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;errLogMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to </span><span class="si">{0}</span><span class="s2"> all jobs with error: [</span><span class="si">{1}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">operation_type</span><span class="p">,</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errLogMessage&#39;</span><span class="p">]</span>
+                            <span class="p">)</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Job&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Error Code:&quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">Error Message: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span>
+                                       <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                       <span class="s2">&quot;Failed to </span><span class="si">{0}</span><span class="s2"> all jobs&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">operation_type</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
 <div class="viewcode-block" id="JobController.all_jobs"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.all_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">all_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lookup_time</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">job_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the dict consisting of all the jobs executed on the Commcell within the number</span>
 <span class="sd">            of hours specified in lookup time value.</span>
@@ -602,6 +678,18 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_jobs_list</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="JobController.suspend_all_jobs"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.suspend_all_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">suspend_all_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Suspends all the jobs on the commserver &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_all_jobs</span><span class="p">(</span><span class="s1">&#39;suspend&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobController.resume_all_jobs"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.resume_all_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">resume_all_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Resumes all the jobs on the commserver &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_all_jobs</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobController.kill_all_jobs"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.kill_all_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">kill_all_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Kills all the jobs on the commserver &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_all_jobs</span><span class="p">(</span><span class="s1">&#39;kill&#39;</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="JobController.get"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the job object for the given job id.</span>
 
@@ -616,7 +704,47 @@
 <span class="sd">                    if no job with specified job id exists</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobController.modify_jobmanagement_options"><a class="viewcode-back" href="../../job.html#cvpysdk.job.JobController.modify_jobmanagement_options">[docs]</a>    <span class="k">def</span> <span class="nf">modify_jobmanagement_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">property_name</span><span class="p">,</span> <span class="n">property_value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Executes a request to modify job management options on commcell</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                property_name (str)   --  property Name to modify/update in Job Management</span>
+
+<span class="sd">                propery_value (str)   --  property Value to modify/update in Job Management</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    - Failed to execute the api to modify property</span>
+
+<span class="sd">                    - response is empty</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">property_name</span><span class="p">,</span>
+             <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">property_value</span>
+            <span class="p">}</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_set_gxglobalparam_value</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to modify </span><span class="si">{0}</span><span class="s2"> with error: [</span><span class="si">{1}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">property_name</span><span class="p">,</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
+
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Job&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;Error Code:&quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">Error Message: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="Job"><a class="viewcode-back" href="../../job.html#cvpysdk.job.Job">[docs]</a><span class="k">class</span> <span class="nc">Job</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -996,6 +1124,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_details</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size_of_application</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the size of application as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;sizeOfApplication&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;sizeOfApplication&#39;</span><span class="p">]</span>
+
 <div class="viewcode-block" id="Job.pause"><a class="viewcode-back" href="../../job.html#cvpysdk.job.Job.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_for_job_to_pause</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Suspends the job.</span>
 
@@ -1143,7 +1277,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

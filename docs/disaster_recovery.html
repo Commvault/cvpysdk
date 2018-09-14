@@ -1,0 +1,234 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Disaster Recovery &#8212; Developer SDK - Python 11.13 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Domains" href="domains.html" />
+    <link rel="prev" title="CVPySDK" href="cvpysdk.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.disasterrecovery">
+<span id="disaster-recovery"></span><h1>Disaster Recovery<a class="headerlink" href="#module-cvpysdk.disasterrecovery" title="Permalink to this headline">¶</a></h1>
+<p>Class to perform all the disaster recovery operations on commcell</p>
+<p>DisasterRecovery is the only class defined in this file</p>
+<p>DisasterRecovery: Helper class to perform DR operations</p>
+<p>DisasterRecovery:</p>
+<blockquote>
+<div><p>__init__()                    –  initializes DR helper object</p>
+<p>disaster_recovery_backup()    –  function to run DR backup</p>
+<p>_process_drbackup_response()  – process the disaster recovery backup request</p>
+<p>restore_out_of_place()        – function to run DR restore operation</p>
+<dl class="docutils">
+<dt>drbackupwithjson()            – Run DR backup with JSON including clients with</dt>
+<dd>sendlogfiles.</dd>
+</dl>
+<p>_generatedrbackupjson()       – Generate JSON corresponds to DR backup job</p>
+<dl class="docutils">
+<dt>_process_createtask_response()– Runs the CreateTask API with the request JSON</dt>
+<dd>provided for DR backup.</dd>
+</dl>
+<p>_filter_paths()               – Filters the paths based on the Operating System and Agent.</p>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.disasterrecovery.DisasterRecovery">
+<em class="property">class </em><code class="descclassname">cvpysdk.disasterrecovery.</code><code class="descname">DisasterRecovery</code><span class="sig-paren">(</span><em>commcell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/disasterrecovery.html#DisasterRecovery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.disasterrecovery.DisasterRecovery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class to perform all the disaster recovery operations on commcell</p>
+<dl class="attribute">
+<dt id="cvpysdk.disasterrecovery.DisasterRecovery.backup_type">
+<code class="descname">backup_type</code><a class="headerlink" href="#cvpysdk.disasterrecovery.DisasterRecovery.backup_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the backup_type as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.disasterrecovery.DisasterRecovery.client_list">
+<code class="descname">client_list</code><a class="headerlink" href="#cvpysdk.disasterrecovery.DisasterRecovery.client_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the client_list as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.disasterrecovery.DisasterRecovery.disaster_recovery_backup">
+<code class="descname">disaster_recovery_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/disasterrecovery.html#DisasterRecovery.disaster_recovery_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.disasterrecovery.DisasterRecovery.disaster_recovery_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a DR job for Commserv</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>backup_level        (str)   –  level of backup the user wish to run</dt>
+<dd><blockquote class="first">
+<div>Full / / Differential</div></blockquote>
+<p class="last">default: Full</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this backup job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if backup level specified is not correct</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.disasterrecovery.DisasterRecovery.iscompression_enabled">
+<code class="descname">iscompression_enabled</code><a class="headerlink" href="#cvpysdk.disasterrecovery.DisasterRecovery.iscompression_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the iscompressionenabled as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.disasterrecovery.DisasterRecovery.restore_out_of_place">
+<code class="descname">restore_out_of_place</code><span class="sig-paren">(</span><em>client</em>, <em>destination_path</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em>, <em>fs_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/disasterrecovery.html#DisasterRecovery.restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.disasterrecovery.DisasterRecovery.restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the files/folders specified in the input paths list to the input client,
+at the specified destionation location.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>client                (str/object) –  either the name of the client or</dt>
+<dd>the instance of the Client</dd>
+</dl>
+<p>destination_path      (str)        –  full path of the restore location on client</p>
+<dl class="last docutils">
+<dt>paths                 (list)       –  list of full paths of</dt>
+<dd>files/folders to restore</dd>
+<dt>overwrite             (bool)       –  unconditional overwrite files during restore</dt>
+<dd>default: True</dd>
+<dt>restore_data_and_acl  (bool)       –  restore data and ACL files</dt>
+<dd>default: True</dd>
+<dt>copy_precedence         (int)   –  copy precedence value of storage policy copy</dt>
+<dd>default: None</dd>
+<dt>from_time           (str)       –  time to retore the contents after</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>to_time           (str)         –  time to retore the contents before</dt>
+<dd><blockquote class="first">
+<div>format: YYYY-MM-DD HH:MM:SS</div></blockquote>
+<p class="last">default: None</p>
+</dd>
+<dt>fs_options      (dict)          – dictionary that includes all advanced options</dt>
+<dd><dl class="first last docutils">
+<dt>options:</dt>
+<dd><p class="first">preserve_level      : preserve level option to set in restore
+proxy_client        : proxy that needed to be used for restore
+impersonate_user    : Impersonate user options for restore
+impersonate_password: Impersonate password option for restore</p>
+<blockquote>
+<div>in base64 encoded form</div></blockquote>
+<dl class="docutils">
+<dt>all_versions <span class="classifier-delimiter">:</span> <span class="classifier">if set to True restores all the versions of the</span></dt>
+<dd>specified file</dd>
+</dl>
+<p class="last">versions            : list of version numbers to be backed up</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if client is not a string or Client instance</p>
+<p>if destination_path is not a string</p>
+<p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="cvpysdk.html" title="previous chapter">CVPySDK</a></li>
+      <li>Next: <a href="domains.html" title="next chapter">Domains</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/disaster_recovery.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/disaster_recovery.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

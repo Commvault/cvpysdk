@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclients.sybasesubclient &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.subclients.sybasesubclient &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -57,6 +57,20 @@
 
 <span class="sd">    _sybase_backup_request_json         -- Returns the JSON request to pass to the API as per the options selected by the user</span>
 
+<span class="sd">    is_snapenabled()                    -- Check if intellisnap has been enabled in the subclient and sets it accordingly</span>
+
+<span class="sd">    snap_engine()                       -- updates snap_engine for sybase subclient</span>
+
+<span class="sd">    snap_proxy()                        -- updates proxy name from sybase snap operation</span>
+
+<span class="sd">    use_dump_based_backup_copy()        -- updates the use of dump based method for backup copy</span>
+
+<span class="sd">    dump_based_backup_copy_option()     -- updates subtype of dump based operation</span>
+
+<span class="sd">    configured_instance()               -- updates configured instance name for dump based backup copy type 1</span>
+
+<span class="sd">    auxiliary_sybase_server()           -- updates custom instance properties for dump based backup copy type 2</span>
+
 <span class="sd">    content()                           -- update the content of the sybase  subclient</span>
 
 <span class="sd">    backup()                            -- Run a backup job for the subclient</span>
@@ -97,6 +111,9 @@
         <span class="k">if</span> <span class="s1">&#39;content&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
 
+        <span class="k">if</span> <span class="s1">&#39;snapCopyInfo&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;snapCopyInfo&#39;</span><span class="p">]</span>
+
     <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;get the all subclient related properties of this subclient.</span>
 
@@ -111,14 +128,15 @@
                     <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
                     <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">,</span>
                     <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
-                    <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                    <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;snapCopyInfo&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span>
                 <span class="p">}</span>
         <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">_sybase_backup_request_json</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">backup_level</span><span class="p">,</span>
-            <span class="n">donottruncatelog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sybaseskipfullafterlogbkp</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">donottruncatelog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sybaseskipfullafterlogbkp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createbackupcopyimmediately</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">backupcopytype</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the JSON request to pass to the API as per the options selected by the user.</span>
 
@@ -130,6 +148,11 @@
 
 <span class="sd">               sybaseskipfullafterlogbkp (bool) -- Sybase backup option for incremental</span>
 
+<span class="sd">               createbackupcopyimmediately(bool)  -- Sybase snap job needs this backup copy operation</span>
+
+<span class="sd">               backupcopytype(int)            --   backup copy job to be launched based on below two options</span>
+<span class="sd">                default : 2, possible values : 1 (USING_STORAGE_POLICY_RULE), 2( USING_LATEST_CYCLE)</span>
+
 <span class="sd">            Returns:</span>
 <span class="sd">                dict - JSON request to pass to the API</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -138,10 +161,204 @@
             <span class="s2">&quot;doNotTruncateLog&quot;</span><span class="p">:</span> <span class="n">donottruncatelog</span><span class="p">,</span>
             <span class="s2">&quot;sybaseSkipFullafterLogBkp&quot;</span><span class="p">:</span> <span class="n">sybaseskipfullafterlogbkp</span>
         <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">createbackupcopyimmediately</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">sub_opt</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;dataOpt&quot;</span><span class="p">:</span>
+                       <span class="p">{</span>
+                           <span class="s2">&quot;createBackupCopyImmediately&quot;</span><span class="p">:</span> <span class="n">createbackupcopyimmediately</span><span class="p">,</span>
+                           <span class="s2">&quot;backupCopyType&quot;</span><span class="p">:</span> <span class="n">backupcopytype</span>
+                       <span class="p">}</span>
+                       <span class="p">}</span>
+            <span class="n">sybase_options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sub_opt</span><span class="p">)</span>
+
         <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;backupOpts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="n">sybase_options</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_snapenabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to check whether the subclient has snap enabled</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Bool - True if snap is enabled on the subclient. Else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;isSnapBackupEnabled&#39;</span><span class="p">]</span>
+
+    <span class="nd">@is_snapenabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_snapenabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to set is snap enabled to true or false</span>
+<span class="sd">        Args:</span>
+<span class="sd">            value           (bool) --   to enable snap at subclient level or not</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;isSnapBackupEnabled&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">snap_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to fetch snap_engine</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str     --  name of snap engine at subclient level</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;snapToTapeSelectedEngine&#39;</span><span class="p">][</span><span class="s1">&#39;snapShotEngineName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@snap_engine</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">snap_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to set snap engine name</span>
+<span class="sd">        Args:</span>
+<span class="sd">            engine_name           (str) --   snap engine name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;snapToTapeSelectedEngine&#39;][&#39;snapShotEngineName&#39;]&quot;</span><span class="p">,</span> <span class="n">engine_name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">snap_proxy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to snap_proxy if set any</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str     --  name of proxy client used for intellisnap operation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;snapToTapeProxyToUse&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@snap_proxy</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">snap_proxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to set snap proxy name</span>
+<span class="sd">        Args:</span>
+<span class="sd">            proxy_name           (str) --   snap proxy name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;snapToTapeProxyToUse&#39;][&#39;clientName&#39;]&quot;</span><span class="p">,</span> <span class="n">proxy_name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">use_dump_based_backup_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to status of dumpbased backup copy</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool     --  checks if dump based backup copy is enabled or not</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;useDumpBasedBackupCopy&#39;</span><span class="p">]</span>
+
+    <span class="nd">@use_dump_based_backup_copy</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">use_dump_based_backup_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dump_based</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to enable dump based backup copy</span>
+<span class="sd">        Args:</span>
+<span class="sd">            dump_based           (bool) --   set true  to enable dump based backup copy option</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;useDumpBasedBackupCopy&#39;]&quot;</span><span class="p">,</span> <span class="n">dump_based</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dump_based_backup_copy_option</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to fetch dumpbased backup copy option : 1(configured instance), 2(custom new instance)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int     --  returns 1 or 2 based type of sybase instance configured</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;dumpBasedBackupCopyOption&#39;</span><span class="p">]</span>
+
+    <span class="nd">@dump_based_backup_copy_option</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">dump_based_backup_copy_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dump_based_backup_copy_option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to enable dump based backup copy</span>
+<span class="sd">        Args:</span>
+<span class="sd">            dump_based_backup_copy_option      (int) --   set 1(configured instance), 2(custom new instance)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;dumpBasedBackupCopyOption&#39;]&quot;</span><span class="p">,</span> <span class="n">dump_based_backup_copy_option</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">configured_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter to fetch configured isntance name if dump based backup copy option is 2</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (str)       --      string of configured instance if dump based backup option is 1</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDK Exception</span>
+<span class="sd">                if dump based backup copy not enabled</span>
+
+<span class="sd">                if dump based copy option is not 1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;useDumpBasedBackupCopy&#39;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;dumpBasedBackupCopyOption&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;configuredSybaseInstance&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Invalid dump based copy option set. cannot get this parameter&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s2">&quot;Dump based parameter is not available&quot;</span><span class="p">)</span>
+
+    <span class="nd">@configured_instance</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">configured_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter for configured instance name for dump based backup copy option</span>
+<span class="sd">        Args:</span>
+<span class="sd">            instance_name       (str) --    string of instance name to be used for dump based backup copy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;configuredSybaseInstance&#39;][&#39;instanceName&#39;]&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance_name</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">auxiliary_sybase_server</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter to fetch custom instance properties if dump based copy option is 2</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict        --  dict of four properties : sybase_home, sybase_ase, sybase_ocs, sybase_user for custom instance</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDK Exception</span>
+<span class="sd">                if dump based backup copy not enabled</span>
+
+<span class="sd">                if dump based copy option is not 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_dump_based_backup_copy</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_based_backup_copy_option</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">auxiliary_sybase_server</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;sybaseHome&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;sybaseHome&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;sybaseASE&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;sybaseASE&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;sybaseOCS&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;sybaseOCS&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;sybaseUser&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapCopyInfo</span><span class="p">[</span><span class="s1">&#39;sybaseUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+                <span class="k">return</span> <span class="n">auxiliary_sybase_server</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Invalid dump based copy option set. cannot get this parameter&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s2">&quot;dump based parameter is not available&quot;</span><span class="p">)</span>
+
+    <span class="nd">@auxiliary_sybase_server</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">auxiliary_sybase_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_properties</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter  custom instance properties if dump based copy option is 2</span>
+<span class="sd">        Args:</span>
+<span class="sd">            instance_properties     (dict)       --  dict of four properties : sybase_home, sybase_ase, sybase_ocs, sybase_user for custom instance</span>
+
+<span class="sd">            Sample dict:</span>
+<span class="sd">            instance_properties = {</span>
+<span class="sd">                        &#39;sybaseHome&#39;:sybase_home,</span>
+<span class="sd">                        &#39;sybaseASE&#39;:sybase_ase,</span>
+<span class="sd">                        &#39;sybaseOCS&#39;:sybase_ocs,</span>
+<span class="sd">                        &#39;sybaseUser&#39;:sybase_user</span>
+<span class="sd">                }</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDK Exception</span>
+
+<span class="sd">                if None value in instance_properties</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">instance_properties</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;One of the sybase custom instance parameter is None so cannot proceed&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;sybaseHome&#39;]&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance_properties</span><span class="p">[</span><span class="s1">&#39;sybaseHome&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;sybaseASE&#39;]&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance_properties</span><span class="p">[</span><span class="s1">&#39;sybaseASE&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_snapCopyInfo[&#39;sybaseOCS&#39;]&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance_properties</span><span class="p">[</span><span class="s1">&#39;sybaseOCS&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_snapCopyInfo[&#39;sybaseUser&#39;][&#39;userName&#39;]&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">instance_properties</span><span class="p">[</span><span class="s1">&#39;sybaseUser&#39;</span><span class="p">]))</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -172,12 +389,21 @@
             <span class="n">content_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sybase_server_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_content&quot;</span><span class="p">,</span> <span class="n">content_new</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SybaseSubclient.backup"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.sybasesubclient.SybaseSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_level</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">donottruncatelog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sybaseskipfullafterlogbkp</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="SybaseSubclient.backup"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.sybasesubclient.SybaseSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_level</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">donottruncatelog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sybaseskipfullafterlogbkp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createbackupcopyimmediately</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">backupcopytype</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            backup_level (str)  -- Level of backup. Can be full, incremental or differential</span>
 <span class="sd">             default: full</span>
+
+<span class="sd">            donottruncatelog (bool) -- Sybase truncate log option for incremental backup</span>
+
+<span class="sd">            sybaseskipfullafterlogbkp (bool) -- Sybase backup option for incremental</span>
+
+<span class="sd">            createbackupcopyimmediately(bool)  -- Sybase snap job needs this backup copy operation</span>
+
+<span class="sd">            backupcopytype(int)            --   backup copy job to be launched based on below two options</span>
+<span class="sd">                default : 2, possible values : 1 (USING_STORAGE_POLICY_RULE), 2( USING_LATEST_CYCLE)</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            object -- instance of Job class</span>
@@ -201,8 +427,13 @@
             <span class="n">donottruncatelog</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">sybaseskipfullafterlogbkp</span> <span class="o">=</span> <span class="kc">False</span>
 
+        <span class="k">if</span> <span class="n">createbackupcopyimmediately</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">backup_level</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;incremental&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Backup Copy job is not valid for Transaction Log Backup &#39;</span><span class="p">)</span>
+
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sybase_backup_request_json</span><span class="p">(</span>
-            <span class="n">backup_level</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">donottruncatelog</span><span class="p">,</span> <span class="n">sybaseskipfullafterlogbkp</span><span class="p">)</span>
+            <span class="n">backup_level</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">donottruncatelog</span><span class="p">,</span> <span class="n">sybaseskipfullafterlogbkp</span><span class="p">,</span> <span class="n">createbackupcopyimmediately</span><span class="p">,</span> <span class="n">backupcopytype</span><span class="p">)</span>
 
         <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
 
@@ -245,7 +476,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

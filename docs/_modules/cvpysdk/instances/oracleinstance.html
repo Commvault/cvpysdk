@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.instances.oracleinstance &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.instances.oracleinstance &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -48,39 +48,47 @@
 
 <span class="sd">OracleInstance:</span>
 
-<span class="sd">    __init__()                  -- Constructor for the class</span>
+<span class="sd">    __init__()                          -- Constructor for the class</span>
 
-<span class="sd">    _get_browse_options         -- Method to get browse options for oracle instance</span>
+<span class="sd">    configure_data_masking_policy()     --  Method to configure data masking policy with given parameters</span>
 
-<span class="sd">    _process_browse_response    -- Method to process browse response</span>
+<span class="sd">    get_masking_policy_id()             --  Method to get policy id of given data masking policy</span>
 
-<span class="sd">    oracle_home()               -- Getter for $ORACLE_HOME of this instance</span>
+<span class="sd">    standalone_data_masking()           --  Method to launch standalone data masking job on given instance</span>
 
-<span class="sd">    version()                   -- Getter for oracle database version</span>
+<span class="sd">    delete_data_masking_policy()        --  Method to delete given data masking policy</span>
 
-<span class="sd">    is_catalog_enabled()        -- Getter to check if catalog is enabled for backups</span>
+<span class="sd">    _get_browse_options                 -- Method to get browse options for oracle instance</span>
 
-<span class="sd">    catalog_user()              -- Getter for getting catalog user</span>
+<span class="sd">    _process_browse_response            -- Method to process browse response</span>
 
-<span class="sd">    catalog_db()                -- Getter for catalog database name</span>
+<span class="sd">    oracle_home()                       -- Getter for $ORACLE_HOME of this instance</span>
 
-<span class="sd">    archive_log_dest()          -- Getter for archivelog destination</span>
+<span class="sd">    version()                           -- Getter for oracle database version</span>
 
-<span class="sd">    os_user()                   -- Getter for OS user owning oracle software</span>
+<span class="sd">    is_catalog_enabled()                -- Getter to check if catalog is enabled for backups</span>
 
-<span class="sd">    cmd_sp()                    -- Getter for command line storage policy</span>
+<span class="sd">    catalog_user()                      -- Getter for getting catalog user</span>
 
-<span class="sd">    log_sp()                    -- Getter for log storage policy</span>
+<span class="sd">    catalog_db()                        -- Getter for catalog database name</span>
 
-<span class="sd">    is_autobackup_on()          -- Getter to check if autobackup is enabled</span>
+<span class="sd">    archive_log_dest()                  -- Getter for archivelog destination</span>
 
-<span class="sd">    db_user()                   -- Getter for SYS database user name</span>
+<span class="sd">    os_user()                           -- Getter for OS user owning oracle software</span>
 
-<span class="sd">    tns_name()                  -- Getter for TNS connect string</span>
+<span class="sd">    cmd_sp()                            -- Getter for command line storage policy</span>
 
-<span class="sd">    dbid()                      -- Getter for getting DBID of database</span>
+<span class="sd">    log_sp()                            -- Getter for log storage policy</span>
 
-<span class="sd">    restore()                   -- Method to restore the instance</span>
+<span class="sd">    is_autobackup_on()                  -- Getter to check if autobackup is enabled</span>
+
+<span class="sd">    db_user()                           -- Getter for SYS database user name</span>
+
+<span class="sd">    tns_name()                          -- Getter for TNS connect string</span>
+
+<span class="sd">    dbid()                              -- Getter for getting DBID of database</span>
+
+<span class="sd">    restore()                           -- Method to restore the instance</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
@@ -106,8 +114,225 @@
 <span class="sd">            instance_id     --  id of the instance</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">OracleInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">OracleInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># instance variable to hold instance properties</span>
+
+<div class="viewcode-block" id="OracleInstance.configure_data_masking_policy"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.configure_data_masking_policy">[docs]</a>    <span class="k">def</span> <span class="nf">configure_data_masking_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy_name</span><span class="p">,</span> <span class="n">table_list_of_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to configure data masking policy with given parameters</span>
+<span class="sd">        Args:</span>
+<span class="sd">            policy_name             (str)       -- string representing policy name</span>
+<span class="sd">            table_list_of_dict      list(dict)  -- list containing one dict item representing rules for single table</span>
+<span class="sd">            Sample  list</span>
+<span class="sd">            Tables:</span>
+<span class="sd">                    [</span>
+<span class="sd">                    {</span>
+<span class="sd">                    &quot;name&quot;:&quot;schema_name.table_name&quot;,</span>
+<span class="sd">                    &quot;columns&quot;: [ {&quot;name&quot;:&quot;column_name&quot;, &quot;type&quot;:&quot;algorithm_type&quot;}, &quot;arguments&quot;:[list of strings]…]</span>
+<span class="sd">                    }</span>
+<span class="sd">                    ]</span>
+<span class="sd">                    Sample :</span>
+<span class="sd">                    [</span>
+<span class="sd">                    {</span>
+<span class="sd">                    &quot;name&quot;:&quot;HR.NUMNEW&quot;,</span>
+<span class="sd">                    &quot;columns&quot;:[{&quot;name&quot;:&quot;N1&quot;,&quot;type&quot;:0},{&quot;name&quot;:&quot;N2&quot;,&quot;type&quot;:2,&quot;arguments&quot;:[&quot;1000&quot;,&quot;2000&quot;]}]</span>
+<span class="sd">                    },</span>
+<span class="sd">                    {</span>
+<span class="sd">                    &quot;name&quot;:&quot;HR.CHANGE&quot;,</span>
+<span class="sd">                    &quot;columns&quot;:[{&quot;name&quot;:&quot;C1&quot;,&quot;type&quot;:1},{&quot;name&quot;:&quot;C2&quot;,&quot;type&quot;:1}]</span>
+<span class="sd">                    }</span>
+<span class="sd">                    ]</span>
+<span class="sd">            schema_name , table_name, column_name: str</span>
+<span class="sd">            Column type key in main dict takes list of dict as value :</span>
+<span class="sd">            This list of dict represents each column name and type of algorithm and arguments if any for that algorithm</span>
+<span class="sd">            arguments : list of strings</span>
+
+<span class="sd">            Choose appropriate algorithm type and pass necessary arguments based on column type</span>
+
+<span class="sd">            Algorithm       Arguments mandatory             Arguments Format        Algorithm type number</span>
+
+<span class="sd">            Shuffling           NA                              NA                      0</span>
+<span class="sd">            Numeric Range       [min, max]                  [&quot;1000&quot;,&quot;2000&quot;]             2</span>
+<span class="sd">            Numeric Variance    [variance percentage]           [&quot;50&quot;]                  3</span>
+<span class="sd">            FPE                 NA                              NA                      1</span>
+<span class="sd">            Fixed String        string_to_replace           [&quot;string_to_replace&quot;]       4</span>
+
+
+<span class="sd">            Supported Algorithms :</span>
+
+<span class="sd">            Column Type     Algorithms Supported</span>
+
+<span class="sd">            Numeric         Shuffling, FPE, Numeric Range, Numeric Variance</span>
+<span class="sd">            Char            Shuffling , FPE , Fixed String</span>
+<span class="sd">            Varchar         Shuffling , FPE , Fixed String</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;policy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)},</span>
+                <span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;tables&quot;</span><span class="p">:</span> <span class="n">table_list_of_dict</span><span class="p">},</span>
+                <span class="s2">&quot;policy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;policyName&quot;</span><span class="p">:</span> <span class="n">policy_name</span><span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;MASKING_POLICY&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Error while creating Data masking policy</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">error_string</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="OracleInstance.get_masking_policy_id"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.get_masking_policy_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_masking_policy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to get policy id of given data masking policy</span>
+<span class="sd">        Args:</span>
+<span class="sd">            policy_name          (str)       -- data masking policy name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            policy_id            (int)       -- data masking policy ID</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;MASKING_POLICY&#39;</span><span class="p">])</span>
+        <span class="n">response_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">policy_list</span> <span class="o">=</span> <span class="n">response_json</span><span class="p">[</span><span class="s2">&quot;policies&quot;</span><span class="p">]</span>
+        <span class="n">policy_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">policy_list</span><span class="p">:</span>
+            <span class="n">pname</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;policy&quot;</span><span class="p">][</span><span class="s2">&quot;policyName&quot;</span><span class="p">]</span>
+            <span class="n">associated_instance_id</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;association&quot;</span><span class="p">][</span><span class="s2">&quot;instanceId&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">pname</span> <span class="o">==</span> <span class="n">policy_name</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">associated_instance_id</span> <span class="o">==</span> <span class="n">instance_id</span><span class="p">):</span>
+                <span class="n">policy_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;policy&quot;</span><span class="p">][</span><span class="s2">&quot;policyId&quot;</span><span class="p">])</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">policy_id</span></div>
+
+<div class="viewcode-block" id="OracleInstance.delete_data_masking_policy"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.delete_data_masking_policy">[docs]</a>    <span class="k">def</span> <span class="nf">delete_data_masking_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to delete given data masking policy</span>
+<span class="sd">        Args:</span>
+<span class="sd">            policy_name         (str)       --  data masking policy name to be deleted</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool                            -- returns true when deletion succeeds</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception</span>
+
+<span class="sd">                When deletion of policy fails</span>
+
+<span class="sd">                When Invalid policy name under given instance is provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">source_instance_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)</span>
+        <span class="n">policy_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_masking_policy_id</span><span class="p">(</span><span class="n">policy_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">policy_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Invalid policy name under given instance. Validate the policy name&quot;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;policy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="n">source_instance_id</span><span class="p">},</span>
+                <span class="s2">&quot;policy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;policyId&quot;</span><span class="p">:</span> <span class="n">policy_id</span><span class="p">,</span> <span class="s2">&quot;policyName&quot;</span><span class="p">:</span> <span class="n">policy_name</span><span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;MASKING_POLICY&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Error while deleting Data masking policy</span><span class="se">\n</span><span class="s1">Error&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="OracleInstance.standalone_data_masking"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.standalone_data_masking">[docs]</a>    <span class="k">def</span> <span class="nf">standalone_data_masking</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy_name</span><span class="p">,</span> <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">destination_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to launch standalone data masking job on given instance</span>
+<span class="sd">        Args:</span>
+
+<span class="sd">            policy_name          (str)       -- data masking policy name</span>
+
+<span class="sd">            destination_client   (str)       -- destination client in which destination instance exists</span>
+
+<span class="sd">            destination_instance (str)       -- destination instance to which masking to be applied</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object -- Job containing data masking job details</span>
+
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException</span>
+<span class="sd">                if policy ID retrieved is None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
+        <span class="n">destination_client_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">destination_client</span><span class="p">)</span>
+        <span class="n">destination_agent_object</span> <span class="o">=</span> <span class="n">destination_client_object</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;oracle&#39;</span><span class="p">)</span>
+        <span class="n">destination_instance_object</span> <span class="o">=</span> <span class="n">destination_agent_object</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">destination_instance</span><span class="p">)</span>
+        <span class="n">destination_instance_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">destination_instance_object</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)</span>
+        <span class="n">source_instance_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)</span>
+        <span class="n">policy_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_masking_policy_id</span><span class="p">(</span><span class="n">policy_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">policy_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Invalid policy name under given instance. Validate the policy name&quot;</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">data_masking_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;destination&quot;</span><span class="p">:</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span><span class="p">},</span>
+                        <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span><span class="p">,</span> <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">destination_instance</span><span class="p">,</span> <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="n">destination_instance_id</span><span class="p">}</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;dbDataMaskingOptions&quot;</span><span class="p">:</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;isStandalone&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;dbDMPolicy&quot;</span><span class="p">:</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="n">source_instance_id</span><span class="p">},</span>
+                                <span class="s2">&quot;policy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;policyId&quot;</span><span class="p">:</span> <span class="n">policy_id</span><span class="p">,</span> <span class="s2">&quot;policyName&quot;</span><span class="p">:</span> <span class="n">policy_name</span><span class="p">}</span>
+                            <span class="p">}</span>
+                    <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_masking_options</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_get_oracle_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">,</span>
                                  <span class="n">instance_name</span><span class="p">,</span> <span class="n">tablespaces</span><span class="p">,</span>
@@ -129,7 +354,8 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Expecting a list for tablespaces&#39;</span><span class="p">)</span>
         <span class="n">destination_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
             <span class="n">destination_client</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
-        <span class="n">tslist</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SID: </span><span class="si">{0}</span><span class="s2"> Tablespace: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance_name</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">tablespaces</span><span class="p">]</span>
+        <span class="n">tslist</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SID: </span><span class="si">{0}</span><span class="s2"> Tablespace: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">instance_name</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">tablespaces</span><span class="p">]</span>
         <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">common_options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
@@ -191,12 +417,14 @@
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span><span class="p">[</span><span class="s1">&#39;tablespaces&#39;</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response_data</span><span class="p">:</span>
                     <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
-                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Browse job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Browse job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">error_message</span><span class="p">)</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
     <span class="nd">@property</span>
@@ -241,7 +469,8 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;oracleInstance&#39;</span><span class="p">][</span><span class="s1">&#39;catalogConnect&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">error_str</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Catalog user not set - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_str</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;Catalog user not set - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_str</span><span class="p">))</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">catalog_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -403,7 +632,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;full&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="OracleInstance.restore"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_options</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">oracle_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="OracleInstance.restore"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.oracleinstance.OracleInstance.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">oracle_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to restore the entire database using latest backup</span>
 
@@ -490,7 +719,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

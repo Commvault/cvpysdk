@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclients.virtualserver.hypervsubclient &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.subclients.virtualserver.hypervsubclient &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
@@ -68,6 +68,7 @@
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
 <span class="kn">from</span> <span class="nn">..vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
 <span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.vmwaresubclient</span> <span class="k">import</span> <span class="n">VMWareVirtualServerSubclient</span>
 
 
 
@@ -93,6 +94,22 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;name&quot;</span>
         <span class="n">datastore</span> <span class="o">=</span> <span class="s2">&quot;DestinationPath&quot;</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_guest_os</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">os_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        stores all the XML tag for OS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_os_name_dict</span> <span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;2012&quot;</span> <span class="p">:</span> <span class="s2">&quot;windows8Server64Guest&quot;</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">os</span> <span class="ow">in</span> <span class="n">_os_name_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">os</span> <span class="ow">in</span> <span class="n">os_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_os_name_dict</span><span class="p">[</span><span class="n">os</span><span class="p">]</span>
+
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Input parameter specified is incorrect&quot;</span> <span class="p">)</span>
 
 <div class="viewcode-block" id="HyperVVirtualServerSubclient.disk_restore"><a class="viewcode-back" href="../../../../subclients/virtualserver/virtualserver.html#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.disk_restore">[docs]</a>    <span class="k">def</span> <span class="nf">disk_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                      <span class="n">vm_name</span><span class="p">,</span>
@@ -392,6 +409,137 @@
         <span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HyperVVirtualServerSubclient.full_vm_conversion_vmware"><a class="viewcode-back" href="../../../../subclients/virtualserver/virtualserver.html#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.full_vm_conversion_vmware">[docs]</a>    <span class="k">def</span> <span class="nf">full_vm_conversion_vmware</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">vcenter_client</span><span class="p">,</span>
+            <span class="n">destination_os_name</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">esx_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">datastore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">disk_option</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span>
+            <span class="n">transport_mode</span><span class="o">=</span><span class="s1">&#39;Auto&#39;</span><span class="p">,</span>
+            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_network</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This converts the Hyperv VM to VMware</span>
+<span class="sd">        Args:</span>
+<span class="sd">                vm_to_restore          (dict)  --  dict containing the VM name(s) to restore as</span>
+<span class="sd">                                                   keys and the new VM name(s) as their values.</span>
+<span class="sd">                                                   Input empty string for default VM name for</span>
+<span class="sd">                                                   restored VM.</span>
+<span class="sd">                                                    default: {}</span>
+
+<span class="sd">                vcenter_client    (basestring) -- name of the vcenter client</span>
+<span class="sd">                                                  where the VM should be</span>
+<span class="sd">                                                    restored.</span>
+
+<span class="sd">                esx_host          (basestring) -- destination esx host</span>
+<span class="sd">                                                    restores to the source VM</span>
+<span class="sd">                                                    esx if this value is not</span>
+<span class="sd">                                                    specified</span>
+
+<span class="sd">                datastore         (basestring) -- datastore where the</span>
+<span class="sd">                                                  restored VM should be located</span>
+<span class="sd">                                                  restores to the source VM</span>
+<span class="sd">                                                  datastore if this value is</span>
+<span class="sd">                                                  not specified</span>
+
+<span class="sd">                overwrite         (bool)       -- overwrite the existing VM</span>
+<span class="sd">                                                  default: True</span>
+
+<span class="sd">                power_on          (bool)       -- power on the  restored VM</span>
+<span class="sd">                                                  default: True</span>
+
+<span class="sd">                copy_precedence   (int)        -- copy precedence value</span>
+<span class="sd">                                                  default: 0</span>
+
+<span class="sd">                disk_option       (basestring) -- disk provisioning for the</span>
+<span class="sd">                                                  restored vm</span>
+<span class="sd">                                                  Options for input are: &#39;Original&#39;,</span>
+<span class="sd">                                                  &#39;Thick Lazy Zero&#39;, &#39;Thin&#39;, &#39;Thick Eager Zero&#39;</span>
+<span class="sd">                                                  default: Original</span>
+
+<span class="sd">                transport_mode    (basestring) -- transport mode to be used for</span>
+<span class="sd">                                                  the restore.</span>
+<span class="sd">                                                  Options for input are: &#39;Auto&#39;, &#39;SAN&#39;, &#39;Hot Add&#39;,</span>
+<span class="sd">                                                  &#39;NBD&#39;, &#39;NBD SSL&#39;</span>
+<span class="sd">                                                  default: Auto</span>
+
+<span class="sd">                proxy_client      (basestring) -- destination proxy client</span>
+
+<span class="sd">                destination_network (basestring)-- destiantion network to which VM has to be connected</span>
+
+<span class="sd">                destiantion_os      (base string)- os of source VM</span>
+
+
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if inputs are not of correct type as per definition</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">vm_names</span><span class="p">,</span> <span class="n">vm_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_ids_and_names_dict_from_browse</span><span class="p">()</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check mandatory input parameters are correct</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">vcenter_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_network</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1">#getting all dummy objects for new client</span>
+
+        <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_conversion_defaults</span><span class="p">(</span><span class="n">vcenter_client</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span>
+        <span class="n">disk_option_value</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">_disk_option</span><span class="p">[</span><span class="n">disk_option</span><span class="p">]</span>
+        <span class="n">transport_mode_value</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">_transport_mode</span><span class="p">[</span><span class="n">transport_mode</span><span class="p">]</span>
+        <span class="n">esx_server</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">server_host_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1">#setting restore vms</span>
+        <span class="n">vm_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">vm_to_restore</span><span class="p">:</span>
+            <span class="n">vm_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span>
+            <span class="n">restore_option</span><span class="p">,</span>
+            <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">vcenter_client</span><span class="o">=</span><span class="n">vcenter_client</span><span class="p">,</span>
+            <span class="n">datastore</span><span class="o">=</span><span class="n">datastore</span><span class="p">,</span>
+            <span class="n">esx_host</span><span class="o">=</span><span class="n">esx_host</span><span class="p">,</span>
+            <span class="n">esx_server</span><span class="o">=</span><span class="n">esx_server</span><span class="p">,</span>
+            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">client_name</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_list</span><span class="p">),</span>
+            <span class="n">disk_option</span><span class="o">=</span><span class="n">disk_option_value</span><span class="p">,</span>
+            <span class="n">transport_mode</span><span class="o">=</span><span class="n">transport_mode_value</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+            <span class="n">backupset_client_name</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+            <span class="n">destination_network</span><span class="o">=</span><span class="n">destination_network</span><span class="p">,</span>
+            <span class="n">destination_os_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_guest_os</span><span class="p">(</span><span class="n">destination_os_name</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 </pre></div>
 
@@ -428,7 +576,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

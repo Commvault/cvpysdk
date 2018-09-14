@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Instance &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>Instance &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -53,7 +53,16 @@ or the details for the given instance name</p>
 <p>has_instance(instance_name)     –  checks if a instance exists with the given name or not</p>
 <p>get(instance_name)              –  returns the Instance class object
 of the input backup set name</p>
+<p>add_informix_instance()         –  adds new Informix Instance to given Client</p>
+<p>delete()                        –  deletes the instance specified by the instance_name
+from the agent.</p>
 <p>add_sybase_instance()           –  To add sybase server instance</p>
+<p>add_big_data_apps_instance()    –  To add an instance with the big data apps agent specified</p>
+<p>add_s3_instance()               –  Method to add a new s3 instance</p>
+<p>add_azure_instance()            –  Method to add a new azure instance</p>
+<p>add_oraclecloud_instance()      –  Method to add a new oracle cloud instance</p>
+<p>add_openstack_instance()        –  Method to add a new openstack instance</p>
+<p>delete_cloud_apps_instance()    –  Method to delete an instance from cloud apps agent</p>
 <p class="last">refresh()                       –  refresh the instances associated with the agent</p>
 </dd>
 <dt>Instance:</dt>
@@ -72,6 +81,7 @@ and returns the restore job object</p>
 <p>_restore_destination_json()     –  setter for destination options property in restore</p>
 <p>_restore_fileoption_json()      –  setter for file option property in restore</p>
 <p>_restore_destination_json()     –  setter for destination property in restore</p>
+<p>_restore_volume_rst_option_json()  –  setter for the volumeRst restore option in restore JSON</p>
 <p>_restore_json()                 –  returns the apppropriate JSON request to pass for either
 Restore In-Place or Out-of-Place operation</p>
 <p>_restore_in_place()             –  Restores the files/folders specified in the
@@ -91,7 +101,7 @@ restore json</p>
 <dl class="class">
 <dt id="cvpysdk.instance.Instance">
 <em class="property">class </em><code class="descclassname">cvpysdk.instance.</code><code class="descname">Instance</code><span class="sig-paren">(</span><em>agent_object</em>, <em>instance_name</em>, <em>instance_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for performing instance operations for a specific instance.</p>
 <dl class="method">
 <dt id="cvpysdk.instance.Instance.browse">
@@ -245,8 +255,225 @@ from browse operation</p>
 <dl class="class">
 <dt id="cvpysdk.instance.Instances">
 <em class="property">class </em><code class="descclassname">cvpysdk.instance.</code><code class="descname">Instances</code><span class="sig-paren">(</span><em>agent_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for getting all the instances associated with a client.</p>
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.add_azure_instance">
+<code class="descname">add_azure_instance</code><span class="sig-paren">(</span><em>instance_name</em>, <em>access_node</em>, <em>storage_policy</em>, <em>accountname</em>, <em>accesskey</em>, <em>description=None</em>, <em>number_of_streams=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_azure_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_azure_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add new Azure cloud apps instance to given client.</p>
+<p>Args :</p>
+<blockquote>
+<div><p>instance_name            (str)         –     name of the instance to be added</p>
+<dl class="docutils">
+<dt>access_node              (str)         –     name of the backup client to be</dt>
+<dd>associated with this instance</dd>
+<dt>storage_policy           (str)         –     name of the storage policy to be</dt>
+<dd>associated with this instance</dd>
+<dt>accountname              (str)         –     name of the account to be</dt>
+<dd>associated with this instance</dd>
+<dt>accesskey                (str)         –     access key of the account to be</dt>
+<dd>associated with this instance</dd>
+</dl>
+<p>description              (str)         –     description of this instance</p>
+<p>number_of_streams        (int)         –     number of data backup streams</p>
+</div></blockquote>
+<p>Returns :</p>
+<blockquote>
+<div>None</div></blockquote>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><p class="first">SDKException:</p>
+<blockquote class="last">
+<div><p>if Azure instance with same name already exists</p>
+<p>if given storage policy does not exists in commcell</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.add_big_data_apps_instance">
+<code class="descname">add_big_data_apps_instance</code><span class="sig-paren">(</span><em>distributed_options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_big_data_apps_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_big_data_apps_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add big data apps instance to the given client.</p>
+<dl class="docutils">
+<dt>distributed_options {</dt>
+<dd><p class="first">“instanceName”: “ClusterInstance”
+“MasterNode” : $MASTER_NODE$ (Optional based on cluster Type. If not present set it to “”)
+“dataAccessNodes”: [</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>{</dt>
+<dd>“clientName”: “DataClient1”</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p class="last">]</p>
+</dd>
+</dl>
+<p>}</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if None value in Distributed options
+if Big Data Apps instance with same name already exists
+if cannot retrieve cluster type from default Instance</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.add_informix_instance">
+<code class="descname">add_informix_instance</code><span class="sig-paren">(</span><em>informix_options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_informix_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_informix_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds new Informix Instance to given Client
+Args:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Dictionary of informix instance creation options:</dt>
+<dd><dl class="first last docutils">
+<dt>Example:</dt>
+<dd><dl class="first last docutils">
+<dt>informix_options = {</dt>
+<dd><blockquote class="first">
+<div>‘instance_name’: ‘ol_informix1210’,
+‘onconfig_file’: ‘onconfig.ol_informix1210’,
+‘sql_host_file’: ‘C:IBMetcsqlhosts.ol_informix1210’,
+‘informix_dir’: ‘C:IBM’,
+‘user_name’:’informix’,
+‘domain_name’:’test_vm’,
+‘password’:’commvault!12’,
+‘storage_policy’:’gk_pg_policy’,
+‘description’:’created from automation’</div></blockquote>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object - instance of the Instance class</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if None value in informix options</p>
+<p>if Informix instance with same name already exists</p>
+<p class="last">if given storage policy does not exists in commcell</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.add_openstack_instance">
+<code class="descname">add_openstack_instance</code><span class="sig-paren">(</span><em>instance_name</em>, <em>access_node</em>, <em>storage_policy</em>, <em>server_name</em>, <em>username</em>, <em>apikey</em>, <em>description=None</em>, <em>number_of_streams=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_openstack_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_openstack_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add new Openstack cloud apps instance to given client.</p>
+<p>Args :</p>
+<blockquote>
+<div><p>instance_name            (str)         –     name of the instance to be added</p>
+<dl class="docutils">
+<dt>access_node              (str)         –     name of the backup client to be</dt>
+<dd>associated with this instance</dd>
+<dt>storage_policy           (str)         –     name of the storage policy to be</dt>
+<dd>associated with this instance</dd>
+<dt>server_name              (str)         –     auth url or server name of the</dt>
+<dd>account to be associated with this instance</dd>
+<dt>username                 (str)         –     username of the account to be</dt>
+<dd>associated with this instance</dd>
+<dt>apikey                   (str)         –     API key of the account to be</dt>
+<dd>associated with this instance</dd>
+</dl>
+<p>description              (str)         –     description of this instance</p>
+<p>number_of_streams        (int)         –     number of data backup streams</p>
+</div></blockquote>
+<p>Returns :</p>
+<blockquote>
+<div>None</div></blockquote>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><p class="first">SDKException:</p>
+<blockquote class="last">
+<div><p>if openstack instance with same name already exists</p>
+<p>if given storage policy does not exists in commcell</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.add_oraclecloud_instance">
+<code class="descname">add_oraclecloud_instance</code><span class="sig-paren">(</span><em>instance_name</em>, <em>access_node</em>, <em>storage_policy</em>, <em>endpointurl</em>, <em>username</em>, <em>password</em>, <em>description=None</em>, <em>number_of_streams=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_oraclecloud_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_oraclecloud_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add new Oracle cloud apps instance to given client.</p>
+<p>Args :</p>
+<blockquote>
+<div><p>instance_name            (str)         –     name of the instance to be added</p>
+<dl class="docutils">
+<dt>access_node              (str)         –     name of the backup client to be</dt>
+<dd>associated with this instance</dd>
+<dt>storage_policy           (str)         –     name of the storage policy to be</dt>
+<dd>associated with this instance</dd>
+<dt>endpointurl              (str)         –     endpoint url of the account to</dt>
+<dd>be associated with this instance</dd>
+<dt>username                 (str)         –     username of the account to be</dt>
+<dd>associated with this instance</dd>
+<dt>password                 (str)         –     password of the account to be</dt>
+<dd>associated with this instance</dd>
+</dl>
+<p>description              (str)         –     description of this instance</p>
+<p>number_of_streams        (int)         –     number of data backup streams</p>
+</div></blockquote>
+<p>Returns :</p>
+<blockquote>
+<div>None</div></blockquote>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><p class="first">SDKException:</p>
+<blockquote class="last">
+<div><p>if oracle instance with same name already exists</p>
+<p>if given storage policy does not exists in commcell</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.add_s3_instance">
+<code class="descname">add_s3_instance</code><span class="sig-paren">(</span><em>instance_name</em>, <em>access_node</em>, <em>storage_policy</em>, <em>accesskey</em>, <em>secretkey</em>, <em>description=None</em>, <em>number_of_streams=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_s3_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_s3_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add new S3 cloud apps instance to given client.</p>
+<p>Args :</p>
+<blockquote>
+<div><p>instance_name            (str)         –     name of the instance to be added</p>
+<dl class="docutils">
+<dt>access_node              (str)         –     name of the backup client to be</dt>
+<dd>associated with this instance</dd>
+<dt>storage_policy           (str)         –     name of the storage policy to be</dt>
+<dd>associated with this instance</dd>
+<dt>accesskey                (str)         –     access key of the account to be</dt>
+<dd>associated with this instance</dd>
+<dt>secretkey                (str)         –     secret key of the account to be</dt>
+<dd>associated with this instance</dd>
+</dl>
+<p>description              (str)         –     description of this instance</p>
+<p>number_of_streams        (int)         –     number of data backup streams</p>
+</div></blockquote>
+<p>Returns :</p>
+<blockquote>
+<div>None</div></blockquote>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><p class="first">SDKException:</p>
+<blockquote class="last">
+<div><p>if S3 instance with same name already exists</p>
+<p>if given storage policy does not exists in commcell</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="cvpysdk.instance.Instances.add_sybase_instance">
 <code class="descname">add_sybase_instance</code><span class="sig-paren">(</span><em>sybase_options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.add_sybase_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.add_sybase_instance" title="Permalink to this definition">¶</a></dt>
@@ -306,6 +533,45 @@ Args:</p>
 “instance2_name”: instance2_id</dd>
 </dl>
 <p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>instance_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the instance specified by the instance_name from the agent.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>instance_name (str)  –  name of the instance to remove from the agent</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the instance name argument is not string</p>
+<p>if failed to delete instance</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if no instance exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.instance.Instances.delete_cloud_apps_instance">
+<code class="descname">delete_cloud_apps_instance</code><span class="sig-paren">(</span><em>instance_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/instance.html#Instances.delete_cloud_apps_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instance.Instances.delete_cloud_apps_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the instance from the cloud apps agent.</p>
+<dl class="docutils">
+<dt>Args :</dt>
+<dd>instance_name       (str)      –     name of the instance to be deleted</dd>
+<dt>Returns :</dt>
+<dd>None</dd>
+<dt>Raises :</dt>
+<dd><p class="first">SDKException:</p>
+<blockquote class="last">
+<div>if the specified instance doesn’t exist
+if the agent type is other than cloud apps</div></blockquote>
 </dd>
 </dl>
 </dd></dl>
@@ -401,7 +667,7 @@ Args:</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

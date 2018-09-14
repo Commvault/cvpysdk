@@ -6,17 +6,17 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Commcell &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>Commcell &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Constants" href="constants.html" />
+    <link rel="next" title="Commcell Migration" href="commcell_migration.html" />
     <link rel="prev" title="Clientgroup" href="clientgroup.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -51,6 +51,9 @@ object upon call to the logout method</p>
 <p>_get_commserv_details()     –  gets the details of the commserv, the Commcell class instance
 is initialized for</p>
 <p>_qoperation_execute()       –  runs the qoperation execute rest api on specified input xml</p>
+<p>_qoperation_execscript()    –  runs the qoperation execute script rest api with
+specified arguements</p>
+<p>_set_gxglobalparam_value    –  updates GXGlobalParam(commcell level configuration parameters)</p>
 <p>logout()                    –  logs out the user associated with the current instance</p>
 <p>request()                   –  runs an input HTTP request on the API specified,
 and returns its response</p>
@@ -58,7 +61,9 @@ and returns its response</p>
 <p>refresh()                   –  refresh the properties associated with the Commcell
 class instance
 run_data_aging()            –  triggers data aging job from the commcell level</p>
-<p class="last">get_saml_token()            –  returns the SAML token for the currently logged-in user</p>
+<p>get_saml_token()            –  returns the SAML token for the currently logged-in user</p>
+<p>add_additional_setting()    –  adds registry key to the commserve property</p>
+<p class="last">delete_additional_setting() –  deletes registry key from the commserve property</p>
 </dd>
 </dl>
 <div class="section" id="commcell-instance-attributes">
@@ -74,6 +79,7 @@ class instance is initalized for</p>
 class instance is initalized for</p>
 <p><strong>commserv_version</strong>        –  returns the ContentStore version installed on the <cite>CommServ</cite>,
 class instance is initalized for</p>
+<p><strong>commcell_id</strong>             –  returns the <cite>CommCell</cite> ID</p>
 <p><strong>webconsole_hostname</strong>     –  returns the host name of the <cite>webconsole</cite>,
 class instance is connected to</p>
 <p><strong>auth_token</strong>              –  returns the <cite>Authtoken</cite> for the current session to the commcell</p>
@@ -120,22 +126,68 @@ to interact with the organizations/companies added on the Commcell</p>
 to interact with the storage pools added to the Commcell Admin Console</p>
 <p><strong>monitoring_policies</strong>     –  returns the instance of the <cite>MonitoringPolicies</cite> class,
 to interact with the MonitoringPolicies added to the Commcell</p>
+<p><strong>operation_window</strong>        – returns the instance of the ‘OperationWindow’ class,
+to interact with the opeartion windows of commcell</p>
 <p><strong>array_management</strong>        –  returns the instance of the <cite>ArrayManagement</cite> class,
 to perform SNAP related operations on the Commcell</p>
 <p><strong>activity_control</strong>        –  returns the instance of the <cite>ActivityControl</cite> class,
 to interact with the Activity Control on the Commcell</p>
 <p><strong>event_viewer</strong>            –  returns the instance of the <cite>Events</cite> class,
 to interact with the Events associated on the Commcell</p>
+<p><strong>disasterrecovery</strong>    – returns the instance of the ‘DisasterRecovery’ class,
+to run disaster recovery backup , restore operations.</p>
+<p><strong>commserv_client</strong>         –  returns the client object associated with the
+commserver</p>
+<p><strong>Commcell_Migration</strong>      –  returns the instance of the ‘CommCellMigration’ class,
+to interact with the Commcell Export &amp; Import on the Commcell</p>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.commcell.Commcell">
 <em class="property">class </em><code class="descclassname">cvpysdk.commcell.</code><code class="descname">Commcell</code><span class="sig-paren">(</span><em>webconsole_hostname</em>, <em>commcell_username=None</em>, <em>commcell_password=None</em>, <em>authtoken=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for establishing a session to the Commcell via Commvault REST API.</p>
 <dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.activity_control">
 <code class="descname">activity_control</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.activity_control" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the ActivityControl class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.add_additional_setting">
+<code class="descname">add_additional_setting</code><span class="sig-paren">(</span><em>category</em>, <em>key_name</em>, <em>data_type</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.add_additional_setting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.add_additional_setting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds registry key to the commserve property.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">category    (str)   –  Category of registry key</p>
+<p>key_name    (str)   –  Name of the registry key</p>
+<p>data_type   (str)   –  Data type of registry key</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Accepted Values:</dt>
+<dd><ul class="first last simple">
+<li>BOOLEAN</li>
+<li>INTEGER</li>
+<li>STRING</li>
+<li>MULTISTRING</li>
+<li>ENCRYPTED</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<p class="last">value   (str)   –  Value of registry key</p>
+</dd>
+<dt>Returns:</dt>
+<dd>None</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to add</p>
+<p>if response is empty</p>
+<p class="last">if response code is not as expected</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -169,9 +221,27 @@ to interact with the Events associated on the Commcell</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.commcell_id">
+<code class="descname">commcell_id</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.commcell_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the ID of the CommCell.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.commcell_migration">
+<code class="descname">commcell_migration</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.commcell_migration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the CommcellMigration class</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.commcell_username">
 <code class="descname">commcell_username</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.commcell_username" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the logged in user name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.commserv_client">
+<code class="descname">commserv_client</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.commserv_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the Client class for the CommServ client.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -216,10 +286,39 @@ to interact with the Events associated on the Commcell</p>
 <dd><p>Returns the instance of the Datacube class.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.delete_additional_setting">
+<code class="descname">delete_additional_setting</code><span class="sig-paren">(</span><em>category</em>, <em>key_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.delete_additional_setting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.delete_additional_setting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes registry key from the commserve property.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">category    (str)   –  Category of registry key</p>
+<p class="last">key_name    (str)   –  Name of the registry key</p>
+</dd>
+<dt>Returns:</dt>
+<dd>None</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to delete</p>
+<p>if response is empty</p>
+<p class="last">if response code is not as expected</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.device_id">
 <code class="descname">device_id</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.device_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the value of the Device ID attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.disasterrecovery">
+<code class="descname">disasterrecovery</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.disasterrecovery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the DisasterRecovery class.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -292,6 +391,12 @@ to interact with the Events associated on the Commcell</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.operation_window">
+<code class="descname">operation_window</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.operation_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the OperationWindow class.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.organizations">
 <code class="descname">organizations</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.organizations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the Organizations class.</p>
@@ -307,6 +412,23 @@ to interact with the Events associated on the Commcell</p>
 <dt id="cvpysdk.commcell.Commcell.policies">
 <code class="descname">policies</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.policies" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the Policies class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.protected_vms">
+<code class="descname">protected_vms</code><span class="sig-paren">(</span><em>days</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.protected_vms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.protected_vms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all the protected VMs for the particular client for passed days
+Args:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>days: Protected VMs for days</dt>
+<dd>ex: if value is 30 , returns VM prtected in past 30 days</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>vm_dict -  all properties of VM prtotected for passed days</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -471,7 +593,7 @@ of the Commcell class, after the user was logged out.</p>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
       <li>Previous: <a href="clientgroup.html" title="previous chapter">Clientgroup</a></li>
-      <li>Next: <a href="constants.html" title="next chapter">Constants</a></li>
+      <li>Next: <a href="commcell_migration.html" title="next chapter">Commcell Migration</a></li>
   </ul></li>
   </ul></li>
 </ul>
@@ -503,7 +625,7 @@ of the Commcell class, after the user was logged out.</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

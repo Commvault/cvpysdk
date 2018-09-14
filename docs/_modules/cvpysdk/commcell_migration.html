@@ -1,0 +1,405 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.commcell_migration &#8212; Developer SDK - Python 11.13 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.commcell_migration</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Class to perform all the CommCell Migration operations on commcell</span>
+
+<span class="sd">CommCellMigration is the only class defined in this file.</span>
+
+<span class="sd">CommCellMigration: Helper class to perform CommCell Import &amp; Export operations.</span>
+
+<span class="sd">CommCellMigration:</span>
+
+<span class="sd">    __init__()                      --  initializes CommCellMigration helper object.</span>
+
+<span class="sd">    commcell_export()               --  function to run CCM Export operation.</span>
+
+<span class="sd">    commcell_import()               --  function to run CCM Import operation.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+<div class="viewcode-block" id="CommCellMigration"><a class="viewcode-back" href="../../commcell_migration.html#cvpysdk.commcell_migration.CommCellMigration">[docs]</a><span class="k">class</span> <span class="nc">CommCellMigration</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing the commcell export &amp; import operations from commcell. &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes object of the CommCellMigration class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">               commcell_object (object) -instance of the commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">               object - instance of the CommCellMigration class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="CommCellMigration.commcell_export"><a class="viewcode-back" href="../../commcell_migration.html#cvpysdk.commcell_migration.CommCellMigration.commcell_export">[docs]</a>    <span class="k">def</span> <span class="nf">commcell_export</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">export_location</span><span class="p">,</span> <span class="n">client_list</span><span class="p">,</span> <span class="n">options_dictionary</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Starts the Commcell Export job.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                export_location     ( str )         --  Location to export generated dumps.</span>
+
+<span class="sd">                client_list         ( list )        --  Contains list of clients used for export.</span>
+<span class="sd">                    [</span>
+<span class="sd">                        &quot;Server_1&quot;,&quot;Client1&quot;,&quot;Client2&quot;</span>
+<span class="sd">                    ]</span>
+
+<span class="sd">                options_dictionary  ( dict )        --  Contains options used to perform CCM Export.</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;pathType&quot;:&quot;Local&quot;,</span>
+
+<span class="sd">                        &quot;otherSqlInstance&quot;:True</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                int                                 --  returns the CCM Export job id.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the input is not valid.</span>
+
+<span class="sd">                    if all the required inputs are not provided.</span>
+
+<span class="sd">                    if invalid inputs are passed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path_type</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pathType&quot;</span><span class="p">,</span> <span class="s2">&quot;Local&quot;</span><span class="p">)</span>
+        <span class="n">network_user_name</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">network_user_password</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">other_sql_instance</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;otherSqlInstance&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">sql_instance_name</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sqlInstanceName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">sql_user_name</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sqlUserName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">sql_password</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sqlPassword&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Database&quot;</span><span class="p">,</span> <span class="s2">&quot;commserv&quot;</span><span class="p">)</span>
+        <span class="n">capture_ma</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;captureMediaAgents&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">auto_pick_cluster</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;autopickCluster&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">path_type</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">network_user_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">network_user_password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other_sql_instance</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sql_instance_name</span><span class="p">,</span><span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">export_location</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sql_user_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sql_password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">capture_ma</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">auto_pick_cluster</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">path_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;local&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">path_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;network&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span>  <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span>  <span class="n">other_sql_instance</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sql_instance_name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">sql_user_name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">sql_password</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">raise</span>  <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+            <span class="n">sql_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">sql_password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">network_user_name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">network_user_password</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+            <span class="n">network_user_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">network_user_password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+        <span class="n">export_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;isEditing&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;appGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4029</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;ccmOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;commonOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;otherSqlInstance&quot;</span><span class="p">:</span> <span class="n">other_sql_instance</span><span class="p">,</span>
+                                        <span class="s2">&quot;pathType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span><span class="p">,</span>
+                                        <span class="s2">&quot;dumpFolder&quot;</span><span class="p">:</span> <span class="n">export_location</span><span class="p">,</span>
+                                        <span class="s2">&quot;splitCSDB&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s2">&quot;userAccount&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">network_user_password</span><span class="p">,</span>
+                                            <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">network_user_name</span>
+                                        <span class="p">},</span>
+                                        <span class="s2">&quot;sqlLinkedServer&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;sqlServerName&quot;</span><span class="p">:</span> <span class="n">sql_instance_name</span><span class="p">,</span>
+                                            <span class="s2">&quot;sqlUserAccount&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">sql_user_name</span><span class="p">,</span>
+                                                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">sql_password</span>
+                                            <span class="p">}</span>
+                                        <span class="p">}</span>
+                                    <span class="p">},</span>
+                                    <span class="s2">&quot;captureOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;captureMediaAgents&quot;</span><span class="p">:</span> <span class="n">capture_ma</span><span class="p">,</span>
+                                        <span class="s2">&quot;lastHours&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+                                        <span class="s2">&quot;remoteDumpDir&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;remoteCSName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;pruneExportedDump&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;autopickCluster&quot;</span><span class="p">:</span> <span class="n">auto_pick_cluster</span><span class="p">,</span>
+                                        <span class="s2">&quot;copyDumpToRemoteCS&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;useJobResultsDirForExport&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;captureFromDB&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;csName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_name</span><span class="p">,</span>
+                                            <span class="s2">&quot;csDbName&quot;</span><span class="p">:</span> <span class="n">database</span>
+                                        <span class="p">},</span>
+                                        <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                        <span class="p">],</span>
+                                        <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">54</span><span class="p">,</span>
+                                        <span class="p">}</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">sub_dict</span> <span class="o">=</span> <span class="n">export_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;adminOpts&#39;</span><span class="p">][</span><span class="s1">&#39;ccmOption&#39;</span><span class="p">]</span> \
+            <span class="p">[</span><span class="s1">&#39;captureOptions&#39;</span><span class="p">][</span><span class="s1">&#39;entities&#39;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">client_list</span><span class="p">)):</span>
+            <span class="n">temp_dic</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;clientName&#39;</span><span class="p">:</span> <span class="n">client_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s1">&#39;commCellName&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_name</span><span class="p">}</span>
+            <span class="n">sub_dict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dic</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span>
+                                                           <span class="n">export_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;jobIds&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span> <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CommCellMigration.commcell_import"><a class="viewcode-back" href="../../commcell_migration.html#cvpysdk.commcell_migration.CommCellMigration.commcell_import">[docs]</a>    <span class="k">def</span> <span class="nf">commcell_import</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">import_location</span><span class="p">,</span> <span class="n">options_dictionary</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Starts the Commcell Import job.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                import_location     ( str )         --  Location to import the generated dumps.</span>
+
+<span class="sd">                options_dictionary  ( dict )        --  Contains list of options used for CCMImport.</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;pathType&quot;:&quot;Local&quot;,</span>
+
+<span class="sd">                        &quot;userName&quot;:&quot;sa&quot;</span>
+
+<span class="sd">                        &quot;password&quot;:&quot;password&quot;</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                int                                 --  returns CCM Import job id or error code.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the input is not valid.</span>
+
+<span class="sd">                    if all the required inputs are not provided.</span>
+
+<span class="sd">                    if invalid inputs are passed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path_type</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pathType&quot;</span><span class="p">,</span> <span class="s2">&quot;Local&quot;</span><span class="p">)</span>
+        <span class="n">network_user_name</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">network_user_password</span> <span class="o">=</span> <span class="n">options_dictionary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">path_type</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">import_location</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">path_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;local&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">path_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;network&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span>  <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">network_user_name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">network_user_password</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+
+        <span class="n">import_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;clientSidePackage&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;consumeLicense&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                    <span class="p">}</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span><span class="mi">4030</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:{</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:{</span>
+                                <span class="s2">&quot;ccmOption&quot;</span><span class="p">:{</span>
+                                    <span class="s2">&quot;mergeOptions&quot;</span><span class="p">:{</span>
+                                        <span class="s2">&quot;deleteEntitiesIfOnlyfromSource&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;forceOverwriteHolidays&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;reuseTapes&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;specifyStagingPath&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;forceOverwriteOperationWindow&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;fallbackSpareGroup&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;mergeOperationWindow&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;pruneImportedDump&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;alwaysUseFallbackDataPath&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;deleteEntitiesNotPresent&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;forceOverwrite&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;mergeHolidays&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;forceOverwriteSchedule&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;fallbackDrivePool&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;mergeActivityControl&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;fallbackMediaAgent&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;mergeSchedules&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;failIfEntityAlreadyExists&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;fallbackLibrary&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;skipConflictMedia&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;stagingPath&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span>
+                                    <span class="p">},</span>
+                                    <span class="s2">&quot;commonOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;bRoboJob&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;databaseConfiguredRemote&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;pathType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_type</span><span class="p">,</span>
+                                        <span class="s2">&quot;dumpFolder&quot;</span><span class="p">:</span> <span class="n">import_location</span><span class="p">,</span>
+                                        <span class="s2">&quot;splitCSDB&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;userAccount&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">network_user_password</span><span class="p">,</span>
+                                            <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">network_user_name</span>
+                                        <span class="p">}</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span>
+                                                           <span class="n">import_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;jobIds&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span> <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
