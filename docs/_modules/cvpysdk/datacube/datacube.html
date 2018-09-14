@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.datacube.datacube &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.datacube.datacube &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -75,7 +75,8 @@
 
 <span class="n">USER_LOGGED_OUT_MESSAGE</span> <span class="o">=</span> <span class="s1">&#39;User Logged Out. Please initialize the Commcell object again.&#39;</span>
 <span class="sd">&quot;&quot;&quot;str:     Message to be returned to the user, when trying the get the value of an attribute</span>
-<span class="sd">                of the Commcell class, after the user was logged out.</span>
+<span class="sd">of the Commcell class, after the user was logged out.</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -95,8 +96,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ANALYTICS_ENGINES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ANALYTICS_ENGINES&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ALL_DATASOURCES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_DATASOURCES&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ANALYTICS_ENGINES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ANALYTICS_ENGINES&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ALL_DATASOURCES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_DATASOURCES&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_GET_JDBC_DRIVERS</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_analytics_engines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_analytics_engines</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_datasources</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -118,12 +125,11 @@
 
 <span class="sd">            Args:</span>
 <span class="sd">                response    (object)    --  response class object,</span>
-<span class="sd">                                                received upon running an API request,</span>
-<span class="sd">                                                using the `requests` python package</span>
+
+<span class="sd">                received upon running an API request, using the `requests` python package</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
-            <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_get_analytics_engines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the list all the analytics engines associated with the datacube.</span>
@@ -141,9 +147,7 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ANALYTICS_ENGINES</span>
-        <span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ANALYTICS_ENGINES</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;listOfCIServer&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -168,8 +172,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasources</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Datacube.get_jdbc_drivers"><a class="viewcode-back" href="../../../datacube/datacube.html#cvpysdk.datacube.datacube.Datacube.get_jdbc_drivers">[docs]</a>    <span class="k">def</span> <span class="nf">get_jdbc_drivers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analytics_engine</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the list all jdbc_drivers associated with the datacube.</span>
@@ -196,13 +198,11 @@
             <span class="k">if</span> <span class="n">engine</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">analytics_engine</span>
         <span class="p">)</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_GET_JDBC_DRIVERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_JDBC_DRIVERS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_GET_JDBC_DRIVERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_JDBC_DRIVERS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">analytics_engines</span><span class="p">[</span><span class="n">engine_index</span><span class="p">][</span><span class="s2">&quot;cloudID&quot;</span><span class="p">]</span>
         <span class="p">)</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GET_JDBC_DRIVERS</span>
-        <span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GET_JDBC_DRIVERS</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;drivers&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -250,7 +250,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

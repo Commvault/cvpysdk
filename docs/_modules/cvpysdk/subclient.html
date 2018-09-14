@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclient &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.subclient &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -132,6 +132,8 @@
 <span class="sd">    restore_out_of_place()      --  Restores the files/folders specified in the input paths list</span>
 <span class="sd">    to the input client, at the specified destionation location</span>
 
+<span class="sd">    set_backup_nodes()          -- Set Backup Nodes for NFS Share Pseudo client&#39;s subclient.</span>
+
 <span class="sd">    find_latest_job()           --  Finds the latest job for the subclient</span>
 <span class="sd">    which includes current running job also.</span>
 
@@ -153,6 +155,7 @@
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedule</span>
 
 <span class="n">install_aliases</span><span class="p">()</span>
 
@@ -212,6 +215,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="kn">from</span> <span class="nn">.subclients.fssubclient</span> <span class="k">import</span> <span class="n">FileSystemSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.bigdataappssubclient</span> <span class="k">import</span> <span class="n">BigDataAppsSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.casubclient</span> <span class="k">import</span> <span class="n">CloudAppsSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.sqlsubclient</span> <span class="k">import</span> <span class="n">SQLServerSubclient</span>
@@ -225,7 +229,9 @@
         <span class="kn">from</span> <span class="nn">.subclients.mysqlsubclient</span> <span class="k">import</span> <span class="n">MYSQLSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.exchange.exchange_database_subclient</span> <span class="k">import</span> <span class="n">ExchangeDatabaseSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.postgressubclient</span> <span class="k">import</span> <span class="n">PostgresSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.informixsubclient</span> <span class="k">import</span> <span class="n">InformixSubclient</span>
 
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;BigDataAppsSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BigDataAppsSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;FileSystemSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FileSystemSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;VirtualServerSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">VirtualServerSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;CloudAppsSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CloudAppsSubclient</span>
@@ -240,10 +246,12 @@
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;MYSQLSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MYSQLSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;ExchangeDatabaseSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ExchangeDatabaseSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;PostgresSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PostgresSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;InformixSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">InformixSubclient</span>
 
         <span class="c1"># add the agent name to this dict, and its class as the value</span>
         <span class="c1"># the appropriate class object will be initialized based on the agent</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;big data apps&#39;</span><span class="p">:</span> <span class="n">BigDataAppsSubclient</span><span class="p">,</span>
             <span class="s1">&#39;file system&#39;</span><span class="p">:</span> <span class="n">FileSystemSubclient</span><span class="p">,</span>
             <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="n">VirtualServerSubclient</span><span class="p">,</span>
             <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="n">CloudAppsSubclient</span><span class="p">,</span>
@@ -257,7 +265,8 @@
             <span class="s2">&quot;exchange mailbox&quot;</span><span class="p">:</span> <span class="n">ExchangeSubclient</span><span class="p">,</span>
             <span class="s1">&#39;mysql&#39;</span><span class="p">:</span> <span class="n">MYSQLSubclient</span><span class="p">,</span>
             <span class="s1">&#39;exchange database&#39;</span><span class="p">:</span> <span class="n">ExchangeDatabaseSubclient</span><span class="p">,</span>
-            <span class="s1">&#39;postgresql&#39;</span><span class="p">:</span> <span class="n">PostgresSubclient</span>
+            <span class="s1">&#39;postgresql&#39;</span><span class="p">:</span> <span class="n">PostgresSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;informix&#39;</span><span class="p">:</span> <span class="n">InformixSubclient</span>
         <span class="p">}</span>
 
         <span class="c1"># sql server subclient type dict</span>
@@ -1020,7 +1029,9 @@
 <span class="sd">                update_request  (str)  --  update request specifying the details to update</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Job class for this restore job</span>
+<span class="sd">                object - instance of the Job class for this backup job if its an immediate Job</span>
+<span class="sd">                        instance of the Schedule class for the backup job if its a scheduled Job</span>
+
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1035,6 +1046,8 @@
                 <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
                                <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;taskId&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Schedule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">schedule_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskId&#39;</span><span class="p">])</span>
                 <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Initializing backup failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
@@ -1048,7 +1061,6 @@
                 <span class="s1">&#39;101&#39;</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
                     <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
-
 
     <span class="k">def</span> <span class="nf">_backup_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                      <span class="n">backup_level</span><span class="p">,</span>
@@ -1662,7 +1674,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the same location.</span>
 
 <span class="sd">            Args:</span>
@@ -1693,8 +1706,14 @@
 <span class="sd">                                                specified file</span>
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
 
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
+
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Job class for this restore job</span>
+<span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
+<span class="sd">                         instance of the Schedule class for this restore job if its a scheduled Job</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1715,7 +1734,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.restore_out_of_place"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span>
@@ -1728,7 +1748,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
 <span class="sd">            at the specified destionation location.</span>
 
@@ -1772,8 +1793,14 @@
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
 <span class="sd">                        media_agent         : Media Agent need to be used for Browse and restore</span>
 
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
+
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Job class for this restore job</span>
+<span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
+<span class="sd">                         instance of the Schedule class for this restore job if its a scheduled Job</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1800,8 +1827,48 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span>
         <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Subclient.set_backup_nodes"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">set_backup_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_access_nodes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the the backup nodes for NFS share subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                data_access_nodes   (list)  --  the list of data access nodes to be set</span>
+<span class="sd">                as backup nodes for NFS share subclient</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None    -   if the operation is successful</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if unable to update the backup nodes for the subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data_access_nodes_json</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">access_node</span> <span class="ow">in</span> <span class="n">data_access_nodes</span><span class="p">:</span>
+            <span class="n">data_access_nodes_json</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">access_node</span><span class="p">})</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;fsSubClientProp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;backupConfiguration&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;backupDataAccessNodes&quot;</span><span class="p">:</span> <span class="n">data_access_nodes_json</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENT</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to update properties of subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
 
 <div class="viewcode-block" id="Subclient.find_latest_job"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.find_latest_job">[docs]</a>    <span class="k">def</span> <span class="nf">find_latest_job</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -1894,7 +1961,169 @@
 <div class="viewcode-block" id="Subclient.refresh"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the Subclient.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">software_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of Software Compression settings on the Subclient.&quot;&quot;&quot;</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;ON_CLIENT&#39;</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;ON_MEDIAAGENT&#39;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;USE_STORAGE_POLICY_SETTINGS&#39;</span><span class="p">,</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="s1">&#39;OFF&#39;</span>
+        <span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mapping</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">][</span><span class="s1">&#39;softwareCompression&#39;</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">][</span><span class="s1">&#39;softwareCompression&#39;</span><span class="p">]</span>
+
+    <span class="nd">@software_compression</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">software_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the software compression of the subclient as the value provided as input.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str)   --  software compression setting</span>
+
+<span class="sd">                Valid values are:</span>
+
+<span class="sd">                -   ON_CLIENT</span>
+<span class="sd">                -   ON_MEDIAAGENT</span>
+<span class="sd">                -   USE_STORAGE_POLICY_SETTINGS</span>
+<span class="sd">                -   OFF</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update software compression of subclient</span>
+
+<span class="sd">                    if the type of value input is not string</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_commonProperties[&#39;storageDevice&#39;][&#39;softwareCompression&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">encryption_flag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of encryption flag settings on the Subclient.&quot;&quot;&quot;</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;ENC_NONE&#39;</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;ENC_MEDIA_ONLY&#39;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;ENC_NETWORK_AND_MEDIA&#39;</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="s1">&#39;ENC_NETWORK_ONLY&#39;</span>
+        <span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mapping</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;encryptionFlag&#39;</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;encryptionFlag&#39;</span><span class="p">]</span>
+
+    <span class="nd">@encryption_flag</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">encryption_flag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the encryption Flag of the subclient as the value provided as input.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str)   --  encryption flag value</span>
+
+<span class="sd">                Valid values are:</span>
+
+<span class="sd">                -   ENC_NONE</span>
+<span class="sd">                -   ENC_MEDIA_ONLY</span>
+<span class="sd">                -   ENC_NETWORK_AND_MEDIA</span>
+<span class="sd">                -   ENC_NETWORK_ONLY</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update encryption Flag of subclient</span>
+
+<span class="sd">                    if the type of value input is not string</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;encryptionFlag&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">deduplication_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of deduplication options settings on the Subclient.&quot;&quot;&quot;</span>
+        <span class="n">mapping_dedupe</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">mapping_signature</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;ON_CLIENT&quot;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;ON_MEDIA_AGENT&quot;</span>
+        <span class="p">}</span>
+
+        <span class="n">dedupe_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">][</span><span class="s1">&#39;deDuplicationOptions&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;enableDeduplication&quot;</span> <span class="ow">in</span> <span class="n">dedupe_options</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dedupe_options</span><span class="p">[</span><span class="s1">&#39;enableDeduplication&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">mapping_dedupe</span><span class="p">[</span><span class="n">dedupe_options</span><span class="p">[</span><span class="s1">&#39;enableDeduplication&#39;</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;generateSignature&#39;</span> <span class="ow">in</span> <span class="n">dedupe_options</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">mapping_signature</span><span class="p">[</span><span class="n">dedupe_options</span><span class="p">[</span><span class="s1">&#39;generateSignature&#39;</span><span class="p">]]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">dedupe_options</span><span class="p">[</span><span class="s1">&#39;generateSignature&#39;</span><span class="p">]</span>
+
+    <span class="nd">@deduplication_options</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">deduplication_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_dedupe</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables / Disables the deduplication options of the Subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                enable_dedupe   (tuple)     --  to enable or disable deduplication</span>
+
+<span class="sd">                    tuple:</span>
+<span class="sd">                        **bool**    -   boolean flag to specify whether to</span>
+<span class="sd">                        enable / disable deduplication</span>
+
+<span class="sd">                        **str**     -   where to generate the signature at</span>
+
+<span class="sd">                            Valid Values are:</span>
+
+<span class="sd">                            -   ON_CLIENT</span>
+<span class="sd">                            -   ON_MEDIA_AGENT</span>
+
+
+<span class="sd">                    e.g.:</span>
+
+<span class="sd">                        &gt;&gt;&gt; subclient.deduplication_options = (False, None)</span>
+
+<span class="sd">                        &gt;&gt;&gt; subclient.deduplication_options = (True, &quot;ON_CLIENT&quot;)</span>
+
+<span class="sd">                        &gt;&gt;&gt; subclient.deduplication_options = (True, &quot;ON_MEDIA_AGENT&quot;)</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update deDuplication Options of subclient</span>
+
+<span class="sd">                    if the type of value input is not correct</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">enable_dedupe</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">enable_dedupe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                    <span class="s2">&quot;_commonProperties[&#39;storageDevice&#39;][&#39;deDuplicationOptions&#39;]&quot;</span><span class="p">,</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;enableDeduplication&quot;</span><span class="p">:</span> <span class="n">enable_dedupe</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="s2">&quot;generateSignature&quot;</span><span class="p">:</span> <span class="n">enable_dedupe</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Input data is not correct&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_commonProperties[&#39;storageDevice&#39;][&#39;deDuplicationOptions&#39;]&quot;</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;enableDeduplication&quot;</span><span class="p">:</span> <span class="n">enable_dedupe</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">}</span>
+            <span class="p">)</span></div>
 </pre></div>
 
           </div>
@@ -1930,7 +2159,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

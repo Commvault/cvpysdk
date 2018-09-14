@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Clientgroup &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>Clientgroup &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -52,6 +52,9 @@ Id or the details for the given client group name</p>
 from the list of clients provided</p>
 <p>all_clientgroups()         – returns the dict of all the clientgroups on the commcell</p>
 <p>has_clientgroup()          – checks if a client group exists with the given name or not</p>
+<p>create_smart_rule()        – Create rules required for smart client group creation
+based on input parameters</p>
+<p>merge_smart_rules()       – Merge multiple rules into (SCG) rule to create smart client group</p>
 <p>add(clientgroup_name)      – adds a new client group to the commcell</p>
 <p>get(clientgroup_name)      – returns the instance of the ClientGroup class,
 for the the input client group name</p>
@@ -94,7 +97,7 @@ an activity</p>
 <dl class="class">
 <dt id="cvpysdk.clientgroup.ClientGroup">
 <em class="property">class </em><code class="descclassname">cvpysdk.clientgroup.</code><code class="descname">ClientGroup</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>clientgroup_name</em>, <em>clientgroup_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroup" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for performing operations for a specific ClientGroup.</p>
 <dl class="method">
 <dt id="cvpysdk.clientgroup.ClientGroup.add_clients">
@@ -392,22 +395,27 @@ to be removed from the client group</dd>
 <dl class="class">
 <dt id="cvpysdk.clientgroup.ClientGroups">
 <em class="property">class </em><code class="descclassname">cvpysdk.clientgroup.</code><code class="descname">ClientGroups</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for representing all the clientgroups associated with a Commcell.</p>
 <dl class="method">
 <dt id="cvpysdk.clientgroup.ClientGroups.add">
-<code class="descname">add</code><span class="sig-paren">(</span><em>clientgroup_name</em>, <em>clients=[]</em>, <em>clientgroup_description=''</em>, <em>enable_backup=True</em>, <em>enable_restore=True</em>, <em>enable_data_aging=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.add" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add</code><span class="sig-paren">(</span><em>clientgroup_name</em>, <em>clients=[]</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a new Client Group to the Commcell.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><p class="first">clientgroup_name        (str)        –  name of the new client group to add</p>
-<dl class="last docutils">
+<dl class="docutils">
 <dt>clients                 (str/list)   –  ‘,’ separated string of client names,</dt>
 <dd><blockquote class="first">
 <div>or a list of clients,
 to be added under client group</div></blockquote>
 <p class="last">default: []</p>
 </dd>
+</dl>
+<p>** kwargs               (dict)       – Key value pairs for supported arguments</p>
+<p>Supported:</p>
+<blockquote class="last">
+<div><dl class="docutils">
 <dt>clientgroup_description (str)        –  description of the client group</dt>
 <dd>default: “”</dd>
 <dt>enable_backup           (bool)       –  enable or disable backup</dt>
@@ -416,7 +424,10 @@ to be added under client group</div></blockquote>
 <dd>default: True</dd>
 <dt>enable_data_aging       (bool)       –  enable or disable data aging</dt>
 <dd>default: True</dd>
+<dt>scg_rule                (dict)       –  scg_rule required to create smart</dt>
+<dd>client group</dd>
 </dl>
+</div></blockquote>
 </dd>
 <dt>Returns:</dt>
 <dd>object - instance of the ClientGroup class created by this method</dd>
@@ -444,6 +455,38 @@ to be added under client group</div></blockquote>
 <dt>{</dt>
 <dd>“clientgroup1_name”: clientgroup1_id,
 “clientgroup2_name”: clientgroup2_id,</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroups.create_smart_rule">
+<code class="descname">create_smart_rule</code><span class="sig-paren">(</span><em>filter_rule='OS Type'</em>, <em>filter_condition='equal to'</em>, <em>filter_value='Windows'</em>, <em>value='1'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.create_smart_rule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.create_smart_rule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create/Prepare rules required for smart client group creation based on input parameters</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">filter_rule (str)      –  Rule selection to match specific criterion</p>
+<p>filter_condition (str) –  Filter value between selections in rule</p>
+<p>filter_value(str)     –   Value of rule criterion</p>
+<p class="last">value(str)            –   value required to create rule</p>
+</dd>
+<dt>Returns:</dt>
+<dd><blockquote class="first">
+<div>dict    -   consists of single rule based on inputs</div></blockquote>
+<dl class="docutils">
+<dt>{</dt>
+<dd><dl class="first docutils">
+<dt>“rule”: {</dt>
+<dd>“filterID”: 100,
+“secValue”: ‘Windows’,
+“propID”: 8,
+“propType”: 4,
+“value”: ‘1’</dd>
+</dl>
+<p class="last">}</p>
+</dd>
 </dl>
 <p class="last">}</p>
 </dd>
@@ -509,6 +552,22 @@ to be added under client group</div></blockquote>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.clientgroup.ClientGroups.merge_smart_rules">
+<code class="descname">merge_smart_rules</code><span class="sig-paren">(</span><em>rule_list</em>, <em>op_value='all'</em>, <em>scg_op='all'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.merge_smart_rules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.merge_smart_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge multiple rules into (SCG) rule to create smart client group.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">rule_list (list)  –  List of smart rules to be added in rule group</p>
+<p>op_value (str)–     condition to apply between smart rules
+ex: all, any,not any</p>
+<p class="last">scg_op (str)–       condition to apply between smart rule groups (&#64;group level)</p>
+</dd>
+<dt>Returns:</dt>
+<dd>scg_rule (dict)    -   Rule group to create smart client group</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.clientgroup.ClientGroups.refresh">
 <code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/clientgroup.html#ClientGroups.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.clientgroup.ClientGroups.refresh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Refresh the client groups associated with the Commcell.</p>
@@ -561,7 +620,7 @@ to be added under client group</div></blockquote>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

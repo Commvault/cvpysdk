@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.commcell &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.commcell &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -66,6 +66,11 @@
 
 <span class="sd">    _qoperation_execute()       --  runs the qoperation execute rest api on specified input xml</span>
 
+<span class="sd">    _qoperation_execscript()    --  runs the qoperation execute script rest api with</span>
+<span class="sd">    specified arguements</span>
+
+<span class="sd">    _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)</span>
+
 <span class="sd">    logout()                    --  logs out the user associated with the current instance</span>
 
 <span class="sd">    request()                   --  runs an input HTTP request on the API specified,</span>
@@ -79,6 +84,9 @@
 
 <span class="sd">    get_saml_token()            --  returns the SAML token for the currently logged-in user</span>
 
+<span class="sd">    add_additional_setting()    --  adds registry key to the commserve property</span>
+
+<span class="sd">    delete_additional_setting() --  deletes registry key from the commserve property</span>
 
 <span class="sd">Commcell instance Attributes</span>
 <span class="sd">============================</span>
@@ -98,6 +106,8 @@
 
 <span class="sd">    **commserv_version**        --  returns the ContentStore version installed on the `CommServ`,</span>
 <span class="sd">    class instance is initalized for</span>
+
+<span class="sd">    **commcell_id**             --  returns the `CommCell` ID</span>
 
 <span class="sd">    **webconsole_hostname**     --  returns the host name of the `webconsole`,</span>
 <span class="sd">    class instance is connected to</span>
@@ -169,6 +179,9 @@
 <span class="sd">    **monitoring_policies**     --  returns the instance of the `MonitoringPolicies` class,</span>
 <span class="sd">    to interact with the MonitoringPolicies added to the Commcell</span>
 
+<span class="sd">    **operation_window**        -- returns the instance of the &#39;OperationWindow&#39; class,</span>
+<span class="sd">    to interact with the opeartion windows of commcell</span>
+
 <span class="sd">    **array_management**        --  returns the instance of the `ArrayManagement` class,</span>
 <span class="sd">    to perform SNAP related operations on the Commcell</span>
 
@@ -178,6 +191,14 @@
 <span class="sd">    **event_viewer**            --  returns the instance of the `Events` class,</span>
 <span class="sd">    to interact with the Events associated on the Commcell</span>
 
+<span class="sd">    **disasterrecovery**    -- returns the instance of the &#39;DisasterRecovery&#39; class,</span>
+<span class="sd">    to run disaster recovery backup , restore operations.</span>
+
+<span class="sd">    **commserv_client**         --  returns the client object associated with the</span>
+<span class="sd">    commserver</span>
+
+<span class="sd">    **Commcell_Migration**      --  returns the instance of the &#39;CommCellMigration&#39; class,</span>
+<span class="sd">    to interact with the Commcell Export &amp; Import on the Commcell</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
@@ -201,8 +222,6 @@
 <span class="kn">from</span> <span class="nn">.alert</span> <span class="k">import</span> <span class="n">Alerts</span>
 <span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">MediaAgents</span>
 <span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">DiskLibraries</span>
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">StoragePolicies</span>
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">SchedulePolicies</span>
 <span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="k">import</span> <span class="n">UserGroups</span>
 <span class="kn">from</span> <span class="nn">.domains</span> <span class="k">import</span> <span class="n">Domains</span>
 <span class="kn">from</span> <span class="nn">.workflow</span> <span class="k">import</span> <span class="n">WorkFlows</span>
@@ -220,9 +239,13 @@
 <span class="kn">from</span> <span class="nn">.monitoring</span> <span class="k">import</span> <span class="n">MonitoringPolicies</span>
 <span class="kn">from</span> <span class="nn">.policy</span> <span class="k">import</span> <span class="n">Policies</span>
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedule</span>
 <span class="kn">from</span> <span class="nn">.activitycontrol</span> <span class="k">import</span> <span class="n">ActivityControl</span>
 <span class="kn">from</span> <span class="nn">.eventviewer</span> <span class="k">import</span> <span class="n">Events</span>
 <span class="kn">from</span> <span class="nn">.array_management</span> <span class="k">import</span> <span class="n">ArrayManagement</span>
+<span class="kn">from</span> <span class="nn">.disasterrecovery</span> <span class="k">import</span> <span class="n">DisasterRecovery</span>
+<span class="kn">from</span> <span class="nn">.operation_window</span> <span class="k">import</span> <span class="n">OperationWindow</span>
+<span class="kn">from</span> <span class="nn">.commcell_migration</span> <span class="k">import</span> <span class="n">CommCellMigration</span>
 
 
 <span class="n">USER_LOGGED_OUT_MESSAGE</span> <span class="o">=</span> <span class="s1">&#39;User Logged Out. Please initialize the Commcell object again.&#39;</span>
@@ -360,9 +383,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_guid</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_version</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_media_agents</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_workflows</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_disk_libraries</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policies</span> <span class="o">=</span> <span class="kc">None</span>
@@ -384,6 +409,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_events</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_monitoring_policies</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_array_management</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_client</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
@@ -457,11 +485,15 @@
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_events</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_monitoring_policies</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array_management</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_client</span>
 
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_web_service</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_device_id</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span>
         <span class="k">del</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">_get_commserv_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -492,6 +524,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_name</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;commcell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellName&#39;</span><span class="p">]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_timezone_name</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;csTimeZone&#39;</span><span class="p">][</span><span class="s1">&#39;TimeZoneName&#39;</span><span class="p">]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_version</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;currentSPVersion&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;commcell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellId&#39;</span><span class="p">]</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_timezone</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
                         <span class="sa">r</span><span class="s1">&#39;\(.*&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;timeZone&#39;</span><span class="p">]</span>
@@ -521,6 +554,86 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_xml</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_convert_days_to_epoch</span><span class="p">(</span><span class="n">days</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        convert the days to epoch time stamp</span>
+<span class="sd">        Args:</span>
+<span class="sd">            days: Number of days to convert</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            from_time : days - now  . start time in unix format</span>
+<span class="sd">            to_time   : now . end time in unix format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">datetime</span>
+        <span class="kn">import</span> <span class="nn">time</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">then</span> <span class="o">=</span> <span class="n">now</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days</span><span class="p">)</span>
+        <span class="n">start_dt</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">then</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
+        <span class="n">end_dt</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">start_dt</span><span class="p">,</span> <span class="n">end_dt</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">commcell_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the ID of the CommCell.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+
+    <span class="k">def</span> <span class="nf">_qoperation_execscript</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Makes a qoperation execute rest api call</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                arguments     (str)   --  arguements that is to be passed</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   json response received from the server</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QSCRIPT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="n">arguments</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_set_gxglobalparam_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Updates GXGlobalParam table (Commcell level configuration parameters)</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_json (str)   --  request json that is to be passed</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict                --   json response received from the server</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GLOBAL_PARAM&#39;</span><span class="p">],</span> <span class="n">request_json</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
@@ -594,8 +707,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">media_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -607,8 +718,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_media_agents</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">workflows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -620,8 +729,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflows</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -633,8 +740,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">disk_libraries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -646,34 +751,16 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disk_libraries</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">storage_policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the instance of the StoragePolicies class.&quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policies</span> <span class="o">=</span> <span class="n">StoragePolicies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policies</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">policies</span><span class="o">.</span><span class="n">storage_policies</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">schedule_policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the instance of the SchedulePolicies class.&quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_policies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_policies</span> <span class="o">=</span> <span class="n">SchedulePolicies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_policies</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">policies</span><span class="o">.</span><span class="n">schedule_policies</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -685,8 +772,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">user_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -698,8 +783,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">domains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -711,8 +794,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">client_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -724,8 +805,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_groups</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">global_filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -737,8 +816,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_filters</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">datacube</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -750,8 +827,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datacube</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">plans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -763,8 +838,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">job_controller</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -776,8 +849,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_controller</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -789,8 +860,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_users</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -802,8 +871,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">download_center</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -815,8 +882,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_download_center</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">organizations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -828,8 +893,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">storage_pools</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -841,8 +904,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pools</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">monitoring_policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -854,8 +915,16 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_monitoring_policies</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">operation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the OperationWindow class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span> <span class="o">=</span> <span class="n">OperationWindow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">activity_control</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -867,8 +936,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activity_control</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">event_viewer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -880,8 +947,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_events</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">array_management</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -893,8 +958,36 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array_management</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
-        <span class="k">except</span> <span class="n">SDKException</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">disasterrecovery</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the DisasterRecovery class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span> <span class="o">=</span> <span class="n">DisasterRecovery</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">commserv_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the Client class for the CommServ client.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commserv_name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_client</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">commcell_migration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the CommcellMigration class&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span> <span class="o">=</span> <span class="n">CommCellMigration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="n">USER_LOGGED_OUT_MESSAGE</span>
 
 <div class="viewcode-block" id="Commcell.logout"><a class="viewcode-back" href="../../commcell.html#cvpysdk.commcell.Commcell.logout">[docs]</a>    <span class="k">def</span> <span class="nf">logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Logs out the user associated with the current instance.&quot;&quot;&quot;</span>
@@ -1036,7 +1129,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_events</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_monitoring_policies</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_array_management</span> <span class="o">=</span> <span class="kc">None</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_client</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_commserv_details</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Commcell.run_data_aging"><a class="viewcode-back" href="../../commcell.html#cvpysdk.commcell.Commcell.run_data_aging">[docs]</a>    <span class="k">def</span> <span class="nf">run_data_aging</span><span class="p">(</span>
@@ -1108,7 +1204,7 @@
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="n">schedule_pattern</span><span class="p">:</span>
-            <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">()</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">request_json</span><span class="p">,</span><span class="n">schedule_pattern</span><span class="p">)</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">()</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">request_json</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="p">)</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">],</span> <span class="n">request_json</span>
@@ -1126,7 +1222,7 @@
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="s2">&quot;taskId&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="k">pass</span>
+                    <span class="k">return</span> <span class="n">Schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schedule_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskId&#39;</span><span class="p">])</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
@@ -1172,6 +1268,88 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Commcell.add_additional_setting"><a class="viewcode-back" href="../../commcell.html#cvpysdk.commcell.Commcell.add_additional_setting">[docs]</a>    <span class="k">def</span> <span class="nf">add_additional_setting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">,</span> <span class="n">key_name</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds registry key to the commserve property.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                category    (str)   --  Category of registry key</span>
+
+<span class="sd">                key_name    (str)   --  Name of the registry key</span>
+
+<span class="sd">                data_type   (str)   --  Data type of registry key</span>
+
+<span class="sd">                    Accepted Values:</span>
+<span class="sd">                        - BOOLEAN</span>
+<span class="sd">                        - INTEGER</span>
+<span class="sd">                        - STRING</span>
+<span class="sd">                        - MULTISTRING</span>
+<span class="sd">                        - ENCRYPTED</span>
+
+<span class="sd">                value   (str)   --  Value of registry key</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to add</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response code is not as expected</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commserv_client</span><span class="o">.</span><span class="n">add_additional_setting</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">key_name</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commcell.delete_additional_setting"><a class="viewcode-back" href="../../commcell.html#cvpysdk.commcell.Commcell.delete_additional_setting">[docs]</a>    <span class="k">def</span> <span class="nf">delete_additional_setting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">,</span> <span class="n">key_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes registry key from the commserve property.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                category    (str)   --  Category of registry key</span>
+
+<span class="sd">                key_name    (str)   --  Name of the registry key</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to delete</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response code is not as expected</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commserv_client</span><span class="o">.</span><span class="n">delete_additional_setting</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">key_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commcell.protected_vms"><a class="viewcode-back" href="../../commcell.html#cvpysdk.commcell.Commcell.protected_vms">[docs]</a>    <span class="k">def</span> <span class="nf">protected_vms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns all the protected VMs for the particular client for passed days</span>
+<span class="sd">        Args:</span>
+<span class="sd">            days: Protected VMs for days</span>
+<span class="sd">                ex: if value is 30 , returns VM prtected in past 30 days</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                vm_dict -  all properties of VM prtotected for passed days</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">from_time</span><span class="p">,</span> <span class="n">to_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_days_to_epoch</span><span class="p">(</span><span class="n">days</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_PROTECTED_VMS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;PROTECTED_VMS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">from_time</span><span class="p">,</span> <span class="n">to_time</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_PROTECTED_VMS</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div></div>
 </pre></div>
 
@@ -1208,7 +1386,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

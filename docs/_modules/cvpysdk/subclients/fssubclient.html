@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclients.fssubclient &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.subclients.fssubclient &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -66,12 +66,39 @@
 
 <span class="sd">    trueup_option()                     --  enable/disable trueup option of the subclient</span>
 
+<span class="sd">    backup_retention()                  -- 	enable/disable backup retention for the subclient</span>
+
+<span class="sd">    backup_retention_days()             -- 	set number of days for backup retention</span>
+
+<span class="sd">    archiver_retention()                --  enable/disable archiver_retention of the subclient.</span>
+
+<span class="sd">    archiver_retention_days()           --  set number of days for archiver retention</span>
+
+<span class="sd">    file_version()                      --  set version mode and no of version or days</span>
+
+<span class="sd">    disk_cleanup()                      --  enable/disable disk cleanup tab</span>
+
+<span class="sd">    disk_cleanup_rules()                --  update rules for disk_cleanup</span>
+
+<span class="sd">    backup_only_archiving_candidate     --  enable or disable backup only candidate on the subclient</span>
+
 <span class="sd">    trueup_days()                       --  update trueup after **n** days value of the subclient</span>
+
+<span class="sd">    generate_signature_on_ibmi()        --  enable or disable signature generation on ibmi</span>
+
+<span class="sd">    object_level_backup()               --  enable or disable object level backup for ibmi subclient</span>
 
 <span class="sd">    find_all_versions()                 --  returns the dict containing list of all the backed up</span>
 <span class="sd">    versions of specified file</span>
-
+<span class="sd">	</span>
+<span class="sd">    block_level_backup_option            -- Enable/Disable Blocklevel Option on subclient</span>
+<span class="sd">        </span>
+<span class="sd">    create_file_level_index_option       -- Enable/Disable Metadata collection Option on subclient</span>
+<span class="sd">	</span>
 <span class="sd">    backup()                            --  run a backup job for the subclient</span>
+
+<span class="sd">    restore_out_of_place()              --  Restores the files/folders specified in the input paths list</span>
+<span class="sd">                                            to the input client, at the specified destionation location</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -81,6 +108,27 @@
 
 <span class="kn">from</span> <span class="nn">..subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
 <span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<span class="k">def</span> <span class="nf">_nested_dict</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">update_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function recursively update the source dictionary with new values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">         source   (dict)  --  Original dictionary</span>
+
+<span class="sd">         update_dict   (dict)  --  The changes which are need to make</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        dict  --  modified source dictionary with updated values</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">update_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">source</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_nested_dict</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">source</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">return</span> <span class="n">source</span>
 
 
 <div class="viewcode-block" id="FileSystemSubclient"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.fssubclient.FileSystemSubclient">[docs]</a><span class="k">class</span> <span class="nc">FileSystemSubclient</span><span class="p">(</span><span class="n">Subclient</span><span class="p">):</span>
@@ -117,6 +165,7 @@
                     <span class="s2">&quot;proxyClient&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxyClient</span><span class="p">,</span>
                     <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
                     <span class="s2">&quot;fsSubClientProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">,</span>
+
                     <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">,</span>
                     <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
                     <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
@@ -145,8 +194,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">_nested_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">&#39;enableOnePass&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">:</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;enableOnePass&#39;</span><span class="p">]</span>
@@ -158,15 +206,14 @@
                      <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">filter_content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">exception_content</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sets the subclient content / filter / exception content.</span>
+        <span class="sd">&quot;&quot;&quot;Sets the subclient content / filter / exception content</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                content             (list)  --  list of subclient content</span>
+<span class="sd">                content         	(list)      --  list of subclient content</span>
 
-<span class="sd">                filter_content      (list)  --  list of filter content</span>
+<span class="sd">                filter_content  	(list)      --  list of filter content</span>
 
-<span class="sd">                exception_content   (list)  --  list of exception content</span>
-
+<span class="sd">                exception_content	(list)		--	list of exception content</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span>
@@ -222,8 +269,7 @@
         <span class="k">if</span> <span class="s1">&#39;inline_bkp_cpy&#39;</span> <span class="ow">in</span> <span class="n">options</span> <span class="ow">or</span> <span class="s1">&#39;skip_catalog&#39;</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
             <span class="n">final_dict</span><span class="p">[</span><span class="s1">&#39;dataOpt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;createBackupCopyImmediately&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;inline_bkp_cpy&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-                <span class="s1">&#39;skipCatalogPhaseForSnapBackup&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;skip_catalog&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="p">}</span>
+                <span class="s1">&#39;skipCatalogPhaseForSnapBackup&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;skip_catalog&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)}</span>
 
         <span class="k">if</span> <span class="s1">&#39;adhoc_backup_contents&#39;</span> <span class="ow">in</span> <span class="n">options</span> <span class="ow">and</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;adhoc_backup_contents&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;adhoc_backup_contents&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
@@ -233,7 +279,38 @@
                 <span class="s1">&#39;selectedAdHocPaths&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;adhoc_backup_contents&#39;</span><span class="p">]</span>
             <span class="p">}</span>
 
+        <span class="k">if</span> <span class="s1">&#39;use_multi_stream&#39;</span> <span class="ow">in</span> <span class="n">options</span> <span class="ow">and</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;use_multi_stream&#39;</span><span class="p">]:</span>
+
+            <span class="n">multi_stream_opts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;useMultiStream&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;use_multi_stream&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;useMaximumStreams&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;use_maximum_streams&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;maxNumberOfStreams&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_number_of_streams&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="s1">&#39;dataOpt&#39;</span> <span class="ow">in</span> <span class="n">final_dict</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_dict</span><span class="p">[</span><span class="s1">&#39;dataOpt&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">final_dict</span><span class="p">[</span><span class="s1">&#39;dataOpt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">multi_stream_opts</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">final_dict</span><span class="p">[</span><span class="s1">&#39;dataOpt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">multi_stream_opts</span>
+
         <span class="k">return</span> <span class="n">final_dict</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_vlr_restore_options_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Constructs volume level Restore Dictionary&quot;&quot;&quot;</span>
+
+        <span class="n">physical_volume</span> <span class="o">=</span> <span class="s1">&#39;PHYSICAL_VOLUME&#39;</span>
+        <span class="n">vlr_options_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;volumeRstOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;volumeLeveRestore&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;volumeLevelRestoreType&quot;</span><span class="p">:</span> <span class="n">physical_volume</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;virtualServerRstOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;isDiskBrowse&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;isVolumeBrowse&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;isBlockLevelReplication&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">vlr_options_dict</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -265,8 +342,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_content</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">subclient_content</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient content should be a list value and not empty&#39;</span>
-            <span class="p">)</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Subclient content should be a list value and not empty&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">filter_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -297,8 +375,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_content</span><span class="p">(</span><span class="n">filter_content</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient filter content should be a list value and not empty&#39;</span>
-            <span class="p">)</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Subclient filter content should be a list value and not empty&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">exception_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -331,8 +410,7 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;Subclient exception content should be a list value and not empty&#39;</span>
-            <span class="p">)</span>
+                <span class="s1">&#39;Subclient exception content should be a list value and not empty&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">scan_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -399,6 +477,143 @@
         <span class="p">)</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_retention</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return if backup retention is enabled or not</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                True    -   if backup_retention is enabled for the subclient</span>
+
+<span class="sd">                False   -   if backup_rentention is not enabled for the subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;backupRetention&#39;</span><span class="p">]</span>
+
+    <span class="nd">@backup_retention</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backup_retention</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified Boolean variable to pass to the API</span>
+<span class="sd">            to update the backup_retention of this File System Subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">             value   (bool)  --  To enable or disable backup_retention.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;extendStoragePolicyRetention&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s1">&#39;backupRetention&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;backupRetention&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fs_subclient_prop&quot;</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;argument should only be boolean&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">block_level_backup_option</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the block level option </span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                true - if blocklevel is enabled on the subclient</span>
+<span class="sd">                false - if blocklevel is not enabled on the subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;blockLevelBackup&#39;</span><span class="p">]</span>
+
+
+    <span class="nd">@block_level_backup_option</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">block_level_backup_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_level_backup_value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified blocklevel flag</span>
+<span class="sd">            to pass to the API to update the blocklevel of this</span>
+<span class="sd">            File System Subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                block_level_backup_value (bool)  --  Specifies to enable or disable blocklevel option</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_fsSubClientProp[&#39;blockLevelBackup&#39;]&quot;</span><span class="p">,</span>
+            <span class="n">block_level_backup_value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">create_file_level_index_option</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the value of Metadata collection Option</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                true - if metadata collection is enabled on the subclient</span>
+<span class="sd">                false - if metadata collection is not enabled on the subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;createFileLevelIndexDuringBackup&#39;</span><span class="p">]</span>
+
+    <span class="nd">@create_file_level_index_option</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">create_file_level_index_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">create_file_level_index_value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified scan type</span>
+<span class="sd">            to pass to the API to update the Metadata collection of this</span>
+<span class="sd">            File System Subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                create_file_level_index_value (bool)  --  Specifies to enable or disable metadata collection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_fsSubClientProp[&#39;createFileLevelIndexDuringBackup&#39;]&quot;</span><span class="p">,</span>
+            <span class="n">create_file_level_index_value</span><span class="p">)</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_retention_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return number of days for backup retention</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                        (int)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;afterDeletionKeepItemsForNDays&#39;</span><span class="p">]</span>
+
+    <span class="nd">@backup_retention_days</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backup_retention_days</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the JSON with the specified backup_retention days to pass to the API</span>
+<span class="sd">            to update the retention for deleted item of this File System Subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">                value   (int)  --  To set extended retention days for deleted items</span>
+
+<span class="sd">                The value will be converted in years , months and days form on GUI.</span>
+
+<span class="sd">                To set infinite ,value should be -1</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update days for deleted item retention for the subclient</span>
+
+<span class="sd">                    if value is invalid</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;afterDeletionKeepItemsForNDays&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                    <span class="s1">&#39;backupRetentionMode&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;afterDeletionKeepItemsForNDays&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fs_subclient_prop&quot;</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;argument should only be boolean&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">trueup_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the trueup after n days value for this Subclient</span>
 
@@ -422,6 +637,7 @@
 <span class="sd">                    if trueup_days_value is invalid</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trueup_days_value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
                 <span class="s2">&quot;_fsSubClientProp[&#39;runTrueUpJobAfterDaysForFS&#39;]&quot;</span><span class="p">,</span>
@@ -429,6 +645,351 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Invalid trueup days&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">archiver_retention</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return the value of archiver retention or modified time retention</span>
+
+<span class="sd">          Returns:</span>
+<span class="sd">                True    -   if archiver or modified time retention is enabled for the subclient</span>
+
+<span class="sd">                False   -   if archiver or modified time retention is not enabled for the subclient</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;archiverRetention&#39;</span><span class="p">]</span>
+
+    <span class="nd">@archiver_retention</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">archiver_retention</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the JSON with the specified Boolean variable to pass to the API</span>
+<span class="sd">            to update the archiver or modified time based retention of this File System Subclient</span>
+
+<span class="sd">        If archiver retention is enabled-</span>
+<span class="sd">                With backup retention, the object based retention is selected and</span>
+<span class="sd">                modified time based retention is selected.</span>
+
+<span class="sd">                Without backup retention, job based retention is selected</span>
+<span class="sd">        Args:</span>
+<span class="sd">            value  (bool)  --  To enable or disable job based retention or modified time retention</span>
+
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;extendStoragePolicyRetention&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s1">&#39;archiverRetention&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;archiverRetention&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fs_subclient_prop&quot;</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;argument should only be boolean&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">archiver_retention_days</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return number of days for archiver or modified time  retention</span>
+
+<span class="sd">           Return:</span>
+<span class="sd">                                (int)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;extendRetentionForNDays&#39;</span><span class="p">]</span>
+
+    <span class="nd">@archiver_retention_days</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">archiver_retention_days</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the JSON with the specified archiver retention or modified time based retentiondays</span>
+<span class="sd">         to pass to the API to update the respected value of this File System Subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">                value  (int)  --   To update archiving retention or modified time based retention</span>
+
+<span class="sd">                               The value will be converted in years , months and days from on GUI.</span>
+
+<span class="sd">                               To set infinite value should be -1</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update archiver retention days of subclient</span>
+
+<span class="sd">                    if value is invalid</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;extendRetentionForNDays&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                    <span class="s1">&#39;archiverRetentionMode&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;extendRetentionForNDays&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fs_subclient_prop&quot;</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;argument should only be integer&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">disk_cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return value of disk cleanup of the subclient</span>
+
+<span class="sd">         Returns:</span>
+<span class="sd">                True    -   if disk Cleanup is enabled for the subclient</span>
+
+<span class="sd">                False   -   if disk Cleanup is not enabled for the subclient</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">diskcleanup</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;enableArchivingWithRules&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;diskCleanupRules&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;diskCleanupRules&#39;</span><span class="p">][</span><span class="s1">&#39;enableArchivingWithRules&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">diskcleanup</span>
+
+    <span class="nd">@disk_cleanup</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">disk_cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the JSON with the specified Boolean to pass to the API</span>
+<span class="sd">            to update the disk cleanup option of this File System Subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value   (bool)  --  To enable or disbale disk cleanup</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update the propety of subclient</span>
+
+<span class="sd">                    if value is invalid</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_fsSubClientProp[&#39;diskCleanupRules&#39;][&#39;enableArchivingWithRules&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;argument should only be boolean&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">disk_cleanup_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return disk cleanup rules for this FileSystem Subclient</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            (dict)  --  disk clean up rules</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;diskCleanupRules&#39;</span><span class="p">]</span>
+
+    <span class="nd">@disk_cleanup_rules</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">disk_cleanup_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the JSON with the specified dictionary value to pass to the API</span>
+<span class="sd">            to update the disk cleanup rules of this File System Subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">                        rules   (dict)  --  To update the rules Only need to send the value which need to be</span>
+<span class="sd">                        updated</span>
+
+<span class="sd">                        {&#39;diskCleanupRules&#39;:{</span>
+<span class="sd">                &#39;useNativeSnapshotToPreserveFileAccessTime&#39;: False,</span>
+<span class="sd">                &#39;fileModifiedTimeOlderThan&#39;: 0,</span>
+<span class="sd">                &#39;fileSizeGreaterThan&#39;: 1024,</span>
+<span class="sd">                &#39;stubPruningOptions&#39;: 0, 0 to disable and 1,2 ,3 for different option</span>
+
+<span class="sd">                &#39;afterArchivingRule&#39;: 1, - 1 for stub the file and 2 for delete the file</span>
+
+<span class="sd">                &#39;stubRetentionDaysOld&#39;: 365,</span>
+<span class="sd">                &#39;fileCreatedTimeOlderThan&#39;: 0,</span>
+<span class="sd">                &#39;maximumFileSize&#39;: 0,</span>
+<span class="sd">                &#39;fileAccessTimeOlderThan&#39;: 89,</span>
+<span class="sd">                &#39;startCleaningIfLessThan&#39;: 50,</span>
+<span class="sd">                &#39;enableRedundancyForDataBackedup&#39;: True,</span>
+<span class="sd">                 &#39;stopCleaningIfupto&#39;: 80,</span>
+
+<span class="sd">                 &#39;diskCleanupFileTypes&#39;: {{&#39;fileTypes&#39;: [&quot;%Text%&quot;, &#39;%Image%&#39;]}</span>
+
+<span class="sd">                 or</span>
+
+<span class="sd">                 &#39;diskCleanupFilesTypes&#39;:{} for no extension</span>
+<span class="sd">                }</span>
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update the property of the subclient</span>
+
+<span class="sd">                    if value is invalid</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rules</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fs_subclient_prop&quot;</span><span class="p">,</span> <span class="n">rules</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;The parameter should be dictionary&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_only_archiving_candidate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            To get the value of backup only archiving candidate</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                True    -   if backup only archiving candidate is enabled for the subclient</span>
+
+<span class="sd">                False   -   if backup only archiving candidate is not enabled for the subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;backupFilesQualifiedForArchive&#39;</span><span class="p">]</span>
+
+    <span class="nd">@backup_only_archiving_candidate</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backup_only_archiving_candidate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the JSON with the specified boolean value to pass to the API</span>
+<span class="sd">            to update the backup only archiving candidate of this File System Subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value   (bool)  --  Enable or disable the option</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update the propety of subclient</span>
+
+<span class="sd">                    if value is invalid</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+                <span class="s2">&quot;_fsSubClientProp[&#39;backupFilesQualifiedForArchive&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;The parameter must be boolean type&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">file_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                        (dict)  --  file version mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">version</span><span class="p">[</span><span class="s1">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;olderFileVersionsMode&#39;</span><span class="p">]</span>
+        <span class="n">modes</span><span class="o">=</span><span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;keepOlderVersionsForNDays&#39;</span><span class="p">],</span>
+			   <span class="mi">2</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="p">[</span><span class="s1">&#39;keepVersions&#39;</span><span class="p">]</span> <span class="p">}</span>
+        <span class="n">version</span><span class="p">[</span><span class="s1">&#39;DaysOrNumber&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">version</span><span class="p">[</span><span class="s1">&#39;Mode&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">version</span>
+
+    <span class="nd">@file_version</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">file_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Creates the JSON with the specified dictionary to pass to the API</span>
+<span class="sd">            to update the version mode and the value of this File System Subclient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">             value   (dict)  --  format -{&#39;Mode&#39;:value,&#39;DaysOrNumber&#39;:value}</span>
+
+<span class="sd">                    Mode value 1- version based on modified time</span>
+
+<span class="sd">                                2- No of version</span>
+
+<span class="sd">                Example-</span>
+<span class="sd">                    To set version based on modified time to 2 years</span>
+
+<span class="sd">                    value={&#39;Mode&#39;:1,&#39;DaysOrNumber&#39;,730}</span>
+
+<span class="sd">                    To set Number of version to 10</span>
+
+<span class="sd">                    value={&#39;Mode&#39;:2,&#39;DaysOrNumber&#39;:10}</span>
+<span class="sd">        Raises:</span>
+<span class="sd">               SDKException:</span>
+<span class="sd">                    if failed to update the propety of subclient</span>
+
+<span class="sd">                    if value is invalid</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;olderFileVersionsMode&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;Mode&#39;</span><span class="p">]}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;File version mode can only be 1 or 2&quot;</span><span class="p">)</span>
+            <span class="n">modes</span><span class="o">=</span><span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;keepOlderVersionsForNDays&#39;</span><span class="p">,</span>
+				    <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;keepVersions&#39;</span><span class="p">}</span>
+			
+            <span class="n">new_value</span><span class="p">[</span><span class="n">modes</span><span class="p">[</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;Mode&#39;</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;DaysOrNumber&#39;</span><span class="p">]</span>
+           
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fs_subclient_prop&quot;</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;Parameter need to be dictionary&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">generate_signature_on_ibmi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the value of generate signature on ibmi option for IBMi subclient.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                False   -   if signature generation on IBMi is enabled on the subclient</span>
+
+<span class="sd">                True    -   if signature generation on IBMi is not enabled on the subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;genSignatureOnIBMi&#39;</span><span class="p">))</span>
+
+    <span class="nd">@generate_signature_on_ibmi</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">generate_signature_on_ibmi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generate_signature_value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the generate signature property value on ibmi subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                generate_signature_value (int)  --  Specifies to enable or disable signature generation on IBMi</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_fsSubClientProp[&#39;genSignatureOnIBMi&#39;]&quot;</span><span class="p">,</span>
+            <span class="n">generate_signature_value</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">object_level_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the value of object level backup option for IBMi subclient.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                True    -   if object level backup is enabled on the subclient</span>
+
+<span class="sd">                False   -   if object level backup is not enabled on the subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupAsObjects&#39;</span><span class="p">)</span>
+
+    <span class="nd">@object_level_backup</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">object_level_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_level_value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the object level backup property for an IBMi subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                object_level_value (bool)  --  Specifies to enable or disable object level backup on IBMi</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_fsSubClientProp[&#39;backupAsObjects&#39;]&quot;</span><span class="p">,</span>
+            <span class="n">object_level_value</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="FileSystemSubclient.find_all_versions"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.find_all_versions">[docs]</a>    <span class="k">def</span> <span class="nf">find_all_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Searches the content of a Subclient.</span>
@@ -510,8 +1071,14 @@
 <span class="sd">                            inline_backup_copy      :   to run backup copy immediately(inline)</span>
 <span class="sd">                            skip_catalog            :   skip catalog for intellisnap operation</span>
 
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
+
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Job class for this backup job</span>
+<span class="sd">                object - instance of the Job class for this backup job if its an immediate Job</span>
+<span class="sd">                         instance of the Schedule class for the backup job if its a scheduled Job</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -528,8 +1095,9 @@
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_on_demand_subclient</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;On Demand backup is not supported for this subclient&#39;</span>
-                <span class="p">)</span>
+                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;On Demand backup is not supported for this subclient&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">advanced_options</span><span class="p">:</span>
                 <span class="n">advanced_options</span> <span class="o">=</span> <span class="p">{}</span>
@@ -559,7 +1127,123 @@
                 <span class="n">collect_metadata</span><span class="o">=</span><span class="n">collect_metadata</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FileSystemSubclient.restore_out_of_place"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">client</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">paths</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">restore_data_and_acl</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">from_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
+<span class="sd">            at the specified destionation location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client                (str/object) --  either the name of the client or</span>
+<span class="sd">                                                           the instance of the Client</span>
+
+<span class="sd">                destination_path      (str)        --  full path of the restore location on client</span>
+
+<span class="sd">                paths                 (list)       --  list of full paths of</span>
+<span class="sd">                                                           files/folders to restore</span>
+
+<span class="sd">                overwrite             (bool)       --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                restore_data_and_acl  (bool)       --  restore data and ACL files</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                copy_precedence         (int)   --  copy precedence value of storage policy copy</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                from_time           (str)       --  time to retore the contents after</span>
+<span class="sd">                        format: YYYY-MM-DD HH:MM:SS</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                to_time           (str)         --  time to retore the contents before</span>
+<span class="sd">                        format: YYYY-MM-DD HH:MM:SS</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                fs_options      (dict)          -- dictionary that includes all advanced options</span>
+<span class="sd">                    options:</span>
+<span class="sd">                        preserve_level      : preserve level option to set in restore</span>
+<span class="sd">                        proxy_client        : proxy that needed to be used for restore</span>
+<span class="sd">                        impersonate_user    : Impersonate user options for restore</span>
+<span class="sd">                        impersonate_password: Impersonate password option for restore</span>
+<span class="sd">                                                in base64 encoded form</span>
+<span class="sd">                        all_versions        : if set to True restores all the versions of the</span>
+<span class="sd">                                                specified file</span>
+<span class="sd">                        versions            : list of version numbers to be backed up</span>
+<span class="sd">                        media_agent         : Media Agent need to be used for Browse and restore</span>
+<span class="sd">                        is_vlr_restore      : sets if the restore job is to be triggered as vlr</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if client is not a string or Client instance</span>
+
+<span class="sd">                    if destination_path is not a string</span>
+
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+
+        <span class="c1"># check to find whether file level Restore/ Volume level restore for blocklvel.</span>
+
+        <span class="k">if</span> <span class="n">fs_options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">fs_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_vlr_restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">restore_data_and_acl</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+            <span class="n">paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">paths</span> <span class="o">==</span> <span class="p">[]:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+
+            <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span>
+                <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
+                <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+                <span class="n">restore_data_and_acl</span><span class="o">=</span><span class="n">restore_data_and_acl</span><span class="p">,</span>
+                <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+                <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
+                <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
+                <span class="n">destPath</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
+                <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">)</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vlr_restore_options_dict</span><span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;destination&#39;</span><span class="p">][</span><span class="s1">&#39;destPath&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> \
+                                                                                        <span class="n">destination_path</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;destination&#39;</span><span class="p">][</span><span class="s1">&#39;inPlace&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FileSystemSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">restore_out_of_place</span><span class="p">(</span><span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span>
+                                                                         <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
+                                                                         <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
+                                                                         <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+                                                                         <span class="n">restore_data_and_acl</span><span class="o">=</span><span class="n">restore_data_and_acl</span><span class="p">,</span>
+                                                                         <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+                                                                         <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
+                                                                         <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
+                                                                         <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -595,7 +1279,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

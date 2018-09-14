@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.clientgroup &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.clientgroup &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -68,6 +68,11 @@
 <span class="sd">    all_clientgroups()         -- returns the dict of all the clientgroups on the commcell</span>
 
 <span class="sd">    has_clientgroup()          -- checks if a client group exists with the given name or not</span>
+
+<span class="sd">    create_smart_rule()        -- Create rules required for smart client group creation</span>
+<span class="sd">    based on input parameters</span>
+
+<span class="sd">    merge_smart_rules()       -- Merge multiple rules into (SCG) rule to create smart client group</span>
 
 <span class="sd">    add(clientgroup_name)      -- adds a new client group to the commcell</span>
 
@@ -315,13 +320,240 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroups</span> <span class="ow">and</span> <span class="n">clientgroup_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroups</span></div>
 
-<div class="viewcode-block" id="ClientGroups.add"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-            <span class="n">clientgroup_name</span><span class="p">,</span>
-            <span class="n">clients</span><span class="o">=</span><span class="p">[],</span>
-            <span class="n">clientgroup_description</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-            <span class="n">enable_backup</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">enable_restore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">enable_data_aging</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups.create_smart_rule"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.create_smart_rule">[docs]</a>    <span class="k">def</span> <span class="nf">create_smart_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                          <span class="n">filter_rule</span><span class="o">=</span><span class="s1">&#39;OS Type&#39;</span><span class="p">,</span>
+                          <span class="n">filter_condition</span><span class="o">=</span><span class="s1">&#39;equal to&#39;</span><span class="p">,</span>
+                          <span class="n">filter_value</span><span class="o">=</span><span class="s1">&#39;Windows&#39;</span><span class="p">,</span>
+                          <span class="n">value</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create/Prepare rules required for smart client group creation based on input parameters</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                filter_rule (str)      --  Rule selection to match specific criterion</span>
+
+<span class="sd">                filter_condition (str) --  Filter value between selections in rule</span>
+
+<span class="sd">                filter_value(str)     --   Value of rule criterion</span>
+
+<span class="sd">                value(str)            --   value required to create rule</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                    dict    -   consists of single rule based on inputs</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;rule&quot;: {</span>
+<span class="sd">                        &quot;filterID&quot;: 100,</span>
+<span class="sd">                        &quot;secValue&quot;: &#39;Windows&#39;,</span>
+<span class="sd">                        &quot;propID&quot;: 8,</span>
+<span class="sd">                        &quot;propType&quot;: 4,</span>
+<span class="sd">                        &quot;value&quot;: &#39;1&#39;</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">filter_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;equal to&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="s1">&#39;not equal&#39;</span><span class="p">:</span> <span class="mi">101</span><span class="p">,</span>
+            <span class="s1">&#39;any in selection&#39;</span><span class="p">:</span> <span class="mi">108</span><span class="p">,</span>
+            <span class="s1">&#39;not in selection&#39;</span><span class="p">:</span> <span class="mi">109</span><span class="p">,</span>
+            <span class="s1">&#39;is true&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;is false&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;contains&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="n">prop_id_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Client&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Agents Installed&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Client Group&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Timezone&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="s1">&#39;Hostname&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s1">&#39;Client Version&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="s1">&#39;OS Type&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+            <span class="s1">&#39;Package Installed&#39;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+            <span class="s1">&#39;Client offline (days)&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s1">&#39;User as client owner&#39;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+            <span class="s1">&#39;Local user group as client owner&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+            <span class="s1">&#39;External group as client owner&#39;</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+            <span class="s1">&#39;Associated library name&#39;</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+            <span class="s1">&#39;OS Version&#39;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+            <span class="s1">&#39;Product Version&#39;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+            <span class="s1">&#39;Client Version Same as CS Version&#39;</span><span class="p">:</span> <span class="mi">17</span><span class="p">,</span>
+            <span class="s1">&#39;Days since client created&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+            <span class="s1">&#39;Days since last backup&#39;</span><span class="p">:</span> <span class="mi">19</span><span class="p">,</span>
+            <span class="s1">&#39;SnapBackup clients&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+            <span class="s1">&#39;Clients with attached storages&#39;</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span>
+            <span class="s1">&#39;Case manager hold clients&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgents for clients in group&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="s1">&#39;Client acts as proxy&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span>
+            <span class="s1">&#39;Backup activity enabled&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+            <span class="s1">&#39;Restore activity enabled&#39;</span><span class="p">:</span> <span class="mi">26</span><span class="p">,</span>
+            <span class="s1">&#39;Client online (days)&#39;</span><span class="p">:</span> <span class="mi">27</span><span class="p">,</span>
+            <span class="s1">&#39;Inactive AD user as client owner&#39;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
+            <span class="s1">&#39;Client excluded from SLA report&#39;</span><span class="p">:</span> <span class="mi">29</span><span class="p">,</span>
+            <span class="s1">&#39;Client uses storage policy&#39;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+            <span class="s1">&#39;Client is not ready&#39;</span><span class="p">:</span> <span class="mi">31</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Storage Policy&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgent has Lucene Index Roles&#39;</span><span class="p">:</span> <span class="mi">33</span><span class="p">,</span>
+            <span class="s1">&#39;Client associated with plan&#39;</span><span class="p">:</span> <span class="mi">34</span><span class="p">,</span>
+            <span class="s1">&#39;Client by Schedule Interval&#39;</span><span class="p">:</span> <span class="mi">35</span><span class="p">,</span>
+            <span class="s1">&#39;Client needs Updates&#39;</span><span class="p">:</span> <span class="mi">36</span><span class="p">,</span>
+            <span class="s1">&#39;Subclient Name&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">,</span>
+            <span class="s1">&#39;CommCell Psuedo Client&#39;</span><span class="p">:</span> <span class="mi">38</span><span class="p">,</span>
+            <span class="s1">&#39;Client Description&#39;</span><span class="p">:</span> <span class="mi">39</span><span class="p">,</span>
+            <span class="s1">&#39;Clients discovered using VSA Subclient&#39;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="s1">&#39;Clients with no Archive Data&#39;</span><span class="p">:</span> <span class="mi">41</span><span class="p">,</span>
+            <span class="s1">&#39;User Client Provider Associations&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+            <span class="s1">&#39;User Group Client Provider Associations&#39;</span><span class="p">:</span> <span class="mi">43</span><span class="p">,</span>
+            <span class="s1">&#39;Company Client Provider Associations&#39;</span><span class="p">:</span> <span class="mi">44</span><span class="p">,</span>
+            <span class="s1">&#39;Clients Meet SLA&#39;</span><span class="p">:</span> <span class="mi">45</span><span class="p">,</span>
+            <span class="s1">&#39;Index Servers&#39;</span><span class="p">:</span> <span class="mi">46</span><span class="p">,</span>
+            <span class="s1">&#39;Clients with OnePass enabled&#39;</span><span class="p">:</span> <span class="mi">49</span><span class="p">,</span>
+            <span class="s1">&#39;Clients by Role&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+            <span class="s1">&#39;Clients by Permission&#39;</span><span class="p">:</span> <span class="mi">51</span><span class="p">,</span>
+            <span class="s1">&#39;User description contains&#39;</span><span class="p">:</span> <span class="mi">52</span><span class="p">,</span>
+            <span class="s1">&#39;User Group description contains&#39;</span><span class="p">:</span> <span class="mi">53</span><span class="p">,</span>
+            <span class="s1">&#39;Content Analyzer Cloud&#39;</span><span class="p">:</span> <span class="mi">54</span><span class="p">,</span>
+            <span class="s1">&#39;Company Installed Client Associations&#39;</span><span class="p">:</span> <span class="mi">55</span><span class="p">,</span>
+            <span class="s1">&#39;Client Online in Last 30 Days&#39;</span><span class="p">:</span> <span class="mi">56</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Subclients Having Associated Storage Policy&#39;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Improperly Deconfigured Subclients&#39;</span><span class="p">:</span> <span class="mi">61</span><span class="p">,</span>
+            <span class="s1">&#39;Strikes count&#39;</span><span class="p">:</span> <span class="mi">62</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Backup Schedule&#39;</span><span class="p">:</span> <span class="mi">63</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Long Running Jobs&#39;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Synthetic Full Backup N Days&#39;</span><span class="p">:</span> <span class="mi">67</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgents for clients in group list&#39;</span><span class="p">:</span> <span class="mi">70</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Client Group List&#39;</span><span class="p">:</span> <span class="mi">71</span><span class="p">,</span>
+            <span class="s1">&#39;Timezone List&#39;</span><span class="p">:</span> <span class="mi">72</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgent has Lucene Index Role List&#39;</span><span class="p">:</span> <span class="mi">73</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Storage Policy List&#39;</span><span class="p">:</span> <span class="mi">74</span><span class="p">,</span>
+            <span class="s1">&#39;Timezone Region List&#39;</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Encryption&#39;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+            <span class="s1">&#39;Client CIDR Address Range&#39;</span><span class="p">:</span> <span class="mi">81</span><span class="p">,</span>
+            <span class="s1">&#39;HAC Cluster&#39;</span><span class="p">:</span> <span class="mi">85</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="n">ptype_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Client&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Agents Installed&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Client Group&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Timezone&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Hostname&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Client Version&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;OS Type&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Package Installed&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s1">&#39;Client offline (days)&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;User as client owner&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Local user group as client owner&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;External group as client owner&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Associated library name&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;OS Version&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Product Version&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Client Version Same as CS Version&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Days since client created&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;Days since last backup&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;SnapBackup clients&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Clients with attached storages&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Case manager hold clients&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgents for clients in group&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Client acts as proxy&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Backup activity enabled&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Restore activity enabled&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Client online (days)&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;Inactive AD user as client owner&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Client excluded from SLA report&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Client uses storage policy&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Client is not ready&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Storage Policy&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgent has Lucene Index Roles&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Client associated with plan&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Client by Schedule Interval&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Client needs Updates&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Subclient Name&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;CommCell Psuedo Client&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Client Description&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Clients discovered using VSA Subclient&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s1">&#39;Clients with no Archive Data&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;User Client Provider Associations&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;User Group Client Provider Associations&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Company Client Provider Associations&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Clients Meet SLA&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Index Servers&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Clients with OnePass enabled&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Clients by Role&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Clients by Permission&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;User description contains&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;User Group description contains&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;Content Analyzer Cloud&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Company Installed Client Associations&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;Client Online in Last 30 Days&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Subclients Having Associated Storage Policy&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Improperly Deconfigured Subclients&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Strikes count&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Backup Schedule&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Long Running Jobs&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Synthetic Full Backup N Days&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgents for clients in group list&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Client Group List&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="s1">&#39;Timezone List&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="s1">&#39;MediaAgent has Lucene Index Role List&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="s1">&#39;Associated Storage Policy List&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="s1">&#39;Timezone Region List&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+            <span class="s1">&#39;Clients With Encryption&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;Client CIDR Address Range&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s1">&#39;HAC Cluster&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">}</span>
+
+        <span class="n">rule_mk</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;filterID&quot;</span><span class="p">:</span> <span class="n">filter_dict</span><span class="p">[</span><span class="n">filter_condition</span><span class="p">],</span>
+                        <span class="s2">&quot;secValue&quot;</span><span class="p">:</span> <span class="n">filter_value</span><span class="p">,</span>
+                        <span class="s2">&quot;propID&quot;</span><span class="p">:</span> <span class="n">prop_id_dict</span><span class="p">[</span><span class="n">filter_rule</span><span class="p">],</span>
+                        <span class="s2">&quot;propType&quot;</span><span class="p">:</span> <span class="n">ptype_dict</span><span class="p">[</span><span class="n">filter_rule</span><span class="p">],</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span>
+                    <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">rule_mk</span></div>
+
+<div class="viewcode-block" id="ClientGroups.merge_smart_rules"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.merge_smart_rules">[docs]</a>    <span class="k">def</span> <span class="nf">merge_smart_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_list</span><span class="p">,</span> <span class="n">op_value</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">scg_op</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Merge multiple rules into (SCG) rule to create smart client group.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                rule_list (list)  --  List of smart rules to be added in rule group</span>
+
+<span class="sd">                op_value (str)--     condition to apply between smart rules</span>
+<span class="sd">                ex: all, any,not any</span>
+
+<span class="sd">                scg_op (str)--       condition to apply between smart rule groups (@group level)</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">               scg_rule (dict)    -   Rule group to create smart client group</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">op_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;all&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;any&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;not any&#39;</span><span class="p">:</span> <span class="mi">2</span>
+        <span class="p">}</span>
+        <span class="n">scg_rule</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;op&quot;</span><span class="p">:</span> <span class="n">op_dict</span><span class="p">[</span><span class="n">scg_op</span><span class="p">],</span>
+            <span class="s2">&quot;rules&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">rules_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;op&quot;</span><span class="p">:</span> <span class="n">op_dict</span><span class="p">[</span><span class="n">op_value</span><span class="p">],</span>
+                <span class="s2">&quot;rules&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">each_rule</span> <span class="ow">in</span> <span class="n">rule_list</span><span class="p">:</span>
+            <span class="n">rules_dict</span><span class="p">[</span><span class="s2">&quot;rule&quot;</span><span class="p">][</span><span class="s2">&quot;rules&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">each_rule</span><span class="p">)</span>
+
+        <span class="n">scg_rule</span><span class="p">[</span><span class="s2">&quot;rules&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rules_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scg_rule</span></div>
+
+<div class="viewcode-block" id="ClientGroups.add"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">clients</span><span class="o">=</span><span class="p">[],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new Client Group to the Commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -330,19 +562,25 @@
 <span class="sd">                clients                 (str/list)   --  &#39;,&#39; separated string of client names,</span>
 <span class="sd">                                                             or a list of clients,</span>
 <span class="sd">                                                             to be added under client group</span>
-<span class="sd">                    default: []</span>
+<span class="sd">                                                            default: []</span>
 
-<span class="sd">                clientgroup_description (str)        --  description of the client group</span>
-<span class="sd">                    default: &quot;&quot;</span>
+<span class="sd">                ** kwargs               (dict)       -- Key value pairs for supported arguments</span>
 
-<span class="sd">                enable_backup           (bool)       --  enable or disable backup</span>
-<span class="sd">                    default: True</span>
+<span class="sd">                Supported:</span>
 
-<span class="sd">                enable_restore          (bool)       --  enable or disable restore</span>
-<span class="sd">                    default: True</span>
+<span class="sd">                    clientgroup_description (str)        --  description of the client group</span>
+<span class="sd">                                                                default: &quot;&quot;</span>
 
-<span class="sd">                enable_data_aging       (bool)       --  enable or disable data aging</span>
-<span class="sd">                    default: True</span>
+<span class="sd">                    enable_backup           (bool)       --  enable or disable backup</span>
+<span class="sd">                                                                default: True</span>
+
+<span class="sd">                    enable_restore          (bool)       --  enable or disable restore</span>
+<span class="sd">                                                                default: True</span>
+
+<span class="sd">                    enable_data_aging       (bool)       --  enable or disable data aging</span>
+<span class="sd">                                                                default: True</span>
+<span class="sd">                    scg_rule                (dict)       --  scg_rule required to create smart</span>
+<span class="sd">                                                                client group</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the ClientGroup class created by this method</span>
@@ -360,7 +598,7 @@
 <span class="sd">                    if client group already exists with the given name</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">clientgroup_description</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clientgroup_description&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="n">basestring</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_clientgroup</span><span class="p">(</span><span class="n">clientgroup_name</span><span class="p">):</span>
@@ -376,24 +614,30 @@
             <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">clients</span><span class="p">:</span>
                 <span class="n">clients_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;clientName&#39;</span><span class="p">:</span> <span class="n">client</span><span class="p">})</span>
 
+            <span class="n">smart_client_group</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;scg_rule&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;scg_rule&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;scg_rule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
             <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;clientGroupOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
                 <span class="s2">&quot;clientGroupDetail&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">clientgroup_description</span><span class="p">,</span>
+                    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clientgroup_description&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;isSmartClientGroup&quot;</span><span class="p">:</span> <span class="n">smart_client_group</span><span class="p">,</span>
+                    <span class="s2">&quot;scgRule&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;scg_rule&#39;</span><span class="p">),</span>
                     <span class="s2">&quot;clientGroupActivityControl&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">&quot;activityControlOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
                             <span class="p">{</span>
                                 <span class="s2">&quot;activityType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
                                 <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">enable_backup</span>
+                                <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enable_backup&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
                             <span class="p">},</span> <span class="p">{</span>
                                 <span class="s2">&quot;activityType&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
                                 <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">enable_data_aging</span>
+                                <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enable_data_aging&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
                             <span class="p">},</span> <span class="p">{</span>
                                 <span class="s2">&quot;activityType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
                                 <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">enable_restore</span>
+                                <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enable_restore&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
                             <span class="p">}</span>
                         <span class="p">]</span>
                     <span class="p">},</span>
@@ -1357,7 +1601,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

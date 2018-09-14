@@ -1,0 +1,231 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.policies.schedule_policies &#8212; Developer SDK - Python 11.13 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.policies.schedule_policies</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing storage related operations on the commcell.</span>
+
+<span class="sd">This file has all the classes related to Schedule Policy operations.</span>
+
+<span class="sd">SchedulePolicies: Class for representing all the Schedule Policies associated to the commcell.</span>
+
+
+<span class="sd">SchedulePolicies:</span>
+<span class="sd">    __init__(commcell_object)    --  initialize the SchedulePolicies instance for the commcell</span>
+
+<span class="sd">    __str__()                    --  returns all the schedule policies associated with the commcell</span>
+
+<span class="sd">    __repr__()                   --  returns a string for instance of the SchedulePolicies class</span>
+
+<span class="sd">    _get_policies()              --  gets all the schedule policies of the commcell</span>
+
+<span class="sd">    all_schedule_policies()      --  returns the dict of all the schedule policies on commcell</span>
+
+<span class="sd">    has_policy(policy_name)      --  checks if a schedule policy exists with the given name</span>
+
+<span class="sd">    refresh()                    --  refresh the schedule policies associated with the commcell</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="k">import</span> <span class="n">install_aliases</span>
+
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
+
+<span class="n">install_aliases</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="SchedulePolicies"><a class="viewcode-back" href="../../../policies/policies.html#cvpysdk.policies.schedule_policies.SchedulePolicies">[docs]</a><span class="k">class</span> <span class="nc">SchedulePolicies</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for getting all the schedule policies associated with the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the SchedulePolicies class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the SchedulePolicies class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_POLICY</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SCHEDULE_POLICY&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all schedule policies of the commcell.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the schedule policies associated with the commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;Schedule Policy&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">policy</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_policies</span><span class="p">):</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">policy</span><span class="p">)</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the SchedulePolicies class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;SchedulePolicies class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets all the schedule policies associated to the commcell specified by commcell object.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - consists of all schedule policies of the commcell</span>
+<span class="sd">                    {</span>
+<span class="sd">                         &quot;schedule_policy1_name&quot;: schedule_policy1_id,</span>
+<span class="sd">                         &quot;schedule_policy2_name&quot;: schedule_policy2_id</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_POLICY</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;taskDetail&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">policies</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskDetail&#39;</span><span class="p">]</span>
+                <span class="n">policies_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="k">for</span> <span class="n">policy</span> <span class="ow">in</span> <span class="n">policies</span><span class="p">:</span>
+                    <span class="n">temp_name</span> <span class="o">=</span> <span class="n">policy</span><span class="p">[</span><span class="s1">&#39;task&#39;</span><span class="p">][</span><span class="s1">&#39;taskName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;task&#39;</span><span class="p">][</span><span class="s1">&#39;taskId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">policies_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+
+                <span class="k">return</span> <span class="n">policies_dict</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_schedule_policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the schedule policies on this commcell</span>
+
+<span class="sd">            dict - consists of all schedule policies of the commcell</span>
+<span class="sd">                    {</span>
+<span class="sd">                         &quot;schedule_policy1_name&quot;: schedule_policy1_id,</span>
+<span class="sd">                         &quot;schedule_policy2_name&quot;: schedule_policy2_id</span>
+<span class="sd">                    }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span>
+
+<div class="viewcode-block" id="SchedulePolicies.has_policy"><a class="viewcode-back" href="../../../policies/policies.html#cvpysdk.policies.schedule_policies.SchedulePolicies.has_policy">[docs]</a>    <span class="k">def</span> <span class="nf">has_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a schedule policy exists in the commcell with the input schedule policy name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                policy_name (str)  --  name of the schedule policy</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean output whether the schedule policy exists in the commcell or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the schedule policy name argument is not string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span> <span class="ow">and</span> <span class="n">policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span></div>
+
+<div class="viewcode-block" id="SchedulePolicies.refresh"><a class="viewcode-back" href="../../../policies/policies.html#cvpysdk.policies.schedule_policies.SchedulePolicies.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the Schedule Policies associated with the Commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_policies</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
