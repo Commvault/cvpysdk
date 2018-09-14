@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.instances.sybaseinstance &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>cvpysdk.instances.sybaseinstance &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -66,12 +66,14 @@
 
 <span class="sd">    sybase_home()                   -- returns string of sybase_home Property of Sybase instance</span>
 
+<span class="sd">    sybase_instance_name()          -- returns sybase instance name without any case change</span>
+
 <span class="sd">    is_discovery_enabled()          -- returns bool value of autodiscovery option</span>
 <span class="sd">                                      at given sybase instance level</span>
 
 <span class="sd">    localadmin_user()               -- returns string of localadmin_user of given sybase instance</span>
 
-<span class="sd">    sa_user()                       -- returns string of sa_username of given sybase instance</span>
+<span class="sd">    sa_user()                       -- returns string of sybase sa_user of given sybase instance</span>
 
 <span class="sd">    version()                       -- returns string of given sybase server version</span>
 
@@ -121,7 +123,8 @@
 <span class="sd">            object - instance of the Sybase Instance class</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SybaseInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SybaseInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_instanceprop</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># instance variable to hold instance properties</span>
 
     <span class="nd">@property</span>
@@ -134,6 +137,17 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sybaseInstance&#39;</span><span class="p">][</span><span class="s1">&#39;sybaseHome&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sybase_instance_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter for sybase instance name with actual case without any conversion</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            string - string of sybase_instance_name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;instance&quot;</span><span class="p">][</span><span class="s2">&quot;instanceName&quot;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_discovery_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -167,7 +181,6 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;sybaseInstance&#39;</span><span class="p">][</span><span class="s1">&#39;saUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
-
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -264,7 +277,8 @@
                                       <span class="n">instance_restore</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                                       <span class="n">timevalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                       <span class="n">sybasecreatedevice</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                      <span class="n">renamedatabases</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                                      <span class="n">renamedatabases</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                      <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to return basic sybase restore JSON based on given combination of parameters</span>
 
@@ -288,11 +302,18 @@
 <span class="sd">            renamedatabases (bool)            -- determines whether renamedatabase option</span>
 <span class="sd">                                                 chosen for given database restore</span>
 
+<span class="sd">            copy_precedence         (int)     --  copy precedence value of storage policy copy</span>
+<span class="sd">                    default: 0</span>
+
+
 <span class="sd">        Return :</span>
 
 <span class="sd">            returns base sybase restore json</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">copy_precedence_applicable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">copy_precedence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">copy_precedence_applicable</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="n">instance_restore</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">pointintime</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="n">timevalue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -309,6 +330,12 @@
             <span class="s2">&quot;browseOption&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;toTimeValue&quot;</span><span class="p">:</span> <span class="n">timevalue</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;mediaOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;copyPrecedence&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;copyPrecedenceApplicable&quot;</span><span class="p">:</span> <span class="n">copy_precedence_applicable</span><span class="p">,</span>
+                        <span class="s2">&quot;copyPrecedence&quot;</span><span class="p">:</span> <span class="n">copy_precedence</span>
+                    <span class="p">}</span>
                 <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;destination&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -385,7 +412,8 @@
                                  <span class="n">timevalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                  <span class="n">sybasecreatedevice</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                                  <span class="n">renamedatabases</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                 <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                                 <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Method to construct sybase restore JSON for individual Database restore</span>
 
 <span class="sd">        Args :</span>
@@ -408,6 +436,10 @@
 <span class="sd">            device_options  (dict(dict))      -- dict of dict for each database with</span>
 <span class="sd">                                                 device rename and database rename options</span>
 
+<span class="sd">            copy_precedence         (int)     --  copy precedence value of storage policy copy</span>
+<span class="sd">                    default: 0</span>
+
+
 <span class="sd">        Returns :</span>
 
 <span class="sd">                return restore JSON for individual Sybase database restore</span>
@@ -426,7 +458,8 @@
             <span class="n">instance_restore</span><span class="p">,</span>
             <span class="n">timevalue</span><span class="p">,</span>
             <span class="n">sybasecreatedevice</span><span class="p">,</span>
-            <span class="n">renamedatabases</span>
+            <span class="n">renamedatabases</span><span class="p">,</span>
+            <span class="n">copy_precedence</span>
         <span class="p">)</span>
         <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
         <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">basic_sybase_options</span>
@@ -435,7 +468,6 @@
         <span class="p">)</span>
         <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
             <span class="s2">&quot;sybaseRstOption&quot;</span><span class="p">][</span><span class="s2">&quot;sybaseDatabase&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">db_options</span>
-
         <span class="k">return</span> <span class="n">restore_json</span>
 
     <span class="k">def</span> <span class="nf">_get_sybase_full_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -445,7 +477,8 @@
                                       <span class="n">timevalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                       <span class="n">sybasecreatedevice</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                       <span class="n">renamedatabases</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                      <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                                      <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                      <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Method to create JSON for Full server restore</span>
 
 <span class="sd">        Args :</span>
@@ -465,8 +498,11 @@
 <span class="sd">            renamedatabases (bool)            -- determines whether renamedatabase option</span>
 <span class="sd">                                                 chosen for given database restore</span>
 
-<span class="sd">            device_options : (dict(dict))      -- dict of dict for each database with</span>
+<span class="sd">            device_options : (dict(dict))     -- dict of dict for each database with</span>
 <span class="sd">                                                 device rename and database rename options</span>
+
+<span class="sd">            copy_precedence         (int)     --  copy precedence value of storage policy copy</span>
+<span class="sd">                    default: 0</span>
 
 <span class="sd">        Returns :</span>
 
@@ -482,7 +518,8 @@
             <span class="n">instance_restore</span><span class="p">,</span>
             <span class="n">timevalue</span><span class="p">,</span>
             <span class="n">sybasecreatedevice</span><span class="p">,</span>
-            <span class="n">renamedatabases</span><span class="p">)</span>
+            <span class="n">renamedatabases</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="p">)</span>
         <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
         <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">basic_sybase_options</span>
         <span class="n">db_options</span> <span class="o">=</span> <span class="p">[]</span>
@@ -620,27 +657,30 @@
                               <span class="n">pointintime</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                               <span class="n">timevalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">renamedatabases</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                              <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                              <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to restore the entire sybase server</span>
 
 <span class="sd">        Args:</span>
 
-<span class="sd">            destination_client_name  (str)    -- sybase destination client for restore</span>
+<span class="sd">            destination_client_name  (str)   -- sybase destination client for restore</span>
 
-<span class="sd">            destination_instance_name  (str)  -- sybase destination instance for restore</span>
+<span class="sd">            destination_instance_name  (str) -- sybase destination instance for restore</span>
 
 <span class="sd">            pointintime (bool)               -- determines pointintime based restore or not</span>
 
-<span class="sd">            timevalue (str)                   -- for pointintime based restore</span>
+<span class="sd">            timevalue (str)                  -- for pointintime based restore</span>
 <span class="sd">                                              format: YYYY-MM-DD HH:MM:SS</span>
 
-<span class="sd">            sybasecreatedevice (bool)         -- determines whether to createdevice for sybase database restore</span>
+<span class="sd">            sybasecreatedevice (bool)        -- determines whether to createdevice for sybase database restore</span>
 
-<span class="sd">            renamedatabases (bool)            -- determines whether renamedatabase option chosen for given database restore</span>
+<span class="sd">            renamedatabases (bool)           -- determines whether renamedatabase option chosen for given database restore</span>
 
 <span class="sd">            device_options (dict(dict))      -- dict of dict for each database with device rename and database rename options</span>
 
+<span class="sd">            copy_precedence         (int)    --  copy precedence value of storage policy copy</span>
+<span class="sd">                    default: 0</span>
 <span class="sd">        Note :</span>
 
 <span class="sd">        Also This is dict  of dict having sourcedatabasename as Key and set of another dict options</span>
@@ -696,7 +736,7 @@
             <span class="n">timevalue</span><span class="p">,</span>
             <span class="n">sybasecreatedevice</span><span class="p">,</span>
             <span class="n">renamedatabases</span><span class="p">,</span>
-            <span class="n">device_options</span><span class="p">)</span>
+            <span class="n">device_options</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="p">)</span>
 
         <span class="c1"># subclient_object = self.subclients.get(&#39;default&#39;)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
@@ -708,7 +748,8 @@
                          <span class="n">timevalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                          <span class="n">sybasecreatedevice</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                          <span class="n">renamedatabases</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                         <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                         <span class="n">device_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Method to restore the individual databases</span>
@@ -730,6 +771,8 @@
 
 <span class="sd">            device_options (dict(dict))       -- dict of dict for each database with device rename and database rename options</span>
 
+<span class="sd">            copy_precedence         (int)     --  copy precedence value of storage policy copy</span>
+<span class="sd">                    default: 0</span>
 <span class="sd">        Note :</span>
 
 <span class="sd">        Also This is dict  of dict having sourcedatabasename as Key and set of another dict options</span>
@@ -788,7 +831,8 @@
             <span class="n">timevalue</span><span class="p">,</span>
             <span class="n">sybasecreatedevice</span><span class="p">,</span>
             <span class="n">renamedatabases</span><span class="p">,</span>
-            <span class="n">device_options</span><span class="p">)</span>
+            <span class="n">device_options</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="p">)</span>
         <span class="c1"># subclient_object = self.subclients.get(&#39;default&#39;)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 </pre></div>
@@ -826,7 +870,7 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Virtual Server Subclients &#8212; Developer SDK - Python 11.12 documentation</title>
+    <title>Virtual Server Subclients &#8212; Developer SDK - Python 11.13 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -306,7 +306,7 @@ subclient</dd>
 
 <dl class="method">
 <dt id="cvpysdk.subclients.virtualserver.fusioncomputesubclient.FusionComputeVirtualServerSubclient.full_vm_restore_out_of_place">
-<code class="descname">full_vm_restore_out_of_place</code><span class="sig-paren">(</span><em>vm_to_restore=None</em>, <em>destination_client=None</em>, <em>proxy_client=None</em>, <em>new_name=None</em>, <em>host=None</em>, <em>datastore=None</em>, <em>overwrite=True</em>, <em>power_on=True</em>, <em>copy_precedence=0</em>, <em>disk_provisioning=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/fusioncomputesubclient.html#FusionComputeVirtualServerSubclient.full_vm_restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.fusioncomputesubclient.FusionComputeVirtualServerSubclient.full_vm_restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<code class="descname">full_vm_restore_out_of_place</code><span class="sig-paren">(</span><em>vm_to_restore=None</em>, <em>destination_client=None</em>, <em>proxy_client=None</em>, <em>new_name=None</em>, <em>host=None</em>, <em>datastore=None</em>, <em>overwrite=True</em>, <em>power_on=True</em>, <em>copy_precedence=0</em>, <em>disk_provisioning='original'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/fusioncomputesubclient.html#FusionComputeVirtualServerSubclient.full_vm_restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.fusioncomputesubclient.FusionComputeVirtualServerSubclient.full_vm_restore_out_of_place" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restores the FULL Virtual machine specified in the input list
 to the provided vcenter client along with the ESX and the datastores.
 If the provided client name is none then it restores the Full Virtual
@@ -404,7 +404,7 @@ Hyper-V  virtual server subclient,and to perform operations on that subclient.</
 <dl class="class">
 <dt id="cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.disk_pattern">
 <em class="property">class </em><code class="descname">disk_pattern</code><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/hypervsubclient.html#HyperVVirtualServerSubclient.disk_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.disk_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
 <p>stores the disk pattern of all hypervisors</p>
 <dl class="attribute">
 <dt id="cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.disk_pattern.datastore">
@@ -447,6 +447,74 @@ Hyper-V  virtual server subclient,and to perform operations on that subclient.</
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.full_vm_conversion_vmware">
+<code class="descname">full_vm_conversion_vmware</code><span class="sig-paren">(</span><em>vcenter_client</em>, <em>destination_os_name</em>, <em>vm_to_restore=None</em>, <em>esx_host=None</em>, <em>datastore=None</em>, <em>overwrite=True</em>, <em>power_on=True</em>, <em>copy_precedence=0</em>, <em>disk_option='Original'</em>, <em>transport_mode='Auto'</em>, <em>proxy_client=None</em>, <em>destination_network=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/hypervsubclient.html#HyperVVirtualServerSubclient.full_vm_conversion_vmware"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.hypervsubclient.HyperVVirtualServerSubclient.full_vm_conversion_vmware" title="Permalink to this definition">¶</a></dt>
+<dd><p>This converts the Hyperv VM to VMware
+Args:</p>
+<blockquote>
+<div><blockquote>
+<div><dl class="docutils">
+<dt>vm_to_restore          (dict)  –  dict containing the VM name(s) to restore as</dt>
+<dd><p class="first">keys and the new VM name(s) as their values.
+Input empty string for default VM name for
+restored VM.</p>
+<blockquote class="last">
+<div>default: {}</div></blockquote>
+</dd>
+<dt>vcenter_client    (basestring) – name of the vcenter client</dt>
+<dd><dl class="first last docutils">
+<dt>where the VM should be</dt>
+<dd>restored.</dd>
+</dl>
+</dd>
+<dt>esx_host          (basestring) – destination esx host</dt>
+<dd>restores to the source VM
+esx if this value is not
+specified</dd>
+<dt>datastore         (basestring) – datastore where the</dt>
+<dd>restored VM should be located
+restores to the source VM
+datastore if this value is
+not specified</dd>
+<dt>overwrite         (bool)       – overwrite the existing VM</dt>
+<dd>default: True</dd>
+<dt>power_on          (bool)       – power on the  restored VM</dt>
+<dd>default: True</dd>
+<dt>copy_precedence   (int)        – copy precedence value</dt>
+<dd>default: 0</dd>
+<dt>disk_option       (basestring) – disk provisioning for the</dt>
+<dd>restored vm
+Options for input are: ‘Original’,
+‘Thick Lazy Zero’, ‘Thin’, ‘Thick Eager Zero’
+default: Original</dd>
+<dt>transport_mode    (basestring) – transport mode to be used for</dt>
+<dd>the restore.
+Options for input are: ‘Auto’, ‘SAN’, ‘Hot Add’,
+‘NBD’, ‘NBD SSL’
+default: Auto</dd>
+</dl>
+<p>proxy_client      (basestring) – destination proxy client</p>
+<p>destination_network (basestring)– destiantion network to which VM has to be connected</p>
+<p>destiantion_os      (base string)- os of source VM</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if inputs are not of correct type as per definition</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -558,6 +626,229 @@ name                        (str)- name of the VM to be restored</p>
 <p>if response is empty</p>
 <p>if response is not success</p>
 </div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.subclients.virtualserver.oraclecloudsubclient">
+<span id="oracle-cloud"></span><h2>Oracle Cloud<a class="headerlink" href="#module-cvpysdk.subclients.virtualserver.oraclecloudsubclient" title="Permalink to this headline">¶</a></h2>
+<p>File for operating on a Virtual Server OracleCloud Subclient.</p>
+<p>OracleCloudeVirtualServerSubclient is the only class defined in this file.</p>
+<dl class="docutils">
+<dt>OracleCloudVirtualServerSubclient: Derived class from VirtualServerSubClient  Base class,</dt>
+<dd>representing a OracleCloud Subclient, and
+to perform operations on that Subclient</dd>
+</dl>
+<p>OracleCloudVirtualServerSubclient:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>full_vm_restore_out_of_place()  –  restores the VM specified in to the specified client,</dt>
+<dd>at the specified destination location</dd>
+</dl>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.subclients.virtualserver.oraclecloudsubclient.OracleCloudVirtualServerSubclient">
+<em class="property">class </em><code class="descclassname">cvpysdk.subclients.virtualserver.oraclecloudsubclient.</code><code class="descname">OracleCloudVirtualServerSubclient</code><span class="sig-paren">(</span><em>backupset_object</em>, <em>subclient_name</em>, <em>subclient_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/oraclecloudsubclient.html#OracleCloudVirtualServerSubclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.oraclecloudsubclient.OracleCloudVirtualServerSubclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient" title="cvpysdk.subclients.vssubclient.VirtualServerSubclient"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.subclients.vssubclient.VirtualServerSubclient</span></code></a></p>
+<p>Derived class from VirtualServerSubclient Base class.
+This represents a OracleCloud virtual server subclient,
+and can perform restore operations on only that subclient.</p>
+<dl class="method">
+<dt id="cvpysdk.subclients.virtualserver.oraclecloudsubclient.OracleCloudVirtualServerSubclient.full_vm_restore_out_of_place">
+<code class="descname">full_vm_restore_out_of_place</code><span class="sig-paren">(</span><em>vm_to_restore=None</em>, <em>destination_client=None</em>, <em>proxy_client=None</em>, <em>new_name=None</em>, <em>host=None</em>, <em>power_on=True</em>, <em>copy_precedence=0</em>, <em>restore_option=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/oraclecloudsubclient.html#OracleCloudVirtualServerSubclient.full_vm_restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.oraclecloudsubclient.OracleCloudVirtualServerSubclient.full_vm_restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the FULL Virtual machine specified in the input list
+to the provided vcenter client along with the ESX and the datastores.
+If the provided client name is none then it restores the Full Virtual
+Machine to the source client and corresponding ESX and datastore.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">vm_to_restore           (list)  –  list of all VMs to restore</p>
+<dl class="docutils">
+<dt>destination_client      (str)   –  name of the pseudo client where VM should be</dt>
+<dd>restored</dd>
+</dl>
+<p>proxy_client            (str)   –  the proxy to be used for restore</p>
+<p>new_name                (str)   –  new name to be given to the restored VM</p>
+<dl class="last docutils">
+<dt>host                    (str)   –  destination host or cluster; restores to the</dt>
+<dd>source VM ESX if this value is not
+specified</dd>
+<dt>power_on                (bool)  –  power on the restored VM</dt>
+<dd>default: True</dd>
+<dt>copy_precedence         (int)   –  copy precedence to restored from</dt>
+<dd>default: 0</dd>
+<dt>restore_option          (dict)  –  dictionary with all the advanced restore</dt>
+<dd>options.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if inputs are not of correct type as per definition</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.subclients.virtualserver.oraclevmsubclient">
+<span id="oraclevm"></span><h2>OracleVM<a class="headerlink" href="#module-cvpysdk.subclients.virtualserver.oraclevmsubclient" title="Permalink to this headline">¶</a></h2>
+<p>File for operating on a Virtual Server OracleVM.</p>
+<p>OracleVMVirtualServerSubclient is the only class defined in this file.</p>
+<dl class="docutils">
+<dt>OracleVMVirtualServerSubclient: Derived class from VirtualServerSubClient  Base class,</dt>
+<dd>representing a OracleVM Subclient, and
+to perform operations on that Subclient</dd>
+</dl>
+<p>OracleVMVirtualServerSubclient:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>__init__(,backupset_object, subclient_name, subclient_id)–  initialize object of FusionCompute</dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>subclient object</dt>
+<dd>associated with</dd>
+</dl>
+</div></blockquote>
+<p class="last">the VirtualServer subclient</p>
+</dd>
+<dt>full_vm_restore_out_of_place()                  –  restores the VM  specified in</dt>
+<dd><dl class="first last docutils">
+<dt>to the specified client, at the</dt>
+<dd>specified destination location</dd>
+</dl>
+</dd>
+<dt>full_vm_restore_in_place()              –  restores the VM specified by the</dt>
+<dd>user to the same location</dd>
+</dl>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.subclients.virtualserver.oraclevmsubclient.OracleVMVirtualServerSubclient">
+<em class="property">class </em><code class="descclassname">cvpysdk.subclients.virtualserver.oraclevmsubclient.</code><code class="descname">OracleVMVirtualServerSubclient</code><span class="sig-paren">(</span><em>backupset_object</em>, <em>subclient_name</em>, <em>subclient_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/oraclevmsubclient.html#OracleVMVirtualServerSubclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.oraclevmsubclient.OracleVMVirtualServerSubclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient" title="cvpysdk.subclients.vssubclient.VirtualServerSubclient"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.subclients.vssubclient.VirtualServerSubclient</span></code></a></p>
+<p>Derived class from VirtualServerSubclient Base class.
+This represents a OracleVM virtual server subclient,
+and can perform restore operations on only that subclient.</p>
+<dl class="method">
+<dt id="cvpysdk.subclients.virtualserver.oraclevmsubclient.OracleVMVirtualServerSubclient.full_vm_restore_in_place">
+<code class="descname">full_vm_restore_in_place</code><span class="sig-paren">(</span><em>vm_to_restore=None</em>, <em>destination_client=None</em>, <em>overwrite=True</em>, <em>power_on=True</em>, <em>disk_option='Original'</em>, <em>transport_mode='Auto'</em>, <em>copy_precedence=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/oraclevmsubclient.html#OracleVMVirtualServerSubclient.full_vm_restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.oraclevmsubclient.OracleVMVirtualServerSubclient.full_vm_restore_in_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the FULL Virtual machine specified in the input list
+to the location same as the actual location of the VM in VCenter.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>vm_to_restore       (list)     –  provide the VM name to</dt>
+<dd>restore
+default: None</dd>
+<dt>destination_client (basestring)  – proxy client to be used for</dt>
+<dd>restore
+default: proxy added in
+subclient</dd>
+<dt>overwrite           (bool)     –  overwrite the existing VM</dt>
+<dd>default: True</dd>
+<dt>power_on            (bool)     –  power on the  restored VM</dt>
+<dd>default: True</dd>
+</dl>
+</div></blockquote>
+<dl class="last docutils">
+<dt>disk_option       (basestring) – disk provisioning for the</dt>
+<dd><blockquote class="first">
+<div>restored vm
+default: 0 which is equivalent
+to Original</div></blockquote>
+<dl class="last docutils">
+<dt>transport_mode    (basestring) – transport mode that need to be</dt>
+<dd>used</dd>
+<dt>copy_precedence     (int)      –  copy precedence value</dt>
+<dd>default: 0</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if inputs are not of correct type as per definition</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.virtualserver.oraclevmsubclient.OracleVMVirtualServerSubclient.full_vm_restore_out_of_place">
+<code class="descname">full_vm_restore_out_of_place</code><span class="sig-paren">(</span><em>vm_to_restore=None</em>, <em>restored_vm_name=None</em>, <em>disk_name_prefix=None</em>, <em>virtualization_client=None</em>, <em>destination_client=None</em>, <em>repository=None</em>, <em>overwrite=True</em>, <em>power_on=True</em>, <em>server=None</em>, <em>copy_precedence=0</em>, <em>disk_provisioning='Original'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/oraclevmsubclient.html#OracleVMVirtualServerSubclient.full_vm_restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.oraclevmsubclient.OracleVMVirtualServerSubclient.full_vm_restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the FULL Virtual machine specified in the input list
+to the provided vcenter client along with the ESX and the datastores.
+If the provided client name is none then it restores the Full Virtual
+Machine to the source client and corresponding ESX and datastore.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>vm_to_restore     (string)  –  provide the VM name to restore</dt>
+<dd>{“name_of_vm_to_restore”:
+“new_name_of_restored_vm”}
+default: {}</dd>
+<dt>restored_vm_name   (string)  – name of the new VM that should</dt>
+<dd>restored.</dd>
+<dt>disk_name_prefix    (string) – new name for the disks while restoring</dt>
+<dd>the VM</dd>
+<dt>virtualization_client   (basestring) – name of the Oracle</dt>
+<dd>virtualization
+client that needs to be
+restored</dd>
+<dt>destination_client    (basestring) – name of the proxy that</dt>
+<dd>should be used during
+restore</dd>
+<dt>repository         (basestring) – datastore where the</dt>
+<dd>restored VM should be located
+restores to the source VM
+datastore if this value is
+not specified</dd>
+<dt>overwrite         (bool)       – overwrite the existing VM</dt>
+<dd>default: True</dd>
+<dt>power_on          (bool)       – power on the  restored VM</dt>
+<dd>default: True</dd>
+<dt>server          (basestring) – destination cluster or  host</dt>
+<dd>restores to the source VM
+esx if this value is not
+specified</dd>
+<dt>copy_precedence   (int)        – copy precedence value</dt>
+<dd>default: 0</dd>
+<dt>disk_option       (basestring) – disk provisioning for the</dt>
+<dd>restored vm default: 0
+which is equivalent
+to Original</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this restore job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if inputs are not of correct type as per definition</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
 </dd>
 </dl>
 </dd>
@@ -687,7 +978,7 @@ default: Auto</dd>
 
 <dl class="method">
 <dt id="cvpysdk.subclients.virtualserver.vmwaresubclient.VMWareVirtualServerSubclient.full_vm_restore_out_of_place">
-<code class="descname">full_vm_restore_out_of_place</code><span class="sig-paren">(</span><em>vm_to_restore=None</em>, <em>restored_vm_name=None</em>, <em>vcenter_client=None</em>, <em>esx_host=None</em>, <em>datastore=None</em>, <em>overwrite=True</em>, <em>power_on=True</em>, <em>copy_precedence=0</em>, <em>disk_option='Original'</em>, <em>transport_mode='Auto'</em>, <em>proxy_client=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/vmwaresubclient.html#VMWareVirtualServerSubclient.full_vm_restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.vmwaresubclient.VMWareVirtualServerSubclient.full_vm_restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<code class="descname">full_vm_restore_out_of_place</code><span class="sig-paren">(</span><em>vm_to_restore=None</em>, <em>restored_vm_name=None</em>, <em>vcenter_client=None</em>, <em>esx_host=None</em>, <em>datastore=None</em>, <em>overwrite=True</em>, <em>power_on=True</em>, <em>copy_precedence=0</em>, <em>disk_option='Original'</em>, <em>transport_mode='Auto'</em>, <em>proxy_client=None</em>, <em>source_ip=None</em>, <em>destination_ip=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/virtualserver/vmwaresubclient.html#VMWareVirtualServerSubclient.full_vm_restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.vmwaresubclient.VMWareVirtualServerSubclient.full_vm_restore_out_of_place" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restores the FULL Virtual machine specified in the input list
 to the provided vcenter client along with the ESX and the datastores.
 If the provided client name is none then it restores the Full Virtual
@@ -720,7 +1011,9 @@ default: ‘Original’</dd>
 ‘Hot Add’, ‘NBD’, ‘NBD SSL’
 default: Auto</dd>
 </dl>
-<p class="last">proxy_client      (basestring)    –  destination proxy client</p>
+<p>proxy_client      (basestring)    –  destination proxy client</p>
+<p>source_ip           (basestring)    –  IP of the source VM</p>
+<p class="last">destination_ip      (basestring)    –  IP of the destination VM</p>
 </dd>
 <dt>Returns:</dt>
 <dd>object - instance of the Job class for this restore job</dd>
@@ -759,6 +1052,8 @@ default: Auto</dd>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.azuresubclient">Azure</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.fusioncomputesubclient">Fusion Compute</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.hypervsubclient">HyperV</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.oraclecloudsubclient">Oracle Cloud</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.oraclevmsubclient">OracleVM</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.vmwaresubclient">VMWare</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver">Module contents</a></li>
 </ul>
@@ -804,7 +1099,7 @@ default: Auto</dd>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
