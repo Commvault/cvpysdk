@@ -33,12 +33,17 @@ class CloudAppsSubclient(Subclient):
     def __new__(cls, backupset_object, subclient_name, subclient_id=None):
         from .cloudapps.salesforce_subclient import SalesforceSubclient
         from .cloudapps.google_subclient import GoogleSubclient
+        from .cloudapps.cloud_storage_subclient import CloudStorageSubclient
 
         instance_types = {
             1: GoogleSubclient,
             2: GoogleSubclient,
             3: SalesforceSubclient,
-            7: GoogleSubclient  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too
+            5: CloudStorageSubclient,  # AmazonS3 Subclient
+            6: CloudStorageSubclient,  # AzureBlob Subclient
+            7: GoogleSubclient,  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too
+            14: CloudStorageSubclient,  # OracleCloud Subclient
+            15: CloudStorageSubclient,  # Openstack Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

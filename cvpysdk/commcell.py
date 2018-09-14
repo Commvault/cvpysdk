@@ -36,6 +36,8 @@ Commcell:
     _qoperation_execscript()    --  runs the qoperation execute script rest api with
     specified arguements
 
+    _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)
+
     logout()                    --  logs out the user associated with the current instance
 
     request()                   --  runs an input HTTP request on the API specified,
@@ -52,7 +54,6 @@ Commcell:
     add_additional_setting()    --  adds registry key to the commserve property
 
     delete_additional_setting() --  deletes registry key from the commserve property
-
 
 Commcell instance Attributes
 ============================
@@ -163,6 +164,8 @@ Commcell instance Attributes
     **commserv_client**         --  returns the client object associated with the
     commserver
 
+    **Commcell_Migration**      --  returns the instance of the 'CommCellMigration' class,
+    to interact with the Commcell Export & Import on the Commcell
 """
 
 from __future__ import absolute_import
@@ -209,6 +212,7 @@ from .eventviewer import Events
 from .array_management import ArrayManagement
 from .disasterrecovery import DisasterRecovery
 from .operation_window import OperationWindow
+from .commcell_migration import CommCellMigration
 
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -374,6 +378,7 @@ class Commcell(object):
         self._array_management = None
         self._operation_window = None
         self._commserv_client = None
+        self._commcell_migration = None
 
         self.refresh()
 
@@ -455,6 +460,7 @@ class Commcell(object):
         del self._device_id
         del self._services
         del self._disaster_recovery
+        del self._commcell_migration
         del self
 
     def _get_commserv_details(self):
@@ -525,6 +531,25 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    @staticmethod
+    def _convert_days_to_epoch(days):
+        """
+        convert the days to epoch time stamp
+        Args:
+            days: Number of days to convert
+
+        Returns:
+            from_time : days - now  . start time in unix format
+            to_time   : now . end time in unix format
+        """
+        import datetime
+        import time
+        now = datetime.datetime.now()
+        then = now - datetime.timedelta(days=days)
+        start_dt = time.mktime(then.timetuple())
+        end_dt = time.mktime(now.timetuple())
+        return start_dt, end_dt
+
     @property
     def commcell_id(self):
         """Returns the ID of the CommCell."""
@@ -557,6 +582,34 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def _set_gxglobalparam_value(self, request_json):
+        """ Updates GXGlobalParam table (Commcell level configuration parameters)
+
+            Args:
+                request_json (str)   --  request json that is to be passed
+
+            Returns:
+                dict                --   json response received from the server
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GLOBAL_PARAM'], request_json
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def commserv_guid(self):
@@ -892,6 +945,17 @@ class Commcell(object):
 
         return self._commserv_client
 
+    @property
+    def commcell_migration(self):
+        """Returns the instance of the CommcellMigration class"""
+        try:
+            if self._commcell_migration is None:
+                self._commcell_migration = CommCellMigration(self)
+
+            return self._commcell_migration
+        except AttributeError:
+            return  USER_LOGGED_OUT_MESSAGE
+
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
@@ -1035,6 +1099,7 @@ class Commcell(object):
         self._disaster_recovery = None
         self._operation_window = None
         self._commserv_client = None
+        self._commcell_migration = None
         self._get_commserv_details()
 
     def run_data_aging(
@@ -1226,3 +1291,30 @@ class Commcell(object):
 
         """
         self.commserv_client.delete_additional_setting(category, key_name)
+
+    def protected_vms(self, days):
+        """
+        Returns all the protected VMs for the particular client for passed days
+        Args:
+            days: Protected VMs for days
+                ex: if value is 30 , returns VM prtected in past 30 days
+
+        Returns:
+                vm_dict -  all properties of VM prtotected for passed days
+
+        """
+
+        from_time, to_time = self._convert_days_to_epoch(days)
+        self._PROTECTED_VMS = self._services['PROTECTED_VMS'] % (from_time, to_time)
+        flag, response = self._cvpysdk_object.make_request(
+            'GET',
+            self._PROTECTED_VMS
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

@@ -54,13 +54,18 @@ class CloudAppsInstance(Instance):
     def __new__(cls, agent_object, instance_name, instance_id):
         from .cloudapps.google_instance import GoogleInstance
         from .cloudapps.salesforce_instance import SalesforceInstance
+        from .cloudapps.cloud_storage_instance import CloudStorageInstance
 
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
             3: SalesforceInstance,
+            5: CloudStorageInstance,  # AmazonS3 Instance
+            6: CloudStorageInstance,  # AzureBlob Instance
             # OneDrive Instance, GoogleInstance class is used for OneDrive instance too.
             7: GoogleInstance,
+            14: CloudStorageInstance,  # OracleCloud Instance
+            15: CloudStorageInstance,  # Openstack Instance
         }
 
         commcell_object = agent_object._commcell_object

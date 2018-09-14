@@ -1445,7 +1445,7 @@ class LiveMountPolicy(VirtualMachinePolicy):
             'csinfo': _csinfo,
             'hwconfig': _hwconfig,
             'netconfig': _netconfig,
-            'dataBrowseTime': {},
+            'dataBrowseTime': live_mount_options.get('pointInTime', {}),
             'maInfo': {
                 'clientName': ''
             },
@@ -1680,11 +1680,20 @@ class LiveMountPolicy(VirtualMachinePolicy):
                                                         mount job.
                                                         Allowed key-value pairs and input types
                                                         are given below
-                    default                      :  None
-                    'vmName'              (str)  :  name of the new vm that will be mounted
-                    'copyPrecedence'      (int)  :  number for the storage policy copy to use
-                                                    Default value is zero (copy with highest
-                                                    precedence is used)
+                    default                       :  None
+                    'vmName'              (str)   :  name of the new vm that will be mounted
+                    'copyPrecedence'      (int)   :  number for the storage policy copy to use
+                                                     Default value is zero (copy with highest
+                                                     precedence is used)
+                    'pointInTime'         (dict)  :  to select live mount from point in time,
+                                                     provide a dict with following key-value pairs
+                        "timeValue"             (str)  : date and time in below format
+                                                         "yyyy-mm-dd hh:mm:ss".
+                                                         "2018-06-18 16:09:00", for example.
+                        "TimeZoneName"          (str)  : time zone value in given format
+                                                        (MS Windows time zone options).
+                                                         "(UTC-05:00) Eastern Time (US & Canada)"
+                }
 
 
             Raises:

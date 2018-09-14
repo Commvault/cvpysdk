@@ -990,7 +990,7 @@ class Backupset(object):
             request_json['options']['includeRunningJobs'] = True
 
         if options['vs_volume_browse']:
-            request_json['mode'] = 3
+            request_json['mode']['mode'] = 3
             request_json['options']['vsVolumeBrowse'] = True
             request_json['advOptions']['browseViewName'] = options['browse_view_name']
 

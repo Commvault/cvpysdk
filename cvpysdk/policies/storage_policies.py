@@ -79,6 +79,12 @@ StoragePolicy:
 
     delete_job()                            -- delete a job from storage policy node
 
+    add_ddb_partition()                     -- Adds a new DDB partition
+
+    move_dedupe_store()                     -- Moves a deduplication store
+
+    run_ddb_verification()                  -- Runs DDB verification job
+
 
 """
 
@@ -153,7 +159,8 @@ class StoragePolicies(object):
 
                     if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._POLICY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._POLICY + "?getAll=TRUE")
 
         if flag:
             if response.json() and 'policies' in response.json():
@@ -288,7 +295,7 @@ class StoragePolicies(object):
 
         if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
                 (not (isinstance(storage_policy_name, basestring) and
-                          isinstance(retention_period, int))) or
+                      isinstance(retention_period, int))) or
                 (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
             raise SDKException('Storage', '101')
 
@@ -389,19 +396,49 @@ class StoragePolicies(object):
 
     def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool):
         """
+        Adds storage policy with tape data path
+        Args:
+                storage_policy_name (str)         --  name of the new storage policy to add
 
-        :param storage_policy_name: name of the new storage policy to add
-        :param library: name or instance of the library to add the policy to
-        :param media_agent: name or instance of media agent to add the policy to
-        :param drive_pool: name of the drive pool associated with the storage policy
-        :param scratch_pool: name of the scratch pool associated with the storage policy
-        :return:
+                library             (str)          --  name or instance of the library
+                to add the policy to
+
+                media_agent         (str/object)  --  name or instance of media agent
+                to add the policy to
+
+                drive_pool          (str)         --  Drive pool name of the tape library
+
+                scratch_pool      (str)          --  Scratch pool name of the tape library
+
+            Raises:
+                SDKException:
+                    if type of the storage policy name argument is not string
+
+                    if type of the retention period argument is not int
+
+                    if type of the library argument is not either string or DiskLibrary instance
+
+                    if type of the media agent argument is not either string or MediaAgent instance
+
+                    if failed to create storage policy
+
+                    if response is empty
+
+                    if response is not success
         """
 
         from urllib.parse import urlencode
+        if not (isinstance(drive_pool, basestring) and
+                isinstance(scratch_pool, basestring) and
+                isinstance(library, basestring) and
+                isinstance(media_agent, basestring) and
+                isinstance(storage_policy_name, basestring)):
+            raise SDKException('Storage', '101')
+
         tape_library = library
-        encode_dict = {"storagepolicy": storage_policy_name, "mediaagent": media_agent, "library": tape_library,
-                       "drivepool": drive_pool, "scratchpool": scratch_pool}
+        encode_dict = {"storagepolicy": storage_policy_name, "mediaagent": media_agent,
+                       "library": tape_library, "drivepool": drive_pool,
+                       "scratchpool": scratch_pool}
         web_service = self._POLICY + '?' + urlencode(encode_dict)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', web_service)
@@ -427,7 +464,7 @@ class StoragePolicies(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-        return storage_policy_name
+        return self.get(storage_policy_name)
 
     def delete(self, storage_policy_name):
         """Deletes a storage policy from the commcell.
@@ -614,8 +651,8 @@ class StoragePolicy(object):
                     if response is not success
         """
         if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
+                isinstance(library_name, basestring) and
+                isinstance(media_agent_name, basestring)):
             raise SDKException('Storage', '101')
 
         if self.has_copy(copy_name):
@@ -638,9 +675,9 @@ class StoragePolicy(object):
                                 <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
                             </storagePolicyCopyInfo>
                         </App_CreateStoragePolicyCopyReq>
-                        """.format(copy_name, self.storage_policy_id, self.storage_policy_name, tape_library_id,
-                                   library_name, media_agent_id, media_agent_name, drive_pool_id, drive_pool,
-                                   spare_pool_id, spare_pool, snap_copy)
+                        """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
+                                   tape_library_id, library_name, media_agent_id, media_agent_name,
+                                   drive_pool_id, drive_pool, spare_pool_id, spare_pool, snap_copy)
 
         else:
             library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
@@ -653,8 +690,8 @@ class StoragePolicy(object):
                     <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
                 </storagePolicyCopyInfo>
             </App_CreateStoragePolicyCopyReq>
-            """.format(copy_name, self.storage_policy_id, self.storage_policy_name, library_id,
-                       library_name, media_agent_id, media_agent_name, snap_copy)
+            """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
+                       library_id, library_name, media_agent_id, media_agent_name, snap_copy)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -937,24 +974,29 @@ class StoragePolicy(object):
             library = primary_copy[0].get('library', {})
             return library.get('libraryId')
 
-    def run_aux_copy(self, storage_policy_copy_name, media_agent, use_scale=False, streams=0):
+    def run_aux_copy(self, storage_policy_copy_name=None, media_agent=None, use_scale=False, streams=0,
+                     all_copies=True, total_jobs_to_process=0):
         """Runs the aux copy job from the commcell.
-
             Args:
+
                 storage_policy_copy_name (str)  --  name of the storage policy copy
 
                 media_agent              (str)  --  name of the media agent
 
+                use_scale                (bool) --  use Scalable Resource Management (True/False)
+
                 streams                  (int)  --  number of streams to use
 
-                use_scale                       --  use Scalable Resource Management (True/False)
+                all_copies               (bool) -- run auxcopy job on all copies or select copy (True/False)
+
+                total_jobs_to_process    (int)  -- Total number jobs to process for the auxcopy job
 
             Returns:
                 object - instance of the Job class for this aux copy job
 
             Raises:
                 SDKException:
-                    if type of the storage policy copy name argument is not string
+                    if type of the  argument is not string
 
                     if aux copy job failed
 
@@ -962,14 +1004,24 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(storage_policy_copy_name, basestring) and
-                    isinstance(media_agent, basestring) and
-                    isinstance(streams, int)):
+        if not (isinstance(total_jobs_to_process, int) and
+                isinstance(streams, int)):
             raise SDKException('Storage', '101')
 
         use_max_streams = True
         if streams != 0:
             use_max_streams = False
+
+        if storage_policy_copy_name is not None:
+            all_copies = False
+            if not (isinstance(storage_policy_copy_name, basestring) and
+                    isinstance(media_agent, basestring)):
+                raise SDKException('Storage', '101')
+        else:
+            if all_copies is False:
+                raise SDKException('Storage', '110')
+            storage_policy_copy_name = ""
+            media_agent = ""
 
         request_json = {
             "taskInfo": {
@@ -1001,6 +1053,8 @@ class StoragePolicy(object):
                                         "maxNumberOfStreams": streams,
                                         "useMaximumStreams": use_max_streams,
                                         "useScallableResourceManagement": use_scale,
+                                        "totalJobsToProcess": total_jobs_to_process,
+                                        "allCopies": all_copies,
                                         "mediaAgent": {
                                             "mediaAgentName": media_agent
                                         }
@@ -1032,6 +1086,7 @@ class StoragePolicy(object):
                     raise SDKException('Storage', '102', 'Failed to run the aux copy job')
             else:
                 raise SDKException('Response', '102')
+
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -1040,36 +1095,41 @@ class StoragePolicy(object):
         """Refresh the properties of the StoragePolicy."""
         self._initialize_storage_policy_properties()
 
-    def delete_job(self, jobID, SPName, copy_name):
+    def delete_job(self, job_id, copy_name):
         """
         Deletes a job on Storage Policy
-        :param jobID: ID for the job to be deleted
-        :param SPName: name of the storage policy
-        :param copy_name: name of the copy
-        :return:
-        """
+            Args:
+                job_id      (str)   --  ID for the job to be deleted
 
-        if not (isinstance(SPName, basestring) and
-                    isinstance(copy_name, basestring) and isinstance(jobID, basestring)):
+                copy_name   (str)   --  name of the copy
+
+        Raises:
+            SDKException:
+                if type of input parameters is not string
+        """
+        if not (isinstance(copy_name, basestring) and isinstance(job_id, basestring)):
             raise SDKException('Storage', '101')
 
         request_xml = """
         <App_JobOperationCopyReq operationType="2">
         <jobList appType="" commCellId="2" jobId="{0}"><copyInfo copyName="{1}" storagePolicyName="{2}"/></jobList>
         <commCellInfo commCellId="2"/></App_JobOperationCopyReq>
-        """.format(jobID, copy_name, SPName)
+        """.format(job_id, copy_name, self.storage_policy_name)
 
         self._commcell_object._qoperation_execute(request_xml)
 
-    def seal_ddb(self, SPName, copy_name):
+    def seal_ddb(self, copy_name):
         """
-        Seals the related DDB
-        :param SPName: name of the storage policy
-        :param copy_name: name od teh associated copy
-        :return:
+        Seals the deduplication database
+
+            Args:
+                copy_name   (str)   --  name of the storage policy copy
+
+            Raises:
+                SDKException:
+                    if type of input parameters is not string
         """
-        if not (isinstance(SPName, basestring) and
-                    isinstance(copy_name, basestring)):
+        if not isinstance(copy_name, basestring):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -1080,21 +1140,25 @@ class StoragePolicy(object):
             </archiveGroupCopy>
         </App_SealSIDBStoreReq>
 
-        """.format(copy_name, SPName)
+        """.format(copy_name, self.storage_policy_name)
         self._commcell_object._qoperation_execute(request_xml)
 
-    def update_transactional_ddb(self, updateValue, copy_name, SPName, media_agent_name):
+    def update_transactional_ddb(self, update_value, copy_name, media_agent_name):
         """
-        Enables TransactionalDDB on the related DDB
+        Updates TransactionalDDB option on the deduplication database
 
-        :param updateValue :   enable(True)/disable(False)
-        :param copy_name: name of the associated copy
-        :param SPName: name of the associated storage policy
-        :param : media_agent_name : name of the media agent
-        :return:
+            Args:
+                update_value    (bool)   --   enable(True)/disable(False)
+
+                copy_name       (str)   --   name of the associated copy
+
+                media_agent_name(str)   --   name of the media agent
+
+            Raises:
+                SDKException:
+                    if type of input parameters is not string
         """
-        if not (isinstance(SPName, basestring) and
-                    isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -1118,20 +1182,36 @@ class StoragePolicy(object):
                     </DDBPartitionInfo>
            </storagePolicyCopyInfo>
         </App_UpdateStoragePolicyCopyReq>
-        """.format(copy_name, SPName, media_agent_name, updateValue)
+        """.format(copy_name, self.storage_policy_name, media_agent_name, int(update_value))
 
         self._commcell_object._qoperation_execute(request_xml)
 
-    def create_dedupe_secondary_copy(self, copy_name, library_name, media_agent_name, path, ddb_media_agent,
-                                     enableDASHFull=None, enableClientSideDedup=None, enableSourceSideDiskCache=None):
+    def create_dedupe_secondary_copy(self, copy_name, library_name,
+                                     media_agent_name, path, ddb_media_agent,
+                                     dash_full=None,
+                                     source_side_disk_cache=None,
+                                     software_compression=None):
         """Creates Synchronous copy for this storage policy
 
             Args:
-                copy_name           (str)   --  copy name to create
+                copy_name               (str)   --  copy name to create
 
-                library_name        (str)   --  library name to be assigned
+                library_name            (str)   --  library name to be assigned
 
-                media_agent_name    (str)   --  media_agent to be assigned
+                media_agent_name        (str)   --  media_agent to be assigned
+
+                path                    (str)   --  path where deduplication store is to be hosted
+
+                ddb_media_agent         (str)   --  media agent name on which deduplication store is to be hosted
+
+                dash_full               (bool)  --  enable DASH full on deduplication store (True/False)
+                Default None
+
+                source_side_disk_cache  (bool)  -- enable source side disk cache (True/False)
+                Default None
+
+                software_compression    (bool)  -- enable software compression (True/False)
+                Default None
 
             Raises:
                 SDKException:
@@ -1146,37 +1226,34 @@ class StoragePolicy(object):
                     if response is not success
         """
         if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
+                isinstance(library_name, basestring) and
+                isinstance(path, basestring) and
+                isinstance(ddb_media_agent, basestring) and
+                isinstance(media_agent_name, basestring)):
             raise SDKException('Storage', '101')
 
-        if enableClientSideDedup is None:
-            enableClientSideDedup = "2"
-        if enableDASHFull is None:
-            enableDASHFull = "2"
-        if enableSourceSideDiskCache is None:
-            enableSourceSideDiskCache = "2"
+        if dash_full is None:
+            dash_full = "2"
+        if source_side_disk_cache is None:
+            source_side_disk_cache = "2"
+        if software_compression is None:
+            software_compression = "2"
 
         if self.has_copy(copy_name):
             err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
             raise SDKException('Storage', '102', err_msg)
 
-        library_id = self._commcell_object.disk_libraries._libraries[library_name]
+        library_id = self._commcell_object.disk_libraries.get(library_name).library_id
         media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]['id']
 
         request_xml = """
         <App_CreateStoragePolicyCopyReq copyName="{0}">
-            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
+            <storagePolicyCopyInfo copyType="0" isDefault="0">
                 <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
                 <library _type_="9" libraryId="{3}" libraryName="{4}" />
                 <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
-                <copyFlags auxCopyReencryptData="1" />
-                <dedupeFlags enableDeduplication="1" enableDASHFull="{9}" enableClientSideDedup="{10}" enableSourceSideDiskCache="{11}"/>
-                <dataEncryption>
-                    <encryptData>1</encryptData>
-                    <encryptionType>AES</encryptionType>
-                    <encryptionKeyLength>256</encryptionKeyLength>
-                </dataEncryption>
+                <copyFlags auxCopyReencryptData="0" />
+                <dedupeFlags enableDeduplication="1" enableDASHFull="{9}" enableSourceSideDiskCache="{10}"/>
                 <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
                 <DDBPartitionInfo>
                     <maInfoList>
@@ -1190,15 +1267,16 @@ class StoragePolicy(object):
                     <sidbStoreInfo>
                         <operation>1</operation>
                         <copyName>{0}</copyName>
-                        <sidbStoreFlags enableSoftwareCompression="2"/>
+                        <sidbStoreFlags enableSoftwareCompression="{11}"/>
                     </sidbStoreInfo>
                 </DDBPartitionInfo>
 
             </storagePolicyCopyInfo>
         </App_CreateStoragePolicyCopyReq>
-        """.format(copy_name, self.storage_policy_id, self.storage_policy_name, library_id,
-                   library_name, media_agent_id, media_agent_name, path, ddb_media_agent, enableDASHFull,
-                   enableClientSideDedup, enableSourceSideDiskCache)
+        """.format(copy_name, self._storage_policy_id, self.storage_policy_name,
+                   library_id, library_name, media_agent_id, media_agent_name,
+                   path, ddb_media_agent, int(dash_full),
+                   int(source_side_disk_cache), int(software_compression))
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -1231,3 +1309,255 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def run_ddb_verification(self,
+                             copy_name,
+                             ver_type,
+                             ddb_ver_level):
+        """
+        Runs DDB verification job
+
+            Args:
+                copy_name       (str)   --  name of the copy which is associated with the DDB store
+
+                ver_type        (str)   --  backup level (Full/Incremental)
+
+                ddb_ver_level   (str)   --  DDB verification type
+                                            (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
+                                            QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+
+            Returns:
+                object - instance of the Job class for this DDB verification job
+
+            Raises:
+                SDKException:
+                    if type of input parameters is not string
+
+                    if job failed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not (isinstance(copy_name, basestring) and
+                isinstance(ver_type, basestring) and
+                isinstance(ddb_ver_level, basestring)):
+            raise SDKException('Storage', '101')
+
+        request = {
+                "taskInfo": {
+                    "associations": [
+                        {
+                            "copyName": "Primary", "storagePolicyName": "sp-dedupe"
+                        }
+                    ], "task": {
+                        "taskType": 1,
+                        "initiatedFrom": 1,
+                        "policyType": 0,
+                        "taskId": 0,
+                        "taskFlags": {
+                            "disabled": False
+                        }
+                    }, "subTasks": [
+                        {
+                            "subTaskOperation": 1, "subTask": {
+                                "subTaskType": 1, "operationType": 4007
+                            },
+                            "options": {
+                                "backupOpts": {
+                                    "mediaOpt": {
+                                        "auxcopyJobOption": {
+                                            "maxNumberOfStreams": 0,
+                                            "allCopies": True,
+                                            "useMaximumStreams": True,
+                                            "useScallableResourceManagement": False,
+                                            "mediaAgent": {
+                                                "mediaAgentName": ""
+                                            }
+                                        }
+                                    }
+                                }, "adminOpts": {
+                                    "archiveCheckOption": {
+                                        "ddbVerificationLevel": ddb_ver_level,
+                                        "jobsToVerify": 0,
+                                        "allCopies": True,
+                                        "backupLevel": ver_type
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+                }
+        data_verf = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', data_verf, request
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'DDB verification job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '109')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def move_dedupe_store(self,
+                          copy_name,
+                          dest_path,
+                          src_path,
+                          dest_media_agent,
+                          src_media_agent,
+                          config_only=False):
+        """
+        Moves a deduplication store
+
+            Args:
+                copy_name               (str)   -- name of the storage policy copy
+
+                dest_path:              (str)   -- path where new partition is to be hosted
+
+                src_path:               (str)   -- path where existing partition is hosted
+
+                dest_media_agent:       (str)   -- media agent name where new partition is to be hosted
+
+                src_media_agent:        (str)   -- media agent name where existing partition is hosted
+
+                config_only             (bool)  -- to only chnage in DB (files need to be moved manually) (True/False)
+                Default : False
+
+            Returns:
+                object - object - instance of the Job class for this DDB move job
+
+            Raises:
+                SDKException:
+                    if type of input parameters is not string
+
+                    if job failed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not (isinstance(copy_name, basestring) and
+                isinstance(dest_path, basestring) and
+                isinstance(src_path, basestring) and
+                isinstance(dest_media_agent, basestring) and
+                isinstance(src_media_agent, basestring)):
+            raise SDKException('Storage', '101')
+
+        request = {
+                    "taskInfo": {
+                        "associations": [
+                            {
+                             "copyName": copy_name, "storagePolicyName": self.storage_policy_name
+                            }
+                        ], "task": {
+                                "taskType": 1,
+                                "initiatedFrom": 1,
+                                "policyType": 0,
+                                "taskId": 0,
+                                "taskFlags": {
+                                    "disabled": False
+                                }
+                        }, "subTasks": [
+                            {
+                                "subTaskOperation": 1,"subTask": {
+                                    "subTaskType": 1, "operationType": 5013
+                                }, "options": {
+                                    "adminOpts": {
+                                        "libraryOption": {
+                                            "operation": 20, "ddbMoveOption": {
+                                                "flags": 2, "subStoreList": [
+                                                    {
+                                                        "srcPath": src_path,
+                                                        "changeOnlyDB": config_only,
+                                                        "destPath": dest_path,
+                                                        "destMediaAgent": {
+                                                            "name": dest_media_agent
+                                                        }, "srcMediaAgent": {
+                                                            "name": src_media_agent
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+        ddb_move = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', ddb_move, request
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '108')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def add_ddb_partition(self,
+                          copy_id,
+                          sidb_store_id,
+                          sidb_new_path,
+                          media_agent):
+        """
+        Adds a new DDB partition
+            Args:
+                copy_id         (str)   -- storage policy copy id
+
+                sidb_store_id   (str)   -- deduplication store id
+
+                sidb_new_path   (str)   -- path where new partition is to be hosted
+
+                media_agent     (str)   -- media agent on which new partition is to be hosted
+
+            Raises:
+                SDKException:
+                    if type of input parameters is not string
+        """
+        if not (isinstance(copy_id, basestring) and
+                isinstance(sidb_store_id, basestring) and
+                isinstance(sidb_new_path, basestring) and
+                isinstance(media_agent, basestring)):
+            raise SDKException('Storage', '101')
+
+        if isinstance(media_agent, MediaAgent):
+            media_agent = media_agent
+        elif isinstance(media_agent, basestring):
+            media_agent = MediaAgent(self._commcell_object, media_agent)
+
+        request_xml = """
+        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{0}" operation="15"> 
+        <SIDBStore SIDBStoreId="{1}"/>
+        <dedupconfigItem commCellId="0"> 
+        <maInfoList><clientInfo id="{2}" name="{3}"/> 
+        <subStoreList><accessPath path="{4}"/> 
+        </subStoreList></maInfoList></dedupconfigItem> 
+        </EVGui_ParallelDedupConfigReq>
+
+        """.format(copy_id, sidb_store_id, media_agent.media_agent_id,
+                   media_agent.media_agent_name, sidb_new_path)
+        self._commcell_object._qoperation_execute(request_xml)

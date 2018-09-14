@@ -38,6 +38,24 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
        and can perform restore operations on only that subclient.
 
     """
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        """Initialize the Instance object for the given Virtual Server instance.
+        Args
+        class_object (backupset_object, subclient_name, subclient_id)  --  instance of the
+                                         backupset class, subclient name, subclient id
+
+        """
+        super(FusionComputeVirtualServerSubclient, self).__init__(
+            backupset_object, subclient_name, subclient_id)
+        self.diskExtension = ["none"]
+
+        self._disk_option = {
+            'original': 0,
+            'thicklazyzero': 1,
+            'thin': 2,
+            'common': 3
+        }
+
 
     def full_vm_restore_in_place(
             self,
@@ -88,10 +106,10 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             restore_option,
             unconditional_overwrite=overwrite,
             power_on=power_on,
-            copy_preecedence=copy_precedence,
+            copy_precedence=copy_precedence,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             volume_level_restore=1,
-            out_place=False
+            in_place=True
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -108,7 +126,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             copy_precedence=0,
-            disk_provisioning=0):
+            disk_provisioning='original'):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -168,20 +186,29 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
         """
         restore_option = {}
 
+        if vm_to_restore:
+            vm_to_restore = [vm_to_restore]
+
+        if new_name:
+            if not(isinstance(vm_to_restore, basestring) or
+                   isinstance(new_name, basestring)):
+                raise SDKException('Subclient', '101')
+            restore_option['restore_new_name'] = new_name
+
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             unconditional_overwrite=overwrite,
             power_on=power_on,
-            disk_option=disk_provisioning,
-            copy_preceedence=copy_precedence,
+            disk_option=self._disk_option[disk_provisioning],
+            copy_precedence=copy_precedence,
             volume_level_restore=1,
             client_name=proxy_client,
             vcenter_client=destination_client,
             esx_host=host,
             datastore=datastore,
-            out_place=True,
+            in_place=False,
             restore_new_name=new_name
         )
 

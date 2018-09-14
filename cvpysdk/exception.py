@@ -154,7 +154,10 @@ EXCEPTION_DICT = {
         '104': 'Type of library should either be the DiskLibrary class instance or string',
         '105': 'No storage policies exist for this user',
         '106': 'Failed to run the backup copy job',
-        '107': 'Failed to run the deferred catalog job'
+        '107': 'Failed to run the deferred catalog job',
+        '108': 'Failed to run the DDB move job',
+        '109': 'Failed to run the DDB verification job',
+        '110': 'Input data is not correct'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',
@@ -288,6 +291,12 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to delete the operation window',
         '104': 'Failed to list operation windows'
+    },
+    'CommCellMigration': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Please specify all the required inputs',
+        '104': 'Please give appropriate input(s)'
     }
 }
 

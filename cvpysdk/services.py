@@ -174,6 +174,7 @@ SERVICES_DICT_TEMPLATE = {
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
     'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
+    'PROTECTED_VMS' : "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
 
     'USERS': '{0}User',
     'USER': '{0}User/%s?Level=50',
@@ -239,7 +240,8 @@ SERVICES_DICT_TEMPLATE = {
     'RELEASE_LICENSE':'{0}Client/License/Release',
     'RECONFIGURE_LICENSE':'{0}Client/License/Reconfigure',
     'LIST_LICENSES':'{0}Client/%s/License',
-    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s'
+    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s',
+    'GLOBAL_PARAM': '{0}/setGlobalParam'
 }
 
 

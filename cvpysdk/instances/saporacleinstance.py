@@ -40,6 +40,10 @@ SAPOracleInstance:
     saporacle_archivelogbackupstreams() -- Getter for getting archivelog backup streams
 
     saporacle_instanceid()              -- Getter for getting InstanceId
+    
+    saporacle_snapbackup_enable()       -- Getter for getting Snap backup enabled or not
+    
+    saporacle_snapengine_name()         -- Getter for getting snap enginename
 
     _restore_request_json()             -- returns the restore request json
 
@@ -174,6 +178,20 @@ class SAPOracleInstance(Instance):
         Returns: saporacle_instanceid option for the instance
         """
         return self._properties['instance']['instanceId']
+    
+    @property
+    def saporacle_snapbackup_enable(self):
+        """
+        Returns: saporacle_snapbackup_enable option for the instance
+        """
+        return self._properties['sapOracleInstance']['snapProtectInfo']['isSnapBackupEnabled']
+    
+    @property
+    def saporacle_snapengine_name(self):
+        """
+        Returns: saporacle_snapengine_name option for the instance
+        """
+        return self._properties['sapOracleInstance']['snapProtectInfo']['snapSelectedEngine']['snapShotEngineName']
 
     def _restore_saporacle_request_json(self, value):
         """Returns the JSON request to pass to the API as per the options selected by the user.
@@ -204,7 +222,10 @@ class SAPOracleInstance(Instance):
                                 "restoreTablespace": value.get("restoreTablespace", False),
                                 "databaseCopy": value.get("databaseCopy", False),
                                 "archiveLogBy": value.get("archiveLogBy", 'default'),
+                                "recoverTime":{
+                                    "time":value.get("point_in_time", 0)},
                             },
+                            
                             "destination": {
                                 "destinationInstance": {
                                     "clientName": value.get("destination_client"),
@@ -221,7 +242,11 @@ class SAPOracleInstance(Instance):
                             "browseOption": {
                                 "backupset": {
                                     "clientName": self._agent_object._client_object.client_name
-                                }
+                                },
+                                "mediaOption":{
+                                     "copyPrecedence": {
+                                             "copyPrecedenceApplicable": value.get("copyPrecedenceApplicable", False),
+                                             "copyPrecedence":value.get("copyPrecedence", 0)}}
                             }
                         }
                     }
@@ -264,7 +289,7 @@ class SAPOracleInstance(Instance):
                 streams                  (int)      :  no of streams to use for restore
                     default:2
 
-                copy_precedence          (int)      :  copy number to use for restore
+                copyPrecedence          (int)      :  copy number to use for restore
                     default:0
 
                 archiveLog               (bool)     :  Restore archive log
@@ -385,7 +410,10 @@ class SAPOracleInstance(Instance):
             raise SDKException('Instance', '101')
         sap_options["destination_client"] = destination_client.client_name
         sap_options["destination_instance"] = destination_instance.instance_name
+        #sap_options["copyPrecedence"] = sap_options.get("copyPrecedence", "0")
 
         # prepare and execute
         request_json = self._restore_saporacle_request_json(sap_options)
         return self._process_restore_response(request_json)
+    
+    

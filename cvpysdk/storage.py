@@ -519,7 +519,7 @@ class DiskLibraries(object):
 
         return self._libraries and library_name.lower() in self._libraries
 
-    def add(self, library_name, media_agent, mount_path, username="", password=""):
+    def add(self, library_name, media_agent, mount_path, username="", password="", servertype=0):
         """Adds a new Disk Library to the Commcell.
 
             Args:
@@ -581,6 +581,10 @@ class DiskLibraries(object):
             }
         }
 
+        if servertype > 0:
+            request_json["library"]["serverType"] = servertype
+            request_json["library"]["isCloud"] = 1
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._LIBRARY, request_json
         )
@@ -594,7 +598,10 @@ class DiskLibraries(object):
                     # so the libraries object has all the libraries
                     self.refresh()
 
-                    return DiskLibrary(self._commcell_object, library['libraryName'])
+                    return DiskLibrary(
+                        self._commcell_object,
+                        library['libraryName'],
+                        library_details=library)
                 elif 'errorCode' in response.json():
                     error_message = response.json()['errorMessage']
                     o_str = 'Failed to create disk library\nError: "{0}"'.format(error_message)
@@ -626,17 +633,17 @@ class DiskLibraries(object):
         if not self.has_library(library_name):
             raise SDKException('Storage',
                                '102',
-                               'No library exists with name: {0}'.\
-                                    format(library_name))
+                               'No library exists with name: {0}'.
+                               format(library_name))
 
         request_json = {
             "EVGui_ConfigureStorageLibraryReq":
                 {
-                    "isDeconfigLibrary":1,
+                    "isDeconfigLibrary": 1,
                     "library":
                         {
-                            "opType":2,
-                            "libraryName":library_name
+                            "opType": 2,
+                            "libraryName": library_name
                         }
                 }
         }
@@ -705,7 +712,7 @@ class DiskLibraries(object):
 class DiskLibrary(object):
     """Class for a specific disk library."""
 
-    def __init__(self, commcell_object, library_name, library_id=None):
+    def __init__(self, commcell_object, library_name, library_id=None, library_details=None):
         """Initialise the DiskLibrary object.
 
             Args:
@@ -729,6 +736,9 @@ class DiskLibrary(object):
         self._library_properties_service = self._commcell_object._services[
             'GET_LIBRARY_PROPERTIES'] % (self._library_id)
         self._library_properties = self._get_library_properties()
+        if library_details is not None:
+            self.mountpath = library_details.get('mountPath', None)
+            self.mediaagent = library_details.get('mediaAgentName', None)
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -806,9 +816,9 @@ class DiskLibrary(object):
         request_json = {
             "EVGui_ConfigureStorageLibraryReq":
             {
-                "isConfigRequired":1,
-                "library":{
-                    "opType":4,
+                "isConfigRequired": 1,
+                "library": {
+                    "opType": 4,
                     "mediaAgentName": media_agent,
                     "libraryName": self._library_name,
                     "mountPath": mount_path,
@@ -836,7 +846,7 @@ class DiskLibrary(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            _stdout =  'Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]'
+            _stdout = 'Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]'
             _stderr = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', _stdout.format(mount_path,
                                                                  self._library_name,
@@ -860,3 +870,59 @@ class DiskLibrary(object):
     def library_id(self):
         """Treats the library id as a read-only attribute."""
         return self._library_id
+
+    @property
+    def mount_path(self):
+        """Treats the library id as a read-only attribute."""
+        return self.mountpath
+
+    @property
+    def media_agent(self):
+        """Treats the library id as a read-only attribute."""
+        return self.mediaagent
+
+    def shareMountpath(self, newMA, newmountpath):
+        """
+        method to specify share mountpath to a disklibrary
+        """
+        self._EXECUTE = self._commcell_object._services['EXECUTE_QCOMMAND']
+        self.library = {
+            "opType": 64,
+            "mediaAgentName": "%s" %
+            self.mediaagent,
+            "libraryName": "%s" %
+            self.library_name,
+            "mountPath": "%s" %
+            self.mountpath}
+        self.libNewprop = {
+            "deviceAccessType": 22,
+            "password": "",
+            "loginName": "",
+            "mediaAgentName": newMA,
+            "mountPath": "{}".format(newmountpath),
+            "proxyPassword": ""}
+        request_json = {
+            "EVGui_ConfigureStorageLibraryReq":
+            {
+                "library": self.library,
+                "libNewProp": self.libNewprop
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._EXECUTE, request_json
+        )
+        if flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            if response.json():
+                if "library" in response.json():
+                    response = response.json()["library"]
+                    return response
+                else:
+                    raise SDKException('Response', '102', response_string)
+            else:
+
+                raise SDKException('Response', '102', response_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
