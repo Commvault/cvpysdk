@@ -1719,6 +1719,12 @@ class Instance(object):
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]["includeMetaData"] = True
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"]["inPlace"] = True
 
+        if 'backup_level' in restore_option:
+            backup_opt_json = {
+                "backupLevel": restore_option.get('backup_level', 'Incremental')
+            }
+            request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"] = backup_opt_json
+
         return request_json
 
     def _restore_in_place(

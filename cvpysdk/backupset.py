@@ -93,6 +93,8 @@ Backupset:
 
     refresh()                       -- refresh the properties of the backupset
 
+    delete_data()                   -- deletes items from the backupset and makes then unavailable
+    to browse and restore
 
 Backupset instance Attributes
 -----------------------------
@@ -894,7 +896,8 @@ class Backupset(object):
         operation_types = {
             'browse': 0,
             'find': 1,
-            'all_versions': 2
+            'all_versions': 2,
+            'delete_data': 7
         }
 
         options['operation'] = options['operation'].lower()
@@ -910,6 +913,14 @@ class Backupset(object):
         }
 
         mode = 2
+        paths = []
+
+        if isinstance(options['path'], basestring):
+            paths.append(options['path'])
+        elif isinstance(options['path'], list):
+            paths = options['path']
+        else:
+            paths = ['\\']
 
         if self._agent_object.agent_name in browse_mode:
             mode = browse_mode[self._agent_object.agent_name]
@@ -919,9 +930,7 @@ class Backupset(object):
             "mode": {
                 "mode": mode
             },
-            "paths": [{
-                "path": options['path']
-            }],
+            "paths": [{"path": path} for path in paths],
             "options": {
                 "showDeletedFiles": options['show_deleted'],
                 "restoreIndex": options['restore_index'],
@@ -1099,6 +1108,9 @@ class Backupset(object):
             "find": ('111', 'Failed to Search\nError: "{0}"'),
             "all_versions": (
                 '112', 'Failed to browse all version for specified content\nError: "{0}"'
+            ),
+            "delete_data": (
+                '113', 'Failed to perform delete data operation for given content\nError: "{0}"'
             )
         }
 
@@ -1176,7 +1188,7 @@ class Backupset(object):
                     raise SDKException('Subclient', '102', o_str.format(error_message))
 
                 else:
-                    raise SDKException('Subclient', exception_code)
+                    return [], {}
 
             else:
                 raise SDKException('Response', '102')
@@ -1539,6 +1551,34 @@ class Backupset(object):
             options['filters'].append(('FileSize', options['file_size_et'], 'EQUALSBLAH'))
 
         return self._do_browse(options)
+
+    def delete_data(self, paths):
+        """Deletes items for the backupset in the Index and makes them unavailable for
+        browsing and recovery
+
+            Args:
+                paths       (str/list)      --      The list of paths or single path to delete
+                from the backupset
+
+            Returns:
+                None        --      If delete request is sent successfully
+
+            Raises:
+                Exception, if unable to prepare, response is invalid or send the
+                delete data request
+
+        """
+
+        options = {
+            'operation': 'delete_data',
+            'path': paths
+        }
+
+        files, metadata = self._do_browse(options)
+
+        # Delete operation does not return any result, hence consider the operation successful
+        if files:
+            raise SDKException('Backupset', '102', 'Delete data operation gave unexpected results')
 
     def refresh(self):
         """Refresh the properties of the Backupset."""
