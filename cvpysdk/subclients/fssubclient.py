@@ -55,14 +55,18 @@ FileSystemSubclient:
 
     object_level_backup()               --  enable or disable object level backup for ibmi subclient
 
+    global_filter_status()              --  returns the status whther to include global filters
+
+    save_while_active_option()          --  enable or disable SAVACT option for ibmi subclients.
+
     find_all_versions()                 --  returns the dict containing list of all the backed up
     versions of specified file
 
-    block_level_backup_option            -- Enable/Disable Blocklevel Option on subclient
+    block_level_backup_option()         -- 	Enable/Disable Blocklevel Option on subclient
 
-    create_file_level_index_option       -- Enable/Disable Metadata collection Option on subclient
+    create_file_level_index_option()    -- 	Enable/Disable Metadata collection Option on subclient
 
-    system_state_option					--	Enable/Disable System state option for the subclient
+    system_state_option()				--	Enable/Disable System state option for the subclient
 
     backup()                            --  run a backup job for the subclient
 
@@ -119,6 +123,12 @@ class FileSystemSubclient(Subclient):
 
         if 'content' in self._subclient_properties:
             self._content = self._subclient_properties['content']
+
+        self._global_filter_status_dict = {
+            'OFF': 0,
+            'ON': 1,
+            'USE CELL LEVEL POLICY': 2
+        }
 
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.
@@ -178,11 +188,11 @@ class FileSystemSubclient(Subclient):
         """Sets the subclient content / filter / exception content
 
             Args:
-                content         	(list)      --  list of subclient content
+                content             (list)      --  list of subclient content
 
-                filter_content  	(list)      --  list of filter content
+                filter_content      (list)      --  list of filter content
 
-                exception_content	(list)		--	list of exception content
+                exception_content   (list)      --  list of exception content
         """
         if content is None:
             content = self.content
@@ -590,7 +600,7 @@ class FileSystemSubclient(Subclient):
             True    -   if system state property is enabled for the subclient
 
             False   -   if system state property is not enabled for the subclient
-		"""
+        """
         return self._fsSubClientProp['backupSystemState']
 
     @system_state_option.setter
@@ -941,7 +951,6 @@ class FileSystemSubclient(Subclient):
 
                 True    -   if signature generation on IBMi is not enabled on the subclient
         """
-
         return bool(self._fsSubClientProp.get('genSignatureOnIBMi'))
 
     @generate_signature_on_ibmi.setter
@@ -949,9 +958,8 @@ class FileSystemSubclient(Subclient):
         """Updates the generate signature property value on ibmi subclient.
 
             Args:
-                generate_signature_value (int)  --  Specifies to enable or disable signature generation on IBMi
+                generate_signature_value (int)  --  Enable or disable signature generation on IBMi
         """
-
         self._set_subclient_properties(
             "_fsSubClientProp['genSignatureOnIBMi']",
             generate_signature_value
@@ -966,21 +974,92 @@ class FileSystemSubclient(Subclient):
 
                 False   -   if object level backup is not enabled on the subclient
         """
-
         return self._fsSubClientProp.get('backupAsObjects')
 
     @object_level_backup.setter
     def object_level_backup(self, object_level_value):
-        """Update the object level backup property for an IBMi subclient.
+        """Updates the object level backup property for an IBMi subclient.
 
             Args:
                 object_level_value (bool)  --  Specifies to enable or disable object level backup on IBMi
         """
-
         self._set_subclient_properties(
             "_fsSubClientProp['backupAsObjects']",
             object_level_value
         )
+
+    @property
+    def global_filter_status(self):
+        """Returns the status whether the global filters are included in configuration"""
+        for key, value in self._global_filter_status_dict.items():
+            if self._fsSubClientProp.get('useGlobalFilters') == value:
+                return key
+
+    @global_filter_status.setter
+    def global_filter_status(self, value):
+        """Sets the configuration flag whether to include global filters
+
+            Accepted Values:
+                1. `OFF`
+				2. `ON`
+				3. `USE CELL LEVEL POLICY`
+        """
+        if not isinstance(value, basestring):
+            raise SDKException('Subclient', '101')
+
+        return self._set_subclient_properties(
+            "_fsSubClientProp['useGlobalFilters']", self._global_filter_status_dict.get(value, 2)
+        )
+
+    @property
+    def save_while_active_option(self):
+        """
+        Return the save while active options for an IBMi subclient.
+
+        Returns:
+             (dict) --  Dictionary of synclib options
+        """
+        return {
+            'saveWhileActiveOpt': self._fsSubClientProp['saveWhileActiveOpt'],
+            'syncQueue': self._fsSubClientProp['syncQueue'],
+            'syncAllLibForBackup': self._fsSubClientProp['syncAllLibForBackup'],
+            'txtlibSyncCheckPoint': self._fsSubClientProp['txtlibSyncCheckPoint'],
+            'activeWaitTime': self._fsSubClientProp['activeWaitTime']
+        }
+
+    @save_while_active_option.setter
+    def save_while_active_option(self, synclib_config):
+        """
+        Updates the save while active backup property for an IBMi subclient.
+
+            Args:
+                synclib_config      (dict)  -- Dictionary of synclib config options
+
+                    options                 --
+
+                        synclib_value       (str)   --  Value of save while active option.
+
+                        sync_queue          (str)   --  Path for the sync queue
+
+                        sync_all_lib        (bool)  --  Whether to synchronize all libraries.
+
+                        check_point         (str)   --  Command to run on checkpoint
+
+                        active_wait_time    (int)   --  Amount of time to wait for check point.
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to update the property of the subclient
+
+                if value is invalid
+        """
+        if isinstance(synclib_config, dict):
+            self._set_subclient_properties("_fs_subclient_prop", synclib_config)
+        else:
+            raise SDKException('Subclient', '102', "The parameter should be dictionary")
 
     def find_all_versions(self, *args, **kwargs):
         """Searches the content of a Subclient.
