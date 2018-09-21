@@ -1139,8 +1139,9 @@ class Backupset(object):
 
                         for result in result_set:
 
-                            name = result['displayName']
-                            snap_display_name = result['name']
+                            name = result.get('displayName')
+                            snap_display_name = result.get('name')
+
                             if 'path' in result:
                                 path = result['path']
                             else:

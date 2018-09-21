@@ -255,7 +255,15 @@ class CVPySDK(object):
         else:
             return 'User already logged out'
 
-    def make_request(self, method, url, payload=None, attempts=0, headers=None, stream=False):
+    def make_request(
+            self,
+            method,
+            url,
+            payload=None,
+            attempts=0,
+            headers=None,
+            stream=False,
+            files=None):
         """Makes the request of the type specified in the argument 'method'.
 
             Args:
@@ -296,6 +304,9 @@ class CVPySDK(object):
 
                     default: False
 
+                files     (dict)          --  file to upload in the form of {'file': open('report.txt', 'rb')}
+
+                    default: None
             Returns:
                 tuple:
                     (True, response)    -   in case of success
@@ -318,7 +329,10 @@ class CVPySDK(object):
 
             if method == 'POST':
                 if isinstance(payload, (dict, list)):
-                    response = requests.post(url, headers=headers, json=payload, stream=stream)
+                    if files is not None:
+                        response = requests.post(url, files=files, data=payload)
+                    else:
+                        response = requests.post(url, headers=headers, json=payload, stream=stream)
                 else:
                     try:
                         # call encode on the payload in case the characters in the payload

@@ -75,7 +75,9 @@ User
 
     refresh()                           --  refreshes the properties of this user
 
-    update_security_associations        --  updates 3-way security associations on user
+    update_security_associations()      --  updates 3-way security associations on user
+
+    request_OTP()                       --  fetches OTP for user
 
 """
 
@@ -214,8 +216,8 @@ class Users(object):
 
     def add(self,
             user_name,
-            full_name,
             email,
+            full_name=None,
             domain=None,
             password=None,
             system_generated_password=False,
@@ -245,7 +247,7 @@ class Users(object):
 
                 system_generated_password     (bool)    --  if set to true system
                                                             defined password will be used
-                    default: False
+                                                            default: False
 
                 entity_dictionary   --      combination of entity_type, entity names
                                             and role
@@ -297,12 +299,8 @@ class Users(object):
             system_generated_password = False
         else:
             username = user_name
-            if not password and not system_generated_password:
-                raise SDKException(
-                    'User',
-                    '102',
-                    'Both password and system_generated_password are not set.'
-                    'Please specify password or mark system_generated_password as true')
+            if not password:
+                system_generated_password = True
 
         if not (isinstance(username, basestring) and
                 isinstance(email, basestring)):
@@ -804,3 +802,34 @@ class User(object):
                 }
         }
         self._update_user_props(request_json)
+
+    def request_otp(self):
+        """fetches OTP for user
+        Returns:
+            OTP generated for user
+        Raises:
+                Exception:
+                    if response is not successful
+        """
+
+        if self._commcell_object.users.has_user(self.user_name):
+            get_otp = self._commcell_object._services['OTP'] % (self.user_id)
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'GET', get_otp
+            )
+            if flag:
+                if response.json():
+                    if 'value' in response.json():
+                        return response.json()['value']
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+
+
+
+
+

@@ -423,6 +423,7 @@ class ArchivePolicy():
         self._synchronize_on = False
         self._path = ""
         self._username = ""
+        self._password = ""
         # self._initialize_archive_policy_properties()
 
     @property
@@ -740,6 +741,15 @@ class ArchivePolicy():
         """sets username for ContentIndex"""
         self._username = username
 
+    @property
+    def password(self):
+        """Treats the password as a read-only attribute."""
+        return self._password
+
+    @password.setter
+    def password(self, password):
+        self._password = password
+
     def _initialize_policy_json(self):
         """
             sets values for creating the add policy json
@@ -805,9 +815,10 @@ class ArchivePolicy():
                                     {}
                                 ],
                                 "previewPathDir": {
-                                    "path": "",
+                                    "path": self._path,
                                     "userAccount": {
-                                        "userName": ""
+                                        "userName": self._username,
+                                        "password": self._password
                                     }
                                 }
                             },
@@ -862,6 +873,7 @@ class JournalPolicy():
         self._synchronize_on = False
         self._path = ""
         self._username = ""
+        self._password = ""
 
     @property
     def name(self):
@@ -1048,6 +1060,15 @@ class JournalPolicy():
     def username(self, username):
         self._username = username
 
+    @property
+    def password(self):
+        """Treats the password as a read-only attribute."""
+        return self._password
+
+    @password.setter
+    def password(self, password):
+        self._password = password
+
     def _initialize_policy_json(self):
         """
             sets values for creating the add policy json
@@ -1078,9 +1099,11 @@ class JournalPolicy():
                                     {}
                                 ],
                                 "previewPathDir": {
-                                    "path": "",
+                                    "path": self._path,
                                     "userAccount": {
-                                        "userName": ""
+                                        "userName": self._username,
+                                        "password": self._password
+
                                     }
                                 }
                             },

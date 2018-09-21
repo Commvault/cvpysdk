@@ -21,11 +21,13 @@ LNDbSubclient:
     _get_subclient_properties_json()    --  gets all the subclient related properties of
     Notes Database subclient.
 
-    content()                           --  update the content of the subclient
+    content()                           --  get the content of the subclient
 
     restore_in_place()                  -- performs an in place restore of the subclient
 
     restore_out_of_place()              -- performs and out of place restore of the subclient
+
+    backup()                            --  run a backup job for the subclient
 """
 
 from __future__ import absolute_import
@@ -34,6 +36,7 @@ from __future__ import unicode_literals
 import json
 
 from ..subclient import Subclient
+from ..exception import SDKException
 
 
 class LNDbSubclient(Subclient):
@@ -94,7 +97,9 @@ class LNDbSubclient(Subclient):
         content = []
         try:
             for database in subclient_content:
-                if 'lotusNotesDBContent' in database:
+                if database == {}:
+                    continue
+                elif 'lotusNotesDBContent' in database:
                     content.append(database)
                 else:
                     temp_content_dict = {}
@@ -179,7 +184,7 @@ class LNDbSubclient(Subclient):
                     Disaster Recovery special options:
                         skipErrorsAndContinue               :   enables a data recovery operation
                         to continue despite media errors
-                        
+
                         disasterRecovery                    :   run disaster recovery
 
                 lndb_restore_options    (dict)          -- dictionary for all options specific
@@ -385,16 +390,17 @@ class LNDbSubclient(Subclient):
 
                             only applicable in case of Synthetic_full backup
 
-                        incremental_level   (str)   --  run incremental backup before/after synthetic full
+                        incremental_level   (str)   --  run incremental backup before/after
+                        synthetic full
 
                             BEFORE_SYNTH / AFTER_SYNTH
 
                             only applicable in case of Synthetic_full backup
 
-                        advanced_options   (dict)  --  advanced backup options to be included while
-                        making the request
+                        schedule_pattern (dict) -- scheduling options to be included for the task
 
-                            default: None
+                            Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
 
                     Returns:
                         dict    -   JSON request to pass to the API
@@ -408,9 +414,9 @@ class LNDbSubclient(Subclient):
                 incremental_level,
                 schedule_pattern=schedule_pattern)
 
-            backup_service = self._commcell_object._services['CREATE_TASK']
+            backup_service = self._services['CREATE_TASK']
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
+            flag, response = self._commcell_object.make_request(
                 'POST', backup_service, request_json
             )
 

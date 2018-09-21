@@ -564,7 +564,9 @@ class Clients(object):
                 None    -   if no client has the same hostname as the given input
 
         """
-        if self.all_clients:
+        # verify there is no client in the Commcell with the same name as the given hostname
+        # for multi-instance clients
+        if self.all_clients and hostname not in self.all_clients:
             for client in self.all_clients:
                 if hostname.lower() == self.all_clients[client]['hostname']:
                     return client
@@ -582,7 +584,9 @@ class Clients(object):
                 None    -   if no client has the same hostname as the given input
 
         """
-        if self.hidden_clients:
+        # verify there is no client in the Commcell with the same name as the given hostname
+        # for multi-instance clients
+        if self.hidden_clients and hostname not in self.hidden_clients:
             for hidden_client in self.hidden_clients:
                 if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
                     return hidden_client

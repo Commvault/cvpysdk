@@ -61,6 +61,9 @@ Commcell:
 
     install_software()              -- triggers the install Software job with the given options
 
+    enable_auth_code()              -- Executes the request on the server to enable Auth Code for installation on
+                                        commcell.
+                                        
 Commcell instance Attributes
 ============================
 
@@ -1547,3 +1550,94 @@ class Commcell(object):
             unix_features=unix_features,
             username=username,
             password=password)
+
+    def enable_auth_code(self):
+        """Executes the request on the server to enable Auth Code for installation on commcell
+
+            Args:
+                None
+
+            Returns:
+                str     -   auth code generated from the server
+
+            Raises:
+                SDKException:
+                    if failed to enable auth code generation
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GENERATE_AUTH_CODE'] % 0
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Client', '102', 'Failed to set auth code, with error: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return response.json()['organizationProperties']['authCode']
+
+    def set_default_plan(self, plan_name):
+        """Executes the request on the server to set Default Plan at commcell level.
+            This is independent of the organization, as id is 0.
+
+            Args:
+                plan_name (str)    - Plan name
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to set Default plan
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        request_json = {
+            "organizationInfo":
+            {
+                "organization":{"shortName":{"id":0}},
+                "organizationProperties":{
+                    "defaultPlansOperationType":1,
+                    "defaultPlans":[{"plan":{"planName":plan_name}}]
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ORGANIZATIONS'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Client', '102', 'Failed to set default plan, with error: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

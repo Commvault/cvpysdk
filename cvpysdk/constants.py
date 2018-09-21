@@ -48,7 +48,7 @@ class VSAObjects(Enum):
     CLUSTER = 6
     DATASTORE = 7
     DATASTORE_CLUSTER = 8
-    VM = 10
+    VM = 9
     VMName = 10
     VMGuestOS = 11
     VMGuestHostName = 12

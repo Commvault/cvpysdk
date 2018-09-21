@@ -11,15 +11,21 @@
 LNDBInstance is the only class defined in this file.
 
 LNDBInstance:
-    restore_in_place()                  -- performs an in place restore of the subclient
+    restore_in_place()                  --  performs an in place restore of the subclient
 
-    restore_out_of_place()              -- performs an out of place restore of the subclient
+    restore_out_of_place()              --  performs an out of place restore of the subclient
+
+    _restore_common_options_json()      --  setter for  the Common options in restore JSON
+
+    _restore_json()                     --  returns the JSON request to pass to the API
+    as per the options selected by the user
 
 """
 
 from __future__ import unicode_literals
 
 from ..instance import Instance
+from ..exception import SDKException
 
 
 class LNDBInstance(Instance):
@@ -85,7 +91,7 @@ class LNDBInstance(Instance):
                     Disaster Recovery special options:
                         skipErrorsAndContinue               :   enables a data recovery operation
                         to continue despite media errors
-                        
+
                         disasterRecovery                    :   run disaster recovery
 
                 lndb_restore_options    (dict)          -- dictionary for all options specific
@@ -198,7 +204,7 @@ class LNDBInstance(Instance):
                     Disaster Recovery special options:
                         skipErrorsAndContinue               :   enables a data recovery operation
                         to continue despite media errors
-                        
+
                         disasterRecovery                    :   run disaster recovery
 
                 lndb_restore_options    (dict)          -- dictionary for all options specific
@@ -345,9 +351,13 @@ class LNDBInstance(Instance):
 
         restore_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
             'lotusNotesDBRestoreOption'] = {
-            "disableReplication": kwargs.get('lndb_restore_options').get('disableReplication', False),
-            "disableBackgroundAgents": kwargs.get('lndb_restore_options').get('disableBackgroundAgents', False)
-        }
+                "disableReplication": kwargs.get('lndb_restore_options').get(
+                    'disableReplication', False
+                ),
+                "disableBackgroundAgents": kwargs.get('lndb_restore_options').get(
+                    'disableBackgroundAgents', False
+                )
+            }
 
         if kwargs.get('common_options_dict').get('disasterRecovery'):
             restore_json['taskInfo']['subTasks'][0]['options']['commonOpts'] = {
@@ -363,8 +373,8 @@ class LNDBInstance(Instance):
             }
             restore_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
                 'browseOption']['mediaOption']['copyPrecedence'] = {
-                'copyPrecedence': 0,
-                'synchronousCopyPrecedence': 1,
-                'copyPrecedenceApplicable': False
-            }
+                    'copyPrecedence': 0,
+                    'synchronousCopyPrecedence': 1,
+                    'copyPrecedenceApplicable': False
+                }
         return restore_json

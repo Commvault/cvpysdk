@@ -899,8 +899,9 @@ class WorkFlow(object):
             else:
                 execute_workflow_json = workflow_inputs
 
+            import urllib.parse
             flag, response = self._cvpysdk_object.make_request(
-                'POST', self._EXECUTE_WORKFLOW % workflow_name, execute_workflow_json
+                'POST', self._EXECUTE_WORKFLOW % urllib.parse.quote(workflow_name), execute_workflow_json
             )
 
             if flag:
