@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
@@ -17,26 +16,19 @@ HANAServerSubclient: Derived class from Subclient Base class, representing a HAN
 HANAServerSubclient:
     _backup_request_json()               --  prepares the json for the backup request
 
-    _get_subclient_properties()          --  gets the subclient  related properties of File System subclient.
-    
-    _get_subclient_properties_json()     --  gets all the subclient  related properties of File System subclient.
-    
-    content()                            --  update the content of the subclient
-
-    log_backup_storage_policy()          --  updpates the log backup storage policy for this
-                                                subclient
+    _get_subclient_properties()          --  gets the subclient  related properties of
+                                                SAP HANA subclient.
 
     backup()                             --  run a backup job for the subclient
 
 """
 from __future__ import unicode_literals
-
 from .dbsubclient import DatabaseSubclient
-
 from ..exception import SDKException
 
+
 class SAPHANASubclient(DatabaseSubclient):
-    """Derived class from Subclient Base class, representing a file system subclient,
+    """Derived class from Subclient Base class, representing a SAP HANA subclient,
         and to perform operations on that subclient."""
 
     def _backup_request_json(
@@ -54,46 +46,21 @@ class SAPHANASubclient(DatabaseSubclient):
             Returns:
                 dict - JSON request to pass to the API
         """
-        request_json = self._backup_json(backup_level, False, "BEFORE SYNTH")
+        request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
         hana_options = {
-                        "hanaOptions": {
-                                "backupPrefix": str(backup_prefix)
-                            }
-                        }
-        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
-                    hana_options
-                )
-        
+            "hanaOptions": {
+                "backupPrefix": str(backup_prefix)
+            }
+        }
+        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(hana_options)
+
         return request_json
 
-        
     def _get_subclient_properties(self):
-        """Gets the subclient  related properties of File System subclient.           
-           
-        """
-        super(DatabaseSubclient,self)._get_subclient_properties()       
+        """Gets the subclient  related properties of SAP HANA subclient."""
+        super(SAPHANASubclient, self)._get_subclient_properties()
         if 'content' in self._subclient_properties:
             self._content = self._subclient_properties['content']
-    
-    def _get_subclient_properties_json(self):
-        """get the all subclient related properties of this subclient.        
-           
-           Returns:
-                dict - all subclient properties put inside a dict
-           
-        """
-        subclient_json = {
-            "subClientProperties":
-                {
-                    "impersonateUser": self._impersonateUser,
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
-                }
-        }
-        return subclient_json
 
     @property
     def content(self):
@@ -177,6 +144,7 @@ class SAPHANASubclient(DatabaseSubclient):
                     if response is empty
 
                     if response is not success
+
         """
         backup_level = backup_level.lower()
 
@@ -186,9 +154,8 @@ class SAPHANASubclient(DatabaseSubclient):
         if backup_prefix is None:
             return super(SAPHANASubclient, self).backup(backup_level)
 
-        else:
-            request_json = self._backup_request_json(backup_level, backup_prefix)
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._commcell_object._services['CREATE_TASK'], request_json
-            )
-            return self._process_backup_response(flag, response)
+        request_json = self._backup_request_json(backup_level, backup_prefix)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['CREATE_TASK'], request_json
+        )
+        return self._process_backup_response(flag, response)

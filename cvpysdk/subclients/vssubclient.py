@@ -195,7 +195,9 @@ class VirtualServerSubclient(Subclient):
             '4': 'Datacenter',
             '9': 'Virtual Machine',
             '16': 'All unprotected VMs',
-            '17': 'Root'
+            '17': 'Root',
+            '34': 'Tag',
+            '35': 'TagCategory'
         }
 
         self.filter_types = {

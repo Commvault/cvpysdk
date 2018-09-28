@@ -102,6 +102,8 @@ SERVICES_DICT_TEMPLATE = {
     'ENABLE_SCHEDULE': '{0}Schedules/task/Action/Enable',
     'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
 
+    'LIVE_SYNC': '{0}Task',
+
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
 
@@ -249,7 +251,7 @@ SERVICES_DICT_TEMPLATE = {
     'IDENTITY_APPS': '{0}ThirdParty/App',
 
     'GLOBAL_PARAM': '{0}/setGlobalParam',
-    
+
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
 
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',

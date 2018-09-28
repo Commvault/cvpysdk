@@ -15,18 +15,22 @@ SAPHANAInstance: Derived class from Instance Base class, representing a hana ser
 
 SAPHANAInstance:
 
+    sps_version()                   --  returns the SPS version of the instance
+
+    instance_number()               --  returns the instance number of SAP HANA
+
+    sql_location_directory()        --  returns the SQL location directory of the Instance
+
+    instance_db_username()          --  returns the db username of the instance
+
+    db_instance_client()            --  returns the SAP HANA client associated with the instance
+
+    hdb_user_storekey()             --  returns the HDB user store key if its set
+
     _restore_request_json()         --  returns the restore request json
 
     _get_hana_restore_options()     --  returns the dict containing destination SAP HANA instance
                                             names for the given client
-
-    _process_restore_response()     --  processes response received for the Restore request
-
-    _run_backup()                   --  runs full backup for this subclients and appends the
-                                            job object to the return list
-
-    backup()                        --  runs full backup for all subclients associated
-                                            with this instance
 
     restore()                       --  runs the restore job for specified instance
 
@@ -35,19 +39,91 @@ SAPHANAInstance:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import time
 import threading
 
 from past.builtins import basestring
 
 from ..instance import Instance
 from ..exception import SDKException
-from ..job import Job
 
 
 class SAPHANAInstance(Instance):
     """Derived class from Instance Base class, representing a SAP HANA instance,
         and to perform operations on that Instance."""
+
+    def __init__(self, agent_object, instance_name, instance_id=None):
+        """Initialize the subclient object
+
+        Args:
+            agent_object    (object):       instance of the agent class
+
+            instance_name   (basestring):   name of the instance
+
+            instance_id     (int):          ID of the instance
+
+        """
+        super(SAPHANAInstance, self).__init__(agent_object, instance_name, instance_id)
+        self.destination_instances_dict = {}
+
+    @property
+    def sps_version(self):
+        """
+        Returns the sps version of the HANA instance
+
+        Returns:
+            sps version
+        """
+        return self._properties['saphanaInstance']['spsVersion']
+
+    @property
+    def instance_number(self):
+        """
+        Returns the instance number of the HANA instance
+
+        Returns:
+            instance number
+        """
+        return self._properties['saphanaInstance']['dbInstanceNumber']
+
+    @property
+    def sql_location_directory(self):
+        """
+        Returns the isql location directory of the HANA instance
+
+        Returns:
+            SQL location directory
+        """
+        return self._properties['saphanaInstance']['hdbsqlLocationDirectory']
+
+    @property
+    def instance_db_username(self):
+        """
+        Returns the username of the HANA instance database
+
+        Returns:
+            instance db username
+        """
+        return self._properties['saphanaInstance']['dbUser']['userName']
+
+    @property
+    def db_instance_client(self):
+        """
+        Returns the client name of the HANA instance
+
+        Returns:
+            db instance client name
+        """
+        return self._properties['saphanaInstance']['DBInstances'][0]
+
+    @property
+    def hdb_user_storekey(self):
+        """
+        Returns the hdb user store key of the HANA instance
+
+        Returns:
+            hdb user store key
+        """
+        return self._properties['saphanaInstance']['hdbuserstorekey']
 
     def _restore_request_json(
             self,
@@ -132,14 +208,16 @@ class SAPHANAInstance(Instance):
             databases.append(backupset_name)
 
         if point_in_time is None:
+            recover_time = 0
             point_in_time = {}
         else:
             if not isinstance(point_in_time, basestring):
                 raise SDKException('Instance', 103)
 
             point_in_time = {
-                'timeValue': str(point_in_time)
+                'time': int(point_in_time)
             }
+            recover_time = 1
 
         request_json = {
             "taskInfo": {
@@ -172,6 +250,7 @@ class SAPHANAInstance(Instance):
                                 "ignoreDeltaBackups": ignore_delta_backups,
                                 "destClientName": destination_hana_client,
                                 "databases": databases,
+                                "recoverTime": recover_time,
                                 "pointInTime": point_in_time
                             },
                             "destination": {
@@ -264,8 +343,6 @@ class SAPHANAInstance(Instance):
 
         flag, response = self._commcell_object._cvpysdk_object.make_request("GET", webservice)
 
-        self.destination_instances_dict = {}
-
         if flag:
             if response.json():
                 if 'instanceProperties' in response.json():
@@ -290,90 +367,6 @@ class SAPHANAInstance(Instance):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-
-    def _process_restore_response(self, request_json):
-        """Runs the CreateTask API with the request JSON provided for Restore,
-            and returns the contents after parsing the response.
-
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
-
-            Returns:
-                object  -   instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if restore job failed
-
-                    if response is empty
-
-                    if response is not success
-
-        """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['RESTORE'], request_json
-        )
-
-        if flag:
-            if response.json():
-                if "jobIds" in response.json():
-                    time.sleep(1)
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
-                elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Instance', '102', o_str)
-                else:
-                    raise SDKException('Instance', '102', 'Failed to run the restore job')
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def _run_backup(self, subclient_name, return_list):
-        """Triggers FULL backup job for the given subclient, and appends its Job object to list
-            The SDKExcpetion class instance is appended to the list,
-            if any exception is raised while running the backup job for the Subclient.
-
-            Args:
-                subclient_name  (str)   --  name of the subclient to trigger the backup for
-
-                return_list     (list)  --  list to append the job object to
-
-        """
-        try:
-            job = self.subclients.get(subclient_name).backup('Full')
-            if job:
-                return_list.append(job)
-        except SDKException as excp:
-            return_list.append(excp)
-
-    def backup(self):
-        """Run full backup job for all subclients in this instance.
-
-            Returns:
-                list    -   list containing the job objects for the full backup jobs started for
-                                the subclients in the backupset
-
-        """
-        return_list = []
-        thread_list = []
-
-        all_subclients = self.subclients._subclients
-
-        if all_subclients:
-            for subclient in all_subclients:
-                thread = threading.Thread(
-                    target=self._run_backup, args=(subclient, return_list)
-                )
-                thread_list.append(thread)
-                thread.start()
-
-        for thread in thread_list:
-            thread.join()
-
-        return return_list
 
     def restore(
             self,

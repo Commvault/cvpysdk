@@ -1950,11 +1950,11 @@ class StoragePolicyCopy(object):
 
         """
 
-        if retention_values[0] > 0:
+        if retention_values[0] >= 0:
             self._retention_rules['retainBackupDataForDays'] = retention_values[0]
-        if retention_values[1] > 0:
+        if retention_values[1] >= 0:
             self._retention_rules['retainBackupDataForCycles'] = retention_values[1]
-        if retention_values[2] > 0:
+        if retention_values[2] >= 0:
             self._retention_rules['retainArchiverDataForDays'] = retention_values[2]
 
         self._set_copy_properties()

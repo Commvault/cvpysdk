@@ -176,8 +176,9 @@ Commcell instance Attributes
     **identity_management**     --  returns the instance of the 'IdentityManagementApps
     class to perform identity management operations on the commcell class
 
-    **Commcell_Migration**      --  returns the instance of the 'CommCellMigration' class,
+    **commcell_migration**      --  returns the instance of the 'CommCellMigration' class,
     to interact with the Commcell Export & Import on the Commcell
+
 """
 
 from __future__ import absolute_import
@@ -244,7 +245,8 @@ class Commcell(object):
             webconsole_hostname,
             commcell_username=None,
             commcell_password=None,
-            authtoken=None):
+            authtoken=None,
+            force_https=False):
         """Initialize the Commcell object with the values required for doing the API operations.
 
             Commcell Username and Password can be None, if QSDK / SAML token is being given
@@ -278,6 +280,16 @@ class Commcell(object):
 
                     default: None
 
+                force_https             (bool)  --  boolean flag to specify whether to force the
+                connection to the commcell only via HTTPS
+
+                if the flag is set to **False**, SDK first tries to connect to the commcell via
+                HTTPS, but if that fails, it tries to connect via HTTP
+
+                if flag is set to **True**, it'll only try via HTTPS, and exit if it fails
+
+                    default: False
+
 
             Returns:
                 object  -   instance of this class
@@ -290,9 +302,11 @@ class Commcell(object):
 
         """
         web_service = [
-            r'https://{0}/webconsole/api/'.format(webconsole_hostname),
-            r'http://{0}/webconsole/api/'.format(webconsole_hostname)
+            r'https://{0}/webconsole/api/'.format(webconsole_hostname)
         ]
+
+        if force_https is False:
+            web_service.append(r'http://{0}/webconsole/api/'.format(webconsole_hostname))
 
         self._user = commcell_username
 

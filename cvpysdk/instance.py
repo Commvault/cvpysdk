@@ -1,4 +1,3 @@
-# FIXME:https://engweb.commvault.com/engtools/defect/215340
 # FIXME:https://engweb.commvault.com/engtools/defect/215230
 # -*- coding: utf-8 -*-
 
@@ -168,7 +167,8 @@ class Instances(object):
         from .instances.sybaseinstance import SybaseInstance
         from .instances.saporacleinstance import SAPOracleInstance
         from .instances.mysqlinstance import MYSQLInstance
-        from .instances.lndbinstance import LNDBInstance
+        from .instances.lotusnotes.lndbinstance import LNDBInstance
+        from .instances.lotusnotes.lndocinstance import LNDOCInstance
         from .instances.postgresinstance import PostgreSQLInstance
         from .instances.informixinstance import InformixInstance
 
@@ -184,6 +184,7 @@ class Instances(object):
             'sap for oracle': SAPOracleInstance,
             'mysql': MYSQLInstance,
             'notes database': LNDBInstance,
+            'notes document': LNDOCInstance,
             'postgresql': PostgreSQLInstance,
             'informix': InformixInstance
         }

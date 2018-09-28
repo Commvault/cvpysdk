@@ -59,6 +59,7 @@ class GoogleInstance(CloudAppsInstance):
         # OneDrive instance related properties
         self._client_id = None
         self._tenant = None
+
         if 'cloudAppsInstance' in self._properties:
             cloud_apps_instance = self._properties['cloudAppsInstance']
             self._ca_instance_type = cloud_apps_instance['instanceType']
@@ -262,3 +263,42 @@ class GoogleInstance(CloudAppsInstance):
                 }
         }
         return self._process_restore_response(request_json)
+
+    def enable_auto_discovery(self, mode='REGEX'):
+        """Enables auto discovery on instance.
+
+           Args:
+
+                mode    (str)   -- Auto Discovery mode
+
+                Valid Values:
+
+                    REGEX
+                    GROUP
+
+        """
+        auto_discovery_dict = {
+            'REGEX': 0,
+            'GROUP': 1
+        }
+        instance_dict = {
+            1: 'gInstance',
+            2: 'gInstance',
+            7: 'oneDriveInstance'
+        }
+        auto_discovery_mode = auto_discovery_dict.get(mode.upper(), None)
+
+        if auto_discovery_mode is None:
+            raise SDKException('Instance', '107')
+        instance_prop = self._properties['cloudAppsInstance'].copy()
+
+        instance_prop[instance_dict[instance_prop['instanceType']]]['isAutoDiscoveryEnabled'] = True
+        instance_prop[instance_dict[instance_prop['instanceType']]]['autoDiscoveryMode'] = auto_discovery_mode
+
+        self._set_instance_properties("_properties['cloudAppsInstance']", instance_prop)
+        self.refresh()
+
+    def _get_instance_properties_json(self):
+        """Returns the instance properties json."""
+
+        return {'instanceProperties': self._properties}

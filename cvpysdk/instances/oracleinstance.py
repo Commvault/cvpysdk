@@ -1,4 +1,3 @@
-# FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -764,7 +763,7 @@ class OracleInstance(Instance):
             if destination_client is None:
                 destination_client = self._properties['instance']['clientName']
         except SDKException:
-            raise
+            raise SDKException("Instance", "105")
         else:
             # subclient = self.subclients.get(subclient_name)
             options = self._get_oracle_restore_json(destination_client=destination_client,

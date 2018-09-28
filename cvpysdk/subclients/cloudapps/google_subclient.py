@@ -6,7 +6,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""File for operating on a GMail/GDrive Subclient.
+"""File for operating on a GMail/GDrive/OneDrive Subclient.
 
 GoogleSubclient is the only class defined in this file.
 
@@ -19,7 +19,9 @@ GoogleSubclient:
 
     _get_subclient_properties_json()    --  gets the properties JSON of Google Subclient
 
-    content()                           --  update the content of the subclient
+    content()                           --  gets the content of the subclient
+
+    groups()                            --  gets the groups associated with the subclient
 
     restore_out_of_place()              --  runs out-of-place restore for the subclient
 
@@ -44,6 +46,24 @@ class GoogleSubclient(CloudAppsSubclient):
         if 'content' in self._subclient_properties:
             self._content = self._subclient_properties['content']
 
+        content = []
+        group_list = []
+
+        for account in self._content:
+            temp_account = account["cloudconnectorContent"]["includeAccounts"]
+
+            if temp_account['contentType'] == 134:
+                content_dict = {
+                    'SMTPAddress': temp_account["contentName"],
+                    'display_name': temp_account["contentValue"]
+                }
+
+                content.append(content_dict)
+            if temp_account['contentType'] == 135:
+                group_list.append(temp_account["contentName"])
+        self._ca_content = content
+        self._ca_groups = group_list
+
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.
 
@@ -51,39 +71,26 @@ class GoogleSubclient(CloudAppsSubclient):
                 dict - all subclient properties put inside a dict
 
         """
-        subclient_json = {
-            "subClientProperties":
-                {
-                    "impersonateUser": self._impersonateUser,
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
-                }
-        }
-        return subclient_json
+
+        return {'subClientProperties': self._subclient_properties}
 
     @property
     def content(self):
-        """Gets the appropriate content from the Subclient relevant to the user.
+        """Returns the subclient content dict"""
+        return self._ca_content
+
+    @property
+    def groups(self):
+        """Returns the list of groups assigned to the subclient if any.
+        Groups can be azure AD group or Google groups.
+        Groups are assigned only if auto discovery is enabled for groups.
 
             Returns:
-                list - list of content associated with the subclient
+
+                list - list of groups associated with the subclient
+
         """
-        content = []
-
-        for account in self._content:
-            temp_account = account["cloudconnectorContent"]["includeAccounts"]
-
-            content_dict = {
-                'SMTPAddress': temp_account["contentName"],
-                'display_name': temp_account["contentValue"]
-            }
-
-            content.append(content_dict)
-
-        return content
+        return self._ca_groups
 
     @content.setter
     def content(self, subclient_content):
@@ -236,13 +243,50 @@ class GoogleSubclient(CloudAppsSubclient):
 
                 if "contentInfo" in self._discover_properties:
                     self._contentInfo = self._discover_properties["contentInfo"]
-
-                user_list = []
-
-                for user in self._contentInfo:
-                    user_list.append(user['contentName'])
-                return user_list
+                return self._contentInfo
             else:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def set_auto_discovery(self, value):
+        """Sets the auto discovery value for subclient.
+        You can either set a RegEx value or a user group,
+        depending on the auto discovery type selected at instance level.
+
+            Args:
+
+                value   (list)  --  List of RegEx or user groups
+
+        """
+
+        if not isinstance(value, list):
+            raise SDKException('Subclient', '116')
+
+        if not self._instance_object.auto_discovery_status:
+            raise SDKException('Subclient', '117')
+
+        subclient_prop = self._subclient_properties['cloudAppsSubClientProp'].copy()
+        if self._instance_object.auto_discovery_mode == 0:
+            # RegEx based auto discovery is enabled on instance
+
+            if subclient_prop['instanceType'] == 7:
+                subclient_prop['oneDriveSubclient']['regularExp'] = value
+            else:
+                subclient_prop['GoogleSubclient']['regularExp'] = value
+            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']", subclient_prop)
+        else:
+            # User group based auto discovery is enabled on instance
+            grp_list = []
+            groups = self.discover(discover_type='GROUPS')
+            for item in value:
+                for group in groups:
+                    if group['contentName'].lower() == item.lower():
+                        grp_list.append({
+                                "cloudconnectorContent": {
+                                "includeAccounts": group
+                                }
+                            })
+            self._content.extend(grp_list)
+            self._set_subclient_properties("_subclient_properties['content']", self._content)
+        self.refresh()

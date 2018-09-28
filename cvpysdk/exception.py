@@ -1,4 +1,3 @@
-#FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -122,8 +121,9 @@ EXCEPTION_DICT = {
         '103': 'Input date is incorrect',
         '104': 'File/Folder(s) to restore list is empty',
         '105': 'Could not fetch instance property',
-        '106': 'Invalid policy name under given instance. Validate the policy name'
-
+        '106': 'Invalid policy name under given instance. Validate the policy name',
+        '107': 'Unsupported auto discovery mode provided.'
+               'Valid values are REGEX and GROUP'
     },
     'Subclient': {
         '101': 'Data type of the input(s) is not valid',
@@ -140,7 +140,9 @@ EXCEPTION_DICT = {
         '112': 'Method Not Implemented',
         '113': 'Type of instance should either be the Instance class instance or string',
         '114': 'Type of backupset should either be the Backupset class instance or string',
-        '115': 'Class object should be an instance of Agent / Instance / Backupset class'
+        '115': 'Class object should be an instance of Agent / Instance / Backupset class',
+        '116': 'Auto discovery values should be a list',
+        '117': 'Auto discovery is disabled at instance level'
     },
     'Job': {
         '101': 'Incorrect JobId',

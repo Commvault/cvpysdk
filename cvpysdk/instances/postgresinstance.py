@@ -172,6 +172,23 @@ class PostgreSQLInstance(Instance):
             "restoreOptions"]["postgresRstOption"] = self.postgres_restore_json
         return rest_json
 
+    def _restore_common_options_json(self, value):
+        """setter for  the Common options of in restore JSON"""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+        super(PostgreSQLInstance, self)._restore_common_options_json(value)
+        if value.get("baseline_jobid"):
+            self._commonoption_restore_json = {
+                "clusterDBBackedup":False,
+                "restoreToDisk":False,
+                "baselineBackup":1,
+                "baselineRefTime": value.get("baseline_ref_time", ""),
+                "baselineJobId":value.get("baseline_jobid", ""),
+                "copyToObjectStore":False,
+                "onePassRestore":False,
+                "syncRestore":value.get("sync_restore", True)
+            }
+
     def _restore_destination_json(self, value):
         """setter for the Destination options in restore JSON
 

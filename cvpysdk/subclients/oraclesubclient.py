@@ -1,4 +1,3 @@
-# FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -27,7 +26,13 @@ OracleSubclient:
 
     selective_online_full()             --  Getter and Setter to enable selective online option
 
+    set_backupcopy_interface()          --  Setter for the backupcopy interface
+
     data_stream()                       --  Getter and Setter for data stream
+
+    backup()                            --  Performs backup database
+
+    restore()                           --  Performs restore databases
 
     backup_archive_log()                --  Getter ans Setter for enaling/disabling
                                             archive log mode
@@ -41,10 +46,6 @@ OracleSubclient:
     _oracle_cumulative_backup_json      --  Get cumulative backup JSON for oracle instance
 
     is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient
-
-    backup                              --  Backup database
-
-    restore                             --  Restore databases
 
 """
 from __future__ import unicode_literals
@@ -285,6 +286,23 @@ class OracleSubclient(DatabaseSubclient):
         self._set_subclient_properties(
             "_oracle_subclient_properties['enableTableBrowse']", False
         )
+
+    def set_backupcopy_interface(self, interface):
+        """Sets the backup copy interafce for the subclient.
+
+            Args:
+                interface (str) -- type of the backup copy interface
+
+            Raises:
+                SDKException:
+                    if failed to disable intelli snap for subclient
+        """
+
+        if interface in self._backupcopy_interfaces:
+            interface = self._backupcopy_interfaces[interface]
+            self._commonProperties['snapCopyInfo']['backupCopyInterface'] = interface
+        else:
+            raise SDKException("Subclient", "101")
 
     @property
     def find(self, *args, **kwargs):

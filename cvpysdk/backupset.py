@@ -160,13 +160,17 @@ class Backupsets(object):
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset
         from .backupsets.cabackupset import CloudAppsBackupset
+        from .backupsets.postgresbackupset import PostgresBackupset
+        from .backupsets.adbackupset import ADBackupset
 
         self._backupsets_dict = {
             'file system': FSBackupset,
             'nas': NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
             'ndmp': NASBackupset,       # SP12 and above honors NDMP as the Agent Name
             'sap hana': HANABackupset,
-            'cloud apps': CloudAppsBackupset
+            'cloud apps': CloudAppsBackupset,
+            'postgresql': PostgresBackupset,
+            "active directory" : ADBackupset            
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:

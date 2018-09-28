@@ -1,4 +1,3 @@
-# FIXME:https://engweb.commvault.com/engtools/defect/215340
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -82,9 +81,13 @@ Subclient:
 
     enable_backup()             --  enables the backup for the subclient
 
+    enable_trueup()             --  enables true up option for the subclient
+
+    enable_trueup_days()        --  enables true up option and sets days for backup
+
     enable_backup_at_time()     --  enables backup for the subclient at the input time specified
 
-    disble_backup()             --  disbles the backup for the subclient
+    disble_backup()             --  disables the backup for the subclient
 
     backup()                    --  run a backup job for the subclient
 
@@ -204,7 +207,8 @@ class Subclients(object):
         from .subclients.nassubclient import NASSubclient
         from .subclients.hanasubclient import SAPHANASubclient
         from .subclients.oraclesubclient import OracleSubclient
-        from .subclients.lndbsubclient import LNDbSubclient
+        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
+        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
         from .subclients.sybasesubclient import SybaseSubclient
         from .subclients.saporaclesubclient import SAPOracleSubclient
         from .subclients.exchsubclient import ExchangeSubclient
@@ -212,6 +216,7 @@ class Subclients(object):
         from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
         from .subclients.postgressubclient import PostgresSubclient
         from .subclients.informixsubclient import InformixSubclient
+        from .subclients.adsubclient import ADSubclient
 
         globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
         globals()['FileSystemSubclient'] = FileSystemSubclient
@@ -222,6 +227,7 @@ class Subclients(object):
         globals()['SAPHANASubclient'] = SAPHANASubclient
         globals()['OracleSubclient'] = OracleSubclient
         globals()['LNDbSubclient'] = LNDbSubclient
+        globals()['LNDocSubclient'] = LNDocSubclient
         globals()['SybaseSubclient'] = SybaseSubclient
         globals()['SAPOracleSubclient'] = SAPOracleSubclient
         globals()['ExchangeSubclient'] = ExchangeSubclient
@@ -229,6 +235,7 @@ class Subclients(object):
         globals()['ExchangeDatabaseSubclient'] = ExchangeDatabaseSubclient
         globals()['PostgresSubclient'] = PostgresSubclient
         globals()['InformixSubclient'] = InformixSubclient
+        globals()['ADSubclient'] = ADSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -243,13 +250,15 @@ class Subclients(object):
             'sap hana': SAPHANASubclient,
             'oracle': OracleSubclient,
             'notes database': LNDbSubclient,
+            'notes document': LNDocSubclient,
             'sybase': SybaseSubclient,
             'sap for oracle': SAPOracleSubclient,
             "exchange mailbox": ExchangeSubclient,
             'mysql': MYSQLSubclient,
             'exchange database': ExchangeDatabaseSubclient,
             'postgresql': PostgresSubclient,
-            'informix': InformixSubclient
+            'informix': InformixSubclient,
+            'active directory' : ADSubclient
         }
 
         # sql server subclient type dict
@@ -812,6 +821,12 @@ class Subclient(object):
             '_json_restore_subtask'
         ]
 
+        self._backupcopy_interfaces = {
+            'FILESYSTEM': 1,
+            'RMAN': 2,
+            'VOLUME': 3
+        }
+
         if subclient_id:
             self._subclient_id = str(subclient_id)
         else:
@@ -1098,33 +1113,15 @@ class Subclient(object):
             }
         }
 
-        advanced_options_dict = {}
-
-        if advanced_options:
-            advanced_options_dict = self._advanced_backup_options(
-                advanced_options)
-
-        if advanced_options_dict:
+        if advanced_options and isinstance(advanced_options, dict):
             request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
-                advanced_options_dict
+                advanced_options
             )
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         return request_json
-
-    def _advanced_backup_options(self, options):
-        """Generates the advanced backup options dict
-
-            Args:
-                options     (dict)  --  advanced backup options that are to be included
-                                            in the request
-
-            Returns:
-                (dict)  -   generated advanced options dict
-        """
-        return options
 
     @property
     def _json_task(self):
@@ -1199,8 +1196,8 @@ class Subclient(object):
     @property
     def is_blocklevel_backup_enabled(self):
         """returns True if block level backup is enabled else returns false"""
-        return self._subclient_properties.get(
-            'postgreSQLSubclientProp', {}).get('isUseBlockLevelBackup', False) == 1
+        return bool(self._subclient_properties.get(
+            'postgreSQLSubclientProp', {}).get('isUseBlockLevelBackup', False))
 
     @property
     def snapshot_engine_name(self):
@@ -1210,11 +1207,18 @@ class Subclient(object):
                 snap_copy_info = self._commonProperties.get('snapCopyInfo', "")
                 if 'snapToTapeSelectedEngine' in snap_copy_info:
                     if 'snapShotEngineName' in snap_copy_info.get('snapToTapeSelectedEngine', ""):
-                        return snap_copy_info['snapToTapeSelectedEngine'].get('snapShotEngineName', "")
+                        return snap_copy_info['snapToTapeSelectedEngine'].get(
+                            'snapShotEngineName', "")
         raise SDKException(
             'Subclient',
             '102',
             'Cannot fetch snap engine name.')
+
+    @property
+    def is_trueup_enabled(self):
+        """Treats the True up enabled as a property of the Subclient class."""
+        if 'isTrueUpOptionEnabled' in self._commonProperties:
+            return self._commonProperties['isTrueUpOptionEnabled']
 
     @property
     def is_on_demand_subclient(self):
@@ -1420,6 +1424,16 @@ class Subclient(object):
         """
         self._set_subclient_properties("_commonProperties['enableBackup']", True)
 
+    def enable_trueup(self):
+        """Setter for the TrueUp Option for a Subclient"""
+        if 'isTrueUpOptionEnabled'in self._commonProperties:
+            self._set_subclient_properties("_commonProperties['isTrueUpOptionEnabled']", True)
+
+    def enable_trueup_days(self, days=30):
+        """Setter for the TrueUp Option with reconcile after x days"""
+        self.enable_trueup()
+        self._set_subclient_properties("_commonProperties['runTrueUpJobAfterDays']", days)
+
     def enable_backup_at_time(self, enable_time):
         """Disables Backup if not already disabled, and enables at the time specified.
 
@@ -1485,19 +1499,20 @@ class Subclient(object):
             }
         }
 
-        if "snap_proxy" in proxy_options:
-            properties_dict["snapToTapeProxyToUse"] = {
-                "clientName": proxy_options["snap_proxy"]
+        if proxy_options is not None:
+            if "snap_proxy" in proxy_options:
+                properties_dict["snapToTapeProxyToUse"] = {
+                    "clientName": proxy_options["snap_proxy"]
                 }
 
-        if "backupcopy_proxy" in proxy_options:
-            properties_dict["useSeparateProxyForSnapToTape"] = True
-            properties_dict["separateProxyForSnapToTape"] = {
-                "clientName": proxy_options["backupcopy_proxy"]
+            if "backupcopy_proxy" in proxy_options:
+                properties_dict["useSeparateProxyForSnapToTape"] = True
+                properties_dict["separateProxyForSnapToTape"] = {
+                    "clientName": proxy_options["backupcopy_proxy"]
                 }
 
-        if "use_source_if_proxy_unreachable" in proxy_options:
-            properties_dict["snapToTapeProxyToUseSource"] = True
+            if "use_source_if_proxy_unreachable" in proxy_options:
+                properties_dict["snapToTapeProxyToUseSource"] = True
 
         self._set_subclient_properties(
             "_commonProperties['snapCopyInfo']", properties_dict)
