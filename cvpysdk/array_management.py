@@ -25,8 +25,11 @@ ArrayManagement:
 
     revert()                    --  Method for revert operation
 
-    reconcile()                     --  Method for recon operation
+    reconcile()                 --  Method for recon operation
 
+    add_array()                 --  Method to add array
+
+    delete_array()              --  Method to delete array
 """
 
 from __future__ import unicode_literals
@@ -50,6 +53,7 @@ class ArrayManagement(object):
 
         self._commcell_object = commcell_object
         self._SNAP_OPS = self._commcell_object._services['SNAP_OPERATIONS']
+        self.storage_arrays = self._commcell_object._services['STORAGE_ARRAYS']
 
     def _snap_operation(self,
                         operation,
@@ -72,7 +76,7 @@ class ArrayManagement(object):
 
                 control_host (int)        -- Control host for the Snap recon operation,
                 defaullt: None
-                
+
                 reconcile    (bool)       -- Uses Reconcile json if true
 
             Return :
@@ -190,3 +194,165 @@ class ArrayManagement(object):
                 control_host    (int)        -- control host id of the array
         """
         return self._snap_operation(7, control_host=control_host, reconcile=True)
+
+    def add_array(self,
+                  vendor_name,
+                  array_name,
+                  username,
+                  password,
+                  control_host=None,
+                  is_ocum=False):
+        """This method will help in adding array entry in the array management
+            Args :
+                    vendor_name         (str)               -- vendor name
+
+                    array_name          (str)               -- name of the array
+
+                    username            (str)               -- username of the array
+
+                    password            (str)               -- password to access array
+
+                    control_host        (str)               -- control host of the array
+
+                    is_ocum             (bool)              -- used for netapp to specify whether
+                                                               to use Primary file server or OCUM
+
+            Return :
+
+                errorMessage   (string) :  Error message
+        """
+
+        request_json = {
+            "clientId": 0,
+            "flags": 0,
+            "assocType": 0,
+            "copyId": 0,
+            "appId": 0,
+            "availableMAs": [
+                {
+                    "arrayControllerId": 0,
+                    "mediaAgent": {
+                        "name": "",
+                        "id": 0
+                    }
+                },
+            ],
+            "hostDG": {
+                "doNotMoveDevices": True,
+                "isOverridden": False,
+                "hostDGName": "",
+                "useOnlySpouseDevices": False,
+                "flags": 0,
+                "deviceGroupOption": 0
+            },
+            "arrayDG": {
+                "isOverridden": False,
+                "arrayDGName": "",
+                "flags": 0,
+                "disableDG": False,
+                "useDevicesFromThisDG": False
+            },
+            "configList": {},
+            "array": {
+                "name": "",
+                "id": 0
+            },
+            "vendor": {
+                "name": "",
+                "id": 0
+            },
+            "info": {
+                "passwordEdit": False,
+                "offlineReason": "",
+                "arrayType": 0,
+                "flags": 0,
+                "description": "",
+                "ctrlHostName": control_host,
+                "offlineCode": 0,
+                "isEnabled": True,
+                "arrayInfoType": 0,
+                "uniqueIdentifier": "",
+                "securityAssociations": {
+                    "processHiddenPermission": 0
+                },
+                "userPswd": {
+                    "userName": username,
+                    "password": password,
+
+                },
+                "arraySecurity": {},
+                "arrayName": {
+                    "name": array_name,
+                    "id": 0
+                },
+                "vendor": {
+                    "name": vendor_name,
+                    "id": 0
+                },
+                "client": {
+                    "name": "",
+                    "id": 0
+                }
+            }
+        }
+        array_type_dict1 = {
+            "info": {
+                "arrayType": 2
+            }
+        }
+        array_type_dict2 = {
+            "info": {
+                "arrayType": 1
+            }
+        }
+        array_type_dict3 = {
+            "info": {
+                "arrayType": 0
+            }
+        }
+        if vendor_name == "NetApp":
+            request_json["info"].update(array_type_dict1["info"]),
+
+        if vendor_name == "NetApp" and is_ocum:
+            request_json["info"].update(array_type_dict2["info"]),
+        else:
+            request_json["info"].update(array_type_dict3["info"]),
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self.storage_arrays, request_json
+        )
+
+        if response.json() and 'errorCode' in response.json():
+            error_code = response.json()['errorCode']
+
+            if error_code != 0:
+                if error_code == 1:
+                    raise SDKException('StorageArray', '101')
+
+                error_message = response.json().get('errorMessage', '')
+                o_str = 'Failed to add array\nError: "{0}"'.format(error_message)
+                raise SDKException('StorageArray', '102', o_str)
+        else:
+            raise SDKException('StorageArray', '102')
+
+    def delete_array(self, control_host_array):
+
+        """This method Deletes an array from the array management
+            Args :
+                    control_host_array  (str)               -- array id of the snap array
+            Return :
+
+                errorMessage   (string) :  Error message"""
+
+        storagearrays_delete_service = self.storage_arrays + '/{0}'.format(control_host_array)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'DELETE', storagearrays_delete_service
+        )
+
+        if response.json() and 'errorCode' in response.json():
+            error_code = response.json()['errorCode']
+
+            if error_code != 0:
+                raise SDKException('StorageArray', '103')
+            else:
+                error_message = response.json()['errorMessage']

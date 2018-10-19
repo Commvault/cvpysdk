@@ -10,7 +10,6 @@
 File for operating on a Sybase Instance.
 
 SybaseInstance is the only class defined in this file.
-
 SybaseInstance: Derived class from Instance Base class, representing an
                             sybase instance, and to perform operations on that instance
 
@@ -66,20 +65,22 @@ SybaseInstance:
     sybase_sharedmemory_directory() -- returns string of sybase_memory_directory
                                        for given sybase instance
 
-    restore_sybase_server()         -- Method to perform restore full sybase server
+    restore_sybase_server()         -- Performs full sybase server restore
 
-    restore_database()              -- Method to restore individual databases
+    restore_database()              -- Performs individual databases restore
+
+    restore_to_disk()               -- Perform restore to disk [Application free restore] for sybase
 
 """
 
 
 from __future__ import unicode_literals
 import datetime
-from ..instance import Instance
+from .dbinstance import DatabaseInstance
 from ..exception import SDKException
 
 
-class SybaseInstance(Instance):
+class SybaseInstance(DatabaseInstance):
     """
     Class to represent a standalone Sybase Instance
     """
@@ -89,15 +90,15 @@ class SybaseInstance(Instance):
         Initializes the object of Sybase Instance class
 
             Args:
-                agent_object    (object) -- instance of the Agent class
+                agent_object    (object) --     instance of the Agent class
 
-                instance_name   (str)    --  name of the instance
+                instance_name   (str)    --     name of the instance
 
-                instance_id     (str)    --  id of the instance
-                                          default None
+                instance_id     (str)    --     id of the instance
+                                                default None
 
             Returns :
-                object - instance of the Sybase Instance class
+                (object) - instance of the Sybase Instance class
 
         """
         self._sybase_restore_json = None
@@ -110,150 +111,178 @@ class SybaseInstance(Instance):
 
     @property
     def sybase_home(self):
-        """Returns sybase home
+        """
+        Returns sybase home
 
             Returns:
-                string - string of sybase_home
+                (str) - string representing sybase home
 
         """
-        return self._properties['sybaseInstance']['sybaseHome']
+        return self._properties.get('sybaseInstance', {}).get('sybaseHome')
 
     @property
     def sybase_instance_name(self):
-        """Returns sybase instance name with actual case without any conversion
+        """
+        Returns sybase instance name with actual case without any conversion
 
             Returns:
-                string - string of sybase_instance_name
+                (str) - string representing sybase instance name
 
         """
-        return self._properties["instance"]["instanceName"]
+        return self._properties.get('instance', {}).get('instanceName')
 
     @property
     def is_discovery_enabled(self):
-        """Returns autodiscovery enable status
+        """
+        Returns autodiscovery enable status
 
             Returns:
-                bool - True if autodiscovery is enabled. Else False.
+                bool - boolean value beased on autodiscovery enable status.
+
+                    True  - returns True if autodiscovery is enabled
+
+                    False - returns False if autodiscosvery is not enabled
+
         """
-        return self._properties['sybaseInstance']['enableAutoDiscovery']
+        return self._properties.get('sybaseInstance', {}).get('enableAutoDiscovery')
 
     @property
     def localadmin_user(self):
-        """Returns for local admin user
+        """
+        Returns for local admin user
 
             Returns:
-                string - string of Local admin user
+                (str) - string representing local admin user
 
         """
-        return self._properties['sybaseInstance']['localAdministrator']['userName']
+        return self._properties.get('sybaseInstance', {}).get('localAdministrator', {}).get('userName')
 
     @property
     def sa_user(self):
-        """Returns for sa username
+        """
+        Returns for sa username
 
             Returns:
-                string - string of sa username
+                (str) - string representing sa username
 
         """
-        return self._properties['sybaseInstance']['saUser']['userName']
+        return self._properties.get('sybaseInstance', {}).get('saUser', {}).get('userName')
 
     @property
     def version(self):
-        """Returns for sybase version
+        """
+        Returns for sybase version
 
             Returns:
-                string - string of sybase instance version
+                (str) - string representing sybase version
 
         """
-        return self._properties['version']
+        return self._properties.get('version')
 
     @property
     def backup_server(self):
-        """Returns for backup_server
+        """
+        Returns for backup server
 
             Returns:
-                string - string of backup_server
+                (str) - string representing backup server
 
         """
-        return self._properties['sybaseInstance']['backupServer']
+        return self._properties.get('sybaseInstance', {}).get('backupServer')
 
     @property
     def sybase_ocs(self):
-        """Returns for sybase_ocs
+        """
+        Returns for sybase ocs
 
             Returns:
-                string - string of sybase_ocs
+                (str) - string representing sybase OCS
 
         """
-        return self._properties['sybaseInstance']['sybaseOCS']
+        return self._properties.get('sybaseInstance', {}).get('sybaseOCS')
 
     @property
     def sybase_ase(self):
-        """Returns for sybase_ase
+        """
+        Returns for sybase ase
 
             Returns:
-                string - string of sybase_ase
+                (str) - string representing sybase ASE
 
         """
-        return self._properties['sybaseInstance']['sybaseASE']
+        return self._properties.get('sybaseInstance', {}).get('sybaseASE')
 
     @property
     def sybase_blocksize(self):
-        """Returns for sybase_blocksize
+        """
+        Returns for sybase blocksize
 
             Returns:
-                Integer - Int of sybase_blocksize
+                (int) - integer representing block size value
 
         """
-        return self._properties['sybaseInstance']['sybaseBlockSize']
+        return self._properties.get('sybaseInstance', {}).get('sybaseBlockSize')
 
     @property
     def sybase_configfile(self):
-        """Returns for sybase_configfile
+        """
+        Returns for sybase configfile
 
             Returns:
-                string - string of sybase_configfile
+                (str) - string representing sybase config file
 
         """
-        return self._properties['sybaseInstance']['configFile']
+        return self._properties.get('sybaseInstance', {}).get('configFile')
 
     @property
     def sybase_sharedmemory_directory(self):
-        """Returns for sybase_sharedmemory_directory
+        """
+        Returns for sybase shared memory directory
 
             Returns:
-                string - string of sybase_sharedmemory_directory
+                (str)  -    string representing sybase
+                            sybase shared memory directory
 
         """
-        return self._properties['sybaseInstance']['sharedMemoryDirectory']
+        return self._properties.get('sybaseInstance', {}).get('sharedMemoryDirectory')
 
     @property
     def client_name(self):
-        """Returns for getting client name of this instance
+        """
+        Returns client name of this instance
 
             Returns:
-                string -- client name as registered in the commcell
+                (str) - client name as registered in the commcell
 
         """
-        return self._properties[r"instance"][r"clientName"]
+        return self._properties.get('instance', {}).get('clientName')
 
     def _restore_common_options_json(self, value):
-        """setter for the Common options in restore JSON
+        """
+        Setter for the Common options in restore JSON
+
             Args:
                 value   (dict)  --  dict of common options
+                                    for restore json
+
         """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
 
         self._commonoption_restore_json = {
-            "sybaseCreateDevices": value.get("sybasecreatedevice", "")
+            "indexFreeRestore": value.get("index_free_restore", False),
+            "restoreToDisk": value.get("restore_to_disk", False),
+            "sybaseCreateDevices": value.get("sybase_create_device", False)
         }
 
     def _restore_destination_json(self, value):
-        """setter for the Sybase Destination options in restore JSON
+        """
+        Setter for the Sybase Destination options in restore JSON
+
             Args:
                     value   (dict)  --  dict of values for destination option
+
         """
 
         if not isinstance(value, dict):
@@ -267,13 +296,17 @@ class SybaseInstance(Instance):
             },
             "destClient": {
                 "clientName": value.get("destination_client", "")
-            }
+            },
+            "destPath": [value.get("destination_path", "")]
         }
 
     def _restore_sybase_option_json(self, value):
-        """setter for the sybase restore option in restore JSON
+        """
+        Setter for the sybase restore option in restore JSON
+
             Args:
                 value   (dict)  --  dict of values for sybase option
+
         """
 
         if not isinstance(value, dict):
@@ -286,24 +319,27 @@ class SybaseInstance(Instance):
             }
         self._sybase_restore_json = {
             "sybaseRecoverType": "STATE_RECOVER",
-            "pointofTime": value.get("pointintime", ""),
+            "pointofTime": value.get("point_in_time", ""),
             "destinationServer": {
                 "name": value.get("destination_instance_name", "")
             },
             "pointInTime": time_dict,
             "instanceRestore": value.get("instance_restore", ""),
-            "renameDatabases": value.get("renamedatabases", ""),
+            "renameDatabases": value.get("rename_databases", ""),
             "restoreType": "POINT_IN_TIME",
             "sybaseDatabase": value.get("syb_db", "")
         }
 
     def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+        """
+        Returns the JSON request to pass to the API as per the options selected by the user.
+
                 Args:
                     kwargs   (list)  --  list of options need to be set for restore
 
                 Returns:
-                    dict - JSON request to pass to the API
+                   (dict) - JSON request to pass to the API
+
         """
         restore_json = super(SybaseInstance, self)._restore_json(**kwargs)
         restore_option = {}
@@ -323,52 +359,58 @@ class SybaseInstance(Instance):
     def _get_sybase_restore_base_json(self,
                                       destination_client,
                                       destination_instance_name,
-                                      pointintime=False,
+                                      point_in_time=False,
                                       instance_restore=False,
                                       timevalue=None,
-                                      sybasecreatedevice=False,
-                                      renamedatabases=False,
+                                      sybase_create_device=False,
+                                      rename_databases=False,
                                       copy_precedence=0):
-        """Method to return basic sybase restore JSON based on given combination of parameters
+        """
+        Returns basic sybase restore JSON based on given combination of parameters
 
             Args:
                 destination_client_name    (str)    -- sybase destination client for restore
 
                 destination_instance_name  (str)    -- sybase destination instance for restore
 
-                pointintime                (bool)   -- determines pointintime based restore or not
+                point_in_time              (bool)   -- determines point_in_time based restore or not
+                                                       default : False
 
                 instance_restore           (bool)   -- determines if its single database or
                                                        complete sybase server restore
+                                                       default : False
 
-                timevalue                  (str)    -- for pointintime based restore
+                timevalue                  (str)    -- for point_in_time based restore
                                                        format: YYYY-MM-DD HH:MM:SS
+                                                       default : None
 
-                sybasecreatedevice         (bool)   -- determines whether to createdevice for
+                sybase_create_device       (bool)   -- determines whether to createdevice for
                                                        sybase database restore
+                                                       default : False
 
-                renamedatabases            (bool)   -- determines whether renamedatabase option
+                rename_databases           (bool)   -- determines whether renamedatabase option
                                                        chosen for given database restore
+                                                       default : False
 
                 copy_precedence            (int)    -- copy precedence value of storage policy
                                                        default: 0
 
 
             Return:
-                dict  -    returns base sybase restore json
+                (dict)  -    returns base sybase restore json
 
         """
         copy_precedence_applicable = False
         if copy_precedence is not None:
             copy_precedence_applicable = True
         if instance_restore is not True:
-            pointintime = True
+            point_in_time = True
             if timevalue is None:
                 current_time = datetime.datetime.utcnow()
                 current_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
                 timevalue = current_time
         else:
-            if (timevalue is None) and (pointintime is True):
+            if (timevalue is None) and (point_in_time is True):
                 current_time = datetime.datetime.utcnow()
                 current_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
                 timevalue = current_time
@@ -376,34 +418,43 @@ class SybaseInstance(Instance):
         basic_sybase_options = self._restore_json(
             destination_client=destination_client,
             destination_instance_name=destination_instance_name,
-            pointintime=pointintime,
+            point_in_time=point_in_time,
             instance_restore=instance_restore,
             to_time=timevalue,
             from_time=None,
-            sybasecreatedevice=sybasecreatedevice,
-            renamedatabases=renamedatabases,
+            sybase_create_device=sybase_create_device,
+            rename_databases=rename_databases,
             copy_precedence=copy_precedence,
             copy_precedence_applicable=copy_precedence_applicable,
             syb_db=syb_db)
 
         return basic_sybase_options
 
-    def _db_option(self, database_list, renamedatabases, sybasecreatedevice, device_options):
-        """Method to construct  db option for each databases in db list
+    def _db_option(self,
+                   database_list,
+                   rename_databases,
+                   sybase_create_device,
+                   device_options):
+        """
+        Constructs  database option for
+        each databases in database list
+
             Args:
-                database_list       (list)          --  list of databases opted for restore
+                database_list           (list)          --  list of databases opted for restore
 
-                sybasecreatedevice  (bool)          --  determines whether to createdevice
-                                                        for sybase database restore
+                sybase_create_device    (bool)          --  determines whether to createdevice
+                                                            for sybase database restore
 
-                renamedatabases     (bool)          --  determines whether renamedatabase option
-                                                        chosen for given database restore
+                rename_databases        (bool)          --  determines whether renamedatabase option
+                                                            chosen for given database restore
 
-                device_options      (dict(dict))    --  list of dict for each database with
-                                                        device rename and database rename options
+                device_options          (dict(dict))    --  list of dict for each database with
+                                                            device rename and database
+                                                            rename options
 
             Returns:
-                dict    -   list of db_options to be added to restore_json
+                (dict)    -     list of db_options to
+                                be added to restore_json
 
         """
         db_options = []
@@ -414,7 +465,7 @@ class SybaseInstance(Instance):
                 if dbname in device_options.keys():
                     dev_opt = device_options[dbname]
                     db_json = self._get_single_database_json(
-                        dbname, dev_opt, renamedatabases, sybasecreatedevice)
+                        dbname, dev_opt, rename_databases, sybase_create_device)
                 else:
                     db_json = self._get_single_database_json(dbname=dbname)
             db_options.append(db_json)
@@ -425,59 +476,68 @@ class SybaseInstance(Instance):
                                  destination_instance_name,
                                  database_list,
                                  timevalue=None,
-                                 sybasecreatedevice=False,
-                                 renamedatabases=False,
+                                 sybase_create_device=False,
+                                 rename_databases=False,
                                  device_options=None,
                                  copy_precedence=0):
-        """Method to construct sybase restore JSON for individual Database restore
+        """
+        Constructs sybase restore JSON for individual Database restore
 
             Args:
-                destination_client_name     (str)           -- sybase destination client
-                                                               for restore
+                destination_client_name         (str)           --  sybase destination client
+                                                                    for restore
 
-                destination_instance_name   (str)           -- sybase destination instance
-                                                               for restore
+                destination_instance_name       (str)           --  sybase destination instance
+                                                                    for restore
 
-                database_list               (list)          -- list of databases for restore
+                database_list                   (list)          --  list of databases for restore
 
-                timevalue                   (str)           -- for pointintime based restore
-                                                               format: YYYY-MM-DD HH:MM:SS
+                timevalue                       (str)           --  for point_in_time based restore
+                                                                    format: YYYY-MM-DD HH:MM:SS
+                                                                    default : None
 
-                sybasecreatedevice          (bool)          -- determines whether to createdevice
-                                                               for sybase database restore
+                sybase_create_device            (bool)          --  determines whether to
+                                                                    createdevice
+                                                                    for sybase database restore
+                                                                    default : False
 
-                renamedatabases             (bool)          -- determines whether renamedatabase
-                                                               option chosen
+                rename_databases                (bool)          --  determines whether
+                                                                    renamedatabase option
+                                                                    enabled or not
+                                                                    default : False
 
-                device_options              (dict(dict))    -- dict of dict for each database with
-                                                               device and database rename options
+                device_options                  (dict(dict))    --  dict of dict for each
+                                                                    database with device
+                                                                    and database rename options
+                                                                    default : None
 
-                copy_precedence             (int)           -- copy precedence of storage policy
-                                                               default: 0
+                copy_precedence                 (int)           --  copy precedence of
+                                                                    storage policy
+                                                                    default: 0
 
             Returns:
-                    dict    -   return restore JSON for individual Sybase database restored
+                    (dict)    -   return restore JSON for individual Sybase database restored
 
         """
         instance_restore = False
-        pointintime = True
+        point_in_time = True
         # Check to perform renamedatabase/create device
-        if (sybasecreatedevice is False) and (renamedatabases is False):
+        if (sybase_create_device is False) and (rename_databases is False):
             device_options = None
 
         restore_json = self._get_sybase_restore_base_json(
             destination_client,
             destination_instance_name,
-            pointintime,
+            point_in_time,
             instance_restore,
             timevalue,
-            sybasecreatedevice,
-            renamedatabases,
+            sybase_create_device,
+            rename_databases,
             copy_precedence
         )
 
         db_options = self._db_option(
-            database_list, renamedatabases, sybasecreatedevice, device_options
+            database_list, rename_databases, sybase_create_device, device_options
         )
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "sybaseRstOption"]["sybaseDatabase"] = db_options
@@ -486,42 +546,52 @@ class SybaseInstance(Instance):
     def _get_sybase_full_restore_json(self,
                                       destination_client,
                                       destination_instance_name,
-                                      pointintime=False,
+                                      point_in_time=False,
                                       timevalue=None,
-                                      sybasecreatedevice=True,
-                                      renamedatabases=False,
+                                      sybase_create_device=True,
+                                      rename_databases=False,
                                       device_options=None,
                                       copy_precedence=0):
-        """Method to create JSON for Full server restore
+        """
+        Creates JSON for Full server restore
 
             Args:
-                destination_client_name     (str)           --  sybase destination client
-                                                                for restore
+                destination_client_name         (str)           --  sybase destination client
+                                                                    for restore
 
-                destination_instance_name   (str)           --  sybase destination instance
-                                                                for restore
+                destination_instance_name       (str)           --  sybase destination instance
+                                                                    for restore
 
-                pointintime                 (bool)          --  determines pointintime
-                                                                restore or not
+                point_in_time                   (bool)          --  determines point_in_time
+                                                                    restore or not
+                                                                    default : False
 
-                timevalue                   (str)           --  for pointintime based restore
-                                                                format: YYYY-MM-DD HH:MM:SS
+                timevalue                       (str)           --  for point_in_time based restore
+                                                                    format: YYYY-MM-DD HH:MM:SS
+                                                                    default : None
 
-                sybasecreatedevice          (bool)          --  determines whether to createdevice
-                                                                for sybase database restore
+                sybase_create_device            (bool)          --  determines whether to
+                                                                    createdevice
+                                                                    for sybase database restore
+                                                                    default : True
 
-                renamedatabases             (bool)          --  determines whether renamedatabase
-                                                                option
+                rename_databases                (bool)          --  determines whether
+                                                                    renamedatabase option
+                                                                    enabled or not
+                                                                    default : False
 
-                device_options              (dict(dict))    --  dict of dict for each
-                                                                database with device
-                                                                and database rename options
+                device_options                  (dict(dict))    --  dict of dict for each
+                                                                    database with device
+                                                                    and database
+                                                                    rename options
+                                                                    default : None
 
-                copy_precedence             (int)           --  copy precedence of storage policy
-                                                                default: 0
+                copy_precedence                 (int)           --  copy precedence of
+                                                                    storage policy
+                                                                    default: 0
 
             Returns:
-                    dict -   return restore JSON for Full sybase server restore
+                    (dict) -   return restore JSON for Full sybase server restore
 
         """
 
@@ -529,11 +599,11 @@ class SybaseInstance(Instance):
         restore_json = self._get_sybase_restore_base_json(
             destination_client,
             destination_instance_name,
-            pointintime,
+            point_in_time,
             instance_restore,
             timevalue,
-            sybasecreatedevice,
-            renamedatabases,
+            sybase_create_device,
+            rename_databases,
             copy_precedence)
         db_options = []
         dblist = self._get_server_content()
@@ -549,7 +619,7 @@ class SybaseInstance(Instance):
 
         database_list = dblist
         db_options = self._db_option(
-            database_list, renamedatabases, sybasecreatedevice, device_options)
+            database_list, rename_databases, sybase_create_device, device_options)
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "sybaseRstOption"]["sybaseDatabase"] = db_options
         return restore_json
@@ -557,26 +627,29 @@ class SybaseInstance(Instance):
     def _get_single_database_json(self,
                                   dbname,
                                   device_options=None,
-                                  renamedatabases=False,
-                                  sybasecreatedevice=False):
-        """Method to construct database JSON for individual
+                                  rename_databases=False,
+                                  sybase_create_device=False):
+        """
+        Constructs database JSON for individual
         Sybase databases with create device and rename database parameters
 
             Args:
-                dbname              (str)              -- Database name opted for restore
+                dbname                  (str)              --   Database name opted for restore
 
-                device_options      (dict(dict))       -- dict of dict for given database
-                                                          with device and database rename option
+                device_options          (dict(dict))       --   dict of dict for given database
+                                                                with device and database
+                                                                rename option
 
 
-                sybasecreatedevice  (bool)             -- determines whether to createdevice
-                                                          for sybase database restore
+                sybase_create_device    (bool)             --   determines whether to createdevice
+                                                                for sybase database restore
 
-                renamedatabases     (bool)             -- determines whether renamedatabase
-                                                          option chosen for given database restore
+                rename_databases        (bool)             --   determines whether renamedatabase
+                                                                option chosen for given
+                                                                database restore
             Returns:
-                dict    -   Individual Database option with restore[
-                for rename and create device]
+                (dict)    -     Individual Database option with restore[
+                                for rename and create device]
 
         """
         sybase_db_details = None
@@ -595,7 +668,7 @@ class SybaseInstance(Instance):
             "databaseChain": dbchain_list
         }
         if device_options is not None:
-            if sybasecreatedevice is True:
+            if sybase_create_device:
                 for key1, value1 in device_options.items():
                     if device_options[key1] is None:
                         if key1 == "newdatabasename":
@@ -615,7 +688,7 @@ class SybaseInstance(Instance):
             logdevicename = device_options["logdevicename"]
             newlogdevicename = device_options["newlogdevicename"]
             newlogdevicepath = device_options["newlogdevicepath"]
-            if renamedatabases is True:
+            if rename_databases:
                 if device_options["newdatabasename"] is None:
                     newdatabasename = dbname
                 else:
@@ -661,7 +734,13 @@ class SybaseInstance(Instance):
         return sybase_db_details
 
     def _get_server_content(self):
-        """Method to get all databases for the speicfied Sybase Server instance"""
+        """
+        To get all databases for the speicfied Sybase Server instance
+
+        Returns:
+            (list)      -       list of databases available as server content
+
+        """
         subclient_dict = self.subclients._get_subclients()
         subclient_list = []
         db_list = []
@@ -678,36 +757,41 @@ class SybaseInstance(Instance):
     def restore_sybase_server(self,
                               destination_client=None,
                               destination_instance_name=None,
-                              pointintime=False,
+                              point_in_time=False,
                               timevalue=None,
-                              renamedatabases=False,
+                              rename_databases=False,
                               device_options=None,
                               copy_precedence=0):
-        """Method to restore the entire sybase server
+        """
+        Performs Full sybase server restore
 
             Args:
                 destination_client_name     (str)               --  sybase destination client
                                                                     for restore
+                                                                    default : None
 
                 destination_instance_name   (str)               --  sybase destination instance
                                                                     for restore
+                                                                    default : None
 
-                pointintime                 (bool)              --  determines pointintime
+                point_in_time               (bool)              --  determines point_in_time
                                                                     restore or not
+                                                                    default:False
 
-                timevalue                   (str)               --  for pointintime based restore
+                timevalue                   (str)               --  for point_in_time based restore
                                                                     format: YYYY-MM-DD HH:MM:SS
+                                                                    default : None
 
-                sybasecreatedevice          (bool)              --  determines whether to create
-                                                                    device for database restore
 
-                renamedatabases             (bool)              --  determines whether
+                rename_databases            (bool)              --  determines whether
                                                                     renamedatabase option chosen
+                                                                    default:False
 
 
                 device_options              (dict(dict))        --  dict of dict for each database
                                                                     with device and database
                                                                     rename options
+                                                                    default : None
 
                 copy_precedence             (int)               --  copy precedence of storage
                                                                     policy
@@ -765,7 +849,7 @@ class SybaseInstance(Instance):
             Note : Devices corresponding to System database cannot be renamed
 
             Returns:
-                object -     Job containing restore details
+                (object)    -     Job containing restore details
 
         """
 
@@ -775,14 +859,14 @@ class SybaseInstance(Instance):
         if destination_instance_name is None:
             destination_instance_name = self.instance_name
 
-        sybasecreatedevice = True
+        sybase_create_device = True
         request_json = self._get_sybase_full_restore_json(
             destination_client,
             destination_instance_name,
-            pointintime,
+            point_in_time,
             timevalue,
-            sybasecreatedevice,
-            renamedatabases,
+            sybase_create_device,
+            rename_databases,
             device_options,
             copy_precedence)
 
@@ -793,33 +877,40 @@ class SybaseInstance(Instance):
                          destination_instance_name=None,
                          database_list=None,
                          timevalue=None,
-                         sybasecreatedevice=False,
-                         renamedatabases=False,
+                         sybase_create_device=False,
+                         rename_databases=False,
                          device_options=None,
                          copy_precedence=0):
-        """Method to restore the individual databases
+        """
+        Performs individual database restores
 
             Args:
 
                 destination_client_name     (str)               --  destination client for restore
+                                                                    default : None
 
                 destination_instance_name   (str)               --  destination instance
                                                                     for restore
+                                                                    default : None
 
                 database_list               (list)              --  list of databases for restore
 
-                timevalue                   (str)               --  for pointintime based restore
+                timevalue                   (str)               --  for point_in_time based restore
                                                                     format: YYYY-MM-DD HH:MM:SS
+                                                                    default : None
 
-                sybasecreatedevice          (bool)              --  determines whether to create
+                sybase_create_device        (bool)              --  determines whether to create
                                                                     device for database restore
+                                                                    default:False
 
-                renamedatabases             (bool)              --  determines whether
+                rename_databases            (bool)              --  determines whether
                                                                     renamedatabase option chosen
+                                                                    default:False
 
                 device_options              (dict(dict))        --  dict of dict for each database
                                                                     with device and database
                                                                     rename options
+                                                                    default : None
 
                 copy_precedence             (int)               --  copy precedence of storage
                                                                     policy
@@ -872,11 +963,12 @@ class SybaseInstance(Instance):
 
 
             Returns:
-                object -     Job containing restore details
+                (object)    -     Job containing restore details
 
             Raises:
                 SDKException
                     if databaselist is empty
+
         """
         if destination_client is None:
             destination_client = self.client_name
@@ -893,9 +985,49 @@ class SybaseInstance(Instance):
             destination_instance_name,
             database_list,
             timevalue,
-            sybasecreatedevice,
-            renamedatabases,
+            sybase_create_device,
+            rename_databases,
             device_options,
             copy_precedence)
 
+        return self._process_restore_response(request_json)
+
+    def restore_to_disk(self,
+                        destination_client,
+                        destination_path,
+                        backup_job_ids,
+                        user_name,
+                        password):
+        """
+        Perform restore to disk [Application free restore] for sybase
+
+            Args:
+                destination_client          (str)   --  destination client name
+
+                destination_path:           (str)   --  destination path
+
+                backup_job_ids              (list)  --  list of backup job IDs
+                                                        to be used for disk restore
+
+                user_name                   (str)   --  impersonation user name to
+                                                        restore to destination client
+
+                password                    (str)   --  impersonation user password
+
+            Returns:
+                (object)    -     Job containing restore details
+
+            Raises:
+                SDKException
+                    if backup_job_ids not given as list of items
+
+        """
+        if not isinstance(backup_job_ids, list):
+            raise SDKException('Instance', '101')
+        request_json = self._get_restore_to_disk_json(destination_client,
+                                                      destination_path,
+                                                      backup_job_ids,
+                                                      user_name,
+                                                      password)
+        del request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sybaseRstOption"]
         return self._process_restore_response(request_json)

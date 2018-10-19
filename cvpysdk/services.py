@@ -253,6 +253,7 @@ SERVICES_DICT_TEMPLATE = {
     'GLOBAL_PARAM': '{0}/setGlobalParam',
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
+    'STORAGE_ARRAYS' : '{0}/StorageArrays',
 
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',

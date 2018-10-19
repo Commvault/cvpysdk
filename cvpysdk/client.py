@@ -2439,7 +2439,7 @@ class Client(object):
             'Authtoken': self._commcell_object._headers['Authtoken'],
             'Accept': 'application/json',
             'FileName': b64encode(file_name.encode('utf-8')),
-            'FileSize': None,
+            'FileSize': str(file_size),
             'ParentFolderPath': b64encode(destination_folder.encode('utf-8'))
         }
 
@@ -2447,19 +2447,16 @@ class Client(object):
 
         if file_size <= chunk_size:
             upload_url = self._services['UPLOAD_FULL_FILE'] % (self.client_id)
-            headers['FileSize'] = str(file_size)
             self._make_request(upload_url, file_stream.read(), headers)
         else:
             upload_url = self._services['UPLOAD_CHUNKED_FILE'] % (self.client_id)
             while file_size > chunk_size:
                 file_size = file_size - chunk_size
-                headers['FileSize'] = str(chunk_size)
                 headers['FileEOF'] = str(0)
                 request_id, chunk_offset = self._make_request(
                     upload_url, file_stream.read(chunk_size), headers, request_id, chunk_offset
                 )
 
-            headers['FileSize'] = str(file_size)
             headers['FileEOF'] = str(1)
             self._make_request(
                 upload_url, file_stream.read(file_size), headers, request_id, chunk_offset

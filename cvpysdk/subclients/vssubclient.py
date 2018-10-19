@@ -145,7 +145,6 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.vmwaresubclient import VMWareVirtualServerSubclient
             return object.__new__(VMWareVirtualServerSubclient)
 
-        
         elif instance_name == hv_type.AZURE.value.lower():
             from .virtualserver.azuresubclient import AzureSubclient
             return object.__new__(AzureSubclient)
@@ -162,6 +161,10 @@ class VirtualServerSubclient(Subclient):
         elif instance_name == hv_type.ORACLE_VM.value.lower():
             from .virtualserver.oraclevmsubclient import OracleVMVirtualServerSubclient
             return object.__new__(OracleVMVirtualServerSubclient)
+
+        elif instance_name == hv_type.ALIBABA_CLOUD.value.lower():
+            from .virtualserver.alibabacloudsubclient import AlibabaCloudVirtualServerSubclient
+            return object.__new__(AlibabaCloudVirtualServerSubclient)
 
         elif instance_name == hv_type.ORACLE_CLOUD.value.lower():
             from .virtualserver.oraclecloudsubclient import OracleCloudVirtualServerSubclient
@@ -353,7 +356,7 @@ class VirtualServerSubclient(Subclient):
     @property
     def metadata(self):
         """
-            Get if collect files/metadata value for given subclient. 
+            Get if collect files/metadata value for given subclient.
             Returns status as True/False (string)
             Default: False for subclient which doesnt have the property
         """
@@ -553,7 +556,8 @@ class VirtualServerSubclient(Subclient):
         try:
             cbt_status = bool(value)
             cbt_attr = r'useChangedTrackingOnVM'
-            self._set_subclient_properties("_vsaSubclientProp['useChangedTrackingOnVM']", cbt_status)
+            self._set_subclient_properties("_vsaSubclientProp['useChangedTrackingOnVM']",
+                                           cbt_status)
         except:
             raise SDKException('Subclient', '101')
 
@@ -660,8 +664,9 @@ class VirtualServerSubclient(Subclient):
                 new_name        (str)       --  new name of the disk
 
             Returns:
-        
-                disk dictionary(dict)       -- Dictionary with key name, new name , datastore and corresponding 
+
+                disk dictionary(dict)       -- Dictionary with key name, new name , datastore
+                                                and corresponding
         """
 
         if not new_name:
@@ -718,8 +723,8 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": "",
-                "networkName": value.get("destination_network",network_card_dict['name']),
-                "destinationNetwork": value.get("destination_network",network_card_dict['name'])
+                "networkName": value.get("destination_network", network_card_dict['name']),
+                "destinationNetwork": value.get("destination_network", network_card_dict['name'])
             }
 
             nics_list.append(nics)
@@ -1114,8 +1119,8 @@ class VirtualServerSubclient(Subclient):
 
                     copy_precedence     (int)   --  copy precedence to be used
                                                     for browsing
-    
-                    media_agent         (str)   --  Browse MA via with Browse has to hapeen . 
+
+                    media_agent         (str)   --  Browse MA via with Browse has to happen.
                                                     It can be MA different than Storage Policy MA
 
                 Returns:
@@ -1144,9 +1149,10 @@ class VirtualServerSubclient(Subclient):
 
 
         browse_content = super(VirtualServerSubclient, self).browse(
-            show_deleted=show_deleted_files, restore_index=restore_index, vm_disk_browse=vm_disk_browse,
+            show_deleted=show_deleted_files, restore_index=restore_index,
+            vm_disk_browse=vm_disk_browse,
             from_time=from_date, to_time=to_date, copy_precedence=copy_precedence,
-            path=vm_path, vs_file_browse=vm_files_browse,media_agent=media_agent)
+            path=vm_path, vs_file_browse=vm_files_browse, media_agent=media_agent)
 
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
@@ -1266,8 +1272,8 @@ class VirtualServerSubclient(Subclient):
                 copy_precedence     (int)   --  copy precedence to be used
                                                     for browsing
 
-                media_agent         (str)   --  Browse MA via with Browse has to hapeen . 
-                                                    It can be MA different than Storage Policy MA
+                media_agent         (str)   --  Browse MA via with Browse has to happen.
+                                                It can be MA different than Storage Policy MA
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1292,7 +1298,7 @@ class VirtualServerSubclient(Subclient):
         """
         return self.browse_in_time(
             vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
-            vm_files_browse=True,media_agent=media_agent)
+            vm_files_browse=True, media_agent=media_agent)
 
     def _check_folder_in_browse(
             self,
@@ -1344,7 +1350,8 @@ class VirtualServerSubclient(Subclient):
         _source_path = r'\\'.join([_vm_id, _folder_to_restore])
 
         _browse_files, _browse_files_dict = self.guest_files_browse(
-            _source_path, from_date=from_date, to_date=to_date, copy_precedence=copy_precedence,media_agent=media_agent)
+            _source_path, from_date=from_date, to_date=to_date,
+            copy_precedence=copy_precedence, media_agent=media_agent)
 
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split("\\")[-1]
@@ -1823,13 +1830,13 @@ class VirtualServerSubclient(Subclient):
         for disk, data in disk_info_dict.items():
             if ((restore_option["in_place"]) or ("datastore" not in restore_option)):
                 restore_option["datastore"] = data["advanced_data"]["browseMetaData"][
-                                             "virtualServerMetaData"]["datastore"]
+                    "virtualServerMetaData"]["datastore"]
             name = disk.split('\\')[-1]
             new_name_prefix = restore_option.get("disk_name_prefix")
             new_name = data["name"] if new_name_prefix is None \
                 else new_name_prefix + "_" + data["name"]
             _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1],
-                                                     restore_option["datastore"], new_name)
+                                                 restore_option["datastore"], new_name)
             vm_disks.append(_disk_dict)
         if not vm_disks:
             raise SDKException('Subclient', '104')
@@ -2093,7 +2100,8 @@ class VirtualServerSubclient(Subclient):
             raise SDKException('Subclient', '103')
 
         if advanced_options:
-            request_json = self._backup_json(backup_level, incremental_backup, incremental_level, advanced_options)
+            request_json = self._backup_json(backup_level, incremental_backup, incremental_level,
+                                             advanced_options)
 
             backup_service = self._commcell_object._services['CREATE_TASK']
 

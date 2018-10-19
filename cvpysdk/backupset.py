@@ -170,7 +170,7 @@ class Backupsets(object):
             'sap hana': HANABackupset,
             'cloud apps': CloudAppsBackupset,
             'postgresql': PostgresBackupset,
-            "active directory" : ADBackupset            
+            "active directory" : ADBackupset
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
@@ -653,6 +653,8 @@ class Backupset(object):
         """Returns the persistent attributes"""
         if attribute in self._restore_methods:
             return getattr(self._instance_object, attribute)
+
+        return super(Backupset, self).__getattribute__(attribute)
 
     def __repr__(self):
         """String representation of the instance of this class."""

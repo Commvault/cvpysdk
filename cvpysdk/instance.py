@@ -169,6 +169,7 @@ class Instances(object):
         from .instances.mysqlinstance import MYSQLInstance
         from .instances.lotusnotes.lndbinstance import LNDBInstance
         from .instances.lotusnotes.lndocinstance import LNDOCInstance
+        from .instances.lotusnotes.lndminstance import LNDMInstance
         from .instances.postgresinstance import PostgreSQLInstance
         from .instances.informixinstance import InformixInstance
 
@@ -185,6 +186,7 @@ class Instances(object):
             'mysql': MYSQLInstance,
             'notes database': LNDBInstance,
             'notes document': LNDOCInstance,
+            'domino mailbox archiver': LNDMInstance,
             'postgresql': PostgreSQLInstance,
             'informix': InformixInstance
         }
@@ -2163,7 +2165,8 @@ class Instance(object):
             "systemStateBackup": False,
             "clusterDBBackedup": False,
             "powerRestore": False,
-            "restoreToDisk": False,
+            "restoreToDisk": value.get("restore_to_disk", False),
+            "indexFreeRestore": value.get("index_free_restore", False),
             "offlineMiningRestore": False,
             "onePassRestore": False,
             "detectRegularExpression": True,

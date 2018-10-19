@@ -12,7 +12,8 @@ Network:
 
     __init__(class_object)            --    initialize object of the Network class
 
-    _get_network_properties()         --    returns all the existing network properties on a client/client group
+    _get_network_properties()         --    returns all the existing network properties on a
+                                            client/client group
 
     configure_network_settings        --    get the value  for configureFirewallSettings
 
@@ -26,9 +27,11 @@ Network:
 
     roaming_client(val)               --    set the value for isRoamingClient
 
-    tunnel_connection_port            --    get the tunnel connection port on the client/client group
+    tunnel_connection_port            --    get the tunnel connection port on the
+                                            client/client group
 
-    tunnel_connection_port(val)       --    set the tunnel connection port on the client/client group
+    tunnel_connection_port(val)       --    set the tunnel connection port on the
+                                            client/client group
 
     force_ssl                         --    get the value for foreceSSL
 
@@ -54,23 +57,31 @@ Network:
 
     keep_alive_seconds(val)           --    set the value for keepAliveSeconds
 
-    incoming_connections              --    get the list of incoming connections on the client/client group
+    incoming_connections              --    get the list of incoming connections on the
+                                            client/client group
 
-    set_incoming_connections(incoming_connections) --  sets the incoming connections on the client/client group with the list of values provided
+    set_incoming_connections()        --    sets the incoming connections on the client/client
+                                            group with the list of values provided
 
-    additional_ports                  --    get the list of additional ports on the client/client group
+    additional_ports                  --    get the list of additional ports on the
+                                            client/client group
 
-    set_additional_ports(ports,tunnelPort)   --  sets the range of additional ports on the client/client group provided as list and tunnel port
+    set_additional_ports()            --    sets the range of additional ports on the client/client
+                                            group provided as list and tunnel port
 
-    outgoing_routes                   --    get the list of outgoing routes on the client/client group
+    outgoing_routes                   --    get the list of outgoing routes on the
+                                            client/client group
 
-    set_outgoing_routes(outgoing_routes) -- sets the outgoing routes on the client/client group with the list of values provided
+    set_outgoing_routes()             --    sets the outgoing routes on the client/client group
+                                            with the list of values provided
 
     tppm_settings                     --    get the list of tppm settings on the client
 
-    set_tppm_settings(tppm_settings)  --    set the tppm on the client with the list of values provided
+    set_tppm_settings(tppm_settings)  --    set the tppm on the client with the list of
+                                            values provided
 
-    _advanced_network_config()       --    set advanced network configuration on the client/client group
+    _advanced_network_config()        --    set advanced network configuration on the
+                                            client/client group
 
 
 """
@@ -122,6 +133,7 @@ class Network(object):
         self._bind_open_ports_only = False
         self._is_dmz = False
         self._keep_alive_seconds = 300
+        self.enable_network_settings = None
 
         self._incoming_connection_type = {
             0: 'RESTRICTED',
@@ -162,7 +174,8 @@ class Network(object):
             network_prop = self._clientgroup_object._properties
 
         if 'firewallConfiguration' in network_prop:
-            self._config_network_settings = network_prop['firewallConfiguration']['configureFirewallSettings']
+            self._config_network_settings = (network_prop['firewallConfiguration'][
+                'configureFirewallSettings'])
 
             self._is_trivial_config = network_prop['firewallConfiguration']['isTrivialConfig']
 
@@ -173,7 +186,8 @@ class Network(object):
                 self._proxy_entities = network_prop['firewallConfiguration']['proxyEntities']
 
             if 'firewallOutGoingRoutes' in network_prop['firewallConfiguration']:
-                self._network_outgoing_routes = network_prop['firewallConfiguration']['firewallOutGoingRoutes']
+                self._network_outgoing_routes = (network_prop['firewallConfiguration'][
+                    'firewallOutGoingRoutes'])
 
             if 'restrictionTo' in network_prop['firewallConfiguration']:
                 self._restriction_to = network_prop['firewallConfiguration']['restrictionTo']
@@ -182,25 +196,30 @@ class Network(object):
                 self._network_options = network_prop['firewallConfiguration']['firewallOptions']
 
             if 'isRoamingClient' in network_prop['firewallConfiguration']:
-                self._is_roaming_client = network_prop['firewallConfiguration']['firewallOptions']['isRoamingClient']
+                self._is_roaming_client = (network_prop['firewallConfiguration'][
+                    'firewallOptions']['isRoamingClient'])
 
             self._tunnel_connection_port = network_prop['firewallConfiguration']['firewallOptions'][
                 'tunnelconnectionPort']
 
             self._force_ssl = network_prop['firewallConfiguration']['firewallOptions']['foreceSSL']
 
-            self._tunnel_init_seconds = network_prop['firewallConfiguration']['firewallOptions']['tunnelInitSeconds']
+            self._tunnel_init_seconds = (network_prop['firewallConfiguration'][
+                'firewallOptions']['tunnelInitSeconds'])
 
             self._lockdown = network_prop['firewallConfiguration']['firewallOptions']['lockdown']
 
-            self._bind_open_ports_only = network_prop['firewallConfiguration']['firewallOptions']['bindOpenPortsOnly']
+            self._bind_open_ports_only = (network_prop['firewallConfiguration'][
+                'firewallOptions']['bindOpenPortsOnly'])
 
             self._is_dmz = network_prop['firewallConfiguration']['firewallOptions']['isDMZ']
 
-            self._keep_alive_seconds = network_prop['firewallConfiguration']['firewallOptions']['keepAliveSeconds']
+            self._keep_alive_seconds = (network_prop['firewallConfiguration'][
+                'firewallOptions']['keepAliveSeconds'])
 
             if 'tppm' in self._network_options:
-                self._tppm_settings = network_prop['firewallConfiguration']['firewallOptions']['tppm']
+                self._tppm_settings = (network_prop['firewallConfiguration'][
+                    'firewallOptions']['tppm'])
 
     @property
     def configure_network_settings(self):
@@ -389,7 +408,8 @@ class Network(object):
 
         for incoming_connection in self._restriction_to:
             if incoming_connection['state'] in self._incoming_connection_type.keys():
-                incoming_connection['state'] = self._incoming_connection_type[incoming_connection['state']]
+                incoming_connection['state'] = (self._incoming_connection_type[
+                    incoming_connection['state']])
 
         return self._restriction_to
 
@@ -397,8 +417,8 @@ class Network(object):
         """Sets the incoming connections on a client/client group with the list of values provided
 
          Args:
-                incoming_connections(list)  -- list of incoming connections should be a list of dict containing
-                incoming connection type, entity name and entity type.
+                incoming_connections(list)  -- list of incoming connections should be
+                a list of dict containing incoming connection type, entity name and entity type.
                 [{'state':val,'entity':val,'isClient':val}]
 
             Example:
@@ -456,12 +476,13 @@ class Network(object):
         """
         return self._port_range
 
-    def set_additional_ports(self, ports, tunnelPort=8403):
+    def set_additional_ports(self, ports, tunnel_port=8403):
         """Sets additional incoming ports and tunnel port with the values provided as parameter
 
             Args:
-                tunnelPort (int) -- value to be set for tunnel port
-                ports(list)  -- list of ports should be a list of dict containing start port and end port
+                tunnel_port (int) -- value to be set for tunnel port
+                ports(list)  -- list of ports should be a list of dict containing
+                start port and end port
                 [{'startPort':val,'endPort':val}]
 
             Example:
@@ -481,7 +502,7 @@ class Network(object):
                     if the required key is missing in the input value passed
         """
         try:
-            self._tunnel_connection_port = tunnelPort
+            self._tunnel_connection_port = tunnel_port
             for port in ports:
                 additional_port_dict = {
                     "startPort": port['startPort'],
@@ -505,14 +526,15 @@ class Network(object):
         """
 
         for outgoing_route in self._network_outgoing_routes:
-            if outgoing_route['fireWallOutGoingRouteOptions'][
-                'connectionProtocol'] in self._firewall_outgoing_connection_protocol.keys():
-                outgoing_route['fireWallOutGoingRouteOptions']['connectionProtocol'] = \
-                    self._firewall_outgoing_connection_protocol[
-                        outgoing_route['fireWallOutGoingRouteOptions']['connectionProtocol']]
-            if outgoing_route['fireWallOutGoingRouteOptions']['routeType'] in self._firewall_outgoing_route_type.keys():
-                outgoing_route['fireWallOutGoingRouteOptions']['routeType'] = self._firewall_outgoing_route_type[
-                    outgoing_route['fireWallOutGoingRouteOptions']['routeType']]
+            if (outgoing_route['fireWallOutGoingRouteOptions']['connectionProtocol']
+                    in self._firewall_outgoing_connection_protocol.keys()):
+                (outgoing_route['fireWallOutGoingRouteOptions'][
+                    'connectionProtocol']) = (self._firewall_outgoing_connection_protocol[
+                    outgoing_route['fireWallOutGoingRouteOptions']['connectionProtocol']])
+            if (outgoing_route['fireWallOutGoingRouteOptions']['routeType']
+                    in self._firewall_outgoing_route_type.keys()):
+                outgoing_route['fireWallOutGoingRouteOptions']['routeType'] = (self._firewall_outgoing_route_type[
+                    outgoing_route['fireWallOutGoingRouteOptions']['routeType']])
 
         return self._network_outgoing_routes
 
@@ -520,19 +542,40 @@ class Network(object):
         """Sets outgoing routes on the client with the list of values provided as parameter
 
             Args:
-                outgoing_routes(list)  -- list of outgoing routes should be a list of dict containing
-                route type, entity name, entity type, streams, gateway host, gateway port and remote proxy based on
-                route type.
+                outgoing_routes(list)  -- list of outgoing routes should be a list of dict
+                containing route type, entity name, entity type, streams, gateway host,
+                gateway port, tunnel connection protocol and remote proxy based on route type.
 
                 For routeType: DIRECT
-                [{'routeType':'DIRECT', 'remoteEntity':val ,'streams':val, 'isClient':val, 'forceAllDataTraffic': True}]
+                [{'routeType':'DIRECT',
+                'remoteEntity':val ,
+                'streams':val,
+                'isClient':val,
+                'forceAllDataTraffic': True,
+                'connectionProtocol' : 0}]
 
                 For routeType: VIA_GATEWAY
-                [{'routeType':'VIA_GATEWAY', 'remoteEntity':val, 'streams':val, 'gatewayPort':val, 'gatewayHost': val,
-                'isClient':val, 'forceAllDataTraffic': False}]
+                [{'routeType':'VIA_GATEWAY',
+                'remoteEntity':val,
+                'streams':val,
+                'gatewayPort':val,
+                'gatewayHost': val,
+                'isClient':val,
+                'forceAllDataTraffic': False,
+                'connectionProtocol' : 3}]
 
                 For routeType: VIA_PROXY
-                [{'routeType':'VIA_PROXY', 'remoteEntity':val, 'remoteProxy':val, 'isClient':val}]
+                [{'routeType':'VIA_PROXY',
+                'remoteEntity':val,
+                'remoteProxy':val,
+                'isClient':val}]
+
+
+                Valid values for connectionProtocol:
+                0: 'HTTP',
+                1: 'HTTPS',
+                2: 'HTTPS_AuthOnly',
+                3: 'RAW_PROTOCOL'
 
             Example:
             [
@@ -542,6 +585,7 @@ class Network(object):
                 'streams': 1,
                 'isClient': True,
                 'forceAllDataTraffic' : True
+                'connectionProtocol' : 0
                 },
                 {
                 'routeType': 'VIA_GATEWAY',
@@ -551,6 +595,7 @@ class Network(object):
                 'gatewayHost': '1.2.3.4',
                 'isClient': True,
                 'forceAllDataTraffic' :False
+                'connectionProtocol' : 1
                 },
                 {
                 'routeType': 'VIA_PROXY',
@@ -589,6 +634,7 @@ class Network(object):
                     remote_proxy = {}
                     nstreams = outgoing_route['streams']
                     force_all_data_traffic = outgoing_route['forceAllDataTraffic']
+                    connection_protocol = outgoing_route.get('connectionProtocol', 2)
 
                 elif outgoing_route['routeType'] == self._firewall_outgoing_route_type[1]:
                     gatewayport = outgoing_route['gatewayPort']
@@ -596,12 +642,14 @@ class Network(object):
                     remote_proxy = {}
                     nstreams = outgoing_route['streams']
                     force_all_data_traffic = outgoing_route['forceAllDataTraffic']
+                    connection_protocol = outgoing_route.get('connectionProtocol', 2)
 
                 elif outgoing_route['routeType'] == self._firewall_outgoing_route_type[2]:
                     gatewayport = 0
                     gatewayhostname = ""
                     nstreams = 1
                     force_all_data_traffic = False
+                    connection_protocol = 2
                     remote_proxy = {
                         "clientName": outgoing_route['remoteProxy'],
 
@@ -615,7 +663,7 @@ class Network(object):
                 outgoing_routes_dict = {
                     "fireWallOutGoingRouteOptions": {
                         "numberOfStreams": nstreams,
-                        "connectionProtocol": 2,
+                        "connectionProtocol": connection_protocol,
                         "gatewayTunnelPort": gatewayport,
                         "forceAllBackupRestoreDataTraffic": force_all_data_traffic,
                         "gatewayHostname": gatewayhostname,
@@ -728,7 +776,7 @@ class Network(object):
         """
 
         if self.flag == "CLIENT":
-            if self._config_network_settings == False:
+            if not self._config_network_settings:
                 update_networkconfig_dict = {
                     "firewallConfiguration":
                         {
@@ -736,9 +784,8 @@ class Network(object):
                         }
                 }
 
-
             else:
-                update_networkconfig_dict ={
+                update_networkconfig_dict = {
                     "firewallConfiguration":
                         {
                             "configureFirewallSettings": self._config_network_settings,
@@ -749,7 +796,9 @@ class Network(object):
                             "restrictionTo": self._restriction_to,
                             "firewallOptions": {
                                 "isRoamingClient": self._is_roaming_client,
-                                "extendedProperties": "<App_FirewallExtendedProperties configureAutomatically=\"0\" defaultOutgoingProtocol=\"0\"/>",
+                                "extendedProperties": "<App_FirewallExtendedProperties "
+                                                      "configureAutomatically=\"0\" "
+                                                      "defaultOutgoingProtocol=\"0\"/>",
                                 "tunnelconnectionPort": self._tunnel_connection_port,
                                 "foreceSSL": self._force_ssl,
                                 "tunnelInitSeconds": self._tunnel_init_seconds,
@@ -763,8 +812,8 @@ class Network(object):
                 }
 
             request_json = self._client_object._update_client_props_json(update_networkconfig_dict)
-            flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._client_object._CLIENT,
-                                                                            request_json)
+            flag, response = (self._commcell_object._cvpysdk_object.make_request(
+                'POST', self._client_object._CLIENT, request_json))
 
             if flag:
                 if response.json() and 'response' in response.json():
@@ -789,56 +838,53 @@ class Network(object):
 
         elif self.flag == "CLIENTGROUP":
 
-            if self._config_network_settings == False:
+            if not self._config_network_settings:
                 request_json = {
-                "clientGroupOperationType": 2,
-                "clientGroupDetail": {
-                "clientGroup": {
-                    "clientGroupName": self._clientgroup_object._clientgroup_name
-                },
-                "firewallConfiguration":
-                    {
-                        "configureFirewallSettings": self._config_network_settings,
-
-                    }
-
-            }}
-
-            else:
-                request_json = {
-            "clientGroupOperationType": 2,
-            "clientGroupDetail": {
-                "clientGroup": {
-                    "clientGroupName": self._clientgroup_object._clientgroup_name
-                },
-                "firewallConfiguration":
-                    {
-                        "configureFirewallSettings": self._config_network_settings,
-                        "isTrivialConfig": False,
-                        "portRange": self._port_range,
-                        "proxyEntities": self._proxy_entities,
-                        "firewallOutGoingRoutes": self._network_outgoing_routes,
-                        "restrictionTo": self._restriction_to,
-                        "firewallOptions": {
-                            "isRoamingClient": self._is_roaming_client,
-                            "extendedProperties": "<App_FirewallExtendedProperties configureAutomatically=\"0\" defaultOutgoingProtocol=\"0\"/>",
-                            "tunnelconnectionPort": self._tunnel_connection_port,
-                            "foreceSSL": self._force_ssl,
-                            "tunnelInitSeconds": self._tunnel_init_seconds,
-                            "lockdown": self._lockdown,
-                            "bindOpenPortsOnly": self._bind_open_ports_only,
-                            "isDMZ": self._is_dmz,
-                            "keepAliveSeconds": self._keep_alive_seconds,
+                    "clientGroupOperationType": 2,
+                    "clientGroupDetail": {
+                        "clientGroup": {
+                            "clientGroupName": self._clientgroup_object._clientgroup_name
+                        },
+                        "firewallConfiguration": {
+                            "configureFirewallSettings": self._config_network_settings,
 
                         }
                     }
+                }
 
-            }}
+            else:
+                request_json = {
+                    "clientGroupOperationType": 2,
+                    "clientGroupDetail": {
+                        "clientGroup": {
+                            "clientGroupName": self._clientgroup_object._clientgroup_name
+                            },
+                        "firewallConfiguration": {
+                            "configureFirewallSettings": self._config_network_settings,
+                            "isTrivialConfig": False,
+                            "portRange": self._port_range,
+                            "proxyEntities": self._proxy_entities,
+                            "firewallOutGoingRoutes": self._network_outgoing_routes,
+                            "restrictionTo": self._restriction_to,
+                            "firewallOptions": {
+                                "isRoamingClient": self._is_roaming_client,
+                                "extendedProperties": "<App_FirewallExtendedProperties "
+                                                      "configureAutomatically=\"0\" "
+                                                      "defaultOutgoingProtocol=\"0\"/>",
+                                "tunnelconnectionPort": self._tunnel_connection_port,
+                                "foreceSSL": self._force_ssl,
+                                "tunnelInitSeconds": self._tunnel_init_seconds,
+                                "lockdown": self._lockdown,
+                                "bindOpenPortsOnly": self._bind_open_ports_only,
+                                "isDMZ": self._is_dmz,
+                                "keepAliveSeconds": self._keep_alive_seconds,
+                            }
+                        }
 
-
+                    }}
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._clientgroup_object._CLIENTGROUP, request_json)
+                'POST', self._clientgroup_object._CLIENTGROUP, request_json)
 
             if flag:
                 if response.json():
@@ -854,7 +900,8 @@ class Network(object):
 
                     else:
                         self._get_network_properties()
-                        raise SDKException('ClientGroup', '102', 'Client group properties were not updated')
+                        raise SDKException('ClientGroup', '102',
+                                           'Client group properties were not updated')
 
                 else:
                     self._get_network_properties()

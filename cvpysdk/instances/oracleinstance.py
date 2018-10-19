@@ -17,6 +17,8 @@ OracleInstance:
 
     __init__()                          --  Constructor for the class
 
+    restore_to_disk                     --  Performs restore to disk(app free restore)
+
     _get_instance_properties()          --  gets the properties of this instance
 
     _get_instance_properties_json()     --  gets all the instance related properties
@@ -72,11 +74,11 @@ from __future__ import unicode_literals
 
 import json
 
-from ..instance import Instance
 from ..exception import SDKException
+from .dbinstance import DatabaseInstance
 
 
-class OracleInstance(Instance):
+class OracleInstance(DatabaseInstance):
     """
     Class to represent a standalone Oracle Instance
     """
@@ -93,7 +95,45 @@ class OracleInstance(Instance):
         """
         super(OracleInstance, self).__init__(
             agent_object, instance_name, instance_id)
-        self._get_instance_properties()
+
+    def restore_to_disk(self,
+                        destination_client,
+                        destination_path,
+                        backup_job_ids,
+                        user_name,
+                        password):
+        """
+        Perform restore to disk [Application free restore] for Oracle
+
+            Args:
+                destination_client          (str)   --  destination client name
+
+                destination_path:           (str)   --  destination path
+
+                backup_job_ids              (list)  --  list of backup job IDs
+                                                        to be used for disk restore
+
+                user_name                   (str)   --  impersonation user name to
+                                                        restore to destination client
+
+                password                    (str)   --  impersonation user password
+
+            Returns:
+                object -     Job containing restore details
+
+            Raises:
+                SDKException
+                    if backup_job_ids not given as list of items
+
+        """
+        if not isinstance(backup_job_ids, list):
+            raise SDKException('Instance', '101')
+        request_json = self._get_restore_to_disk_json(destination_client,
+                                                      destination_path,
+                                                      backup_job_ids,
+                                                      user_name,
+                                                      password)
+        return self._process_restore_response(request_json)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.

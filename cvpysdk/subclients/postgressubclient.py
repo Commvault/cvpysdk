@@ -192,7 +192,9 @@ class PostgresSubclient(DatabaseSubclient):
             clone_options=None,
             media_agent=None,
             table_level_restore=False,
-            staging_path=None):
+            staging_path=None,
+            redirect_enabled=False,
+            redirect_path=None):
         """
         Method to restore the Postgres server
 
@@ -249,6 +251,16 @@ class PostgresSubclient(DatabaseSubclient):
 
                     default: None
 
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is 
+                enabled
+
+                    default: False
+
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+
+                    default: None
+
             Returns:
                 object -- Job containing restore details
 
@@ -284,4 +296,6 @@ class PostgresSubclient(DatabaseSubclient):
             clone_options=clone_options,
             media_agent=media_agent,
             table_level_restore=table_level_restore,
-            staging_path=staging_path)
+            staging_path=staging_path,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path)
