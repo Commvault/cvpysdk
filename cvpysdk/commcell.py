@@ -350,8 +350,8 @@ class Commcell(object):
                 self._headers['Authtoken'] = '{0}{1}'.format('QSDK ', authtoken)
 
             try:
-                self._user = self._cvpysdk_object.who_am_i()
                 self._is_saml_login = True if authtoken.startswith('SAML ') else False
+                self._user = self._cvpysdk_object.who_am_i()
             except SDKException as error:
                 self._headers['Authtoken'] = None
                 validity_err = error

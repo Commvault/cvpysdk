@@ -77,6 +77,10 @@ class VirtualServerInstance(Instance):
             from .virtualserver.googlecloudinstance import GoogleCloudInstance
             return object.__new__(GoogleCloudInstance)
 
+        elif instance_name == hv_type.Azure_Stack.value.lower():
+            from .virtualserver.azurestackinstance import AzureStackInstance
+            return object.__new__(AzureStackInstance)
+
     def _get_instance_properties(self):
         """Gets the properties of this instance.
 

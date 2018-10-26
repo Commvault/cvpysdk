@@ -17,28 +17,28 @@ IdentityManagementApp: Class for representing a single identity management app i
 IdentityManagementApps
 ======================
 
-    __init__(commcell_object)   --  initialise object of identity management apps
+    __init__(commcell_object)       --  initialise object of identity management apps
     class of the commcell
 
-    __str__()                   --  returns all the apps identity management apps
+    __str__()                       --  returns all the apps identity management apps
     in the commcell
 
-    __repr__()                  --  returns the string for the instance of the
+    __repr__()                      --  returns the string for the instance of the
     identity management apps
 
-    _get_apps()                 --  gets all the identity management appsin the commcell
+    _get_apps()                     --  gets all the identity management appsin the commcell
 
-    get_local_identity_app     --  gets the local identity app of the commcell
+    get_local_identity_app          --  gets the local identity app of the commcell
 
-    get_commcell_identity_apps --  gets the list of commcell identity apps of the commcell
+    get_commcell_identity_apps      --  gets the list of commcell identity apps of the commcell
 
-    delete_identity_app         --  deletes the specified local identity app
+    delete_identity_app()           --  deletes the specified local identity app
 
-    configure_local_identity_app    --  sets up the local identity app for the specified commcell
+    configure_local_identity_app()  --  sets up the local identity app for the specified commcell
 
-    configure_commcell_app      --  creates a commcell identity app for the specified commcell
+    configure_commcell_app()        --  creates a commcell identity app for the specified commcell
 
-    refresh()                   --  refresh the apps in the commcell
+    refresh()                       --  refresh the apps in the commcell
 
 
 IdentityManagementApp
@@ -49,7 +49,9 @@ IdentityManagementApp
 
     _get_app_key()              -- gets the app key
 
-    _get_app_details            --  gets the details of the identity management app
+    _get_app_details()          --  gets the details of the identity management app
+
+    get_app_props()             -- returns a dict containing the properties of a third party app
 
     refresh()                   -- refresh the details of the app
 """
@@ -110,8 +112,20 @@ class IdentityManagementApps(object):
             Returns:
                 dict - consisits of all thrid party apps in the commcell
                         {
-                            "app1_name": app1_props
-                            "app2_name": app2_props
+                            'app1_name': {
+                                'appKey': app1_key,
+                                'appType': app1_type,
+                                'appDescription': 'app1_description',
+                                'flags': 'app1_flags',
+                                'isEnabled': 'app1_isEnabled'
+                            },
+                            'app2_name': {
+                                'appKey': app2_key,
+                                'appType': app2_type,
+                                'appDescription': 'app1_description',
+                                'flags': 'app1_flags',
+                                'isEnabled': 'app1_isEnabled'
+                            }
                         }
 
             Raises:
@@ -129,9 +143,12 @@ class IdentityManagementApps(object):
                 response_value = response.json()['clientThirdPartyApps']
 
                 for app in response_value:
-                    apps[app['appName']] = {
+                    apps[app['appName'].lower()] = {
                         'appKey': app['appKey'],
-                        'appType': app['appType']
+                        'appType': app['appType'],
+                        'appDescription': app['appDescription'],
+                        'flags': app['flags'],
+                        'isEnabled': app['isEnabled']
                     }
                 return apps
         else:
@@ -154,11 +171,15 @@ class IdentityManagementApps(object):
         if not isinstance(app_name, basestring):
             raise SDKException('IdentityManagement', '101')
         else:
-            return IdentityManagementApp(
-                self._commcell_object,
-                app_name,
-                self._apps[app_name]['appKey']
-            )
+            app_name = app_name.lower()
+            if self.has_identity_app(app_name):
+                return IdentityManagementApp(
+                    self._commcell_object,
+                    app_name,
+                    self._apps[app_name]
+                )
+
+            raise SDKException('IdentityManagement', '102')
 
     @property
     def get_local_identity_app(self):
@@ -167,10 +188,9 @@ class IdentityManagementApps(object):
             Returns:
                 object    -   object of IdentityManangementApp class
         """
-        app_list = self._apps
-        if app_list:
-            for app in app_list.keys():
-                if app_list[app]['appType'] is 4:
+        if self._apps:
+            for app in self._apps:
+                if self._apps[app]['appType'] is 4:
                     return self.get(app)
 
     @property
@@ -185,14 +205,12 @@ class IdentityManagementApps(object):
                         app2_obj
                     ]
         """
-        app_list = self._apps
         commcell_apps = []
-        if app_list:
-            for app in app_list.keys():
-                if app_list[app]['appType'] is 3:
+        if self._apps:
+            for app in self._apps:
+                if self._apps[app]['appType'] is 3:
                     commcell_apps.append(self.get(app))
-            if commcell_apps:
-                return commcell_apps
+            return commcell_apps
 
     @property
     def all_apps(self):
@@ -209,11 +227,11 @@ class IdentityManagementApps(object):
         """
         return self._apps
 
-    def delete_identity_app(self, app):
+    def delete_identity_app(self, app_name):
         """Deletes the specified local identity app
 
             Args:
-                app     (object)      -- object containing app details
+                app_name     (str)      -- name of the app to be deleted
 
             Returns:
                 bool    -   True if operation succeeds
@@ -224,7 +242,7 @@ class IdentityManagementApps(object):
 
                     if failure in response
         """
-        draft_json = app._get_app_details()
+        draft_json = self._apps.get(app_name)
 
         if draft_json:
             req_json = {
@@ -257,7 +275,7 @@ class IdentityManagementApps(object):
         """Creates a local identity app by associating speccified users
 
             Args:
-                user_list      (list)     --  list of objects to be associated
+                user_list      (list)     --  list of names of users to be associated
                                               with identity server
 
             Returns:
@@ -267,6 +285,7 @@ class IdentityManagementApps(object):
                 SDKException:
                     if failed to configure identity app
         """
+
         third_party_json = {
             'opType': 1,
             'clientThirdPartyApps': [
@@ -275,9 +294,9 @@ class IdentityManagementApps(object):
                     'isEnabled': True,
                     'assocTree': [
                         {
-                            'userId': user_obj.user_id,
+                            'userId': self._commcell_object.users.all_users[user_name],
                             '_type_': 13
-                        } for user_obj in user_list
+                        } for user_name in user_list
                     ]
                 }
             ]
@@ -303,20 +322,47 @@ class IdentityManagementApps(object):
             raise SDKException('', '101', response_string)
 
     def configure_commcell_app(self,
-                               IDP_props,
+                               idp_props,
                                app_name,
+                               app_display_name,
+                               app_description='',
                                user_assoc_list=None,
                                user_mappings=None):
         """Creates a commcell app by associating speccified users
 
             Args:
-                IDP_props      (dict)     --  dict containing properties of the IDP's identity app
+                IDP_props      (list)     --  dict containing properties of the IDP's identity app
+
+                    [
+                        {
+                            "name": "SP Certificate Data",
+                            "value: "certificate1_str"
+                        },
+                        {
+                            "name": "JKS Private Key",
+                            "value: "key1_str"
+                        },
+                        {
+                            "name": "CommcellId",
+                            "value": "id1"
+                        },
+                        {
+                            "name": "RedirectUrl",
+                            "value": "url1"
+                        }
+                    ]
 
                 app_name       (str)      --  GUID for the app
 
-                user_assoclist (list)     --  list of users for association
+                user_assoc_list (list)    --  list of users for association
 
                 user_mappings  (dict)     --  dict containing mapping of IDP user to local user
+
+                    {
+                        "idp1_user":  "sp1_user",
+
+                        "idp2_user":  "sp2_user"
+                    }
 
             Returns:
                 object  -   returns object of IdentityManagementApp class
@@ -330,8 +376,8 @@ class IdentityManagementApps(object):
             'clientThirdPartyApps': [
                 {
                     'appName': app_name,
-                    'appDisplayName': 'Auto_IDP_Commcell_app_{0}'.format(time.time()),
-                    'appDescription': 'Auto created app',
+                    'appDisplayName': app_display_name,
+                    'appDescription': app_description,
                     'flags': 0,
                     'appType': 3,
                     'isEnabled': True,
@@ -341,19 +387,21 @@ class IdentityManagementApps(object):
                             {
                                 'userfromToken': spuser,
                                 "localuser": {
-                                    "userId": user_mappings[spuser].user_id
+                                    "userId": self._commcell_object.users.all_users[
+                                        user_mappings[spuser]
+                                    ]
                                 }
                             } for spuser in user_mappings
                         ]
                     },
                     'props': {
-                        'nameValues': IDP_props
+                        'nameValues': idp_props
                     },
                     'assocTree': [
                         {
-                            'userId': user_obj.user_id,
+                            'userId': self._commcell_object.users.all_users[user_name],
                             '_type_': 13
-                        } for user_obj in user_assoc_list
+                        } for user_name in user_assoc_list
                     ]
                 }
             ]
@@ -378,6 +426,24 @@ class IdentityManagementApps(object):
             response_string = self._update_response_(response.text)
             raise SDKException('', '101', response_string)
 
+    def has_identity_app(self, app_name):
+        """Checks if an identity app exits in the commcell
+
+            Args:
+                app_name    (str)   --  name of the identity app
+
+            Returns:
+                bool    -   boolean output whether the app exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the app name argument is not string
+        """
+        if not isinstance(app_name, basestring):
+            raise SDKException('IdentityManagement', '102')
+
+        return self._apps and app_name.lower() in self._apps
+
     def refresh(self):
         """Refresh the apps associated with the Commcell."""
         self._apps = self._get_apps()
@@ -386,7 +452,7 @@ class IdentityManagementApps(object):
 class IdentityManagementApp(object):
     """Class for performing operations on a specific identity management app"""
 
-    def __init__(self, commcell_object, app_name, app_key=None):
+    def __init__(self, commcell_object, app_name, app_dict=None):
         """Initialize the app class
 
             Args:
@@ -395,6 +461,9 @@ class IdentityManagementApp(object):
                 app_name            (str)       --  name of the app
 
                 app_key             (str)       --  key of the app
+                    default: None
+
+                app_dict            (dict)     -- dict containing the properties of the app
                     default: None
 
             Returns:
@@ -417,9 +486,10 @@ class IdentityManagementApp(object):
         }
         self._is_enabled = None
         self._app_displayname = None
+        self._app_dict = app_dict
 
-        if app_key:
-            self._app_key = app_key
+        if app_dict:
+            self._app_key = app_dict['appKey']
         else:
             self._app_key = self._get_app_key()
 
@@ -449,12 +519,15 @@ class IdentityManagementApp(object):
         """Returns a dict containing the details of a third party app.
 
             Returns:
-                dict    -   details of the identity app app
+                dict    -   details of the identity app
 
             Raises:
                 SDKException:
                         if response is not success
         """
+        if self._app_dict:
+            return self._app_dict
+
         flag, response = self._cvpysdk_object.make_request(
             'GET', self._APPS
         )
@@ -464,24 +537,35 @@ class IdentityManagementApp(object):
                 response_value = response.json()['clientThirdPartyApps']
                 for app in response_value:
                     if app['appKey'] == self._app_key:
-                        if 'appDescription' in app:
-                            self._app_description = app['appDescription']
-
-                        if 'flags' in app:
-                            self._flags = app['flags']
-
-                        if 'appType' in app:
-                            self._app_type = self._app_type_dict[app['appType']]
-
-                        if 'isEnabled' in app:
-                            self._is_enabled = app['isEnabled']
-
+                        self._app_description = app.get('appDescription')
+                        self._flags = app.get('flags')
+                        self._app_type = self._app_type_dict[app.get('appType')]
+                        self._is_enabled = app.get('isEnabled')
                         return app
             else:
                 raise SDKException('IdentityManagement', '101')
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def get_app_props(self):
+        """Returns a dict containing the properties of a third party app.
+
+            Returns:
+                dict    -   properties of the identity app
+
+            Raises:
+                SDKException:
+                    if response is not success
+        """
+        req_xml = """<App_GetClientThirdPartyAppPropReq propLevel='30'>
+                        <appKeys val='{0}'/>
+                    </App_GetClientThirdPartyAppPropReq>""".format(self.app_key)
+        response = self._commcell_object._qoperation_execute(req_xml)
+        if 'clientThirdPartyApps' in response:
+            return response['clientThirdPartyApps'][0]['props']['nameValues']
+        else:
+            raise SDKException('IdentityManagement', '102')
 
     def refresh(self):
         """Refresh the properties of the app."""

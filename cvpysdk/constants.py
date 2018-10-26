@@ -32,6 +32,7 @@ class HypervisorType(Enum):
     ALIBABA_CLOUD = "Alibaba Cloud"
     ORACLE_CLOUD = "Oracle Cloud"
     GOOGLE_CLOUD = "Google Cloud Platform"
+    Azure_Stack = "Azure Stack"
 
 
 class AppIDAType(Enum):

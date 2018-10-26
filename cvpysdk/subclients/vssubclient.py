@@ -170,6 +170,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.oraclecloudsubclient import OracleCloudVirtualServerSubclient
             return object.__new__(OracleCloudVirtualServerSubclient)
 
+        elif instance_name == hv_type.Azure_Stack.value.lower():
+            from .virtualserver.azurestacksubclient import AzureStackSubclient
+            return object.__new__(AzureStackSubclient)
+
         else:
             raise SDKException(
                 'Subclient',
