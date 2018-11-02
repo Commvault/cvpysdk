@@ -174,6 +174,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.azurestacksubclient import AzureStackSubclient
             return object.__new__(AzureStackSubclient)
 
+        elif instance_name == hv_type.OPENSTACK.value.lower():
+            from .virtualserver.openstacksubclient import OpenStackVirtualServerSubclient
+            return object.__new__(OpenStackVirtualServerSubclient)
+
         else:
             raise SDKException(
                 'Subclient',

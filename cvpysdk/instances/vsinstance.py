@@ -73,6 +73,10 @@ class VirtualServerInstance(Instance):
             from .virtualserver.oraclecloudinstance import OracleCloudInstance
             return object.__new__(OracleCloudInstance)
 
+        elif instance_name == hv_type.OPENSTACK.value.lower():
+            from .virtualserver.openstackinstance import OpenStackInstance
+            return object.__new__(OpenStackInstance)
+
         elif instance_name == hv_type.GOOGLE_CLOUD.value.lower():
             from .virtualserver.googlecloudinstance import GoogleCloudInstance
             return object.__new__(GoogleCloudInstance)

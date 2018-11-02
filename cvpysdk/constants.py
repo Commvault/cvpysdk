@@ -31,6 +31,7 @@ class HypervisorType(Enum):
     ORACLE_VM = "OracleVM"
     ALIBABA_CLOUD = "Alibaba Cloud"
     ORACLE_CLOUD = "Oracle Cloud"
+    OPENSTACK   =   "OpenStack"
     GOOGLE_CLOUD = "Google Cloud Platform"
     Azure_Stack = "Azure Stack"
 

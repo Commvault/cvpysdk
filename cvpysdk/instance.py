@@ -1400,7 +1400,13 @@ class Instance(object):
 
                     if response is not success
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._INSTANCE)
+        instance_service = (
+            "{0}?association/entity/clientId={1}&association/entity/applicationId={2}".format(
+                self._INSTANCE, self._agent_object._client_object.client_id,
+                self._agent_object.agent_id
+            )
+        )
+        flag, response = self._cvpysdk_object.make_request('GET', instance_service)
 
         if flag:
             if response.json() and "instanceProperties" in response.json():

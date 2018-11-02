@@ -57,6 +57,6 @@ setup(
     project_urls={
         'Bug Tracker': 'https://github.com/CommvaultEngg/cvpysdk/issues',
         'Documentation': 'https://commvaultengg.github.io/cvpysdk/',
-        'Source Code': 'https://github.com/CommvaultEngg/cvpysdk/tree/SP14'
+        'Source Code': 'https://github.com/CommvaultEngg/cvpysdk/tree/SP15'
     }
 )
