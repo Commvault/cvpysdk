@@ -1129,6 +1129,7 @@ class Client(object):
         self._install_directory = None
         self._version = None
         self._service_pack = None
+        self._client_owners = None
         self._is_backup_enabled = None
         self._is_ci_enabled = None
         self._is_data_aging_enabled = None
@@ -1229,6 +1230,10 @@ class Client(object):
 
                     if service_pack:
                         self._service_pack = service_pack[0]
+
+                if 'clientSecurity' in client_props:
+                    self._client_owners = client_props['clientSecurity'].get('clientOwners')
+
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1682,6 +1687,11 @@ class Client(object):
     def service_pack(self):
         """Treats the service pack as a read-only attribute."""
         return self._service_pack
+
+    @property
+    def owners(self):
+        """Treats the client owners as a read-only attribute."""
+        return self._client_owners
 
     @property
     def job_results_directory(self):

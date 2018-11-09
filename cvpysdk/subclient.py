@@ -527,7 +527,8 @@ class Subclients(object):
         return self._subclients and subclient_name.lower() in self._subclients
 
     def add(self, subclient_name, storage_policy,
-            subclient_type=None, description='', advanced_options=None):
+            subclient_type=None, description='', advanced_options=None,
+            pre_scan_cmd=None):
         """Adds a new subclient to the backupset.
 
             Args:
@@ -558,6 +559,9 @@ class Subclients(object):
                         {
                             ondemand_subclient : True
                         }
+
+                pre_scan_cmd        (str)   --  path to the batch file/shell script file to run
+                                                before each backup of the subclient
 
             Returns:
                 object  -   instance of the Subclient class
@@ -635,10 +639,16 @@ class Subclients(object):
                         "dataBackupStoragePolicy": {
                             "storagePolicyName": storage_policy
                         }
-                    }
+                    },
                 }
             }
         }
+        if pre_scan_cmd is not None:
+            request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = \
+                                                {
+                                                    "runAs": 1,
+                                                    "preScanCommand": pre_scan_cmd,
+                                                }
 
         if self._agent_object.agent_name == 'sql server':
             request_json['subClientProperties']['mssqlSubClientProp'] = {

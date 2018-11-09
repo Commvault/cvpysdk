@@ -183,6 +183,7 @@ SERVICES_DICT_TEMPLATE = {
     'USERS': '{0}User',
     'USER': '{0}User/%s?Level=50',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
+    'OTP': '{0}User/%s/preferences/OTP', 
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',

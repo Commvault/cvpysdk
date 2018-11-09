@@ -749,21 +749,26 @@ class OracleInstance(DatabaseInstance):
             destination_client=None,
             common_options=None,
             browse_option=None,
-            oracle_options=None):
+            oracle_options=None,
+            tag=None):
         """
         Perform restore full/partial database using latest backup or backup copy
 
         Args:
-            files   (dict)    --  fileOption for restore
-            destination_client  (str)    --  destination client name
+            files               (dict)      --  fileOption for restore
 
-            common_options  dict)    --  dictionary containing common options
+            destination_client  (str)       --  destination client name
+
+            common_options      (dict)      --  dictionary containing common options
                 default:    None
 
-            browse_option   (dict)  --  dictionary containing browse options
+            browse_option       (dict)      --  dictionary containing browse options
 
-            oracle_options (dict) --    dictionary containing other oracle options
+            oracle_options      (dict)      --  dictionary containing other oracle options
                 default:    By default it restores the controlfile and datafiles from latest backup
+
+            tag                 (str)       --  Type of the restore to be performed
+                default:    None
 
             Example: {
             "resetLogs": 1,
@@ -789,15 +794,19 @@ class OracleInstance(DatabaseInstance):
                 "resetLogs": 1,
                 "switchDatabaseMode": True,
                 "noCatalog": True,
-                "restoreControlFile": True,
                 "recover": True,
                 "recoverFrom": 3,
                 "restoreData": True,
                 "restoreFrom": 3
             }
 
-        if not isinstance(oracle_options, dict):
-            raise TypeError('Expecting a dict for oracle_options')
+        if tag.lower() == 'snap':
+            opt = {
+                "useSnapRestore": True,
+                "cleanupAuxiliary": True,
+                "restoreControlFile": True,
+            }
+            oracle_options.update(opt)
 
         try:
             if destination_client is None:
