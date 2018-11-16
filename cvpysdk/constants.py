@@ -106,3 +106,10 @@ class SQLDefines:
     STATE_RECOVER = 'STATE_RECOVER'
     STATE_NORECOVER = 'STATE_NORECOVER'
     STATE_STANDBY = 'STATE_STANDBY'
+
+class SharepointDefines:
+    """Class to maintiain Sharepoint Defines"""
+
+    # sharepoint strings
+    CONTENT_WEBAPP = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}'
+    CONTENT_DB = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}\\{1}'

@@ -1,33 +1,30 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# --------------------------------------------------------------------------
-# Copyright ©2016 Commvault Systems, Inc.
+# ————————————————————————–
+# Copyright Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
 # license information.
-# --------------------------------------------------------------------------
+# ————————————————————————–
 
 """File for operating on a SQL Server Subclient
 
 SQLServerSubclient is the only class defined in this file.
 
 SQLServerSubclient: Derived class from Subclient Base class, representing a sql server subclient,
-                        and to perform operations on that subclient
+and to perform operations on that subclient
 
 SQLServerSubclient:
     
-    _get_subclient_properties()          --  gets the subclient  related properties of SQL subclient.
+    _get_subclient_properties()         --  gets the subclient  related properties of SQL subclient.
     
-    _get_subclient_properties_json()     --  gets all the subclient  related properties of SQL subclient.
+    _get_subclient_properties_json()    --  gets all the subclient  related properties of SQL subclient.
 
-    _initialize_subclient_properties()  --  initializes additional properties of this subclient
+    content()                           --  sets the content of the subclient.
 
-    content()                           --  update the content of the subclient
+    log_backup_storage_policy()         --  updates the log backup storage policy for this subclient.
 
-    log_backup_storage_policy()         --  updates the log backup storage policy for this
-                                                subclient
+    backup()                            --  run a backup job for the subclient.
 
-    backup()                            --  run a backup job for the subclient
+    update_content()                    --  add, delete, overwrite the sql server subclient contents.
 
 """
 
@@ -47,15 +44,9 @@ class SQLServerSubclient(DatabaseSubclient):
         """
         super(DatabaseSubclient,self)._get_subclient_properties()
 
-        if 'mssqlSubClientProp' in self._subclient_properties:
-            self._mssql_subclient_prop = self._subclient_properties['mssqlSubClientProp']
-
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
-            
-        self._is_file_group_subclient = False   
-        if 'sqlSubclientType' in self._mssql_subclient_prop:
-            self._is_file_group_subclient = self._mssql_subclient_prop['sqlSubclientType'] == 2
+        self._mssql_subclient_prop = self._subclient_properties.get('mssqlSubClientProp', {})
+        self._content = self._subclient_properties.get('content', {})
+        self._is_file_group_subclient = self._mssql_subclient_prop.get('sqlSubclientType', False) == 2
     
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.        

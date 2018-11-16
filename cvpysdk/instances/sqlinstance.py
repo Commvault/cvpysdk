@@ -14,6 +14,11 @@ SQLServerInstance: Derived class from Instance Base class, representing a sql se
                        and to perform operations on that instance
 
 SQLServerInstance:
+
+    _get_instance_properties()      --  gets the instance related properties of SQL instance.
+    
+    _get_instance_properties_json() --  gets all the instance related properties of SQL instance.
+    
     _restore_request_json()         --  returns the restore request json
 
     _process_restore_response()     --  processes response received for the Restore request
@@ -41,10 +46,11 @@ SQLServerInstance:
 
 from __future__ import unicode_literals
 
-import datetime
-import time
 import re
+import time
+import datetime
 import threading
+from base64 import b64encode
 
 from ..instance import Instance
 from ..exception import SDKException
@@ -55,6 +61,38 @@ from ..constants import SQLDefines
 class SQLServerInstance(Instance):
     """Derived class from Instance Base class, representing a SQL Server instance,
         and to perform operations on that Instance."""
+
+    def _get_instance_properties(self):
+        """Gets the properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+
+        super(SQLServerInstance, self)._get_instance_properties()
+
+        self._mssql_instance_prop = self._properties.get('mssqlInstance', {})
+
+    def _get_instance_properties_json(self):
+        """get the all instance related properties of this instance.        
+
+           Returns:
+                dict - all subclient properties put inside a dict
+
+        """
+        instance_json = {
+            "instanceProperties":
+                {
+                    "instance": self._instance,
+                    "instanceActivityControl": self._instanceActivityControl,
+                    "mssqlInstance": self._mssql_instance_prop,
+                    "contentOperationType": 1
+                }
+        }
+        return instance_json
 
     def _restore_request_json(
             self,
@@ -597,3 +635,98 @@ class SQLServerInstance(Instance):
         )
 
         return self._process_restore_response(request_json)
+
+    @property
+    def mssql_instance_prop(self):
+        """ getter for sql server instance properties """
+        return self._mssql_instance_prop
+
+    @mssql_instance_prop.setter
+    def mssql_instance_prop(self, value):
+        """Setter for SQL server instance properties
+        
+            Args:
+                value (list)  --  list of the category and properties to update on the instance
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Instance API
+        """
+        category, prop = value
+
+        self._set_instance_properties(category, prop)
+
+    def vss_option(self, value):
+        """Enables or disables VSS option on SQL instance
+
+            Args:
+                value (bool)  --  Boolean value whether to set VSS option on or off
+
+        """
+
+        request_json = {
+            "useVss": value
+        }
+
+        self._set_instance_properties("_mssql_instance_prop", request_json)
+
+    def vdi_timeout(self, value):
+        """Sets the SQL VDI timeout value on SQL instance
+
+            Args:
+                value (int)  --  value of vdi timeout for sql vdi operations
+
+        """
+
+        request_json = {
+            "vDITimeOut": value
+        }
+
+        self._set_instance_properties("_mssql_instance_prop", request_json)
+
+    def impersonation(self, enable, username=None, password=None):
+        """Sets impersonation on SQL instance with local system account or provided user account.
+
+            Args:
+                enable (bool)  --  boolean value whether to set impersonation
+                
+                username (str, optional)   --  user to set for impersonation.
+                Defaults to local system account if enabled is True and username not provided.
+                
+                password (str, optional)   --  password of user account
+
+        """
+
+        if enable and username is None:
+            impersonate_json = {
+                "overrideHigherLevelSettings":{
+                    "overrideGlobalAuthentication": enabled,
+                    "useLocalSystemAccount": True
+                }
+            }
+        elif enable and username is not None:
+            if password is not None:
+                impersonate_json = {
+                    "overrideHigherLevelSettings":{
+                        "overrideGlobalAuthentication": enabled,
+                        "useLocalSystemAccount": False,
+                        "userAccount":{
+                            "userName": username,
+                            "password": b64encode(password.encode()).decode()
+                        }
+                    }
+                }
+            else:
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    'Please provide password to set impersonation for user [{0}]'.format(username)
+                )
+        else:
+            impersonate_json = {
+                "overrideHigherLevelSettings":{
+                    "overrideGlobalAuthentication": enable,
+                    "useLocalSystemAccount": False
+                }
+            }
+
+        self._set_instance_properties("_mssql_instance_prop", impersonate_json)

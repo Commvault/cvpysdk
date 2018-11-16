@@ -218,6 +218,7 @@ class Subclients(object):
         from .subclients.postgressubclient import PostgresSubclient
         from .subclients.informixsubclient import InformixSubclient
         from .subclients.adsubclient import ADSubclient
+        from .subclients.sharepointsubclient import SharepointSubclient
 
         globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
         globals()['FileSystemSubclient'] = FileSystemSubclient
@@ -238,6 +239,7 @@ class Subclients(object):
         globals()['PostgresSubclient'] = PostgresSubclient
         globals()['InformixSubclient'] = InformixSubclient
         globals()['ADSubclient'] = ADSubclient
+        globals()['SharepointSubclient'] = SharepointSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -261,7 +263,8 @@ class Subclients(object):
             'exchange database': ExchangeDatabaseSubclient,
             'postgresql': PostgresSubclient,
             'informix': InformixSubclient,
-            'active directory' : ADSubclient
+            'active directory' : ADSubclient,
+            'sharepoint server': SharepointSubclient
         }
 
         # sql server subclient type dict
