@@ -22,11 +22,14 @@ CommCellMigration:
 """
 from base64 import b64encode
 from past.builtins import basestring
+from .job import Job
 
 from .exception import SDKException
 
+
 class CommCellMigration(object):
     """Class for representing the commcell export & import operations from commcell. """
+
     def __init__(self, commcell_object):
         """Initializes object of the CommCellMigration class.
 
@@ -44,7 +47,7 @@ class CommCellMigration(object):
         self._commcell_name = self._commcell_object.commserv_name
         self._path_type = 0
 
-    def commcell_export(self, export_location, client_list, options_dictionary):
+    def commcell_export(self, export_location, client_list, options_dictionary=None):
         """ Starts the Commcell Export job.
 
             Args:
@@ -59,11 +62,27 @@ class CommCellMigration(object):
                     {
                         "pathType":"Local",
 
-                        "otherSqlInstance":True
+                        "otherSqlInstance":True,
+
+                        "userName":"UserName",
+
+                        "password":"UserPassword!12",
+
+                        "sqlInstanceName":"SQLInstanceName",
+
+                        "sqlUserName":"SQLUserName",
+
+                        "sqlPassword":"SQLPassword",
+
+                        "Database":"commserv",
+
+                        "captureMediaAgents":True,
+
+                        "autopickCluster":False
                     }
 
             Returns:
-                int                                 --  returns the CCM Export job id.
+                CCM Export Job instance             --  returns the CCM Export job instance.
 
             Raises:
                 SDKException:
@@ -89,7 +108,7 @@ class CommCellMigration(object):
                 and isinstance(network_user_name, basestring)
                 and isinstance(network_user_password, basestring)
                 and isinstance(other_sql_instance, bool)
-                and isinstance(sql_instance_name,basestring)
+                and isinstance(sql_instance_name, basestring)
                 and isinstance(export_location, basestring)
                 and isinstance(sql_user_name, basestring)
                 and isinstance(sql_password, basestring)
@@ -103,11 +122,11 @@ class CommCellMigration(object):
         elif path_type.lower() == 'network':
             self._path_type = 1
         else:
-            raise  SDKException('CommCellMigration', '104')
+            raise SDKException('CommCellMigration', '104')
 
-        if  other_sql_instance:
+        if other_sql_instance:
             if sql_instance_name == "" or sql_user_name == "" or sql_password == "":
-                raise  SDKException('CommCellMigration', '103')
+                raise SDKException('CommCellMigration', '103')
             sql_password = b64encode(sql_password.encode()).decode()
 
         if self._path_type == 1:
@@ -184,8 +203,8 @@ class CommCellMigration(object):
         sub_dict = export_json['taskInfo']['subTasks'][0]['options']['adminOpts']['ccmOption'] \
             ['captureOptions']['entities']
 
-        for i in range(len(client_list)):
-            temp_dic = {'clientName': client_list[i], 'commCellName': self._commcell_name}
+        for client in client_list:
+            temp_dic = {'clientName': client, 'commCellName': self._commcell_name}
             sub_dict.append(temp_dic)
 
         flag, response = self._cvpysdk_object.make_request('POST',
@@ -194,10 +213,10 @@ class CommCellMigration(object):
 
         if flag:
             if response.json() and 'jobIds' in response.json():
-                return response.json()['jobIds'][0]
-            elif response.json and 'errorCode' in response.json():
-                return response.json()['errorCode']
-            return 0
+                return Job(self._commcell_object, response.json()['jobIds'][0])
+            elif response.json() and 'errorCode' in response.json():
+                raise SDKException('CommCellMigration', '102', 'CCM Export job failed with error code : ' +
+                                   str(response.json()['errorCode']))
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -218,7 +237,7 @@ class CommCellMigration(object):
                     }
 
             Returns:
-                int                                 --  returns CCM Import job id or error code.
+                CCM Import Job instance             --  returns the CCM Import job instance.
 
             Raises:
                 SDKException:
@@ -240,59 +259,59 @@ class CommCellMigration(object):
         elif path_type.lower() == 'network':
             self._path_type = 1
         else:
-            raise  SDKException('CommCellMigration', '104')
+            raise SDKException('CommCellMigration', '104')
 
         if self._path_type == 1:
             if network_user_name == "" or network_user_password == "":
                 raise SDKException('CommCellMigration', '103')
 
         import_json = {
-            "taskInfo":{
-                "associations":[
+            "taskInfo": {
+                "associations": [
                     {
-                        "type":0,
+                        "type": 0,
                         "clientSidePackage": True,
                         "consumeLicense": True
                     }
                 ],
-                "task":{
-                    "taskType":1,
-                    "initiatedFrom":2,
-                    "taskFlags":{
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 2,
+                    "taskFlags": {
                         "disabled": False
                     }
                 },
-                "subTasks":[
+                "subTasks": [
                     {
-                        "subTask":{
-                            "subTaskType":1,
-                            "operationType":4030
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4030
                         },
-                        "options":{
-                            "adminOpts":{
-                                "ccmOption":{
-                                    "mergeOptions":{
+                        "options": {
+                            "adminOpts": {
+                                "ccmOption": {
+                                    "mergeOptions": {
                                         "deleteEntitiesIfOnlyfromSource": False,
                                         "forceOverwriteHolidays": False,
                                         "reuseTapes": False,
                                         "specifyStagingPath": False,
                                         "forceOverwriteOperationWindow": False,
-                                        "fallbackSpareGroup":"",
+                                        "fallbackSpareGroup": "",
                                         "mergeOperationWindow": False,
                                         "pruneImportedDump": False,
-                                        "alwaysUseFallbackDataPath":True,
-                                        "deleteEntitiesNotPresent":False,
-                                        "forceOverwrite":False,
-                                        "mergeHolidays":True,
-                                        "forceOverwriteSchedule":False,
-                                        "fallbackDrivePool":"",
-                                        "mergeActivityControl":True,
-                                        "fallbackMediaAgent":"",
-                                        "mergeSchedules":True,
-                                        "failIfEntityAlreadyExists":False,
-                                        "fallbackLibrary":"",
-                                        "skipConflictMedia":False,
-                                        "stagingPath":""
+                                        "alwaysUseFallbackDataPath": True,
+                                        "deleteEntitiesNotPresent": False,
+                                        "forceOverwrite": False,
+                                        "mergeHolidays": True,
+                                        "forceOverwriteSchedule": False,
+                                        "fallbackDrivePool": "",
+                                        "mergeActivityControl": True,
+                                        "fallbackMediaAgent": "",
+                                        "mergeSchedules": True,
+                                        "failIfEntityAlreadyExists": False,
+                                        "fallbackLibrary": "",
+                                        "skipConflictMedia": False,
+                                        "stagingPath": ""
                                     },
                                     "commonOptions": {
                                         "bRoboJob": False,
@@ -318,10 +337,10 @@ class CommCellMigration(object):
 
         if flag:
             if response.json() and 'jobIds' in response.json():
-                return response.json()['jobIds'][0]
-            elif response.json and 'errorCode' in response.json():
-                return response.json()['errorCode']
-            return 0
+                return Job(self._commcell_object, response.json()['jobIds'][0])
+            elif response.json() and 'errorCode' in response.json():
+                raise SDKException('CommCellMigration', '102', 'CCM Import job failed with error code : ' +
+                                   str(response.json()['errorCode']))
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

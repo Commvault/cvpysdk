@@ -56,7 +56,7 @@ StoragePolicy:
     has_copy()                              --  checks if copy with given name exists
 
     create_secondary_copy()                 --  creates a storage policy copy
-    
+
     create_snap_copy()                      --  creates snap, snapvault, snapmirror, replica
                                                 and replica mirror copies
 
@@ -69,6 +69,9 @@ StoragePolicy:
 
     get_copy_precedence()                   --  returns the copy precedence value associated with
     the copy name
+
+    update_snapshot_options()               --  Method for Updating Backup Copy and Snapshot
+    Catalog Options
 
     run_backup_copy()                       --  Runs the backup copy job from Commcell
 
@@ -305,7 +308,7 @@ class StoragePolicies(object):
 
                 number_of_streams   (int)         --  the number of streams for the storage policy
                 default: None
-                
+
                 ocum_server         (str)         --  On Command Unified Server Name
                 default: None
 
@@ -403,7 +406,7 @@ class StoragePolicies(object):
                     "numberOfStreams": number_of_streams
                 }
                 request_json.update(number_of_streams_dict)
-                
+
             if ocum_server is not None:
                 ocum_server_dict1 = {
                     "dfmServer": {
@@ -777,7 +780,7 @@ class StoragePolicy(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-            
+
     def create_snap_copy(self,
                          copy_name,
                          is_mirror_copy,
@@ -974,7 +977,7 @@ class StoragePolicy(object):
 
     def get_copy_precedence(self, copy_name):
         """ returns the copy precedence value associated with the copy name
-            
+
             Args:
                 copy_name           (str)   --  Storage copy name
 
@@ -995,6 +998,88 @@ class StoragePolicy(object):
             'Storage',
             '102',
             'Failed to get copy precedence from policy')
+
+    def update_snapshot_options(self, **options):
+        """
+        Method for Updating Storage Policy Snapshot Options like Backup Copy and Snapshot Catalog
+
+        Args:
+            Available Snapshot Options:
+
+            enable_backup_copy               (bool)   --  Enables backup copy if the value is True
+
+            source_copy_for_snap_to_tape     (str)    --  Source Copy name for backup copy
+
+            enable_snapshot_catalog          (bool)   --  Enables Snapshot Catalog if value is True
+
+            source_copy_for_snapshot_catalog (str)    --  Source Copy name for Snapshot Catalog
+
+            is_ocum                          (bool)   --  True if Storage policy is enabled with
+                                                          ocum server
+
+        """
+        enable_backup_copy = options['enable_backup_copy']
+        enable_snapshot_catalog = options['enable_snapshot_catalog']
+
+        if options['is_ocum']:
+            if enable_backup_copy and enable_snapshot_catalog:
+                defferred_catalog_value = backup_copy_value = 16
+            else:
+                defferred_catalog_value = backup_copy_value = 3
+        else:
+            if enable_backup_copy:
+                defferred_catalog_value = 16
+                backup_copy_value = 3
+            else:
+                defferred_catalog_value = backup_copy_value = 3
+
+        if options['source_copy_for_snap_to_tape'] is not None:
+            source_copy_for_snap_to_tape_id = self._copies[options['source_copy_for_snap_to_tape'].lower()]['copyId']
+        else:
+            source_copy_for_snap_to_tape_id = 0
+        if options['source_copy_for_snapshot_catalog'] is not None:
+            source_copy_for_snapshot_catalog_id = self._copies[options['source_copy_for_snapshot_catalog'].lower()]['copyId']
+        else:
+            source_copy_for_snapshot_catalog_id = 0
+
+        update_snapshot_tab_service = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+        request_xml = """
+                    <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
+                        <header localeId="0" userId="0" />
+                        <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0" 
+                            enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1" 
+                            sourceCopyId="{4}" startTime="0" type="0" />
+                        <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0" 
+                            enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1" 
+                            sourceCopyId="{6}" startTime="0" type="0" />
+                    </EVGui_SetSnapOpPropsReq>
+        """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
+                   int(enable_backup_copy), source_copy_for_snap_to_tape_id,
+                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', update_snapshot_tab_service, request_xml
+        )
+
+        self.refresh()
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 1:
+                        error_message = "Failed to Update {0} Storage Policy".format(
+                            self.storage_policy_name
+                        )
+                        raise SDKException('Storage', '102', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def run_backup_copy(self):
         """

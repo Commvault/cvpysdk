@@ -31,9 +31,6 @@ LNDbSubclient:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-
-import json
-
 from .lnsubclient import LNSubclient
 from ...exception import SDKException
 
@@ -96,7 +93,7 @@ class LNDbSubclient(LNSubclient):
         content = []
         try:
             for database in subclient_content:
-                if database == {}:
+                if not database or 'useClientGroupGlobalFilter' in database:
                     continue
                 elif 'lotusNotesDBContent' in database:
                     content.append(database)

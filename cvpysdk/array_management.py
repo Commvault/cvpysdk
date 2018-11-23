@@ -60,6 +60,7 @@ class ArrayManagement(object):
                         volume_id=None,
                         client_name=None,
                         mountpath=None,
+                        do_vssprotection=True,
                         control_host=None,
                         reconcile=False):
         """ Common Method for Snap Operations
@@ -73,6 +74,8 @@ class ArrayManagement(object):
                 client_name  (str)        -- name of the destination client, default: None
 
                 MountPath    (str)        -- MountPath for Snap operation, default: None
+
+                do_vssprotection  (int)   -- Performs VSS protected snapshot mount
 
                 control_host (int)        -- Control host for the Snap recon operation,
                 defaullt: None
@@ -106,30 +109,27 @@ class ArrayManagement(object):
                     "_type_": 3
                 }
             }
-
         else:
             request_json = {
                 "reserveField": 0,
                 "serverType": 0,
                 "operation": operation,
                 "userCredentials": {},
-                "volumes": [
-                    {
-                        "doVSSProtection": 1,
-                        "destClientId": client_id,
-                        "destPath": mountpath,
-                        "serverType": 0,
-                        "volumeId": volume_id,
-                        "flags": 0,
-                        "commCellId": 2,
-                        "serverName": "",
-                        "userCredentials": {}
-                        }
-                    ],
-                "scsiServer": {
-                    "_type_": 3
-                    }
-                }
+                "volumes": []
+            }
+            for i in range(len(volume_id)):
+                if i == 0:
+                    request_json['volumes'].append({'doVSSProtection': int(do_vssprotection),
+                                                    'destClientId': client_id,
+                                                    'destPath': mountpath,
+                                                    'serverType':0,
+                                                    'flags':0,
+                                                    'serverName':"",
+                                                    'userCredentials': {},
+                                                    'volumeId':int(volume_id[i][0]),'CommCellId':2})
+
+                else:
+                    request_json['volumes'].append({'volumeId':int(volume_id[i][0]),'CommCellId':2})
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._SNAP_OPS, request_json)
@@ -146,7 +146,7 @@ class ArrayManagement(object):
         else:
             raise SDKException('Snap', '102')
 
-    def mount(self, volume_id, client_name, mountpath):
+    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True):
         """ Mounts Snap of the given volume id
 
             Args:
@@ -156,8 +156,10 @@ class ArrayManagement(object):
                 client_name  (str)        -- name of the destination client, default: None
 
                 MountPath    (str)        -- MountPath for Snap operation, default: None
+
+                do_vssprotection (int)    -- Performs VSS protected mount
         """
-        return self._snap_operation(0, volume_id, client_name, mountpath)
+        return self._snap_operation(0, volume_id, client_name, mountpath, do_vssprotection)
 
     def unmount(self, volume_id):
         """ UnMounts Snap of the given volume id

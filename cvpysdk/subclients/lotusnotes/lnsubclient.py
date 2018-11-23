@@ -18,8 +18,6 @@ LNSubclient:        Class for representing all the Lotus Notes iDAs and performi
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import json
-
 from ...subclient import Subclient
 from ...exception import SDKException
 
@@ -249,7 +247,7 @@ class LNSubclient(Subclient):
 
             backup_service = self._services['CREATE_TASK']
 
-            flag, response = self._commcell_object.make_request(
+            flag, response = self._cvpysdk_object.make_request(
                 'POST', backup_service, request_json
             )
 
