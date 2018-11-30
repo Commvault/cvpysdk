@@ -57,13 +57,16 @@ Commcell:
 
     download_software()         --  triggers the Download Software job with the given options
 
-    push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
+    push_servicepack_and_hotfixes() --  triggers installation of service pack and hotfixes
 
-    install_software()              -- triggers the install Software job with the given options
+    install_software()              --  triggers the install Software job with the given options
 
-    enable_auth_code()              -- Executes the request on the server to enable Auth Code for installation on
-                                        commcell.
-                                        
+    enable_auth_code()              --  executes the request on the server to enable Auth Code
+    for installation on the commcell
+
+    execute_qcommand()              --  executes the ExecuteQCommand API on the commcell
+
+
 Commcell instance Attributes
 ============================
 
@@ -995,7 +998,7 @@ class Commcell(object):
 
             return self._commcell_migration
         except AttributeError:
-            return  USER_LOGGED_OUT_MESSAGE
+            return USER_LOGGED_OUT_MESSAGE
 
     def logout(self):
         """Logs out the user associated with the current instance."""
@@ -1140,7 +1143,7 @@ class Commcell(object):
         self._disaster_recovery = None
         self._operation_window = None
         self._commserv_client = None
-        self._identity_management
+        self._identity_management = None
         self._commcell_migration = None
         self._get_commserv_details()
 
@@ -1429,9 +1432,10 @@ class Commcell(object):
         """
         download = Download(self)
         return download.download_software(
-                                    options=options,
-                                    os_list=os_list,
-                                    service_pack=service_pack)
+            options=options,
+            os_list=os_list,
+            service_pack=service_pack
+        )
 
     def push_servicepack_and_hotfix(
             self,
@@ -1486,12 +1490,13 @@ class Commcell(object):
         """
         install = Install(self)
         return install.push_servicepack_and_hotfix(
-                                    client_computers=client_computers,
-                                    client_computer_groups=client_computer_groups,
-                                    all_client_computers=all_client_computers,
-                                    all_client_computer_groups=all_client_computer_groups,
-                                    reboot_client=reboot_client,
-                                    run_db_maintenance=run_db_maintenance)
+            client_computers=client_computers,
+            client_computer_groups=client_computer_groups,
+            all_client_computers=all_client_computers,
+            all_client_computer_groups=all_client_computer_groups,
+            reboot_client=reboot_client,
+            run_db_maintenance=run_db_maintenance
+        )
 
     def install_software(
             self,
@@ -1626,12 +1631,21 @@ class Commcell(object):
         """
 
         request_json = {
-            "organizationInfo":
-            {
-                "organization":{"shortName":{"id":0}},
-                "organizationProperties":{
-                    "defaultPlansOperationType":1,
-                    "defaultPlans":[{"plan":{"planName":plan_name}}]
+            "organizationInfo": {
+                "organization": {
+                    "shortName": {
+                        "id": 0
+                    }
+                },
+                "organizationProperties": {
+                    "defaultPlansOperationType": 1,
+                    "defaultPlans": [
+                        {
+                            "plan": {
+                                "planName": plan_name
+                            }
+                        }
+                    ]
                 }
             }
         }
@@ -1655,3 +1669,44 @@ class Commcell(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def execute_qcommand(self, command, input_xml=None):
+        """Executes the ExecuteQCommand API on the commcell.
+
+            Args:
+                command     (str)   --  qcommand to be executed
+
+                input_xml   (str)   --  xml body (if applicable)
+
+                    default:    None
+
+            Returns:
+                object  -   requests.Response object
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        from urllib.parse import urlencode
+
+        headers = self._headers.copy()
+        headers['Content-type'] = 'application/x-www-form-urlencoded'
+
+        payload = {
+            'command': command
+        }
+
+        if input_xml:
+            payload['inputRequestXML'] = input_xml
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXEC_QCOMMAND'], urlencode(payload), headers=headers
+        )
+
+        if flag:
+            return response
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

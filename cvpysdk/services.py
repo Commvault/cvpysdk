@@ -126,6 +126,7 @@ SERVICES_DICT_TEMPLATE = {
     'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute',
     'EXECUTE_QSCRIPT': '{0}Qcommand/qoperation execscript %s',
     'QCOMMAND': '{0}QCommand',
+    'EXEC_QCOMMAND': '{0}ExecuteQCommand',
 
     'SOFTWARESTORE_DOWNLOADITEM': '{0}DownloadFile',
     'SOFTWARESTORE_PKGINFO': '{0}SoftwareStore/getPackagePublishInfo?packageName=%s',
@@ -133,7 +134,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'CREATE_TASK': '{0}CreateTask',
     'ADD_INSTANCE': '{0}Instance',
-    'MASKING_POLICY':'{0}MaskingPolicy',
+    'MASKING_POLICY': '{0}MaskingPolicy',
 
 
     'GET_ANALYTICS_ENGINES': '{0}dcube/getAnalyticsEngine',
@@ -167,7 +168,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
-    'DRBACKUP':'{0}/CommServ/DRBackup',
+    'DRBACKUP': '{0}/CommServ/DRBackup',
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
     'METRICS': '{0}CommServ/MetricsReporting',
@@ -178,12 +179,12 @@ SERVICES_DICT_TEMPLATE = {
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
     'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
-    'PROTECTED_VMS' : "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
+    'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
 
     'USERS': '{0}User',
     'USER': '{0}User/%s?Level=50',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
-    'OTP': '{0}User/%s/preferences/OTP', 
+    'OTP': '{0}User/%s/preferences/OTP',
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',
@@ -208,6 +209,8 @@ SERVICES_DICT_TEMPLATE = {
     'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
 
     'STORAGE_POOL': '{0}StoragePool',
+    'GET_STORAGE_POOL': '{0}StoragePool/%s',
+    'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
 
     'GET_ALL_MONITORING_POLICIES': '{0}getLMCloudAndMonitoringPolicyList',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
@@ -222,8 +225,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_DR_GROUP': '{0}DRGroups/%s',
     'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
     'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
-    'REVERSE_REPLICATION_TASK':  '{0}Replications/Monitors/streaming/Operation',
-    'REPLICATION_MONITOR':  '{0}Replications/Monitors/streaming?subclientId=0',
+    'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
+    'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
@@ -241,12 +244,12 @@ SERVICES_DICT_TEMPLATE = {
     'SET_ACTIVITY_CONTROL': '{0}CommCell/ActivityControl/%s/Action/%s',
     'SET_COMMCELL_PROPERTIES': '{0}Commcell/properties',
 
-    'OPERATION_WINDOW':'{0}OperationWindow',
-    'LIST_OPERATION_WINDOW':'{0}/OperationWindow/OpWindowList?clientId=%s',
+    'OPERATION_WINDOW': '{0}OperationWindow',
+    'LIST_OPERATION_WINDOW': '{0}/OperationWindow/OpWindowList?clientId=%s',
 
-    'RELEASE_LICENSE':'{0}Client/License/Release',
-    'RECONFIGURE_LICENSE':'{0}Client/License/Reconfigure',
-    'LIST_LICENSES':'{0}Client/%s/License',
+    'RELEASE_LICENSE': '{0}Client/License/Release',
+    'RECONFIGURE_LICENSE': '{0}Client/License/Reconfigure',
+    'LIST_LICENSES': '{0}Client/%s/License',
     'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s',
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
@@ -254,7 +257,7 @@ SERVICES_DICT_TEMPLATE = {
     'GLOBAL_PARAM': '{0}/setGlobalParam',
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
-    'STORAGE_ARRAYS' : '{0}/StorageArrays',
+    'STORAGE_ARRAYS': '{0}/StorageArrays',
 
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',

@@ -339,7 +339,7 @@ class Organizations:
                 isinstance(company_alias, basestring)):
             raise SDKException('Organization', '101')
 
-        if not re.match(r'[\w]+@[\w]+\.[\w]+', email):
+        if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
             raise SDKException('Organization', '105')
 
         if email_domain is None:

@@ -1783,6 +1783,12 @@ class Instance(object):
             self._browse_restore_json["browseJobCommCellId"] = value.get(
                 "commcell_id", self._commcell_object.commcell_id)
 
+        if value.get('iscsi_server'):
+           self._browse_restore_json['mediaOption']['iSCSIServer'] = {
+               'clientName': value.get("iscsi_server")
+           }
+
+
     def _restore_common_options_json(self, value):
         """setter for  the Common options of in restore JSON"""
         if not isinstance(value, dict):

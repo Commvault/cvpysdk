@@ -126,18 +126,26 @@ class NetworkTopologies(object):
         """
 
         flag, response = self._cvpysdk_object.make_request('GET', self._NETWORK_TOPOLOGIES)
-
+        network_topologies_dict = {}
         if flag:
-            if response.json() and 'firewallTopologies' in response.json():
-                network_topologies = response.json()['firewallTopologies']
-                network_topologies_dict = {}
+            if response.json():
+                if 'error' in response.json() and response.json()['error']['errorCode'] == 0:
+                    if 'firewallTopologies' in response.json():
+                        network_topologies = response.json()['firewallTopologies']
 
-                for network_topology in network_topologies:
-                    temp_name = network_topology['topologyEntity']['topologyName'].lower()
-                    temp_id = network_topology['topologyEntity']['topologyId']
-                    network_topologies_dict[temp_name] = temp_id
+                        for network_topology in network_topologies:
+                            temp_name = network_topology['topologyEntity']['topologyName'].lower()
+                            temp_id = network_topology['topologyEntity']['topologyId']
+                            network_topologies_dict[temp_name] = temp_id
 
-                return network_topologies_dict
+                        return network_topologies_dict
+
+                    else:
+                        return network_topologies_dict
+
+                else:
+                    raise SDKException('NetworkTopology', '102', 'Custom error message')
+
             else:
                 raise SDKException('Response', '102')
         else:
@@ -181,7 +189,7 @@ class NetworkTopologies(object):
             raise SDKException('NetworkTopology', '101')
 
         return (self._network_topologies and
-                network_topology_name.lower()) in self._network_topologies
+                network_topology_name.lower() in self._network_topologies)
 
     def add(self, network_topology_name, client_groups=None, **kwargs):
         """Adds a new Network Topology to the Commcell.

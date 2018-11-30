@@ -21,6 +21,8 @@ PostgresBackupset:
     configure_live_sync()                --  runs the Task API with the request JSON provided
     to create live sync configuration, and returns the contents after parsing the response
 
+    restore_postgres_server()            --  method to restore the Postgres server
+
 """
 from __future__ import unicode_literals
 from ..backupset import Backupset
@@ -135,3 +137,108 @@ class PostgresBackupset(Backupset):
             }
 
         return self.configure_live_sync(request_json)
+
+    def restore_postgres_server(
+            self,
+            database_list=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            clone_env=False,
+            clone_options=None,
+            media_agent=None,
+            table_level_restore=False,
+            staging_path=None):
+        """
+        Method to restore the Postgres server
+
+            Args:
+
+                database_list               (List) -- List of databases
+
+                dest_client_name            (str)  -- Destination Client name
+
+                dest_instance_name          (str)  -- Destination Instance name
+
+                copy_precedence             (int)  -- Copy precedence associted with storage
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                clone_env                   (bool)  --  boolean to specify whether the database
+                should be cloned or not
+
+                    default: False
+
+                clone_options               (dict)  --  clone restore options passed in a dict
+
+                    default: None
+
+                    Accepted format: {
+                                        "stagingLocaion": "/gk_snap",
+                                        "forceCleanup": True,
+                                        "port": "5595",
+                                        "libDirectory": "/opt/PostgreSQL/9.6/lib",
+                                        "isInstanceSelected": True,
+                                        "reservationPeriodS": 3600,
+                                        "user": "postgres",
+                                        "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
+                                     }
+
+                media_agent             (str)   --  media agent name
+
+                    default: None
+
+                table_level_restore     (bool)  --  boolean to specify if the restore operation
+                is table level
+
+                    default: False
+
+                staging_path            (str)   --  staging path location for table level restore
+
+                    default: None
+
+            Returns:
+                object -- Job containing restore details
+
+        """
+        instance_object = self._instance_object
+        if dest_client_name is None:
+            dest_client_name = instance_object._agent_object._client_object.client_name
+
+        if dest_instance_name is None:
+            dest_instance_name = instance_object.instance_name
+
+        backupset_name = self.backupset_name
+
+        if backupset_name.lower() == "fsbasedbackupset":
+            backupset_flag = True
+            if database_list is None:
+                database_list = ["/data"]
+        else:
+            backupset_flag = False
+
+        instance_object._restore_association = self._properties['backupSetEntity']
+        return instance_object.restore_in_place(
+            database_list,
+            dest_client_name,
+            dest_instance_name,
+            backupset_name,
+            backupset_flag,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            staging_path=staging_path)

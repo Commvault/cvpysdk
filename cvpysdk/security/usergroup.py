@@ -303,7 +303,10 @@ class UserGroups(object):
                 "associationsOperationType": "ADD",
                 "associations": security_request
             }
-        user_json = [{"userName": uname} for uname in users_list]
+        if users_list is None:
+            user_json = []
+        else:
+            user_json = [{"userName": uname} for uname in users_list]
 
         external_usergroup_json = []
         if external_usergroup:

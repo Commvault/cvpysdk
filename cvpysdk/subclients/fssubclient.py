@@ -73,6 +73,11 @@ FileSystemSubclient:
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
 
+FileSystemSubclient Instance Attributes:
+=======================================
+
+    **software_compression**            --  returns the software compression setting's value for the subclient.
+
 """
 
 from __future__ import unicode_literals
@@ -1060,6 +1065,45 @@ class FileSystemSubclient(Subclient):
             self._set_subclient_properties("_fs_subclient_prop", synclib_config)
         else:
             raise SDKException('Subclient', '102', "The parameter should be dictionary")
+
+
+    @property
+    def software_compression(self):
+        """Gets the software compression status for this subclient.
+
+            Returns:    int
+                    1   -   On Client
+                    2   -   On Media Agent
+                    3   -   Use Storage Policy Settings
+                    4   -   Off
+
+        """
+        return self._fsSubClientProp['commonProperties']['storageDevice']['softwareCompression']
+
+
+    @software_compression.setter
+    def software_compression(self,sw_compression_value):
+        """Updates the software compression property for a subclient.
+
+            Args:
+                sw_compression_value  (int)   --  Specifies the software compression method indicated by values below.
+                    1   -   On Client
+                    2   -   On Media Agent
+                    3   -   Use Storage Policy Settings
+                    4   -   Off
+
+            Raises:
+                SDKException:
+                    if failed to update software compression method of subclient
+
+                    if software_compression_value is invalid
+        """
+        if isinstance(sw_compression_value, int) and sw_compression_value in range(1,5):
+            attr_name = "_commonProperties['storageDevice']['softwareCompression']"
+            self._set_subclient_properties(attr_name, sw_compression_value)
+        else:
+            raise SDKException('Subclient', '102', 'Invalid value for software compression type.')
+
 
     def find_all_versions(self, *args, **kwargs):
         """Searches the content of a Subclient.
