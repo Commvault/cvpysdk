@@ -85,6 +85,10 @@ class VirtualServerInstance(Instance):
             from .virtualserver.azurestackinstance import AzureStackInstance
             return object.__new__(AzureStackInstance)
 
+        elif instance_name == hv_type.Rhev.value.lower():
+            from .virtualserver.rhevinstance import RhevInstance
+            return object.__new__(RhevInstance)
+
     def _get_instance_properties(self):
         """Gets the properties of this instance.
 

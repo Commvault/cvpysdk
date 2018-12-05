@@ -193,6 +193,8 @@ class PostgresSubclient(DatabaseSubclient):
             media_agent=None,
             table_level_restore=False,
             staging_path=None,
+            no_of_streams=None,
+            volume_level_restore=False,
             redirect_enabled=False,
             redirect_path=None):
         """
@@ -251,7 +253,16 @@ class PostgresSubclient(DatabaseSubclient):
 
                     default: None
 
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is 
+                no_of_streams           (int)   --  number of streams to be used by
+                volume level restore
+
+                    default: None
+
+                volume_level_restore    (bool)  --  volume level restore flag
+
+                    default: False
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
                 enabled
 
                     default: False
@@ -297,5 +308,7 @@ class PostgresSubclient(DatabaseSubclient):
             media_agent=media_agent,
             table_level_restore=table_level_restore,
             staging_path=staging_path,
+            no_of_streams=no_of_streams,
+            volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
             redirect_path=redirect_path)

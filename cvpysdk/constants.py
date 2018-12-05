@@ -34,6 +34,7 @@ class HypervisorType(Enum):
     OPENSTACK   =   "OpenStack"
     GOOGLE_CLOUD = "Google Cloud Platform"
     Azure_Stack = "Azure Stack"
+    Rhev = "Red Hat Virtualization"
 
 
 class AppIDAType(Enum):

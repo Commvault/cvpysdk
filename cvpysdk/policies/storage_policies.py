@@ -646,12 +646,14 @@ class StoragePolicy(object):
                 copy_name = copy['StoragePolicyCopy']['copyName'].lower()
                 library_name = copy['library']['libraryName']
                 copy_precedence = copy['copyPrecedence']
+                is_snap = bool(int(copy['isSnapCopy']))
                 temp = {
                     "copyType": copy_type,
                     "active": active,
                     "copyId": copy_id,
                     "libraryName": library_name,
-                    "copyPrecedence": copy_precedence
+                    "copyPrecedence": copy_precedence,
+                    "isSnapCopy": is_snap
                 }
                 self._copies[copy_name] = temp
 
@@ -1258,8 +1260,34 @@ class StoragePolicy(object):
             library = primary_copy[0].get('library', {})
             return library.get('libraryId')
 
+    @property
+    def aux_copies(self):
+        """
+        Returns the list of all aux copies in the policy
+        Returns:
+            list - list of all aux copies in the storage policy
+        """
+        aux_copies = []
+        for _copy, value in self.copies.items():
+            if not value['isSnapCopy'] and _copy != 'primary':
+                aux_copies.append(_copy)
+        return aux_copies
+
+    @property
+    def snap_copy(self):
+        """
+        Returns the name of the snap copy
+        Returns:
+            str - name of the snap copy
+        """
+        snap_copy = None
+        for _copy, value in self.copies.items():
+            if value['isSnapCopy']:
+                snap_copy = _copy
+        return snap_copy
+
     def run_aux_copy(self, storage_policy_copy_name=None,
-                     media_agent=None, use_scale=False, streams=0,
+                     media_agent=None, use_scale=True, streams=0,
                      all_copies=True, total_jobs_to_process=0):
         """Runs the aux copy job from the commcell.
             Args:
@@ -1300,6 +1328,8 @@ class StoragePolicy(object):
 
         if storage_policy_copy_name is not None:
             all_copies = False
+            if not media_agent:
+                media_agent = "&lt;ANY MEDIAAGENT&gt;"
             if not (isinstance(storage_policy_copy_name, basestring) and
                     isinstance(media_agent, basestring)):
                 raise SDKException('Storage', '101')
@@ -1889,7 +1919,8 @@ class StoragePolicyCopy(object):
             self.copy_id = str(self.get_copy_id())
 
         self._copy_properties = None
-        self._STORAGE_POLICY_COPY = self._services['STORAGE_POLICY_COPY'] % (self.storage_policy_id, self.copy_id)
+        self._STORAGE_POLICY_COPY = self._services['STORAGE_POLICY_COPY'] % (
+            self.storage_policy_id, self.copy_id)
         self.refresh()
 
 
@@ -1966,7 +1997,7 @@ class StoragePolicyCopy(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response','101',self.update_response(response.text))
+            raise SDKException('Response', '101', self.update_response(response.text))
 
     def _set_copy_properties(self):
         """sets the properties of this storage policy copy.
@@ -1977,7 +2008,8 @@ class StoragePolicyCopy(object):
 
         """
         request_json = self._get_request_json()
-        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY, request_json)
+        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
+                                                           request_json)
         self.refresh()
         if flag:
             if response.json():
@@ -2237,7 +2269,6 @@ class StoragePolicyCopy(object):
         if flag:
             if response.ok is not True:
                 raise SDKException('Response', '101',
-                               self._commcell_object._update_response_(response.text))
+                                   self._commcell_object._update_response_(response.text))
             else:
                 return True
-

@@ -178,6 +178,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.openstacksubclient import OpenStackVirtualServerSubclient
             return object.__new__(OpenStackVirtualServerSubclient)
 
+        elif instance_name == hv_type.Rhev.value.lower():
+            from .virtualserver.rhevsubclient import RhevVirtualServerSubclient
+            return object.__new__(RhevVirtualServerSubclient)
+
         else:
             raise SDKException(
                 'Subclient',
@@ -794,6 +798,7 @@ class VirtualServerSubclient(Subclient):
             "guid": value.get("guid", ""),
             "newName": value.get("new_name", ""),
             "esxHost": value.get("esx_host", ""),
+            "cluster": value.get("cluster", ""),
             "name": value.get("name", ""),
             "nics": value.get("nics", []),
             "vmIPAddressOptions": value.get("vm_ip_address_options", []),
@@ -1861,6 +1866,10 @@ class VirtualServerSubclient(Subclient):
             if "hyper" in restore_option["destination_instance"]:
                 restore_option["client_name"] = vs_metadata['esxHost']
                 restore_option["esx_server"] = vs_metadata['esxHost']
+            elif 'Red' in restore_option["destination_instance"]:
+                restore_option["esxHost"] = vs_metadata['clusterName']
+                restore_option["cluster"] = vs_metadata['clusterName']
+                vs_metadata["esxHost"] = vs_metadata['clusterName']
 
         # populate VM Specific values
         self._set_restore_inputs(

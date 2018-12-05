@@ -263,7 +263,11 @@ class PostgreSQLInstance(Instance):
             clone_options=None,
             media_agent=None,
             table_level_restore=False,
-            staging_path=None):
+            staging_path=None,
+            no_of_streams=None,
+            volume_level_restore=False,
+            redirect_enabled=False,
+            redirect_path=None):
         """Restores the postgres data/log files specified in the input paths
         list to the same location.
 
@@ -330,6 +334,25 @@ class PostgreSQLInstance(Instance):
 
                     default: None
 
+                no_of_streams           (int)   --  number of streams to be used by
+                volume level restore
+
+                    default: None
+
+                volume_level_restore    (bool)  --  volume level restore flag
+
+                    default: False
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -365,6 +388,14 @@ class PostgreSQLInstance(Instance):
             clone_options=clone_options,
             media_agent=media_agent,
             table_level_restore=table_level_restore,
-            staging_path=staging_path)
+            staging_path=staging_path,
+            no_of_streams=no_of_streams,
+            volume_level_restore=volume_level_restore,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path)
+
+        if volume_level_restore:
+            request_json['taskInfo']['subTasks'][0]['options'][
+                'restoreOptions']['destination']["noOfStreams"] = no_of_streams
 
         return self._process_restore_response(request_json)

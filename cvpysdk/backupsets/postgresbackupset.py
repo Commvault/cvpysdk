@@ -150,7 +150,11 @@ class PostgresBackupset(Backupset):
             clone_options=None,
             media_agent=None,
             table_level_restore=False,
-            staging_path=None):
+            staging_path=None,
+            no_of_streams=None,
+            volume_level_restore=False,
+            redirect_enabled=False,
+            redirect_path=None):
         """
         Method to restore the Postgres server
 
@@ -207,6 +211,25 @@ class PostgresBackupset(Backupset):
 
                     default: None
 
+                no_of_streams           (int)   --  number of streams to be used by
+                volume level restore
+
+                    default: None
+
+                volume_level_restore    (bool)  --  volume level restore flag
+
+                    default: False
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+
+                    default: None
+
             Returns:
                 object -- Job containing restore details
 
@@ -241,4 +264,8 @@ class PostgresBackupset(Backupset):
             clone_options=clone_options,
             media_agent=media_agent,
             table_level_restore=table_level_restore,
-            staging_path=staging_path)
+            staging_path=staging_path,
+            no_of_streams=no_of_streams,
+            volume_level_restore=volume_level_restore,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path)
