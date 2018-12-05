@@ -973,6 +973,11 @@ class StoragePolicy(object):
         return self._storage_policy_id
 
     @property
+    def name(self):
+        """Returns the Storage Policy display name"""
+        return self._storage_policy_properties['storagePolicy']['storagePolicyName']
+
+    @property
     def storage_policy_name(self):
         """Treats the storage policy name as a read-only attribute."""
         return self._storage_policy_name
@@ -1922,7 +1927,6 @@ class StoragePolicyCopy(object):
         self._STORAGE_POLICY_COPY = self._services['STORAGE_POLICY_COPY'] % (
             self.storage_policy_id, self.copy_id)
         self.refresh()
-
 
     def __repr__(self):
         """String representation of the instance of this class."""

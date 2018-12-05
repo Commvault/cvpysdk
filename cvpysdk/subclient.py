@@ -1177,6 +1177,11 @@ class Subclient(object):
         return options
 
     @property
+    def name(self):
+        """Returns the Subclient display name"""
+        return self._subclient_properties['subClientEntity']['subclientName']
+
+    @property
     def _json_task(self):
         """getter for the task information in JSON"""
 

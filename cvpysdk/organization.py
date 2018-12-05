@@ -540,7 +540,7 @@ class Organization:
         self._default_plan = None
         self._contacts = {}
         self._plans = {}
-
+        self._organization_info = None
         self.refresh()
 
     def __repr__(self):
@@ -576,10 +576,10 @@ class Organization:
 
         if flag:
             if response.json() and 'organizationInfo' in response.json():
-                organization_info = response.json()['organizationInfo']
+                self._organization_info = response.json()['organizationInfo']
 
-                organization = organization_info['organization']
-                organization_properties = organization_info['organizationProperties']
+                organization = self._organization_info['organization']
+                organization_properties = self._organization_info['organizationProperties']
 
                 self._description = organization['description']
                 self._email_domain_names = organization['emailDomainNames']
@@ -600,10 +600,10 @@ class Organization:
                 for plan in organization_properties.get('defaultPlans', []):
                     self._default_plan = plan['plan']['planName']
 
-                for plan in organization_info.get('planDetails', []):
+                for plan in self._organization_info.get('planDetails', []):
                     self._plans[plan['plan']['planName'].lower()] = plan['plan']['planId']
 
-                return organization_info
+                return self._organization_info
             else:
                 raise SDKException('Response', '102')
         else:
@@ -671,6 +671,11 @@ class Organization:
         """
         for key in properties_dict:
             self._properties['organizationProperties'][key] = properties_dict[key]
+
+    @property
+    def name(self):
+        """Returns the Organization display name """
+        return self._organization_info['organization']['connectName']
 
     @property
     def organization_id(self):

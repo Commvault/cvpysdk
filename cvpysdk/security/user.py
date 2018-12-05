@@ -639,6 +639,11 @@ class User(object):
         self._update_user_props(update_usergroup_dict)
 
     @property
+    def name(self):
+        """Returns the User display name"""
+        return self._properties['userEntity']['userName']
+
+    @property
     def user_name(self):
         """Returns the user name of this commcell user"""
         return self._user_name

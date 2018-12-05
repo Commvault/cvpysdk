@@ -568,6 +568,7 @@ class Plan(object):
         self._update_response_ = commcell_object._update_response_
 
         self._plan_name = plan_name.lower()
+        self._plan_properties = None
 
         if plan_id:
             self._plan_id = str(plan_id)
@@ -630,50 +631,50 @@ class Plan(object):
 
         if flag:
             if response.json() and 'plan' in response.json():
-                plan_properties = response.json()['plan']
+                self._plan_properties = response.json()['plan']
 
-                if 'slaInMinutes' in plan_properties['summary']:
-                    self._sla_in_minutes = plan_properties['summary']['slaInMinutes']
+                if 'slaInMinutes' in self._plan_properties['summary']:
+                    self._sla_in_minutes = self._plan_properties['summary']['slaInMinutes']
 
-                if 'type' in plan_properties['summary']:
-                    self._plan_type = plan_properties['summary']['type']
+                if 'type' in self._plan_properties['summary']:
+                    self._plan_type = self._plan_properties['summary']['type']
 
-                if 'subtype' in plan_properties['summary']:
-                    self._subtype = plan_properties['summary']['subtype']
+                if 'subtype' in self._plan_properties['summary']:
+                    self._subtype = self._plan_properties['summary']['subtype']
 
-                if 'useGlobalPolicy' in plan_properties['storage']['copy'][0]:
-                    self._storage_pool = plan_properties['storage']['copy'][0]['useGlobalPolicy']
+                if 'useGlobalPolicy' in self._plan_properties['storage']['copy'][0]:
+                    self._storage_pool = self._plan_properties['storage']['copy'][0]['useGlobalPolicy']
 
                 if self._subtype == 33554439:
-                    if 'clientGroup' in plan_properties['autoCreatedEntities']:
+                    if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
                         self._commcell_object.client_groups.refresh()
                         self._client_group = self._commcell_object.client_groups.get(
-                            plan_properties['autoCreatedEntities']['clientGroup'][
+                            self._plan_properties['autoCreatedEntities']['clientGroup'][
                                 'clientGroupName']
                         )
 
-                    if 'localUserGroup' in plan_properties['autoCreatedEntities']:
-                        self._user_group = plan_properties['autoCreatedEntities'][
+                    if 'localUserGroup' in self._plan_properties['autoCreatedEntities']:
+                        self._user_group = self._plan_properties['autoCreatedEntities'][
                             'localUserGroup']['userGroupName']
 
-                if 'storagePolicy' in plan_properties['storage']:
-                    self._child_policies['storagePolicy'] = plan_properties['storage'][
+                if 'storagePolicy' in self._plan_properties['storage']:
+                    self._child_policies['storagePolicy'] = self._plan_properties['storage'][
                         'storagePolicy']['storagePolicyName']
 
-                if 'task' in plan_properties['schedule']:
-                    self._child_policies['schedulePolicy'] = plan_properties['schedule'][
+                if 'task' in self._plan_properties['schedule']:
+                    self._child_policies['schedulePolicy'] = self._plan_properties['schedule'][
                         'task']['taskName']
 
                 if self._subtype != 33554437:
-                    if 'backupContent' in plan_properties['laptop']['content']:
-                        for ida in plan_properties['laptop']['content']['backupContent']:
+                    if 'backupContent' in self._plan_properties['laptop']['content']:
+                        for ida in self._plan_properties['laptop']['content']['backupContent']:
                             self._child_policies['subclientPolicyIds'].append(
                                 ida['subClientPolicy']['backupSetEntity']['backupsetId']
                             )
 
-                if ('inheritance' in plan_properties and
-                        not plan_properties['inheritance']['isSealed']):
-                    temp_dict = plan_properties['inheritance']
+                if ('inheritance' in self._plan_properties and
+                        not self._plan_properties['inheritance']['isSealed']):
+                    temp_dict = self._plan_properties['inheritance']
                     del temp_dict['isSealed']
                     if 'enforcedEntities' not in temp_dict:
                         temp_dict['enforcedEntities'] = []
@@ -681,10 +682,10 @@ class Plan(object):
                         temp_dict['privateEntities'] = []
                     self._override_entities = temp_dict
 
-                if 'parent' in plan_properties['summary']:
-                    self._parent_plan_id = plan_properties['summary']['parent']['planId']
+                if 'parent' in self._plan_properties['summary']:
+                    self._parent_plan_id = self._plan_properties['summary']['parent']['planId']
 
-                return plan_properties
+                return self._plan_properties
             else:
                 raise SDKException('Response', '102')
         else:
@@ -945,6 +946,11 @@ class Plan(object):
     def plan_id(self):
         """Treats the plan id as a read-only attribute."""
         return self._plan_id
+
+    @property
+    def name(self):
+        """Returns the Plan display name"""
+        return self._plan_properties['summary']['plan']['planName']
 
     @property
     def plan_name(self):

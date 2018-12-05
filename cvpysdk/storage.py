@@ -314,6 +314,7 @@ class MediaAgent(object):
         """
         self._commcell_object = commcell_object
         self._media_agent_name = media_agent_name.lower()
+        self._media_agent_info = None
         if media_agent_id:
             self._media_agent_id = str(media_agent_id)
         else:
@@ -360,6 +361,7 @@ class MediaAgent(object):
 
         if flag:
             if response.json() and 'mediaAgentInfo' in response.json():
+                self._media_agent_info = response.json()['mediaAgentInfo']
                 return response.json()['mediaAgentInfo']
             else:
                 raise SDKException('Response', '102')
@@ -389,6 +391,11 @@ class MediaAgent(object):
                 self._platform = 'UNIX'
             else:
                 self._platform = platform
+
+    @property
+    def name(self):
+        """Returns the media agent display name"""
+        return self._media_agent_info['mediaAgentName']
 
     @property
     def media_agent_name(self):
@@ -725,7 +732,7 @@ class DiskLibrary(object):
                 object - instance of the DiskLibrary class
         """
         self._commcell_object = commcell_object
-        self._library_name = library_name
+        self._library_name = library_name.lower()
 
         if library_id:
             self._library_id = str(library_id)
@@ -858,6 +865,11 @@ class DiskLibrary(object):
         if media_agents is None:
             return []
         return media_agents.strip().split(",")
+
+    @property
+    def name(self):
+        """Returns library display name."""
+        return self._library_properties['MountPathList'][0]['mountPathSummary']['libraryName']
 
     @property
     def library_name(self):

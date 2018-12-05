@@ -650,7 +650,7 @@ class Alert(object):
 
         self._alerts_obj = Alerts(self._commcell_object)
         self._alert_name = alert_name.lower()
-
+        self._alert_detail = None
         if alert_id:
             self._alert_id = str(alert_id)
         else:
@@ -723,13 +723,12 @@ class Alert(object):
 
         if flag:
             if response.json() and 'alertDetail' in response.json().keys():
-                alert_detail = response.json()['alertDetail']
+                self._alert_detail = response.json()['alertDetail']
+                if 'alertSeverity' in self._alert_detail:
+                    self._alert_severity = self._alert_detail['alertSeverity']
 
-                if 'alertSeverity' in alert_detail:
-                    self._alert_severity = alert_detail['alertSeverity']
-
-                if 'criteria' in alert_detail:
-                    criterias = alert_detail['criteria']
+                if 'criteria' in self._alert_detail:
+                    criterias = self._alert_detail['criteria']
                     for criteria in criterias:
                         self._criteria.append({
                             'criteria_value': criteria['value'] if 'value' in criteria else None,
@@ -739,8 +738,8 @@ class Alert(object):
                             criteria['esclationLevel'] if 'esclationLevel' in criteria else None
                         })
 
-                if 'alert' in alert_detail:
-                    alert = alert_detail['alert']
+                if 'alert' in self._alert_detail:
+                    alert = self._alert_detail['alert']
 
                     if 'description' in alert:
                         self._description = alert['description']
@@ -749,8 +748,8 @@ class Alert(object):
                         self._alert_type = alert['alertType']['name']
                         self._alert_type_id = alert['alertType']['id']
 
-                if 'xmlEntityList' in alert_detail:
-                    entity_xml = ET.fromstring(alert_detail['xmlEntityList'])
+                if 'xmlEntityList' in self._alert_detail:
+                    entity_xml = ET.fromstring(self._alert_detail['xmlEntityList'])
                     self._entities_list = []
                     for entity in entity_xml.findall("associations"):
                         if entity.find("flags") is not None:
@@ -767,14 +766,14 @@ class Alert(object):
                         except ValueError:
                             pass
 
-                if 'regularNotifications' in alert_detail:
-                    self._notification_types = alert_detail["regularNotifications"]
+                if 'regularNotifications' in self._alert_detail:
+                    self._notification_types = self._alert_detail["regularNotifications"]
 
-                if 'userList' in alert_detail:
-                    self._users_list = [user['name'] for user in alert_detail['userList']]
+                if 'userList' in self._alert_detail:
+                    self._users_list = [user['name'] for user in self._alert_detail['userList']]
 
-                if 'userGroupList' in alert_detail:
-                    self._user_group_list = [grp['name'] for grp in alert_detail['userGroupList']]
+                if 'userGroupList' in self._alert_detail:
+                    self._user_group_list = [grp['name'] for grp in self._alert_detail['userGroupList']]
 
             else:
                 raise SDKException('Response', '102')
@@ -832,6 +831,11 @@ class Alert(object):
             raise SDKException('Response', '101', response_string)
 
         self.refresh()
+
+    @property
+    def name(self):
+        """Returns the Alert display name """
+        return self._alert_detail['alert']['alert']['name']
 
     @property
     def alert_name(self):

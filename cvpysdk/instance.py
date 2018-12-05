@@ -1558,6 +1558,11 @@ class Instance(object):
         return self._process_restore_response(request_json)
 
     @property
+    def name(self):
+        """Returns the Instance Display name"""
+        return self._properties["instance"]["instanceName"]
+
+    @property
     def _task(self):
         """Treats the task dict as read only property"""
         task = {

@@ -831,10 +831,10 @@ class ClientGroup(object):
         self._properties = clientgroup_props
 
         if 'clientGroupName' in clientgroup_props['clientGroup']:
-            self._clientgroup_name = clientgroup_props['clientGroup']['clientGroupName']
+            self._clientgroup_name = clientgroup_props['clientGroup']['clientGroupName'].lower()
         else:
             raise SDKException(
-                'ClientGroup', '102', 'Client Group name is not specified in the respone'
+                'ClientGroup', '102', 'Client Group name is not specified in the response'
             )
 
         self._description = None
@@ -1097,6 +1097,11 @@ class ClientGroup(object):
             raise SDKException(
                 'ClientGroup', '102', 'Client\'s name should be a list or string value'
             )
+
+    @property
+    def name(self):
+        """Returns the client group display name"""
+        return self._properties['clientGroup']['clientGroupName']
 
     @property
     def clientgroup_id(self):

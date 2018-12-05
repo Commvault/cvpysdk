@@ -596,6 +596,11 @@ class UserGroup(object):
                             usergroup))
 
     @property
+    def name(self):
+        """Returns the UserGroup display name"""
+        return self._properties['userGroupEntity']['userGroupName']
+
+    @property
     def user_group_id(self):
         """Treats the usergroup id as a read-only attribute."""
         return self._user_group_id

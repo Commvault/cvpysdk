@@ -1225,6 +1225,11 @@ class Backupset(object):
         return self._process_browse_response(flag, response, options)
 
     @property
+    def name(self):
+        """Returns the Backupset display name"""
+        return self._properties["backupSetEntity"]["backupsetName"]
+
+    @property
     def backupset_id(self):
         """Treats the backupset id as a read-only attribute."""
         return self._backupset_id

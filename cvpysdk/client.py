@@ -1605,6 +1605,11 @@ class Client(object):
             raise SDKException('Client', '109')
 
     @property
+    def name(self):
+        """Returns the Client display name"""
+        return self._properties['client']['clientEntity']['clientName']
+
+    @property
     def _security_association(self):
         """Returns the security association object"""
         if self._association_object is None:

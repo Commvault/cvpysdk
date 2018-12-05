@@ -418,6 +418,11 @@ class Agent(object):
             return request_json1
 
     @property
+    def name(self):
+        """Returns the Agent display name """
+        return self._agent_properties['idaEntity']['appName']
+
+    @property
     def agent_id(self):
         """Returns the id of the Agent."""
         return self._agent_id
