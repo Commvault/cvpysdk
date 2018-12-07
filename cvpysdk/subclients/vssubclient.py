@@ -266,7 +266,8 @@ class VirtualServerSubclient(Subclient):
             for child in children:
                 path = child['path'] if 'path' in child else None
                 display_name = child['displayName']
-                content_type = self.content_types[str(child['type'])]
+                content_type = VSAObjects(child['type'])
+                content_type = content_type.name
                 vm_id = child['name']
 
                 temp_dict = {
@@ -291,7 +292,7 @@ class VirtualServerSubclient(Subclient):
         """
         vm_filter = []
 
-        if  self._vmFilter:
+        if self._vmFilter:
             subclient_filter = self._vmFilter
 
             if 'children' in subclient_filter:
@@ -300,7 +301,8 @@ class VirtualServerSubclient(Subclient):
                 for child in children:
                     path = child['path'] if 'path' in child else None
                     display_name = child['displayName']
-                    content_type = self.content_types[str(child['type'])]
+                    content_type = VSAObjects(child['type'])
+                    content_type = content_type.name
                     vm_id = child['name']
 
                     temp_dict = {
