@@ -1146,6 +1146,46 @@ class ClientGroup(object):
 
         return self._networkprop
 
+    @property
+    def client_group_filter(self):
+        """Returns the client group filters"""
+        client_group_filters = {}
+
+        os_type_map = {
+            1: 'windows_filters',
+            2: 'unix_filters'
+        }
+
+        for filters_root in self._properties['globalFiltersInfo']['globalFiltersInfoList']:
+            client_group_filters[os_type_map[filters_root['operatingSystemType']]] = filters_root.get(
+                'globalFilters', {}).get('filters', [])
+
+        return client_group_filters
+
+    @client_group_filter.setter
+    def client_group_filter(self, filters):
+        """""Sets the specified server group filters"""
+        request_json = {}
+        request_json['clientGroupDetail'] = self._properties
+        filters_root = request_json['clientGroupDetail']['globalFiltersInfo']['globalFiltersInfoList']
+
+        for var in filters_root:
+            if var['operatingSystemType'] == 1:
+                var['globalFilters'] = {
+                    'filters': filters.get('windows_filters', var['globalFilters'].get(
+                        'filters', []))
+                }
+            if var['operatingSystemType'] == 2:
+                var['globalFilters'] = {
+                    'filters': filters.get('unix_filters', var['globalFilters'].get(
+                        'filters', []))
+                }
+            var['globalFilters']['opType'] = 1
+        request_json['clientGroupOperationType'] = 2
+
+        self._process_request_(request_json)
+        self.refresh()
+
     def enable_backup(self):
         """Enable Backup for this ClientGroup.
 

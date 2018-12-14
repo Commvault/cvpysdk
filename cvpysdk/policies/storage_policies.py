@@ -2276,3 +2276,85 @@ class StoragePolicyCopy(object):
                                    self._commcell_object._update_response_(response.text))
             else:
                 return True
+
+    def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
+        """ Method to add SVM association on Replica/vault and Mirror Copy
+
+            Agrs:
+                src_array_id    (int)   --  Controlhost id of source SVM
+
+                source_array    (str)   --  Name of the source Array
+
+                tgt_array_id    (int)   --  Controlhost id of target SVM
+
+                target_array    (str)   --  Name of the Target Array
+
+        """
+
+        request_json = {
+            "EVGui_MMSMArrayReplicaPairReq":{
+                "processinginstructioninfo":{
+                    "locale":{
+                        "_type_":66,
+                        "localeId":0
+                    },
+                    "formatFlags":{
+                        "ignoreUnknownTags":True,
+                        "elementBased":False,
+                        "skipIdToNameConversion":True,
+                        "formatted":False,
+                        "filterUnInitializedFields":False,
+                        "skipNameToIdConversion":False,
+                        "continueOnError":False
+                    },
+                    "user":{
+                        "_type_":13,
+                        "userName":"admin",
+                        "userId":1
+                    }
+                },
+                "copyId": self.copy_id,
+                "flags":0,
+                "operation":2,
+                "userId":1,
+                "replPairList":[
+                    {
+                        "copyId":0,
+                        "flags":0,
+                        "replicaPairId":0,
+                        "srcArray":{
+                            "name": source_array,
+                            "id": src_array_id
+                        },
+                        "tgtArray":{
+                            "name": target_array,
+                            "id": tgt_array_id
+                        }
+                    }
+                ]
+            }
+        }
+
+        add_svm_association_service = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_svm_association_service, request_json
+        )
+        self.refresh()
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json()['errorCode'])
+                    if error_code != 0:
+                        error_message = "Failed to Update SVM Association on Copy: {0}".format(
+                            self._copy_name
+                        )
+                        raise SDKException('Storage', '102', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

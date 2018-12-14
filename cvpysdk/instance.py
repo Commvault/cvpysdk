@@ -169,11 +169,12 @@ class Instances(object):
         from .instances.lotusnotes.lndminstance import LNDMInstance
         from .instances.postgresinstance import PostgreSQLInstance
         from .instances.informixinstance import InformixInstance
+        from .instances.vminstance import VMInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._instances_dict = {
-            'virtual server': VirtualServerInstance,
+            'virtual server': [VirtualServerInstance, VMInstance],
             'cloud apps': CloudAppsInstance,
             'sql server': SQLServerInstance,
             'sap hana': SAPHANAInstance,
@@ -347,7 +348,14 @@ class Instances(object):
 
             if self.has_instance(instance_name):
                 if agent_name in self._instances_dict:
-                    return self._instances_dict[agent_name](
+                    if isinstance(self._instances_dict[agent_name], list):
+                        if instance_name == "vminstance":
+                            instance = self._instances_dict[agent_name][-1]
+                        else:
+                            instance = self._instances_dict[agent_name][0]
+                    else:
+                        instance = self._instances_dict[agent_name]
+                    return instance(
                         self._agent_object, instance_name, self._instances[instance_name]
                     )
                 else:

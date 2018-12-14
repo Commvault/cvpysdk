@@ -182,6 +182,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.rhevsubclient import RhevVirtualServerSubclient
             return object.__new__(RhevVirtualServerSubclient)
 
+        elif instance_name == hv_type.AMAZON_AWS.value.lower():
+            from .virtualserver.amazonsubclient import AmazonVirtualServerSubclient
+            return object.__new__(AmazonVirtualServerSubclient)
+
         else:
             raise SDKException(
                 'Subclient',
@@ -807,18 +811,34 @@ class VirtualServerSubclient(Subclient):
             "FolderPath": value.get("FolderPath", ""),
             "ResourcePool": value.get("ResourcePool", "")
         }
-        if "vmSize" in value:
-            self._advanced_option_restore_json["vmSize"] = value.get("instanceSize", "")
-        if "createPublicIP" in value:
-            self._advanced_option_restore_json["createPublicIP"] = value.get("createPublicIP", "")
-        if "restoreAsManagedVM" in value:
-            self._advanced_option_restore_json["restoreAsManagedVM"] = \
-                value.get("restoreAsManagedVM", "")
-        if "destination_os_name" in value:
-            self._advanced_option_restore_json["osName"] = value.get(
-                "destination_os_name", "AUTO"
-            )
 
+        value_dict = {
+            "createPublicIP": ["createPublicIP", ["createPublicIP", ""]],
+            "restoreAsManagedVM": ["restoreAsManagedVM", ["restoreAsManagedVM", ""]],
+            "destination_os_name": ["osName", ["destination_os_name", "AUTO"]],
+            "resourcePoolPath": ["resourcePoolPath", ["resourcePoolPath", ""]],
+            "datacenter": ["datacenter", ["datacenter", ""]],
+            "terminationProtected": ["terminationProtected", ["terminationProtected", False]],
+            "securityGroups": ["securityGroups", ["securityGroups", ""]],
+            "keyPairList": ["keyPairList", ["keyPairList", ""]]
+        }
+
+        for key in value_dict:
+            if key in value:
+                inner_key = value_dict[key][0]
+                val1, val2 = value_dict[key][1][0], value_dict[key][1][1]
+                self._advanced_option_restore_json[inner_key] = value.get(val1, val2)
+
+        if "vmSize" in value:
+            val1, val2 = ("instanceSize", "") if not value["vmSize"] else ("vmSize", "vmSize")
+            self._advanced_option_restore_json["vmSize"] = value.get(val1, val2)
+        if "ami" in value and value["ami"] is not None:
+            self._advanced_option_restore_json["templateId"] = value["ami"]["templateId"]
+            self._advanced_option_restore_json["templateName"] = value["ami"]["templateName"]
+        if "iamRole" in value and value["iamRole"] is not None:
+            self._advanced_option_restore_json["roleInfo"] = {
+                "name": value["iamRole"]
+            }
 
         if self.disk_pattern.datastore.value == "DestinationPath":
             self._advanced_option_restore_json["DestinationPath"] = value.get("datastore", "")
@@ -1387,6 +1407,7 @@ class VirtualServerSubclient(Subclient):
                            copy_precedence=0,
                            preserve_level=1,
                            unconditional_overwrite=False,
+                           v2_indexing=False,
                            restore_ACL=True,
                            from_date=0,
                            to_date=0,
@@ -1424,6 +1445,8 @@ class VirtualServerSubclient(Subclient):
             fbr_ma              (basestring)    --  FRE MA used for browsing Unix VMs
 
             browse_ma            (basestring)    --  MA for browsing
+
+            v2_indexing           (bool)         -- Restore is from child level or not
 
          Raises:
                 SDKException:
@@ -1498,6 +1521,29 @@ class VirtualServerSubclient(Subclient):
 
         # prepare and execute the Json
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
+
+        if v2_indexing:
+
+            _vmclient_obj = self._commcell_object.clients.get(vm_name)
+            _vmagent_obj = _vmclient_obj.agents.get(self._agent_object._agent_name)
+            _vminstance_obj = _vmagent_obj.instances.get('VMInstance')
+            _vmbackupset_obj = _vminstance_obj.backupsets.get(
+                self._backupset_object._backupset_name)
+            _vmsub_obj = _vmbackupset_obj.subclients.get('default')
+
+            request_json['taskInfo']['associations'][0]['clientName'] = vm_name
+            request_json['taskInfo']['associations'][0]['clientId'] = \
+                _vmsub_obj._subClientEntity['clientId']
+            request_json['taskInfo']['associations'][0]['instanceName'] = 'VMInstance'
+            request_json['taskInfo']['associations'][0]['backupsetId'] = \
+                _vmsub_obj._subClientEntity['backupsetId']
+            request_json['taskInfo']['associations'][0]['instanceId'] = \
+                _vmsub_obj._subClientEntity['instanceId']
+            request_json['taskInfo']['associations'][0]['subclientGUID'] = \
+                subclientGUID = _vmsub_obj._subClientEntity['subclientGUID']
+            request_json['taskInfo']['associations'][0]['subclientName'] = 'default'
+            request_json['taskInfo']['associations'][0]['subclientId'] = \
+                _vmsub_obj._subClientEntity['subclientId']
 
         return self._process_restore_response(request_json)
 
@@ -1787,7 +1833,7 @@ class VirtualServerSubclient(Subclient):
 
     def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
         """
-        set tje advanced restore options for all vm in restore
+        set the advanced restore options for all vm in restore
         :param
 
         vm_to_restore : Name of the VM to restore
@@ -1830,6 +1876,22 @@ class VirtualServerSubclient(Subclient):
             folder_path = ''
             instanceSize = ''
 
+        if 'resourcePoolPath' in restore_option:
+            restore_option['resourcePoolPath'] = vs_metadata['resourcePoolPath']
+        if 'datacenter' in restore_option:
+            restore_option['datacenter'] = vs_metadata.get('dataCenter', '')
+        if ('terminationProtected' in restore_option and
+                restore_option['terminationProtected'] is None):
+            restore_option['terminationProtected'] = vs_metadata.get('terminationProtected', '')
+        if 'iamRole' in restore_option and restore_option['iamRole'] is None:
+            restore_option['iamRole'] = vs_metadata.get('role', '')
+        if 'securityGroups' in restore_option and restore_option['securityGroups'] is None:
+            _security_groups = self._find_security_groups(vs_metadata['networkSecurityGroups'])
+            restore_option['securityGroups'] = _security_groups
+        if 'keyPairList' in restore_option and restore_option['keyPairList'] is None:
+            _keypair_list = self._find_keypair_list(vs_metadata['loginKeyPairs'])
+            restore_option['keyPairList'] = _keypair_list
+
         # populate restore source item
         restore_option['paths'].append("\\" + vm_ids[vm_to_restore])
         restore_option['name'] = vm_to_restore
@@ -1843,15 +1905,26 @@ class VirtualServerSubclient(Subclient):
             "\\\\" + vm_ids[vm_to_restore])
 
         for disk, data in disk_info_dict.items():
+            ds = ""
+            if "datastore" in restore_option:
+                ds = restore_option["datastore"]
             if ((restore_option["in_place"]) or ("datastore" not in restore_option)):
-                restore_option["datastore"] = data["advanced_data"]["browseMetaData"][
-                    "virtualServerMetaData"]["datastore"]
-            name = disk.split('\\')[-1]
+                if "datastore" in data["advanced_data"]["browseMetaData"][
+                    "virtualServerMetaData"]:
+                    restore_option["datastore"] = data["advanced_data"]["browseMetaData"][
+                        "virtualServerMetaData"]["datastore"]
+                    ds = restore_option["datastore"]
+                elif "esxHost" in vs_metadata and "is_aws_proxy" in restore_option:
+                    if restore_option.get("availability_zone") is not None:
+                        ds = restore_option.get("availability_zone")
+                    else:
+                        ds = vs_metadata["esxHost"]
             new_name_prefix = restore_option.get("disk_name_prefix")
             new_name = data["name"] if new_name_prefix is None \
                 else new_name_prefix + "_" + data["name"]
-            _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1],
-                                                 restore_option["datastore"], new_name)
+            _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1], ds, new_name)
+            if 'is_aws_proxy' in restore_option and not restore_option['is_aws_proxy']:
+                _disk_dict['Datastore'] = restore_option["datastore"]
             vm_disks.append(_disk_dict)
         if not vm_disks:
             raise SDKException('Subclient', '104')
@@ -1884,6 +1957,44 @@ class VirtualServerSubclient(Subclient):
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
         self._advanced_restore_option_list.append(temp_dict)
+
+    @staticmethod
+    def _find_security_groups(xml_str):
+        """
+        sets the security group json from the input xml
+        Args:
+             xml_str            (str)  --  xml from which we want to retrieve security group info
+        Returns:
+             security_group    (dict)  -- security group dict
+        """
+        match1 = re.search('secGroupId=\"(\S*)\"', xml_str)
+        match2 = re.search('secGroupName=\"(\S*)\"', xml_str)
+        security_group = [
+            {
+                "groupId": match1.group(1),
+                "groupName": match2.group(1)
+            }
+        ]
+        return security_group
+
+    @staticmethod
+    def _find_keypair_list(xml_str):
+        """
+        sets the keypair list json from the input xml
+        Args:
+             xml_str            (str)  --  xml from which we want to retrieve keypair list info
+        Returns:
+             keypair_list	(dict) -- keypair list dict
+        """
+        match1 = re.search('keyPairId=\"(\S*)\"', xml_str)
+        match2 = re.search('keyPairName=\"(\S*)\"', xml_str)
+        keypair_list = [
+            {
+                "keyId": match1.group(1),
+                "keyName": match2.group(1)
+            }
+        ]
+        return keypair_list
 
     def _prepare_filelevel_restore_json(self, _file_restore_option):
         """
@@ -2084,7 +2195,8 @@ class VirtualServerSubclient(Subclient):
 
             Args:
                 backup_level            (str)   --  level of backup the user wish to run
-                                                    Full / Incremental / Differential / Synthetic_full
+                                                    Full / Incremental / Differential /
+                                                    Synthetic_full
 
                 incremental_backup      (bool)  --  run incremental backup
                                                     only applicable in case of Synthetic_full backup

@@ -126,10 +126,12 @@ class ArrayManagement(object):
                                                     'flags':0,
                                                     'serverName':"",
                                                     'userCredentials': {},
-                                                    'volumeId':int(volume_id[i][0]),'CommCellId':2})
+                                                    'volumeId':int(volume_id[i][0]),
+                                                    'CommCellId': self._commcell_object.commcell_id})
 
                 else:
-                    request_json['volumes'].append({'volumeId':int(volume_id[i][0]),'CommCellId':2})
+                    request_json['volumes'].append({'volumeId':int(volume_id[i][0]),
+                                                    'CommCellId': self._commcell_object.commcell_id})
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._SNAP_OPS, request_json)
@@ -203,6 +205,7 @@ class ArrayManagement(object):
                   username,
                   password,
                   control_host=None,
+                  array_controller=None,
                   is_ocum=False):
         """This method will help in adding array entry in the array management
             Args :
@@ -216,6 +219,8 @@ class ArrayManagement(object):
 
                     control_host        (str)               -- control host of the array
 
+                    array_controller    (str)               -- Array Controller MediaAgent Name
+
                     is_ocum             (bool)              -- used for netapp to specify whether
                                                                to use Primary file server or OCUM
 
@@ -224,20 +229,30 @@ class ArrayManagement(object):
                 errorMessage   (string) :  Error message
         """
 
+        client_id = int(self._commcell_object.clients.get(array_controller).client_id)
         request_json = {
             "clientId": 0,
             "flags": 0,
             "assocType": 0,
             "copyId": 0,
             "appId": 0,
-            "availableMAs": [
+            "selectedMAs":[
                 {
-                    "arrayControllerId": 0,
-                    "mediaAgent": {
-                        "name": "",
-                        "id": 0
-                    }
-                },
+                    "arrayControllerId":0,
+                    "mediaAgent":{
+                        "name": array_controller,
+                        "id": client_id
+                    },
+                    "arrCtrlOptions":[
+                        {
+                            "isEnabled": True,
+                            "arrCtrlOption":{
+                                "name":"Pruning",
+                                "id": 262144
+                            }
+                        }
+                    ]
+                }
             ],
             "hostDG": {
                 "doNotMoveDevices": True,

@@ -219,6 +219,7 @@ class Subclients(object):
         from .subclients.informixsubclient import InformixSubclient
         from .subclients.adsubclient import ADSubclient
         from .subclients.sharepointsubclient import SharepointSubclient
+        from .subclients.vminstancesubclient import VMInstanceSubclient
 
         globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
         globals()['FileSystemSubclient'] = FileSystemSubclient
@@ -240,13 +241,14 @@ class Subclients(object):
         globals()['InformixSubclient'] = InformixSubclient
         globals()['ADSubclient'] = ADSubclient
         globals()['SharepointSubclient'] = SharepointSubclient
+        globals()['VMInstanceSubclient'] = VMInstanceSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._subclients_dict = {
             'big data apps': BigDataAppsSubclient,
             'file system': FileSystemSubclient,
-            'virtual server': VirtualServerSubclient,
+            'virtual server': [VirtualServerSubclient, VMInstanceSubclient],
             'cloud apps': CloudAppsSubclient,
             'sql server': SQLServerSubclient,
             'nas': NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
@@ -719,12 +721,19 @@ class Subclients(object):
             agent_name = self._agent_object.agent_name
 
             if self.has_subclient(subclient_name):
+                if isinstance(self._subclients_dict[agent_name], list):
+                    if self._instance_object.instance_name == "vminstance":
+                        subclient = self._subclients_dict[agent_name][-1]
+                    else:
+                        subclient = self._subclients_dict[agent_name][0]
+                else:
+                    subclient = self._subclients_dict[agent_name]
+
                 if self._backupset_object is None:
                     self._backupset_object = self._instance_object.backupsets.get(
                         self._subclients[subclient_name]['backupset']
                     )
-
-                return self._subclients_dict[agent_name](
+                return subclient(
                     self._backupset_object, subclient_name, self._subclients[subclient_name]['id']
                 )
 

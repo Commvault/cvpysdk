@@ -1143,6 +1143,7 @@ class Client(object):
         self._license_info = None
         self._cvd_port = None
 
+
         self.refresh()
 
     def __repr__(self):
@@ -3173,3 +3174,9 @@ class Client(object):
         """Returns CVD port of the client"""
 
         return self._cvd_port
+
+    @property
+    def client_guid(self):
+        """Returns client GUID"""
+
+        return self._properties.get('client', {}).get('clientEntity', {}).get('clientGUID', {})

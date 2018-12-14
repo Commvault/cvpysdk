@@ -89,6 +89,10 @@ class VirtualServerInstance(Instance):
             from .virtualserver.rhevinstance import RhevInstance
             return object.__new__(RhevInstance)
 
+        elif instance_name == hv_type.AMAZON_AWS.value.lower():
+            from .virtualserver.amazoninstance import AmazonInstance
+            return object.__new__(AmazonInstance)
+
     def _get_instance_properties(self):
         """Gets the properties of this instance.
 

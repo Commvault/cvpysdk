@@ -78,7 +78,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=0,
             disk_option='Original',
             transport_mode='Auto',
-            proxy_client=None):
+            proxy_client=None,
+            indexing_v2=False):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -110,6 +111,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                indexing_v2           (boolean)     --  true if restore has to be performed from
+                                                        child vm for v2
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -140,22 +144,68 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             restore_option['client'] = proxy_client
 
-        # set attr for all the option in restore xml from user inputs
-        self._set_restore_inputs(
-            restore_option,
-            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
-            in_place=True,
-            esx_server_name="",
-            volume_level_restore=1,
-            unconditional_overwrite=overwrite,
-            power_on=power_on,
-            disk_option=disk_option_value,
-            transport_mode=transport_mode_value,
-            copy_precedence=copy_precedence
-        )
+        restore_option_copy = restore_option.copy()
 
-        request_json = self._prepare_fullvm_restore_json(restore_option)
-        return self._process_restore_response(request_json)
+        if indexing_v2:
+            vm_to_restore = self._set_vm_to_restore(vm_to_restore)
+            job_objects = []
+            for eachvm in vm_to_restore:
+                restore_option = {}
+                restore_option = restore_option_copy.copy()
+                # set attr for all the option in restore xml from user inputs
+                self._set_restore_inputs(
+                    restore_option,
+                    vm_to_restore=[eachvm],
+                    in_place=True,
+                    esx_server_name="",
+                    volume_level_restore=1,
+                    unconditional_overwrite=overwrite,
+                    power_on=power_on,
+                    disk_option=disk_option_value,
+                    transport_mode=transport_mode_value,
+                    copy_precedence=copy_precedence
+                )
+
+                request_json = self._prepare_fullvm_restore_json(restore_option)
+                _vmclient_obj = self._commcell_object.clients.get(eachvm)
+                _vmagent_obj = _vmclient_obj.agents.get(self._agent_object._agent_name)
+                _vminstance_obj = _vmagent_obj.instances.get('VMInstance')
+                _vmbackupset_obj = _vminstance_obj.backupsets.get(
+                    self._backupset_object._backupset_name)
+                _vmsub_obj = _vmbackupset_obj.subclients.get('default')
+                request_json['taskInfo']['associations'][0]['clientName'] = eachvm
+                request_json['taskInfo']['associations'][0]['clientId'] = _vmsub_obj._subClientEntity[
+                    'clientId']
+                request_json['taskInfo']['associations'][0]['instanceName'] = 'VMInstance'
+                request_json['taskInfo']['associations'][0]['backupsetId'] = _vmsub_obj._subClientEntity[
+                    'backupsetId']
+                request_json['taskInfo']['associations'][0]['instanceId'] = _vmsub_obj._subClientEntity[
+                    'instanceId']
+                request_json['taskInfo']['associations'][0]['subclientGUID'] = _vmsub_obj._subClientEntity[
+                    'subclientGUID']
+                request_json['taskInfo']['associations'][0]['subclientName'] = 'default'
+                request_json['taskInfo']['associations'][0]['subclientId'] = _vmsub_obj._subClientEntity[
+                    'subclientId']
+                job_objects.append(self._process_restore_response(request_json))
+            return job_objects
+
+        else:
+            # set attr for all the option in restore xml from user inputs
+            self._set_restore_inputs(
+                restore_option,
+                vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+                in_place=True,
+                esx_server_name="",
+                volume_level_restore=1,
+                unconditional_overwrite=overwrite,
+                power_on=power_on,
+                disk_option=disk_option_value,
+                transport_mode=transport_mode_value,
+                copy_precedence=copy_precedence
+            )
+
+            request_json = self._prepare_fullvm_restore_json(restore_option)
+            return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(
             self,
@@ -171,7 +221,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             transport_mode='Auto',
             proxy_client=None,
             source_ip=None,
-            destination_ip=None
+            destination_ip=None,
+            indexing_v2=False
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -219,6 +270,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 destination_ip      (basestring)    --  IP of the destination VM
 
+                indexing_v2           (boolean)     --  true if restore has to be performed from
+                                                        child vm for v2
+
 
 
             Returns:
@@ -259,27 +313,76 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
 
-        self._set_restore_inputs(
-            restore_option,
-            in_place=False,
-            vcenter_client=vcenter_client,
-            datastore=datastore,
-            esx_host=esx_host,
-            esx_server='',
-            unconditional_overwrite=overwrite,
-            power_on=power_on,
-            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
-            disk_option=self._disk_option[disk_option],
-            transport_mode=self._transport_mode[transport_mode],
-            copy_precedence=copy_precedence,
-            volume_level_restore=1,
-            source_item=[],
-            source_ip=source_ip,
-            destination_ip=destination_ip
-        )
+        restore_option_copy = restore_option.copy()
 
-        request_json = self._prepare_fullvm_restore_json(restore_option)
-        return self._process_restore_response(request_json)
+        if indexing_v2:
+
+            vm_to_restore = self._set_vm_to_restore(vm_to_restore)
+            job_objects = []
+            for eachvm in vm_to_restore:
+                restore_option = {}
+                restore_option = restore_option_copy.copy()
+                self._set_restore_inputs(
+                    restore_option,
+                    in_place=False,
+                    vcenter_client=vcenter_client,
+                    datastore=datastore,
+                    esx_host=esx_host,
+                    esx_server='',
+                    unconditional_overwrite=overwrite,
+                    power_on=power_on,
+                    vm_to_restore=[eachvm],
+                    disk_option=self._disk_option[disk_option],
+                    transport_mode=self._transport_mode[transport_mode],
+                    copy_precedence=copy_precedence,
+                    volume_level_restore=1,
+                    source_item=[],
+                    source_ip=source_ip,
+                    destination_ip=destination_ip
+                )
+                request_json = self._prepare_fullvm_restore_json(restore_option)
+
+                _vmclient_obj = self._commcell_object.clients.get(eachvm)
+                _vmagent_obj = _vmclient_obj.agents.get(self._agent_object._agent_name)
+                _vminstance_obj = _vmagent_obj.instances.get('VMInstance')
+                _vmbackupset_obj = _vminstance_obj.backupsets.get(
+                    self._backupset_object._backupset_name)
+                _vmsub_obj = _vmbackupset_obj.subclients.get('default')
+
+                request_json['taskInfo']['associations'][0]['clientName'] = eachvm
+                request_json['taskInfo']['associations'][0]['clientId'] = _vmsub_obj._subClientEntity['clientId']
+                request_json['taskInfo']['associations'][0]['instanceName'] = 'VMInstance'
+                request_json['taskInfo']['associations'][0]['backupsetId'] = _vmsub_obj._subClientEntity['backupsetId']
+                request_json['taskInfo']['associations'][0]['instanceId'] = _vmsub_obj._subClientEntity['instanceId']
+                request_json['taskInfo']['associations'][0]['subclientGUID'] = _vmsub_obj._subClientEntity['subclientGUID']
+                request_json['taskInfo']['associations'][0]['subclientName'] = 'default'
+                request_json['taskInfo']['associations'][0]['subclientId'] = _vmsub_obj._subClientEntity['subclientId']
+                job_objects.append(self._process_restore_response(request_json))
+            return job_objects
+
+        else:
+
+            self._set_restore_inputs(
+                restore_option,
+                in_place=False,
+                vcenter_client=vcenter_client,
+                datastore=datastore,
+                esx_host=esx_host,
+                esx_server='',
+                unconditional_overwrite=overwrite,
+                power_on=power_on,
+                vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+                disk_option=self._disk_option[disk_option],
+                transport_mode=self._transport_mode[transport_mode],
+                copy_precedence=copy_precedence,
+                volume_level_restore=1,
+                source_item=[],
+                source_ip=source_ip,
+                destination_ip=destination_ip
+            )
+
+            request_json = self._prepare_fullvm_restore_json(restore_option)
+            return self._process_restore_response(request_json)
 
     def disk_restore(self,
                      vm_name,
