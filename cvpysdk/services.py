@@ -183,6 +183,7 @@ SERVICES_DICT_TEMPLATE = {
     'USERS': '{0}User',
     'USER': '{0}User/%s?Level=50',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
+    'OTP': '{0}User/%s/preferences/OTP', 
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',
@@ -253,6 +254,7 @@ SERVICES_DICT_TEMPLATE = {
     'GLOBAL_PARAM': '{0}/setGlobalParam',
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
+    'STORAGE_ARRAYS' : '{0}/StorageArrays',
 
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',

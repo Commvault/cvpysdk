@@ -80,8 +80,6 @@ class PostgreSQLInstance(Instance):
         self.backup_object = None
         self.backupset_object = None
         self.sub_client_object = None
-        self.cvpysdk_object = self._commcell_object._cvpysdk_object
-        self.services = self._commcell_object._services
         self.postgres_restore_json = None
         self._postgres_restore_options = None
         self._destination_restore_json = None

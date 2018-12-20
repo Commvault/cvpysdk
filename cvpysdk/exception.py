@@ -328,6 +328,11 @@ EXCEPTION_DICT = {
         '105': 'please provide the features to be installed',
         '106': 'please provide the client details',
         '107': 'Failed to execute Install job'
+    },
+    'StorageArray' : {
+        '101': 'Array already exist',
+        '102': 'Failed to add array',
+        '103': 'Failed to delete array'
     }
 }
 

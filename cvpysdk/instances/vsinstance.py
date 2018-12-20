@@ -19,15 +19,13 @@ VirtualServerInstance:
 
     __init__                    --  initialise object of vsinstance class associated with
                                             the specified agent, instance name and instance id
-    
 
     _get_instance_properties()  --  Instance class method overwritten to add virtual server
                                         instance properties as well
 
     associated_clients                --  getter or setter for the associated clients
 
-    co_ordinator                    --  getter 
-
+    co_ordinator                    --  getter
 
 """
 
@@ -38,7 +36,6 @@ from ..instance import Instance
 from ..client import Client
 from ..exception import SDKException
 from .. import constants
-
 
 
 class VirtualServerInstance(Instance):
@@ -68,9 +65,17 @@ class VirtualServerInstance(Instance):
             from .virtualserver.oraclevminstance import OracleVMInstance
             return object.__new__(OracleVMInstance)
 
+        elif instance_name == hv_type.ALIBABA_CLOUD.value.lower():
+            from .virtualserver.alibabacloudinstance import AlibabaCloudInstance
+            return object.__new__(AlibabaCloudInstance)
+
         elif instance_name == hv_type.ORACLE_CLOUD.value.lower():
-            from .virtualserver.oralcecloudinstance import OracleCloudInstance
+            from .virtualserver.oraclecloudinstance import OracleCloudInstance
             return object.__new__(OracleCloudInstance)
+
+        elif instance_name == hv_type.GOOGLE_CLOUD.value.lower():
+            from .virtualserver.googlecloudinstance import GoogleCloudInstance
+            return object.__new__(GoogleCloudInstance)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.

@@ -209,6 +209,7 @@ class Subclients(object):
         from .subclients.oraclesubclient import OracleSubclient
         from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
         from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
+        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
         from .subclients.sybasesubclient import SybaseSubclient
         from .subclients.saporaclesubclient import SAPOracleSubclient
         from .subclients.exchsubclient import ExchangeSubclient
@@ -228,6 +229,7 @@ class Subclients(object):
         globals()['OracleSubclient'] = OracleSubclient
         globals()['LNDbSubclient'] = LNDbSubclient
         globals()['LNDocSubclient'] = LNDocSubclient
+        globals()['LNDmSubclient'] = LNDmSubclient
         globals()['SybaseSubclient'] = SybaseSubclient
         globals()['SAPOracleSubclient'] = SAPOracleSubclient
         globals()['ExchangeSubclient'] = ExchangeSubclient
@@ -251,6 +253,7 @@ class Subclients(object):
             'oracle': OracleSubclient,
             'notes database': LNDbSubclient,
             'notes document': LNDocSubclient,
+            'domino mailbox archiver': LNDmSubclient,
             'sybase': SybaseSubclient,
             'sap for oracle': SAPOracleSubclient,
             "exchange mailbox": ExchangeSubclient,
@@ -1113,15 +1116,33 @@ class Subclient(object):
             }
         }
 
-        if advanced_options and isinstance(advanced_options, dict):
+        advanced_options_dict = {}
+
+        if advanced_options:
+            advanced_options_dict = self._advanced_backup_options(
+                advanced_options)
+
+        if advanced_options_dict:
             request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
-                advanced_options
+                advanced_options_dict
             )
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         return request_json
+
+    def _advanced_backup_options(self, options):
+        """Generates the advanced backup options dict
+
+            Args:
+                options     (dict)  --  advanced backup options that are to be included
+                                            in the request
+
+            Returns:
+                (dict)  -   generated advanced options dict
+        """
+        return options
 
     @property
     def _json_task(self):
@@ -1478,6 +1499,16 @@ class Subclient(object):
         """
         self._set_subclient_properties(
             "_commonProperties['enableBackup']", False)
+
+    def exclude_from_sla(self):
+        """Exclude subclient from SLA.
+
+            Raises:
+                SDKException:
+                    if failed to exclude the subclient from SLA
+        """
+        self._set_subclient_properties(
+            "_commonProperties['excludeFromSLA']", True)
 
     def enable_intelli_snap(self, snap_engine_name, proxy_options=None):
         """Enables Intelli Snap for the subclient.

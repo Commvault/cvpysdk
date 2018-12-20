@@ -29,7 +29,9 @@ class HypervisorType(Enum):
     AZURE_V2 = "Azure Resource Manager"
     FUSION_COMPUTE = "FusionCompute"
     ORACLE_VM = "OracleVM"
+    ALIBABA_CLOUD = "Alibaba Cloud"
     ORACLE_CLOUD = "Oracle Cloud"
+    GOOGLE_CLOUD = "Google Cloud Platform"
 
 
 class AppIDAType(Enum):

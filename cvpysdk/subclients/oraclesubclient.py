@@ -110,12 +110,47 @@ class OracleSubclient(DatabaseSubclient):
         subclient_json = {
             "subClientProperties":
                 {
+                    "proxyClient": self._proxyClient,
                     "subClientEntity": self._subClientEntity,
                     "commonProperties": self._commonProperties,
-                    "oracleSubclientProp": self._oracle_subclient_properties
+                    "oracleSubclientProp": self._oracle_subclient_properties,
                 }
         }
         return subclient_json
+
+    def set_prop_for_orcle_subclient(self, storage_policy, snap_engine=None, archivefilebfs=32):
+        """Updates the subclient properties.
+
+            Args:
+
+                storage_policy      (str)   --  name of the storage policy to be associated
+                with the subclient
+
+                snap_engine         (str)   --  Snap Engine to be set for subclient (optional)
+
+                    default: None
+
+            Raises:
+                SDKException:
+                    if storage policy argument is not of type string
+
+                    if failed to update subclient
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if not archivefilebfs and (self.archive_files_per_bfs == '0'):
+            self.archive_files_per_bfs = 32
+        else:
+            self.archive_files_per_bfs = archivefilebfs
+
+        self.data_stream = 2
+
+        self.storage_policy = storage_policy
+        if snap_engine:
+            self.enable_intelli_snap(snap_engine)
 
     @property
     def data(self):
@@ -402,22 +437,28 @@ class OracleSubclient(DatabaseSubclient):
             destination_client=None,
             common_options=None,
             browse_option=None,
-            oracle_options=None):
+            oracle_options=None, tag=None):
         """Performs restore the entire/partial database using latest backup/backupcopy
 
         Args:
-            files (dict) -- dictionary containing file options
-                default -- None
-            destination_client (str) -- destination client name
-                default -- None
-            common_options (dict) -- common options to be passed on for restore
+            files               (dict) -- dictionary containing file options
                 default -- None
 
-            browse_option (dict) : dictionary containing browse options
+            destination_client  (str) -- destination client name
+                default -- None
 
-            oracle_options (dict): dictionary containing other oracle options
+            common_options      (dict) -- common options to be passed on for restore
+                default -- None
+
+            browse_option       (dict) -- dictionary containing browse options
+
+            oracle_options      (dict) -- dictionary containing other oracle options
                 default -- By default it restores the controlfile and datafiles
                                 from latest backup
+
+            tag                 (str)  --  Type of the restore to be performed
+                default:    None
+
                 Example: {
                             "resetLogs": 1,
                             "switchDatabaseMode": True,
@@ -435,4 +476,4 @@ class OracleSubclient(DatabaseSubclient):
         """
         return self._backupset_object._instance_object.restore(files, destination_client,
                                                                common_options, browse_option,
-                                                               oracle_options)
+                                                               oracle_options, tag)
