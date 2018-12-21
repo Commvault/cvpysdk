@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.instances.postgresinstance &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.instances.postgresinstance &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.instances.postgresinstance</h1><div class="highlight"><pre>
@@ -47,25 +49,39 @@
 <span class="sd">                       and to perform operations on that instance</span>
 
 <span class="sd">PostgreSQLInstance:</span>
+<span class="sd">===================</span>
 
-<span class="sd">    _get_postgres_restore_json()    --  returns the restore request json for FSBased restore</span>
+<span class="sd">    _restore_json()                      --     returns the JSON request to pass to the API as per</span>
+<span class="sd">    the options selected by the user</span>
 
+<span class="sd">    _restore_common_options_json()       --     setter for the common options in restore JSON</span>
 
-<span class="sd">    restore_postgres_server()       --  runs the restore job for postgres instance</span>
+<span class="sd">    _restore_destination_json()          --     setter for the Destination options in restore JSON</span>
+
+<span class="sd">    _restore_postgres_option_json()      --     setter for the postgres restore option</span>
+<span class="sd">    in restore JSONRe</span>
+
+<span class="sd">    restore_in_place()                   --     Restores the postgres data/log files</span>
+<span class="sd">    specified in the input paths list to the same location</span>
 
 <span class="sd">PostgreSQLInstance instance Attributes</span>
-<span class="sd">==================================</span>
+<span class="sd">======================================</span>
 
-<span class="sd">    **postgres_bin_directory**           --  returns the `postgres_bin_directory` of postgres server</span>
+<span class="sd">    **postgres_bin_directory**           --  returns the postgres bin directory of postgres server</span>
 
-<span class="sd">    **postgres_archive_log_directory**   --  returns the `postgres_archive_log_directory`</span>
-<span class="sd">                                                of postgres server</span>
+<span class="sd">    **postgres_lib_directory**           --  returns the lib directory of postgres server</span>
 
-<span class="sd">    **postgres_server_user_name**        --  returns the `postgres_server_user_name`</span>
-<span class="sd">                                                of postgres server</span>
+<span class="sd">    **postgres_archive_log_directory**   --  returns the postgres archive log directory</span>
+<span class="sd">    of postgres server</span>
 
-<span class="sd">    **postgres_server_port_number**      --  returns the `postgres_server_port_number`</span>
-<span class="sd">                                                of postgres server</span>
+<span class="sd">    **postgres_server_user_name**        --  returns the postgres server user name</span>
+<span class="sd">    of postgres server</span>
+
+<span class="sd">    **postgres_server_port_number**      --  returns the postgres server port number</span>
+<span class="sd">    of postgres server</span>
+
+<span class="sd">    **maintenance_database**             --  returns the maintenance database associated</span>
+<span class="sd">    with postgres server</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -82,116 +98,27 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Instances class.</span>
+
 <span class="sd">            Args:</span>
 <span class="sd">                agent_object (object)  --  instance of the Agent class</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Instances class</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span>
             <span class="n">PostgreSQLInstance</span><span class="p">,</span>
             <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">agent_object</span><span class="p">,</span>
-            <span class="n">instance_name</span><span class="p">,</span>
-            <span class="n">instance_id</span><span class="p">)</span>
+                <span class="n">agent_object</span><span class="p">,</span>
+                <span class="n">instance_name</span><span class="p">,</span>
+                <span class="n">instance_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backup_object</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backupset_object</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sub_client_object</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cvpysdk_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_postgres_restore_options</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_get_postgres_restore_json</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">destination_client</span><span class="p">,</span>
-            <span class="n">destination_instance_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Generates the JSON input required to run Postgres FS</span>
-<span class="sd">                Based Backupset and return the generated JSON</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                destination_client          (str) -- Name of the destination client to which</span>
-<span class="sd">                                                        the data should be restored</span>
-<span class="sd">                destination_instance_name   (str) -- Name of the desired instance in the</span>
-<span class="sd">                                                        destination client</span>
-<span class="sd">            Returns:</span>
-<span class="sd">                JSON  -   JSON required to run the restore job</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">basic_postgres_options</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;browseOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span><span class="p">,</span>
-                    <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="s2">&quot;FSBasedBackupSet&quot;</span>
-                <span class="p">},</span>
-                <span class="s2">&quot;timeZone&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="s2">&quot;(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi&quot;</span>
-                <span class="p">},</span>
-                <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="p">{}</span>
-            <span class="p">},</span>
-            <span class="s2">&quot;commonOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;clusterDBBackedup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;restoreToDisk&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;onePassRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;syncRestore&quot;</span><span class="p">:</span> <span class="kc">False</span>
-            <span class="p">},</span>
-            <span class="s2">&quot;destination&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span><span class="p">,</span>
-                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">destination_instance_name</span><span class="p">,</span>
-                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="s2">&quot;PostgreSQL&quot;</span>
-                <span class="p">},</span>
-                <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span>
-                <span class="p">}</span>
-            <span class="p">},</span>
-            <span class="s2">&quot;fileOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sourceItem&quot;</span><span class="p">:</span> <span class="p">[</span>
-                    <span class="s2">&quot;/data&quot;</span>
-                <span class="p">]</span>
-            <span class="p">},</span>
-            <span class="s2">&quot;postgresRstOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;pointInTime&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;restoreToSameServer&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;tableLevelRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;instanceRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;fsBackupSetRestore&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                <span class="s2">&quot;startServer&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                <span class="s2">&quot;isCloneRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;fromTime&quot;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s2">&quot;refTime&quot;</span><span class="p">:</span> <span class="p">{}</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-
-        <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">basic_postgres_options</span>
-
-        <span class="k">return</span> <span class="n">restore_json</span>
-
-<div class="viewcode-block" id="PostgreSQLInstance.restore_postgres_server"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_postgres_server">[docs]</a>    <span class="k">def</span> <span class="nf">restore_postgres_server</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">destination_client</span><span class="p">,</span>
-            <span class="n">destination_instance_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to restore the Postgres server</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">        destination_client (str) -- Destination Client name</span>
-
-<span class="sd">        destination_instance_name (str) -- Destination Instance name</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            object -- Job containing restore details</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">destination_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;instance&quot;</span><span class="p">][</span><span class="sa">r</span><span class="s2">&quot;clientName&quot;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">destination_instance_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">destination_instance_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_postgres_restore_json</span><span class="p">(</span>
-            <span class="n">destination_client</span><span class="p">,</span> <span class="n">destination_instance_name</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_bin_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -202,6 +129,16 @@
             <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
             <span class="s1">&#39;105&#39;</span><span class="p">,</span>
             <span class="s2">&quot;Could not fetch the Binary directory.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">postgres_lib_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the lib directory of postgres server&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;LibDirectory&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;LibDirectory&#39;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;105&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;Could not fetch the Lib directory.&quot;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_archive_log_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -231,10 +168,245 @@
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
             <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
             <span class="s1">&#39;105&#39;</span><span class="p">,</span>
-            <span class="s2">&quot;Could not fetch the port Number.&quot;</span><span class="p">)</span></div>
+            <span class="s2">&quot;Could not fetch the port Number.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">maintenance_database</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the maintenance database associated with postgres server&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MaintainenceDB&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;MaintainenceDB&#39;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;105&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;Could not fetch maintenance database.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                kwargs   (dict)  --  Dictionary of options need to be set for restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict             -- JSON request to pass to the API</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rest_json</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PostgreSQLInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restore_option&quot;</span><span class="p">):</span>
+            <span class="n">restore_option</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;restore_option&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;restore_option&quot;</span><span class="p">:</span>
+                    <span class="n">restore_option</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">restore_option</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_postgres_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;postgresRstOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span>
+        <span class="k">return</span> <span class="n">rest_json</span>
+
+    <span class="k">def</span> <span class="nf">_restore_common_options_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for  the Common options of in restore JSON&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PostgreSQLInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_restore_common_options_json</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;baseline_jobid&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commonoption_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;clusterDBBackedup&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;restoreToDisk&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;baselineBackup&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;baselineRefTime&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;baseline_ref_time&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;baselineJobId&quot;</span><span class="p">:</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;baseline_jobid&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;copyToObjectStore&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;onePassRestore&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;syncRestore&quot;</span><span class="p">:</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sync_restore&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_restore_destination_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for the Destination options in restore JSON</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  Dictionary of options need to be set for restore</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_client_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_instance_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest_client_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_restore_postgres_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for the restore option in restore JSON</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  Dictionary of options need to be set for restore</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postgres_restore_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;restoreToSameServer&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;tableLevelRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;table_level_restore&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;instanceRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;fsBackupSetRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;backupset_flag&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;isCloneRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clone_env&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;refTime&quot;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clone_env&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span><span class="p">[</span><span class="s2">&quot;cloneOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clone_options&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">):</span>
+            <span class="n">time_value</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;timevalue&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span><span class="p">[</span><span class="s2">&quot;refTime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span><span class="p">[</span><span class="s2">&quot;fromTime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span><span class="p">[</span><span class="s2">&quot;pointOfTime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_value</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;table_level_restore&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span><span class="p">[</span><span class="s2">&quot;stagingPath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;staging_path&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span><span class="p">[</span><span class="s2">&quot;auxilaryMap&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">database_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">table_path</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;paths&quot;</span><span class="p">):</span>
+                <span class="n">database_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">table_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">database_list</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">database_list</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">database_name</span> <span class="ow">in</span> <span class="n">database_list</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">postgres_restore_json</span><span class="p">[</span><span class="s2">&quot;auxilaryMap&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;sourceDB&quot;</span><span class="p">:</span> <span class="n">database_name</span><span class="p">})</span>
+
+<div class="viewcode-block" id="PostgreSQLInstance.restore_in_place"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">path</span><span class="p">,</span>
+            <span class="n">dest_client_name</span><span class="p">,</span>
+            <span class="n">dest_instance_name</span><span class="p">,</span>
+            <span class="n">backupset_name</span><span class="p">,</span>
+            <span class="n">backupset_flag</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">from_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">clone_env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">clone_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">media_agent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">table_level_restore</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">staging_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the postgres data/log files specified in the input paths</span>
+<span class="sd">        list to the same location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                path                    (list)  --  list of database/databases to be restored</span>
+
+<span class="sd">                dest_client_name        (str)   --  destination client name where files are to be</span>
+<span class="sd">                restored</span>
+
+<span class="sd">                dest_instance_name      (str)   --  destination postgres instance name of</span>
+<span class="sd">                destination client</span>
+
+<span class="sd">                backupset_name          (str)   --  destination postgres backupset name of</span>
+<span class="sd">                destination client</span>
+
+<span class="sd">                backupset_flag          (bool)  --  flag to indicate fsbased backup</span>
+
+<span class="sd">                overwrite               (bool)  --  unconditional overwrite files during restore</span>
+<span class="sd">                    default: True</span>
+
+<span class="sd">                copy_precedence         (int)   --  copy precedence value of storage policy copy</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">                from_time               (str)   --  time to retore the contents after</span>
+<span class="sd">                    format: YYYY-MM-DD HH:MM:SS</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                to_time                 (str)   --  time to retore the contents before</span>
+<span class="sd">                    format: YYYY-MM-DD HH:MM:SS</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                clone_env               (bool)  --  boolean to specify whether the database</span>
+<span class="sd">                should be cloned or not</span>
+
+<span class="sd">                    default: False</span>
+
+<span class="sd">                clone_options           (dict)  --  clone restore options passed in a dict</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                    Accepted format: {</span>
+<span class="sd">                                        &quot;stagingLocaion&quot;: &quot;/gk_snap&quot;,</span>
+<span class="sd">                                        &quot;forceCleanup&quot;: True,</span>
+<span class="sd">                                        &quot;port&quot;: &quot;5595&quot;,</span>
+<span class="sd">                                        &quot;libDirectory&quot;: &quot;/opt/PostgreSQL/9.6/lib&quot;,</span>
+<span class="sd">                                        &quot;isInstanceSelected&quot;: True,</span>
+<span class="sd">                                        &quot;reservationPeriodS&quot;: 3600,</span>
+<span class="sd">                                        &quot;user&quot;: &quot;postgres&quot;,</span>
+<span class="sd">                                        &quot;binaryDirectory&quot;: &quot;/opt/PostgreSQL/9.6/bin&quot;</span>
+<span class="sd">                                     }</span>
+
+<span class="sd">                media_agent             (str)   --  media agent name</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                table_level_restore     (bool)  --  boolean to specify if the restore operation</span>
+<span class="sd">                is table level</span>
+
+<span class="sd">                    default: False</span>
+
+<span class="sd">                staging_path            (str)   --  staging path location for table level restore</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span>
+            <span class="n">paths</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">dest_client_name</span><span class="o">=</span><span class="n">dest_client_name</span><span class="p">,</span>
+            <span class="n">dest_instance_name</span><span class="o">=</span><span class="n">dest_instance_name</span><span class="p">,</span>
+            <span class="n">backupset_name</span><span class="o">=</span><span class="n">backupset_name</span><span class="p">,</span>
+            <span class="n">backupset_flag</span><span class="o">=</span><span class="n">backupset_flag</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
+            <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
+            <span class="n">clone_env</span><span class="o">=</span><span class="n">clone_env</span><span class="p">,</span>
+            <span class="n">clone_options</span><span class="o">=</span><span class="n">clone_options</span><span class="p">,</span>
+            <span class="n">media_agent</span><span class="o">=</span><span class="n">media_agent</span><span class="p">,</span>
+            <span class="n">table_level_restore</span><span class="o">=</span><span class="n">table_level_restore</span><span class="p">,</span>
+            <span class="n">staging_path</span><span class="o">=</span><span class="n">staging_path</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -267,8 +439,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

@@ -1,0 +1,194 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cvpysdk.instances.dbinstance &#8212; Developer SDK - Python 11.14 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for cvpysdk.instances.dbinstance</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a Database Server Instances</span>
+
+<span class="sd">DatabaseInstance is the only class defined in this file.</span>
+
+<span class="sd">DatabaseInstance: Derived class from Instance Base class, representing a Database server instance,</span>
+<span class="sd">                        and to perform operations on that instance</span>
+
+<span class="sd">DatabaseInstance:</span>
+
+<span class="sd">    __init__()                          --  initialise object of Database Instance associated with</span>
+<span class="sd">                                            the specified agent</span>
+
+<span class="sd">    _get_restore_to_disk_json()         --  Creates restore json for app free restore</span>
+
+<span class="sd">    _get_source_item_app_free()         --  Generates list of source items</span>
+<span class="sd">                                            based on job ids for app free restore</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
+
+
+<div class="viewcode-block" id="DatabaseInstance"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.dbinstance.DatabaseInstance">[docs]</a><span class="k">class</span> <span class="nc">DatabaseInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Instance Base class, representing database instance,</span>
+<span class="sd">        and to perform operations on that instance.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the object of Sybase Instance class</span>
+<span class="sd">            Args:</span>
+
+<span class="sd">                agent_object    (object) --  instance of the Agent class</span>
+
+<span class="sd">                instance_name   (str)    --  name of the instance</span>
+
+<span class="sd">                instance_id     (str)    --  id of the instance</span>
+<span class="sd">                                             default None</span>
+
+<span class="sd">            Returns :</span>
+<span class="sd">                object - instance of the Sybase Instance class</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DatabaseInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_restore_to_disk_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                  <span class="n">destination_client</span><span class="p">,</span>
+                                  <span class="n">destination_path</span><span class="p">,</span>
+                                  <span class="n">backup_job_ids</span><span class="p">,</span>
+                                  <span class="n">user_name</span><span class="p">,</span>
+                                  <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates restore json for app free restore</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                destination_client          (str)   --  destination client name</span>
+
+<span class="sd">                destination_path            (str)   --  destination path for</span>
+<span class="sd">                                                        application free restore</span>
+
+<span class="sd">                backup_job_ids              (list)  --  list of backup job IDs</span>
+<span class="sd">                                                        to be used for disk restore</span>
+
+<span class="sd">                user_name                   (str)   --  impersonation user name</span>
+<span class="sd">                                                        to restore to destination client</span>
+
+<span class="sd">                password                    (str)   --  impersonation user password</span>
+
+<span class="sd">            Returns:</span>
+
+<span class="sd">                dict  -    returns app free restore json</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">encoded_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">restore_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="n">destination_client</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">index_free_restore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">restore_to_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">impersonate_user</span><span class="o">=</span><span class="n">user_name</span><span class="p">,</span>
+            <span class="n">impersonate_password</span><span class="o">=</span><span class="n">encoded_password</span>
+        <span class="p">)</span>
+        <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;jobIds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">backup_job_ids</span>
+        <span class="n">restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;fileOption&quot;</span><span class="p">][</span><span class="s2">&quot;sourceItem&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_source_item_app_free</span><span class="p">(</span><span class="n">backup_job_ids</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">restore_json</span>
+
+    <span class="k">def</span> <span class="nf">_get_source_item_app_free</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_ids</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates list of source items based on job ids for app free restore</span>
+<span class="sd">            Args:</span>
+
+<span class="sd">                job_ids     (list)      --  list of job IDs for application free restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                    (list)              -- list of strings representing source item for file option</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">commcell_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_id</span>
+        <span class="n">source_items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">job_id</span> <span class="ow">in</span> <span class="n">job_ids</span><span class="p">:</span>
+            <span class="n">single_item</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">commcell_id</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span>
+            <span class="n">source_items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">single_item</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">source_items</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -150,11 +150,23 @@ Subclient operations are currently supported for the following Agents:
 
 #. Notes Database
 
+#. Domino Mailbox Archiver
+
+#. Notes Document
+
+#. Alibaba Cloud
+
+#. Oracle Cloud
+
+#. Oracle VM
+
 #. MySQL
 
 #. PostgreS
 
 #. Big Data Apps
+
+#. Download and Install
 
 
 Documentation
@@ -188,6 +200,7 @@ Pull Requests
         - SP11
         - SP12
         - SP13
+        - SP14
 
 - The contributor should *Fork* the **dev** branch, and make their changes on top of it, and open a *Pull Request*
 - The **master** branch will then be updated with the **dev** branch, once everything is verified

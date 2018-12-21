@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.alert &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.alert &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.alert</h1><div class="highlight"><pre>
@@ -61,10 +63,13 @@
 <span class="sd">    __getitem__()               --  returns the name of the alert for the given alert Id or the</span>
 <span class="sd">    details for the given alert name</span>
 
-<span class="sd">    _get_alert()                --  gets all the alerts associated with the commcell specified</span>
+<span class="sd">    _get_alerts()               --  gets all the alerts associated with the commcell specified</span>
 
-<span class="sd">    all_alerts()                --  returns the dict of all the alerts associated</span>
-<span class="sd">    with the commcell</span>
+<span class="sd">    _get_entities()             --  returns the list of associations for an alert</span>
+
+<span class="sd">    _get_alert_json()           --  returns the dict/json required to create an alert</span>
+
+<span class="sd">    create_alert(alert_name)    --  returns the instance of Alert class for created alert</span>
 
 <span class="sd">    has_alert(alert_name)       --  checks whether the alert exists or not</span>
 
@@ -75,6 +80,11 @@
 <span class="sd">    console_alerts()            --  returns the list of all console alerts</span>
 
 <span class="sd">    refresh()                   --   refresh the alerts associated with the commcell</span>
+
+<span class="sd">Alerts Attributes</span>
+<span class="sd">------------------</span>
+<span class="sd">    **all_alerts**              --  returns the dict of all the alerts associated</span>
+<span class="sd">    with the commcell and their information such as name, id and category</span>
 
 
 <span class="sd">Alert:</span>
@@ -92,6 +102,16 @@
 
 <span class="sd">    _get_alert_category()         --  return the category of the alert</span>
 
+<span class="sd">    _modify_alert_properties      --  modifies the alert properties</span>
+
+<span class="sd">    alert_name(name)              --  sets the alert name</span>
+
+<span class="sd">    alert_severity(severity)      --  sets the alert severity</span>
+
+<span class="sd">    notification_types(list)      --  sets the notifications types</span>
+
+<span class="sd">    entities(entities_dict)       --  sets the entities/associations</span>
+
 <span class="sd">    enable()                      --  enables the alert</span>
 
 <span class="sd">    disable()                     --  disables the alert</span>
@@ -102,13 +122,31 @@
 
 <span class="sd">    refresh()                     --  refresh the properties of the Alert</span>
 
+<span class="sd">Alert Attributes</span>
+<span class="sd">------------------</span>
+<span class="sd">    **alert_id**                --  returns the id of an alert</span>
+
+<span class="sd">    **alert_name**              --  gets the name of an alert</span>
+
+<span class="sd">    **alert_type**              --  returns the type of an alert</span>
+
+<span class="sd">    **alert_category**          --  returns the category of an alert</span>
+
+<span class="sd">    **alert_severity**          --  returns the severity of an alert</span>
+
+<span class="sd">    **alert_criteria**          --  returns the criteria of an alert</span>
+
+<span class="sd">    **notification_types**      --  returns the notification types of an alert</span>
+
+<span class="sd">    **description**             --  returns the description of an alert</span>
+
+<span class="sd">    **entities**                --  returns the list of entities associated with an alert</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-
+<span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="k">as</span> <span class="nn">ET</span>
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 
 
@@ -125,9 +163,23 @@
 <span class="sd">                object - instance of the Alerts class</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ALERTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_ALERTS&#39;</span><span class="p">]</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ALERTS</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_ALERTS&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notification_types</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;snmp&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s1">&#39;event viewer&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+            <span class="s1">&#39;save to disk&#39;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+            <span class="s1">&#39;rss feeds&#39;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+            <span class="s1">&#39;console alerts&#39;</span><span class="p">:</span> <span class="mi">8192</span><span class="p">,</span>
+            <span class="s1">&#39;scom&#39;</span><span class="p">:</span> <span class="mi">32768</span><span class="p">,</span>
+            <span class="s1">&#39;workflow&#39;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
+            <span class="s1">&#39;content indexing&#39;</span><span class="p">:</span> <span class="mi">131072</span>
+        <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -212,32 +264,230 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ALERTS</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ALERTS</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;alertList&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="n">alerts_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
                 <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;alertList&#39;</span><span class="p">]:</span>
-                    <span class="n">alert_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">temp_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
                     <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;alert&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                     <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;alert&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                     <span class="n">temp_description</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                     <span class="n">temp_category</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;alertCategory&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-                    <span class="n">alert_dict</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
-                    <span class="n">alert_dict</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_description</span>
-                    <span class="n">alert_dict</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_category</span>
+                    <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+                    <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_description</span>
+                    <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_category</span>
 
-                    <span class="n">alerts_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">alert_dict</span>
+                    <span class="n">alerts_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_dict</span>
+
+                    <span class="k">del</span> <span class="n">temp_dict</span>
 
                 <span class="k">return</span> <span class="n">alerts_dict</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_entities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of entities associations for an alert</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entities    (dict)  --  dictionary of entities for an alert</span>
+
+<span class="sd">        Raise:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if entities is not an instance of dictionary</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list  -  a list of associations for an alert</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entities</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1"># policies not handled as</span>
+
+        <span class="n">entity_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clients&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="s2">&quot;client_name&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;client_groups&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="s2">&quot;clientgroup_name&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;clientGroupId&quot;</span><span class="p">:</span> <span class="s2">&quot;clientgroup_id&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">28</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;users&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="s2">&quot;user_name&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;userId&quot;</span><span class="p">:</span> <span class="s2">&quot;user_id&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">13</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;user_groups&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span> <span class="s2">&quot;user_group_name&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;userGroupId&quot;</span><span class="p">:</span> <span class="s2">&quot;user_group_id&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">15</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;disk_libraries&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="s2">&quot;library_name&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;libraryId&quot;</span><span class="p">:</span> <span class="s2">&quot;library_id&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">9</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;media_agents&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;media_agent_name&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;mediaAgentId&quot;</span><span class="p">:</span> <span class="s2">&quot;media_agent_id&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">11</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">associations</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">entity</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">entities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">entity_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+
+            <span class="c1"># this will allows us to loop through even for single item</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">values</span>
+
+            <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                <span class="n">temp_dict</span> <span class="o">=</span> <span class="n">entity_dict</span><span class="p">[</span><span class="n">entity</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">entity_attr</span> <span class="ow">in</span> <span class="n">temp_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;_type_&quot;</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span> <span class="c1"># to convert the string values to int types</span>
+                            <span class="n">temp_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">entity_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">entity_attr</span><span class="p">))</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="n">temp_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">entity_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">entity_attr</span><span class="p">)</span>
+                <span class="n">associations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">associations</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_alert_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;To form the json required to create an alert</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alert_json    (dict)  --  a dictionary to create an alert</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict  -  a constructed dictionary needed to create an alert</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alert_detail</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;alertDetail&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;alertType&quot;</span><span class="p">:</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alert_type&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;notifType&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">n_type</span> <span class="k">for</span> <span class="n">n_type</span> <span class="ow">in</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;notif_type&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">8192</span><span class="p">])],</span>
+                <span class="s2">&quot;notifTypeListOperationType&quot;</span><span class="p">:</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;notifTypeListOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;alertSeverity&quot;</span><span class="p">:</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alertSeverity&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;EscnonGalaxyUserList&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;nonGalaxyUserOperationType&quot;</span><span class="p">:</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nonGalaxyUserOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;locale&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;localeID&quot;</span><span class="p">:</span><span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;localeID&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;EscUserList&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;userListOperationType&quot;</span><span class="p">:</span><span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userListOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;EscUserGroupList&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;userGroupListOperationType&quot;</span><span class="p">:</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userGroupListOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;alertrule&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;alertName&quot;</span><span class="p">:</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alert_name&quot;</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;criteria&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;criteria&quot;</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;userList&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;userListOperationType&quot;</span><span class="p">:</span><span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userListOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="s2">&quot;userList&quot;</span><span class="p">:[{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span><span class="n">user</span><span class="p">}</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;admin&quot;</span><span class="p">])]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;EntityList&quot;</span><span class="p">:{</span>
+                    <span class="s2">&quot;associationsOperationType&quot;</span><span class="p">:</span><span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;associationsOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_entities</span><span class="p">(</span><span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entities&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">()))</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_groups&quot;</span><span class="p">):</span>
+            <span class="n">alert_detail</span><span class="p">[</span><span class="s2">&quot;alertDetail&quot;</span><span class="p">][</span><span class="s2">&quot;userGroupList&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;userGroupListOperationType&quot;</span><span class="p">:</span><span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userGroupListOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;userGroupList&quot;</span><span class="p">:[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span><span class="n">user_grp</span>
+                    <span class="p">}</span> <span class="k">for</span> <span class="n">user_grp</span> <span class="ow">in</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_groups&quot;</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">alert_detail</span>
+
+
+<div class="viewcode-block" id="Alerts.create_alert"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alerts.create_alert">[docs]</a>    <span class="k">def</span> <span class="nf">create_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a new Alert for CommCell</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alert_dict    (dict)  --  dictionary required to create an alert</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object  -  instance of the Alert class for this new alert</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if input argument is not an instance of dict</span>
+
+<span class="sd">                if alert with given name already exists</span>
+
+<span class="sd">                if failed to create an alert</span>
+
+<span class="sd">                if response is not success</span>
+
+<span class="sd">                if response is empty</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alert_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="c1"># required alert json</span>
+        <span class="n">alert_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_alert_json</span><span class="p">(</span><span class="n">alert_dict</span><span class="p">)</span>
+        <span class="n">alert_name</span> <span class="o">=</span> <span class="n">alert_json</span><span class="p">[</span><span class="s2">&quot;alertDetail&quot;</span><span class="p">][</span><span class="s2">&quot;alertrule&quot;</span><span class="p">][</span><span class="s2">&quot;alertName&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_alert</span><span class="p">(</span><span class="n">alert_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Alert &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span>
+                               <span class="nb">format</span><span class="p">(</span><span class="n">alert_name</span><span class="p">))</span>
+
+        <span class="n">post_alert</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_ALERTS&#39;</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">post_alert</span><span class="p">,</span> <span class="n">alert_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_dict</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;errorResp&quot;</span><span class="p">]</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">error_dict</span><span class="p">[</span><span class="s2">&quot;errorCode&quot;</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alert_name</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">error_dict</span><span class="p">:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">error_dict</span><span class="p">[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                            <span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to create Alert</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">error_message</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                            <span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Failed to create Alert&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">all_alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -323,10 +573,10 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">page_number</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">page_count</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="n">console_alerts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_CONSOLE_ALERTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="n">console_alerts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_CONSOLE_ALERTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
             <span class="n">page_number</span><span class="p">,</span> <span class="n">page_count</span><span class="p">)</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">console_alerts</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">console_alerts</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;totalNoOfAlerts&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -350,7 +600,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alerts.delete"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alerts.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_name</span><span class="p">):</span>
@@ -369,39 +619,38 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alert_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">alert_name</span> <span class="o">=</span> <span class="n">alert_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">alert_name</span> <span class="o">=</span> <span class="n">alert_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_alert</span><span class="p">(</span><span class="n">alert_name</span><span class="p">):</span>
-                <span class="n">alert_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span><span class="p">[</span><span class="n">alert_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
-                <span class="n">alert</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">alert_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_alert</span><span class="p">(</span><span class="n">alert_name</span><span class="p">):</span>
+            <span class="n">alert_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span><span class="p">[</span><span class="n">alert_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+            <span class="n">alert</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">alert_id</span><span class="p">)</span>
 
-                <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-                    <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">alert</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">alert</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="c1"># initialize the alerts again</span>
+                            <span class="c1"># to refresh with the latest alerts</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">exception_message</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete alert</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">response_string</span>
                 <span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                        <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                                <span class="c1"># initialize the alerts again</span>
-                                <span class="c1"># to refresh with the latest alerts</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
-                            <span class="k">else</span><span class="p">:</span>
-                                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-                    <span class="n">exception_message</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete alert</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">response_string</span>
-                    <span class="p">)</span>
-
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">exception_message</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No alert exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_name</span><span class="p">)</span>
-                <span class="p">)</span></div>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">exception_message</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No alert exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alert_name</span><span class="p">)</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alerts.refresh"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alerts.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the alerts associated with the Commcell.&quot;&quot;&quot;</span>
@@ -428,7 +677,13 @@
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the ALert class</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alerts_obj</span> <span class="o">=</span> <span class="n">Alerts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alert_name</span> <span class="o">=</span> <span class="n">alert_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">alert_id</span><span class="p">:</span>
@@ -441,7 +696,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_alert_category</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_alert_category</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ALERT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ALERT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_all_notification_types</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="s1">&#39;snmp&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
@@ -454,16 +709,22 @@
             <span class="s1">&#39;content indexing&#39;</span><span class="p">:</span> <span class="mi">131072</span>
         <span class="p">}</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_criteria</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alert_severity</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alert_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alert_type_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_criteria</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_users_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_group_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notification_types</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
-        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Alert class instance for Alert: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, Notification Type: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
-        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alert_category</span><span class="p">)</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Alert class instance for Alert: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, Alert Type: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_type</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_alert_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the alert id associated with this alert.</span>
@@ -471,8 +732,7 @@
 <span class="sd">            Returns:</span>
 <span class="sd">                str - id associated with this alert</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">alerts</span> <span class="o">=</span> <span class="n">Alerts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">alerts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_name</span><span class="p">)</span><span class="o">.</span><span class="n">alert_id</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_name</span><span class="p">)</span><span class="o">.</span><span class="n">alert_id</span>
 
     <span class="k">def</span> <span class="nf">_get_alert_category</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the alert category associated with this alert.</span>
@@ -480,8 +740,7 @@
 <span class="sd">            Returns:</span>
 <span class="sd">                str - alert category name associated with this alert</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">alerts</span> <span class="o">=</span> <span class="n">Alerts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">alerts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_name</span><span class="p">)</span><span class="o">.</span><span class="n">alert_category</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_name</span><span class="p">)</span><span class="o">.</span><span class="n">alert_category</span>
 
     <span class="k">def</span> <span class="nf">_get_alert_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the alert properties of this alert.</span>
@@ -495,33 +754,25 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ALERT</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ALERT</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;alertDetail&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">alert_detail</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;alertDetail&#39;</span><span class="p">]</span>
 
+                <span class="k">if</span> <span class="s1">&#39;alertSeverity&#39;</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_alert_severity</span> <span class="o">=</span> <span class="n">alert_detail</span><span class="p">[</span><span class="s1">&#39;alertSeverity&#39;</span><span class="p">]</span>
+
                 <span class="k">if</span> <span class="s1">&#39;criteria&#39;</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">:</span>
-                    <span class="n">criteria</span> <span class="o">=</span> <span class="n">alert_detail</span><span class="p">[</span><span class="s1">&#39;criteria&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-
-                    <span class="n">criteria_value</span> <span class="o">=</span> <span class="kc">None</span>
-                    <span class="n">criteria_id</span> <span class="o">=</span> <span class="kc">None</span>
-                    <span class="n">escalation_level</span> <span class="o">=</span> <span class="kc">None</span>
-
-                    <span class="k">if</span> <span class="s1">&#39;value&#39;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
-                        <span class="n">criteria_value</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
-
-                    <span class="k">if</span> <span class="s1">&#39;criteriaId&#39;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
-                        <span class="n">criteria_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">criteria</span><span class="p">[</span><span class="s1">&#39;criteriaId&#39;</span><span class="p">])</span>
-
-                    <span class="k">if</span> <span class="s1">&#39;esclationLevel&#39;</span> <span class="ow">in</span> <span class="n">criteria</span><span class="p">:</span>
-                        <span class="n">escalation_level</span> <span class="o">=</span> <span class="n">criteria</span><span class="p">[</span><span class="s1">&#39;esclationLevel&#39;</span><span class="p">]</span>
-
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_criteria</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s1">&#39;criteria_value&#39;</span><span class="p">:</span> <span class="n">criteria_value</span><span class="p">,</span>
-                        <span class="s1">&#39;criteria_id&#39;</span><span class="p">:</span> <span class="n">criteria_id</span><span class="p">,</span>
-                        <span class="s1">&#39;esclation_level&#39;</span><span class="p">:</span> <span class="n">escalation_level</span>
-                    <span class="p">}</span>
+                    <span class="n">criterias</span> <span class="o">=</span> <span class="n">alert_detail</span><span class="p">[</span><span class="s1">&#39;criteria&#39;</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">criteria</span> <span class="ow">in</span> <span class="n">criterias</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_criteria</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                            <span class="s1">&#39;criteria_value&#39;</span><span class="p">:</span> <span class="n">criteria</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;value&#39;</span> <span class="ow">in</span> <span class="n">criteria</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                            <span class="s1">&#39;criteria_id&#39;</span><span class="p">:</span>
+                            <span class="nb">str</span><span class="p">(</span><span class="n">criteria</span><span class="p">[</span><span class="s1">&#39;criteriaId&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;criteriaId&#39;</span> <span class="ow">in</span> <span class="n">criteria</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                            <span class="s1">&#39;esclation_level&#39;</span><span class="p">:</span>
+                            <span class="n">criteria</span><span class="p">[</span><span class="s1">&#39;esclationLevel&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;esclationLevel&#39;</span> <span class="ow">in</span> <span class="n">criteria</span> <span class="k">else</span> <span class="kc">None</span>
+                        <span class="p">})</span>
 
                 <span class="k">if</span> <span class="s1">&#39;alert&#39;</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">:</span>
                     <span class="n">alert</span> <span class="o">=</span> <span class="n">alert_detail</span><span class="p">[</span><span class="s1">&#39;alert&#39;</span><span class="p">]</span>
@@ -531,16 +782,105 @@
 
                     <span class="k">if</span> <span class="s1">&#39;alertType&#39;</span> <span class="ow">in</span> <span class="n">alert</span> <span class="ow">and</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">alert</span><span class="p">[</span><span class="s1">&#39;alertType&#39;</span><span class="p">]:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_alert_type</span> <span class="o">=</span> <span class="n">alert</span><span class="p">[</span><span class="s1">&#39;alertType&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_alert_type_id</span> <span class="o">=</span> <span class="n">alert</span><span class="p">[</span><span class="s1">&#39;alertType&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="s1">&#39;xmlEntityList&#39;</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">:</span>
+                    <span class="n">entity_xml</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">alert_detail</span><span class="p">[</span><span class="s1">&#39;xmlEntityList&#39;</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">entity_xml</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;associations&quot;</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">entity</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;flags&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">entity</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;flags&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;exclude&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;1&quot;</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entity</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entity</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span>
+
+                <span class="c1"># to convert the ids to int type</span>
+                <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">entity</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="c1"># to change the ids to type int</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="k">pass</span>
+
+                <span class="k">if</span> <span class="s1">&#39;regularNotifications&#39;</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_notification_types</span> <span class="o">=</span> <span class="n">alert_detail</span><span class="p">[</span><span class="s2">&quot;regularNotifications&quot;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="s1">&#39;userList&#39;</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_users_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">user</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">[</span><span class="s1">&#39;userList&#39;</span><span class="p">]]</span>
+
+                <span class="k">if</span> <span class="s1">&#39;userGroupList&#39;</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_user_group_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">grp</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">alert_detail</span><span class="p">[</span><span class="s1">&#39;userGroupList&#39;</span><span class="p">]]</span>
+
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_modify_alert_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        modifies the properties of an alert</span>
+<span class="sd">        Exception:</span>
+<span class="sd">            if modification of the alert failed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;alertDetail&quot;</span><span class="p">:{</span>
+                <span class="s2">&quot;alertDetail&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;alertType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_type_id</span><span class="p">,</span> <span class="c1"># this should not be changed</span>
+                    <span class="s2">&quot;notifType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notification_types</span><span class="p">,</span>
+                    <span class="s2">&quot;alertSeverity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_severity</span><span class="p">,</span>
+                    <span class="s2">&quot;alertrule&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;alertName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_name</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_criteria</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;criteria_id&#39;</span><span class="p">])</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;userList&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;userList&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">user</span><span class="p">}</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_users_list</span><span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;EntityList&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">modify_alert</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;MODIFY_ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">modify_alert</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to update properties of Alert</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">alert_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the alert name as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_name</span>
+
+    <span class="nd">@alert_name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">alert_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Modifies the Alert name&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alert_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_alert_properties</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">alert_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -555,17 +895,76 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">alert_category</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the alert category type id as a read-only attribute. &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_category</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_category</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">alert_severity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the alert severity type id as a read-only attribute. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alert_severity</span>
+
+    <span class="nd">@alert_severity</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">alert_severity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">severity</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Modifies the Alert severity&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">severity</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alert_severity</span> <span class="o">=</span> <span class="n">severity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_alert_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">alert_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the alert criteria as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">criteria</span><span class="p">[</span><span class="s2">&quot;criteria_value&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">criteria</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_criteria</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">notification_types</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the alert notif types as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="n">notif_types</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">notif</span><span class="p">,</span> <span class="n">notif_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_notification_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">notif_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notification_types</span><span class="p">:</span>
+                <span class="n">notif_types</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">notif_id</span><span class="p">,</span> <span class="n">notif</span><span class="o">.</span><span class="n">title</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">notif_types</span>
+
+    <span class="nd">@notification_types</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">notification_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">notif_types</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the alert notif types as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">notif_types</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ntypes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_notification_types</span><span class="p">[</span><span class="n">ntype</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="k">for</span> <span class="n">ntype</span> <span class="ow">in</span> <span class="n">notif_types</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">notif_type</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Alert&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;No notification type with name </span><span class="si">{0}</span><span class="s1"> exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">notif_type</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notification_types</span> <span class="o">=</span> <span class="n">ntypes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_alert_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">entities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the alert associations as a read-only attribute. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span>
+
+    <span class="nd">@entities</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">entities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Modifies the Alert entities&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entities_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts_obj</span><span class="o">.</span><span class="n">_get_entities</span><span class="p">(</span><span class="n">entity_json</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_alert_properties</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the alert description as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_description</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the alert criteria as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_criteria</span>
+    <span class="nd">@description</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Modifies the Alert description&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_alert_properties</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Alert.enable_notification_type"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert.enable_notification_type">[docs]</a>    <span class="k">def</span> <span class="nf">enable_notification_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_notification_type</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enable the notification type.</span>
@@ -592,11 +991,11 @@
             <span class="n">alert_notification_type_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_notification_types</span><span class="p">[</span>
                 <span class="n">alert_notification_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
 
-            <span class="n">enable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ENABLE_ALERT_NOTIFICATION&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">enable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ENABLE_ALERT_NOTIFICATION&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">,</span> <span class="n">alert_notification_type_id</span>
             <span class="p">)</span>
 
-            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
                 <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">enable_request</span>
             <span class="p">)</span>
 
@@ -610,7 +1009,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -644,11 +1043,11 @@
             <span class="n">alert_notification_type_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_notification_types</span><span class="p">[</span>
                 <span class="n">alert_notification_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
 
-            <span class="n">disable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DISABLE_ALERT_NOTIFICATION&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">disable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DISABLE_ALERT_NOTIFICATION&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">,</span> <span class="n">alert_notification_type_id</span>
             <span class="p">)</span>
 
-            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
                 <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">disable_request</span>
             <span class="p">)</span>
 
@@ -662,7 +1061,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -682,9 +1081,9 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">enable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ENABLE_ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">)</span>
+        <span class="n">enable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ENABLE_ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">)</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">enable_request</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">enable_request</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -709,7 +1108,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alert.disable"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert.disable">[docs]</a>    <span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -723,9 +1122,9 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">disable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DISABLE_ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">)</span>
+        <span class="n">disable_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DISABLE_ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert_id</span><span class="p">)</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">disable_request</span>
         <span class="p">)</span>
 
@@ -752,7 +1151,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Alert.refresh"><a class="viewcode-back" href="../../alert.html#cvpysdk.alert.Alert.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -761,6 +1160,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -793,8 +1193,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

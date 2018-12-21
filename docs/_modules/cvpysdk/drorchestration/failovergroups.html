@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.drorchestration.failovergroups &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.drorchestration.failovergroups &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.drorchestration.failovergroups</h1><div class="highlight"><pre>
@@ -87,10 +89,6 @@
 <span class="sd">    _set_failover_machines(</span>
 <span class="sd">                failover_group_options)         -- Sets failover machines in the failover group</span>
 <span class="sd">                                                    options dict</span>
-
-
-<span class="sd">    _prepare_clients_for_failover_group(</span>
-<span class="sd">        failover_group_options)                 -- Prepare clients while failover group creation</span>
 
 <span class="sd">    _prepare_add_failover_group_json(</span>
 <span class="sd">                failover_group_options)         -- Constructs failover group json to create</span>
@@ -448,7 +446,12 @@
             <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;No virtualization clients setup on this Commcell&#39;</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;FailoverGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
 
-        <span class="n">v_client</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">virtualization_clients</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># get the first source virtualization client if not supplied in input test case</span>
+        <span class="k">if</span> <span class="s1">&#39;VirtualizationClient&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="p">:</span>
+            <span class="n">v_client</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">virtualization_clients</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">v_client</span> <span class="o">=</span> <span class="n">virtualization_clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">failover_group_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VirtualizationClient&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hostName&quot;</span><span class="p">)</span>
 
         <span class="n">failover_group_options</span><span class="p">[</span><span class="s2">&quot;VirtualizationClient&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">v_client</span><span class="p">,</span>
@@ -629,50 +632,6 @@
 
         <span class="k">return</span> <span class="n">failover_group_json</span>
 
-    <span class="k">def</span> <span class="nf">_prepare_clients_for_failover_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">failover_group_options</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Prepare clients for constructing failover group json</span>
-<span class="sd">        while creating new failover group</span>
-
-<span class="sd">        Args: input dict of failover group options</span>
-<span class="sd">                failover_group_options (json) -- failover group options for creating group</span>
-<span class="sd">                {</span>
-<span class="sd">                    &quot;failoverGroupName&quot;: &quot;FailoverAutomation-vApp&quot;,</span>
-<span class="sd">                    &quot;failoverGroupVMs&quot;: &quot;DRautoVM1, DRautoVM2&quot;,</span>
-<span class="sd">                    &quot;VirtualizationClient&quot;: &quot;vsa-vc6.testlab.commvault.com&quot;,</span>
-<span class="sd">                    &quot;approvalRequired&quot;: false,</span>
-<span class="sd">                    &quot;initiatedFromMonitor&quot;: false</span>
-<span class="sd">                }</span>
-
-<span class="sd">        Returns:</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            SDKException:</span>
-<span class="sd">                if proper inputs are not provided</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">failover_group_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;FailoverGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;machines&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;FailoverGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-
-        <span class="n">machines</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="s1">&#39;failoverGroupVMs&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="p">:</span>
-            <span class="c1"># get first VM</span>
-            <span class="n">machines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">failover_group_options</span><span class="p">[</span><span class="s2">&quot;machines&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-
-        <span class="k">else</span><span class="p">:</span>
-
-            <span class="c1"># iterarte over input VMs</span>
-            <span class="k">for</span> <span class="n">vm</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                    <span class="s2">&quot;failoverGroupVMs&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">):</span>
-
-                <span class="n">vm</span> <span class="o">=</span> <span class="n">vm</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-                <span class="c1"># iterate over all machines</span>
-                <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="p">[</span><span class="s2">&quot;machines&quot;</span><span class="p">]:</span>
-                    <span class="k">if</span> <span class="n">vm</span> <span class="o">==</span> <span class="n">machine</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]:</span>
-                        <span class="n">machines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">machine</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">machines</span>
 
     <span class="k">def</span> <span class="nf">_prepare_client_list_for_failover_group_json</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">failover_group_options</span><span class="p">):</span>
@@ -704,11 +663,8 @@
 
         <span class="n">clients</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">machines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_clients_for_failover_group</span><span class="p">(</span>
-            <span class="n">failover_group_options</span><span class="p">)</span>
-
         <span class="c1"># iterate over all machines</span>
-        <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="n">machines</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;machines&quot;</span><span class="p">):</span>
             <span class="n">client</span> <span class="o">=</span> <span class="p">{}</span>
 
             <span class="n">client</span><span class="p">[</span><span class="s2">&quot;GUID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">machine</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;GUID&#39;</span><span class="p">]</span>
@@ -749,12 +705,9 @@
         <span class="k">if</span> <span class="s1">&#39;machines&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;FailoverGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="n">machines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_clients_for_failover_group</span><span class="p">(</span>
-            <span class="n">failover_group_options</span><span class="p">)</span>
-
         <span class="n">vm_sequences</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="n">machines</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">machine</span> <span class="ow">in</span> <span class="n">failover_group_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;machines&quot;</span><span class="p">):</span>
             <span class="n">vm_sequence</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">vm_sequence</span><span class="p">[</span><span class="s2">&quot;copyPrecedence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">vm_sequence</span><span class="p">[</span><span class="s2">&quot;replicationId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">machine</span><span class="p">[</span><span class="s1">&#39;replicationId&#39;</span><span class="p">]</span>
@@ -1053,6 +1006,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -1085,8 +1039,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

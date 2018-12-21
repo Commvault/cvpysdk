@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.instances.hanainstance &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.instances.hanainstance &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.instances.hanainstance</h1><div class="highlight"><pre>
@@ -48,18 +50,22 @@
 
 <span class="sd">SAPHANAInstance:</span>
 
+<span class="sd">    sps_version()                   --  returns the SPS version of the instance</span>
+
+<span class="sd">    instance_number()               --  returns the instance number of SAP HANA</span>
+
+<span class="sd">    sql_location_directory()        --  returns the SQL location directory of the Instance</span>
+
+<span class="sd">    instance_db_username()          --  returns the db username of the instance</span>
+
+<span class="sd">    db_instance_client()            --  returns the SAP HANA client associated with the instance</span>
+
+<span class="sd">    hdb_user_storekey()             --  returns the HDB user store key if its set</span>
+
 <span class="sd">    _restore_request_json()         --  returns the restore request json</span>
 
 <span class="sd">    _get_hana_restore_options()     --  returns the dict containing destination SAP HANA instance</span>
 <span class="sd">                                            names for the given client</span>
-
-<span class="sd">    _process_restore_response()     --  processes response received for the Restore request</span>
-
-<span class="sd">    _run_backup()                   --  runs full backup for this subclients and appends the</span>
-<span class="sd">                                            job object to the return list</span>
-
-<span class="sd">    backup()                        --  runs full backup for all subclients associated</span>
-<span class="sd">                                            with this instance</span>
 
 <span class="sd">    restore()                       --  runs the restore job for specified instance</span>
 
@@ -68,19 +74,91 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">threading</span>
 
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
 
 <span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
 <span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
 
 
 <div class="viewcode-block" id="SAPHANAInstance"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.hanainstance.SAPHANAInstance">[docs]</a><span class="k">class</span> <span class="nc">SAPHANAInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Derived class from Instance Base class, representing a SAP HANA instance,</span>
 <span class="sd">        and to perform operations on that Instance.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the subclient object</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            agent_object    (object):       instance of the agent class</span>
+
+<span class="sd">            instance_name   (basestring):   name of the instance</span>
+
+<span class="sd">            instance_id     (int):          ID of the instance</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SAPHANAInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sps_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the sps version of the HANA instance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            sps version</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;saphanaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;spsVersion&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">instance_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the instance number of the HANA instance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            instance number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;saphanaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;dbInstanceNumber&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sql_location_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the isql location directory of the HANA instance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SQL location directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;saphanaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;hdbsqlLocationDirectory&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">instance_db_username</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the username of the HANA instance database</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            instance db username</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;saphanaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;dbUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">db_instance_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the client name of the HANA instance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            db instance client name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;saphanaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;DBInstances&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hdb_user_storekey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the hdb user store key of the HANA instance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            hdb user store key</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;saphanaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;hdbuserstorekey&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_restore_request_json</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -165,14 +243,16 @@
             <span class="n">databases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">point_in_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">recover_time</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">point_in_time</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">point_in_time</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="mi">103</span><span class="p">)</span>
 
             <span class="n">point_in_time</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;timeValue&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">point_in_time</span><span class="p">)</span>
+                <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">point_in_time</span><span class="p">)</span>
             <span class="p">}</span>
+            <span class="n">recover_time</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -205,6 +285,7 @@
                                 <span class="s2">&quot;ignoreDeltaBackups&quot;</span><span class="p">:</span> <span class="n">ignore_delta_backups</span><span class="p">,</span>
                                 <span class="s2">&quot;destClientName&quot;</span><span class="p">:</span> <span class="n">destination_hana_client</span><span class="p">,</span>
                                 <span class="s2">&quot;databases&quot;</span><span class="p">:</span> <span class="n">databases</span><span class="p">,</span>
+                                <span class="s2">&quot;recoverTime&quot;</span><span class="p">:</span> <span class="n">recover_time</span><span class="p">,</span>
                                 <span class="s2">&quot;pointInTime&quot;</span><span class="p">:</span> <span class="n">point_in_time</span>
                             <span class="p">},</span>
                             <span class="s2">&quot;destination&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -297,8 +378,6 @@
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">webservice</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">destination_instances_dict</span> <span class="o">=</span> <span class="p">{}</span>
-
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s1">&#39;instanceProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -323,90 +402,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_process_restore_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Runs the CreateTask API with the request JSON provided for Restore,</span>
-<span class="sd">            and returns the contents after parsing the response.</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                request_json    (dict)  --  JSON request to run for the API</span>
-
-<span class="sd">            Returns:</span>
-<span class="sd">                object  -   instance of the Job class for this restore job</span>
-
-<span class="sd">            Raises:</span>
-<span class="sd">                SDKException:</span>
-<span class="sd">                    if restore job failed</span>
-
-<span class="sd">                    if response is empty</span>
-
-<span class="sd">                    if response is not success</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span> <span class="n">request_json</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
-                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Restore job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to run the restore job&#39;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_run_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">return_list</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Triggers FULL backup job for the given subclient, and appends its Job object to list</span>
-<span class="sd">            The SDKExcpetion class instance is appended to the list,</span>
-<span class="sd">            if any exception is raised while running the backup job for the Subclient.</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                subclient_name  (str)   --  name of the subclient to trigger the backup for</span>
-
-<span class="sd">                return_list     (list)  --  list to append the job object to</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="s1">&#39;Full&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">job</span><span class="p">:</span>
-                <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">SDKException</span> <span class="k">as</span> <span class="n">excp</span><span class="p">:</span>
-            <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">excp</span><span class="p">)</span>
-
-<div class="viewcode-block" id="SAPHANAInstance.backup"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.hanainstance.SAPHANAInstance.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Run full backup job for all subclients in this instance.</span>
-
-<span class="sd">            Returns:</span>
-<span class="sd">                list    -   list containing the job objects for the full backup jobs started for</span>
-<span class="sd">                                the subclients in the backupset</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">return_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">thread_list</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="n">all_subclients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">_subclients</span>
-
-        <span class="k">if</span> <span class="n">all_subclients</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">subclient</span> <span class="ow">in</span> <span class="n">all_subclients</span><span class="p">:</span>
-                <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
-                    <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_backup</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">subclient</span><span class="p">,</span> <span class="n">return_list</span><span class="p">)</span>
-                <span class="p">)</span>
-                <span class="n">thread_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
-                <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
-        <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">thread_list</span><span class="p">:</span>
-            <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">return_list</span></div>
 
 <div class="viewcode-block" id="SAPHANAInstance.restore"><a class="viewcode-back" href="../../../instances/instances.html#cvpysdk.instances.hanainstance.SAPHANAInstance.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -496,6 +491,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -528,8 +524,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

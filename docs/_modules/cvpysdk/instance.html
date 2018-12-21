@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.instance &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.instance &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -28,10 +28,12 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.instance</h1><div class="highlight"><pre>
-<span></span><span class="c1"># FIXME : https://engweb.commvault.com/engtools/defect/215230</span>
+<span></span><span class="c1"># FIXME:https://engweb.commvault.com/engtools/defect/215230</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
 
 <span class="c1"># --------------------------------------------------------------------------</span>
@@ -200,7 +202,9 @@
         <span class="kn">from</span> <span class="nn">.instances.sybaseinstance</span> <span class="k">import</span> <span class="n">SybaseInstance</span>
         <span class="kn">from</span> <span class="nn">.instances.saporacleinstance</span> <span class="k">import</span> <span class="n">SAPOracleInstance</span>
         <span class="kn">from</span> <span class="nn">.instances.mysqlinstance</span> <span class="k">import</span> <span class="n">MYSQLInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.lndbinstance</span> <span class="k">import</span> <span class="n">LNDBInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndbinstance</span> <span class="k">import</span> <span class="n">LNDBInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndocinstance</span> <span class="k">import</span> <span class="n">LNDOCInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndminstance</span> <span class="k">import</span> <span class="n">LNDMInstance</span>
         <span class="kn">from</span> <span class="nn">.instances.postgresinstance</span> <span class="k">import</span> <span class="n">PostgreSQLInstance</span>
         <span class="kn">from</span> <span class="nn">.instances.informixinstance</span> <span class="k">import</span> <span class="n">InformixInstance</span>
 
@@ -216,6 +220,8 @@
             <span class="s1">&#39;sap for oracle&#39;</span><span class="p">:</span> <span class="n">SAPOracleInstance</span><span class="p">,</span>
             <span class="s1">&#39;mysql&#39;</span><span class="p">:</span> <span class="n">MYSQLInstance</span><span class="p">,</span>
             <span class="s1">&#39;notes database&#39;</span><span class="p">:</span> <span class="n">LNDBInstance</span><span class="p">,</span>
+            <span class="s1">&#39;notes document&#39;</span><span class="p">:</span> <span class="n">LNDOCInstance</span><span class="p">,</span>
+            <span class="s1">&#39;domino mailbox archiver&#39;</span><span class="p">:</span> <span class="n">LNDMInstance</span><span class="p">,</span>
             <span class="s1">&#39;postgresql&#39;</span><span class="p">:</span> <span class="n">PostgreSQLInstance</span><span class="p">,</span>
             <span class="s1">&#39;informix&#39;</span><span class="p">:</span> <span class="n">InformixInstance</span>
         <span class="p">}</span>
@@ -576,7 +582,6 @@
                 <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Instance exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance_name</span><span class="p">)</span>
             <span class="p">)</span></div>
 
-
 <div class="viewcode-block" id="Instances.add_sybase_instance"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instances.add_sybase_instance">[docs]</a>    <span class="k">def</span> <span class="nf">add_sybase_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sybase_options</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Method to Add new Sybase Instance to given Client</span>
@@ -694,7 +699,6 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Instances.add_big_data_apps_instance"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instances.add_big_data_apps_instance">[docs]</a>    <span class="k">def</span> <span class="nf">add_big_data_apps_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distributed_options</span><span class="p">):</span>
-
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Method to add big data apps instance to the given client.</span>
 
@@ -803,29 +807,29 @@
         <span class="sd">&quot;&quot;&quot; Method to add new S3 cloud apps instance to given client.</span>
 
 <span class="sd">        Args :</span>
-<span class="sd">        </span>
+
 <span class="sd">            instance_name            (str)         --     name of the instance to be added</span>
-<span class="sd">            </span>
+
 <span class="sd">            access_node              (str)         --     name of the backup client to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            storage_policy           (str)         --     name of the storage policy to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            accesskey                (str)         --     access key of the account to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            secretkey                (str)         --     secret key of the account to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            description              (str)         --     description of this instance</span>
-<span class="sd">            </span>
+
 <span class="sd">            number_of_streams        (int)         --     number of data backup streams</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns :</span>
-<span class="sd">        </span>
+
 <span class="sd">            None</span>
-<span class="sd">            </span>
+
 <span class="sd">        Raises:</span>
 <span class="sd">                SDKException:</span>
 
@@ -918,27 +922,27 @@
         <span class="sd">&quot;&quot;&quot; Method to add new Azure cloud apps instance to given client.</span>
 
 <span class="sd">        Args :</span>
-<span class="sd">        </span>
+
 <span class="sd">            instance_name            (str)         --     name of the instance to be added</span>
-<span class="sd">            </span>
+
 <span class="sd">            access_node              (str)         --     name of the backup client to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            storage_policy           (str)         --     name of the storage policy to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            accountname              (str)         --     name of the account to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            accesskey                (str)         --     access key of the account to be</span>
 <span class="sd">                associated with this instance</span>
 
 <span class="sd">            description              (str)         --     description of this instance</span>
-<span class="sd">            </span>
+
 <span class="sd">            number_of_streams        (int)         --     number of data backup streams</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns :</span>
-<span class="sd">        </span>
+
 <span class="sd">            None</span>
 
 <span class="sd">        Raises:</span>
@@ -1038,32 +1042,32 @@
         <span class="sd">&quot;&quot;&quot; Method to add new Oracle cloud apps instance to given client.</span>
 
 <span class="sd">        Args :</span>
-<span class="sd">        </span>
+
 <span class="sd">            instance_name            (str)         --     name of the instance to be added</span>
-<span class="sd">            </span>
+
 <span class="sd">            access_node              (str)         --     name of the backup client to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            storage_policy           (str)         --     name of the storage policy to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            endpointurl              (str)         --     endpoint url of the account to</span>
 <span class="sd">                be associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            username                 (str)         --     username of the account to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            password                 (str)         --     password of the account to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            description              (str)         --     description of this instance</span>
-<span class="sd">            </span>
+
 <span class="sd">            number_of_streams        (int)         --     number of data backup streams</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns :</span>
-<span class="sd">        </span>
+
 <span class="sd">            None</span>
-<span class="sd">            </span>
+
 <span class="sd">        Raises:</span>
 <span class="sd">                SDKException:</span>
 
@@ -1164,32 +1168,32 @@
         <span class="sd">&quot;&quot;&quot; Method to add new Openstack cloud apps instance to given client.</span>
 
 <span class="sd">        Args :</span>
-<span class="sd">        </span>
+
 <span class="sd">            instance_name            (str)         --     name of the instance to be added</span>
-<span class="sd">            </span>
+
 <span class="sd">            access_node              (str)         --     name of the backup client to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            storage_policy           (str)         --     name of the storage policy to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            server_name              (str)         --     auth url or server name of the</span>
 <span class="sd">                account to be associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            username                 (str)         --     username of the account to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            apikey                   (str)         --     API key of the account to be</span>
 <span class="sd">                associated with this instance</span>
-<span class="sd">                </span>
+
 <span class="sd">            description              (str)         --     description of this instance</span>
-<span class="sd">            </span>
+
 <span class="sd">            number_of_streams        (int)         --     number of data backup streams</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns :</span>
-<span class="sd">        </span>
+
 <span class="sd">            None</span>
-<span class="sd">            </span>
+
 <span class="sd">        Raises:</span>
 <span class="sd">                SDKException:</span>
 
@@ -1284,16 +1288,16 @@
 
 <span class="sd">        Args :</span>
 <span class="sd">            instance_name       (str)      --     name of the instance to be deleted</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns :</span>
 <span class="sd">            None</span>
-<span class="sd">            </span>
+
 <span class="sd">        Raises :</span>
 <span class="sd">            SDKException:</span>
 
 <span class="sd">                    if the specified instance doesn&#39;t exist</span>
 <span class="sd">                    if the agent type is other than cloud apps</span>
-<span class="sd">                    </span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_instance</span><span class="p">(</span><span class="n">instance_name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -1359,7 +1363,7 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No instance exists with name: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance_name</span><span class="p">)</span>
             <span class="p">)</span></div>
-    
+
 <div class="viewcode-block" id="Instances.refresh"><a class="viewcode-back" href="../../instance.html#cvpysdk.instance.Instances.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the instances associated with the Agent of the selected Client.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_instances</span><span class="p">()</span></div></div>
@@ -1431,7 +1435,13 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_INSTANCE</span><span class="p">)</span>
+        <span class="n">instance_service</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">?association/entity/clientId=</span><span class="si">{1}</span><span class="s2">&amp;association/entity/applicationId=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_INSTANCE</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">instance_service</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">&quot;instanceProperties&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -1687,6 +1697,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_destination_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_fileoption_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_volume_rst_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sync_restore_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1715,13 +1726,13 @@
                                                              <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;schedule_pattern&#39;</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="s2">&quot;multinode_restore&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">:</span>
-                    
+
             <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;destinationInstance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_instance&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span>
             <span class="p">}</span>
-            
+
             <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;noOfStreams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;no_of_streams&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-            
+
             <span class="bp">self</span><span class="o">.</span><span class="n">_distributed_restore_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;distributedRestore&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="s2">&quot;dataAccessNodes&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1734,18 +1745,29 @@
             <span class="p">}</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_qr_restore_option</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;destAppTypeId&quot;</span><span class="p">:</span>  <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_appTypeId&#39;</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+                <span class="s2">&quot;destAppTypeId&quot;</span><span class="p">:</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_appTypeId&#39;</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
             <span class="p">}</span>
-            
+
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;adminOpts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;contentIndexingOption&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;subClientBasedAnalytics&quot;</span><span class="p">:</span> <span class="kc">False</span>
                 <span class="p">}</span>
             <span class="p">}</span>
-            
+
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;destination&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;distributedAppsRestoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distributed_restore_json</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;qrOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qr_restore_option</span>
+
+        <span class="k">if</span> <span class="s2">&quot;sync_restore&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;syncOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sync_restore_json</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s2">&quot;includeMetaData&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;destination&quot;</span><span class="p">][</span><span class="s2">&quot;inPlace&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="s1">&#39;backup_level&#39;</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">:</span>
+            <span class="n">backup_opt_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backup_level&#39;</span><span class="p">,</span> <span class="s1">&#39;Incremental&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;backupOpts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">backup_opt_json</span>
 
         <span class="k">return</span> <span class="n">request_json</span>
 
@@ -1793,6 +1815,8 @@
 <span class="sd">                        all_versions        : if set to True restores all the versions of the</span>
 <span class="sd">                                                specified file</span>
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
+<span class="sd">                        validate_only       : To validate data backed up for restore</span>
+
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
@@ -1825,7 +1849,7 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
+            <span class="n">restore_option</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
@@ -1884,6 +1908,8 @@
 <span class="sd">                                                specified file</span>
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
 <span class="sd">                        media_agent         : Media Agent need to be used for Browse and restore</span>
+<span class="sd">                        validate_only       : To validate data backed up for restore</span>
+
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
@@ -2169,7 +2195,7 @@
         <span class="k">if</span> <span class="s2">&quot;browse_job_id&quot;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_browse_restore_json</span><span class="p">[</span><span class="s2">&quot;browseJobId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;browse_job_id&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_browse_restore_json</span><span class="p">[</span><span class="s2">&quot;browseJobCommCellId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">&quot;commcell_id&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_id</span> <span class="p">)</span>
+                <span class="s2">&quot;commcell_id&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_id</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_restore_common_options_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for  the Common options of in restore JSON&quot;&quot;&quot;</span>
@@ -2192,8 +2218,22 @@
             <span class="s2">&quot;stripLevelType&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;striplevel_type&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
             <span class="s2">&quot;allVersion&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;all_versions&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;unconditionalOverwrite&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-            <span class="s2">&quot;includeAgedData&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;include_aged_data&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="s2">&quot;includeAgedData&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;include_aged_data&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;validateOnly&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;validate_only&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="p">}</span>
+
+        <span class="n">_advance_fs_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;restoreDataInsteadOfStub&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;restoreOnlyStubExists&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;overwriteFiles&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;doNotOverwriteFileOnDisk&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;disableStubRestore&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;fs_options&quot;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">_fs_option_value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;fs_options&quot;</span><span class="p">]</span>
+            <span class="k">if</span>  <span class="n">_fs_option_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">_key</span> <span class="ow">in</span> <span class="n">_advance_fs_keys</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">_key</span> <span class="ow">in</span> <span class="n">_fs_option_value</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commonoption_restore_json</span><span class="p">[</span><span class="n">_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_fs_option_value</span><span class="p">[</span><span class="n">_key</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_restore_destination_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for  the destination restore option in restore JSON&quot;&quot;&quot;</span>
@@ -2225,6 +2265,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_volume_restore_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;volumeLeveRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;volume_level_restore&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;volumeLevelRestoreType&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;volume_level_restore_type&quot;</span><span class="p">,</span> <span class="s2">&quot;PHYSICAL_VOLUME&quot;</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_sync_restore_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for the Sync. Restore option in restore JSON&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sync_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;PreserveModifiedFiles&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;isMigration&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;isSyncRestore&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;paths&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sync_option_paths&quot;</span><span class="p">)</span>
         <span class="p">}</span>
 
     <span class="nd">@property</span>
@@ -2283,6 +2335,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -2315,8 +2368,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

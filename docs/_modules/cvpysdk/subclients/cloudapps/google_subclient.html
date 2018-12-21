@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclients.cloudapps.google_subclient &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.subclients.cloudapps.google_subclient &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.subclients.cloudapps.google_subclient</h1><div class="highlight"><pre>
@@ -39,7 +41,7 @@
 <span class="c1"># license information.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;File for operating on a GMail/GDrive Subclient.</span>
+<span class="sd">&quot;&quot;&quot;File for operating on a GMail/GDrive/OneDrive Subclient.</span>
 
 <span class="sd">GoogleSubclient is the only class defined in this file.</span>
 
@@ -52,7 +54,9 @@
 
 <span class="sd">    _get_subclient_properties_json()    --  gets the properties JSON of Google Subclient</span>
 
-<span class="sd">    content()                           --  update the content of the subclient</span>
+<span class="sd">    content()                           --  gets the content of the subclient</span>
+
+<span class="sd">    groups()                            --  gets the groups associated with the subclient</span>
 
 <span class="sd">    restore_out_of_place()              --  runs out-of-place restore for the subclient</span>
 
@@ -77,6 +81,24 @@
         <span class="k">if</span> <span class="s1">&#39;content&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
 
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">group_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">:</span>
+            <span class="n">temp_account</span> <span class="o">=</span> <span class="n">account</span><span class="p">[</span><span class="s2">&quot;cloudconnectorContent&quot;</span><span class="p">][</span><span class="s2">&quot;includeAccounts&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">temp_account</span><span class="p">[</span><span class="s1">&#39;contentType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">134</span><span class="p">:</span>
+                <span class="n">content_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;SMTPAddress&#39;</span><span class="p">:</span> <span class="n">temp_account</span><span class="p">[</span><span class="s2">&quot;contentName&quot;</span><span class="p">],</span>
+                    <span class="s1">&#39;display_name&#39;</span><span class="p">:</span> <span class="n">temp_account</span><span class="p">[</span><span class="s2">&quot;contentValue&quot;</span><span class="p">]</span>
+                <span class="p">}</span>
+
+                <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content_dict</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">temp_account</span><span class="p">[</span><span class="s1">&#39;contentType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">135</span><span class="p">:</span>
+                <span class="n">group_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_account</span><span class="p">[</span><span class="s2">&quot;contentName&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ca_content</span> <span class="o">=</span> <span class="n">content</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ca_groups</span> <span class="o">=</span> <span class="n">group_list</span>
+
     <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;get the all subclient related properties of this subclient.</span>
 
@@ -84,39 +106,26 @@
 <span class="sd">                dict - all subclient properties put inside a dict</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">subclient_json</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span>
-                <span class="p">{</span>
-                    <span class="s2">&quot;impersonateUser&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impersonateUser</span><span class="p">,</span>
-                    <span class="s2">&quot;proxyClient&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxyClient</span><span class="p">,</span>
-                    <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">,</span>
-                    <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
-                    <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
-                <span class="p">}</span>
-        <span class="p">}</span>
-        <span class="k">return</span> <span class="n">subclient_json</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">}</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Gets the appropriate content from the Subclient relevant to the user.</span>
+        <span class="sd">&quot;&quot;&quot;Returns the subclient content dict&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ca_content</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of groups assigned to the subclient if any.</span>
+<span class="sd">        Groups can be azure AD group or Google groups.</span>
+<span class="sd">        Groups are assigned only if auto discovery is enabled for groups.</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                list - list of content associated with the subclient</span>
+
+<span class="sd">                list - list of groups associated with the subclient</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">:</span>
-            <span class="n">temp_account</span> <span class="o">=</span> <span class="n">account</span><span class="p">[</span><span class="s2">&quot;cloudconnectorContent&quot;</span><span class="p">][</span><span class="s2">&quot;includeAccounts&quot;</span><span class="p">]</span>
-
-            <span class="n">content_dict</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;SMTPAddress&#39;</span><span class="p">:</span> <span class="n">temp_account</span><span class="p">[</span><span class="s2">&quot;contentName&quot;</span><span class="p">],</span>
-                <span class="s1">&#39;display_name&#39;</span><span class="p">:</span> <span class="n">temp_account</span><span class="p">[</span><span class="s2">&quot;contentValue&quot;</span><span class="p">]</span>
-            <span class="p">}</span>
-
-            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content_dict</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">content</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ca_groups</span>
 
     <span class="nd">@content</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_content</span><span class="p">):</span>
@@ -269,19 +278,57 @@
 
                 <span class="k">if</span> <span class="s2">&quot;contentInfo&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discover_properties</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_contentInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discover_properties</span><span class="p">[</span><span class="s2">&quot;contentInfo&quot;</span><span class="p">]</span>
-
-                <span class="n">user_list</span> <span class="o">=</span> <span class="p">[]</span>
-
-                <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_contentInfo</span><span class="p">:</span>
-                    <span class="n">user_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user</span><span class="p">[</span><span class="s1">&#39;contentName&#39;</span><span class="p">])</span>
-                <span class="k">return</span> <span class="n">user_list</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_contentInfo</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="GoogleSubclient.set_auto_discovery"><a class="viewcode-back" href="../../../../subclients/cloudapps/cloudapps.html#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.set_auto_discovery">[docs]</a>    <span class="k">def</span> <span class="nf">set_auto_discovery</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the auto discovery value for subclient.</span>
+<span class="sd">        You can either set a RegEx value or a user group,</span>
+<span class="sd">        depending on the auto discovery type selected at instance level.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                value   (list)  --  List of RegEx or user groups</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;116&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">auto_discovery_status</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;117&#39;</span><span class="p">)</span>
+
+        <span class="n">subclient_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;cloudAppsSubClientProp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">auto_discovery_mode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># RegEx based auto discovery is enabled on instance</span>
+
+            <span class="k">if</span> <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;instanceType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+                <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;oneDriveSubclient&#39;</span><span class="p">][</span><span class="s1">&#39;regularExp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;GoogleSubclient&#39;</span><span class="p">][</span><span class="s1">&#39;regularExp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]&quot;</span><span class="p">,</span> <span class="n">subclient_prop</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># User group based auto discovery is enabled on instance</span>
+            <span class="n">grp_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discover</span><span class="p">(</span><span class="n">discover_type</span><span class="o">=</span><span class="s1">&#39;GROUPS&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;contentName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">item</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                        <span class="n">grp_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                                <span class="s2">&quot;cloudconnectorContent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;includeAccounts&quot;</span><span class="p">:</span> <span class="n">group</span>
+                                <span class="p">}</span>
+                            <span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">grp_list</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;content&#39;]&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div></div>
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -314,8 +361,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

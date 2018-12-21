@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.schedules &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.schedules &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.schedules</h1><div class="highlight"><pre>
@@ -181,13 +183,13 @@
     <span class="sd">&quot;&quot;&quot;Class for getting the schedule pattern&quot;&quot;&quot;</span>
 
     <span class="n">_days_to_run</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;sunday&#39;</span><span class="p">,</span>
         <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;monday&#39;</span><span class="p">,</span>
         <span class="mi">4</span><span class="p">:</span> <span class="s1">&#39;tuesday&#39;</span><span class="p">,</span>
         <span class="mi">8</span><span class="p">:</span> <span class="s1">&#39;wednesday&#39;</span><span class="p">,</span>
         <span class="mi">16</span><span class="p">:</span> <span class="s1">&#39;thursday&#39;</span><span class="p">,</span>
         <span class="mi">32</span><span class="p">:</span> <span class="s1">&#39;friday&#39;</span><span class="p">,</span>
-        <span class="mi">64</span><span class="p">:</span> <span class="s1">&#39;saturday&#39;</span>
+        <span class="mi">64</span><span class="p">:</span> <span class="s1">&#39;saturday&#39;</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;sunday&#39;</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">_relative_weekday</span> <span class="o">=</span> <span class="p">{</span>
@@ -222,48 +224,53 @@
     <span class="k">def</span> <span class="nf">_time_converter</span><span class="p">(</span><span class="n">_time</span><span class="p">,</span> <span class="n">time_format</span><span class="p">,</span> <span class="n">utc_to_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        converts a time string to epoch time based on the time format provided</span>
-<span class="sd">        param :</span>
-<span class="sd">            _time: UTC time (str) or EPOCH time (int)</span>
-<span class="sd">            time_format      : format of the time you need process (str)</span>
+<span class="sd">        Args:</span>
 
-<span class="sd">        Exception:</span>
-<span class="sd">            if time format is wrong</span>
+<span class="sd">            _time  (str/int) -- UTC time or EPOCH time</span>
+<span class="sd">            time_format (str) -- format of the time you need process</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException if time format is wrong</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
 
             <span class="k">if</span> <span class="n">utc_to_epoch</span><span class="p">:</span>
                 <span class="n">date_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">_time</span><span class="p">,</span> <span class="n">time_format</span><span class="p">)</span>
-                <span class="k">return</span> <span class="nb">int</span><span class="p">((</span><span class="n">date_time</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">date_time</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">utc_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="n">_time</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">utc_time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">time_format</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                               <span class="s2">&quot;Incorrect data format, should be </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_format</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;Incorrect data format, should be </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_format</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_pattern_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_option_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        forms a pattern json and set the class variable</span>
-<span class="sd">        :param pattern_option_dict: dictionary with the parameters needed for</span>
+<span class="sd">        Args:</span>
+<span class="sd">             pattern_option_dict (dict) -- dictionary with the parameters needed for</span>
 <span class="sd">                                                            forming the corresponding pattern</span>
-<span class="sd">                                        {&#39;freq_type&#39;,</span>
-<span class="sd">                                        &#39;active_start_date&#39;,</span>
-<span class="sd">                                        &#39;active_start_time&#39;,</span>
-<span class="sd">                                        &#39;freq_recurrence_factor&#39;,</span>
-<span class="sd">                                        &#39;freq_interval&#39;}</span>
+<span class="sd">                                            {&#39;freq_type&#39;,</span>
+<span class="sd">                                            &#39;active_start_date&#39;,</span>
+<span class="sd">                                            &#39;active_start_time&#39;,</span>
+<span class="sd">                                            &#39;freq_recurrence_factor&#39;,</span>
+<span class="sd">                                            &#39;freq_interval&#39;}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;freq_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pattern_option_dict</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
                 <span class="n">pattern_option_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]):</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;active_start_date&#39;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
-                        <span class="n">pattern_option_dict</span><span class="p">[</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; 12:00&#39;</span><span class="p">,</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
-                        <span class="s1">&#39;1/1/1970 &#39;</span> <span class="o">+</span> <span class="n">pattern_option_dict</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">,</span> <span class="s1">&#39;active_end_date&#39;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                        <span class="n">pattern_option_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; 00:00&#39;</span><span class="p">,</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">,</span> <span class="s1">&#39;active_end_time&#39;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                        <span class="s1">&#39;1/1/1970 &#39;</span> <span class="o">+</span> <span class="n">pattern_option_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -275,9 +282,10 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">default_start_time</span> <span class="o">=</span> <span class="s1">&#39;09:00&#39;</span>
 
-            <span class="n">_active_start_date</span> <span class="o">=</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span>
-                <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y&#39;</span><span class="p">)))</span>
-            <span class="n">_active_start_time</span> <span class="o">=</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">,</span> <span class="n">default_start_time</span><span class="p">)</span>
+            <span class="n">_active_start_date</span> <span class="o">=</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;active_start_date&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y&#39;</span><span class="p">)))</span>
+            <span class="n">_active_start_time</span> <span class="o">=</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;active_start_time&#39;</span><span class="p">,</span> <span class="n">default_start_time</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;freq_type&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">],</span>
@@ -285,20 +293,66 @@
                     <span class="n">_active_start_date</span> <span class="o">+</span> <span class="s1">&#39; 00:00&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
-                    <span class="s1">&#39;1/1/1970 &#39;</span> <span class="o">+</span>
-                    <span class="n">_active_start_time</span><span class="p">,</span>
+                    <span class="s1">&#39;1/1/1970 &#39;</span> <span class="o">+</span> <span class="n">_active_start_time</span><span class="p">,</span>
                     <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-                <span class="s1">&#39;freq_interval&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-                <span class="s1">&#39;freq_relative_interval&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;freq_relative_interval&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-                <span class="s1">&#39;timeZone&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;TimeZoneName&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;time_zone&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)}</span>
-            <span class="p">}</span>
+                <span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">,</span>
+                    <span class="mi">0</span><span class="p">),</span>
+                <span class="s1">&#39;freq_interval&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s1">&#39;freq_interval&#39;</span><span class="p">,</span>
+                    <span class="mi">0</span><span class="p">),</span>
+                <span class="s1">&#39;freq_relative_interval&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s1">&#39;freq_relative_interval&#39;</span><span class="p">,</span>
+                    <span class="mi">0</span><span class="p">),</span>
+                <span class="s1">&#39;timeZone&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;TimeZoneName&#39;</span><span class="p">:</span> <span class="n">pattern_option_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;time_zone&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;&#39;</span><span class="p">)}}</span>
+
+            <span class="k">if</span> <span class="s2">&quot;active_end_date&quot;</span> <span class="ow">in</span> <span class="n">pattern_option_dict</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s2">&quot;active_end_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                    <span class="n">pattern_option_dict</span><span class="p">[</span><span class="s2">&quot;active_end_date&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; 00:00&#39;</span><span class="p">,</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;exception_dates&quot;</span> <span class="ow">in</span> <span class="n">pattern_option_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s2">&quot;repeatPattern&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;exception&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                               <span class="s2">&quot;onDayNumber&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception_dates</span><span class="p">(</span>
+                                                   <span class="n">pattern_option_dict</span><span class="p">[</span><span class="s2">&quot;exception_dates&quot;</span><span class="p">])}</span>
+                                              <span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;end_after&quot;</span> <span class="ow">in</span> <span class="n">pattern_option_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s2">&quot;active_end_occurence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pattern_option_dict</span><span class="p">[</span><span class="s2">&quot;end_after&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;repeat_every&quot;</span> <span class="ow">in</span> <span class="n">pattern_option_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_repeat_pattern</span><span class="p">(</span><span class="n">pattern_option_dict</span><span class="p">))</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_repeat_pattern</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forms repeat pattern json based on the pattern dict provided</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary containing repeat_every and repeat_end parameters</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                    &quot;repeat_every&quot;: &quot;08:00&quot;,</span>
+<span class="sd">                                    &quot;repeat_end&quot;: &quot;23:00&quot;</span>
+<span class="sd">                                    }</span>
+<span class="sd">        Returns:</span>
+<span class="sd">                Dict with subdayinterval and endtime information to plug into the pattern json</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_repeat_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+            <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;repeat_every&quot;</span><span class="p">,</span> <span class="s2">&quot;08:00&quot;</span><span class="p">),</span> <span class="s2">&quot;%H:%M&quot;</span><span class="p">)</span>
+        <span class="n">_freq_subday</span> <span class="o">=</span> <span class="p">(</span><span class="n">_repeat_time</span><span class="o">.</span><span class="n">hour</span> <span class="o">*</span> <span class="mi">3600</span> <span class="o">+</span> <span class="n">_repeat_time</span><span class="o">.</span><span class="n">minute</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;freq_subday_interval&#39;</span><span class="p">:</span> <span class="n">_freq_subday</span><span class="p">,</span>
+                <span class="s1">&#39;active_end_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                    <span class="s1">&#39;1/1/1970 &#39;</span> <span class="o">+</span> <span class="n">pattern_dict</span><span class="p">[</span><span class="s2">&quot;repeat_end&quot;</span><span class="p">],</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %H:%M&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">_one_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as one time with the parameters provided,</span>
 <span class="sd">        send only required keys to change only those values</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        Args:</span>
+<span class="sd">             pattern_dict (dict) -- Dictonary with the schedule pattern</span>
 <span class="sd">                {</span>
 <span class="sd">                                 &quot;active_start_date&quot;: date_in_%m/%d/%y (str),</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%h:%m (str)</span>
@@ -311,7 +365,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">                sets the pattern type as daily with the parameters provided</span>
 <span class="sd">                send only required keys to change only those values</span>
-<span class="sd">                :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">                Args:</span>
+<span class="sd">                     pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                  {</span>
 <span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                         &quot;repeat_days&quot;: days_to_repeat (int)</span>
@@ -324,15 +379,16 @@
         <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;repeat_days&#39;</span><span class="p">,</span> <span class="n">_repeat_days</span><span class="p">)</span>
 
         <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
-        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_freq_recurrence_factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>\
-            <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">_freq_recurrence_factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pattern_json</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_weekly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as weekly with the parameters provided</span>
 <span class="sd">        send only required keys to change only those values</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                         &quot;repeat_weeks&quot;: weeks_to_repeat (int)</span>
@@ -351,18 +407,22 @@
             <span class="k">if</span> <span class="s1">&#39;weekdays&#39;</span> <span class="ow">in</span> <span class="n">pattern_dict</span><span class="p">:</span>
                 <span class="n">_freq_interval_list</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;weekdays&#39;</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">weekday</span> <span class="ow">in</span> <span class="n">_freq_interval_list</span><span class="p">:</span>
-                    <span class="n">_freq_interval</span> <span class="o">+=</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_days_to_run</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-                    <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_days_to_run</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">weekday</span><span class="o">.</span><span class="n">lower</span><span class="p">())])</span>
+                    <span class="n">_freq_interval</span> <span class="o">+=</span> <span class="p">(</span>
+                        <span class="nb">list</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_days_to_run</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span>
+                            <span class="nb">list</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_days_to_run</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="o">.</span><span class="n">index</span><span class="p">(</span>
+                                <span class="n">weekday</span><span class="o">.</span><span class="n">lower</span><span class="p">())])</span>
             <span class="k">elif</span> <span class="n">_freq_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Weekdays need to be specified&#39;</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
 
-            <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;_repeat_weeks&#39;</span><span class="p">,</span> <span class="n">_repeat_weeks</span><span class="p">)</span>
+            <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;_repeat_weeks&#39;</span><span class="p">,</span> <span class="n">_repeat_weeks</span><span class="p">)</span>
 
             <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_freq_interval</span>
-            <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_freq_recurrence_factor</span><span class="p">,</span>
-                                                                         <span class="nb">int</span><span class="p">)</span> \
-                <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
+            <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">_freq_recurrence_factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_pattern_json</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
 
@@ -374,7 +434,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as monthly with the parameters provided</span>
 <span class="sd">        send only required keys to change only those values</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;repeat_months&quot;: months_to_repeat (int)</span>
@@ -387,13 +448,14 @@
             <span class="n">_repeat_months</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span>
             <span class="n">_on_day</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span>
 
-        <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;repeat_months&#39;</span><span class="p">,</span> <span class="n">_repeat_months</span><span class="p">)</span>
+        <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;repeat_months&#39;</span><span class="p">,</span> <span class="n">_repeat_months</span><span class="p">)</span>
         <span class="n">_freq_interval</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;on_day&#39;</span><span class="p">,</span> <span class="n">_on_day</span><span class="p">)</span>
 
         <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
             <span class="n">_freq_recurrence_factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
-        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_freq_interval</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> \
-            <span class="k">else</span> <span class="n">_freq_interval</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">_freq_interval</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">_freq_interval</span>
         <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">16</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pattern_json</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
 
@@ -401,7 +463,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as monthly_relative with the parameters provided</span>
 <span class="sd">        send only required keys to change only those values</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;relative_time&quot;: relative day of the schedule (str) &#39;first&#39;,</span>
@@ -437,7 +500,8 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">_relative_weekday</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="o">.</span><span class="n">index</span><span class="p">(</span>
                             <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;relative_weekday&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">())])</span>
 
-            <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;repeat_months&#39;</span><span class="p">,</span> <span class="n">_freq_recurrence_factor</span><span class="p">)</span>
+            <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;repeat_months&#39;</span><span class="p">,</span> <span class="n">_freq_recurrence_factor</span><span class="p">)</span>
 
             <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
                 <span class="n">_freq_recurrence_factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
@@ -456,7 +520,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as monthly with the parameters provided</span>
 <span class="sd">        send only required keys to change only those values</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;on_month&quot;: month to run schedule (str) January, Febuary...</span>
@@ -479,8 +544,8 @@
             <span class="n">_freq_interval</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;on_day&#39;</span><span class="p">,</span> <span class="n">_freq_interval</span><span class="p">)</span>
 
             <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_freq_recurrence_factor</span>
-            <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_freq_interval</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> \
-                <span class="k">else</span> <span class="n">_freq_interval</span>
+            <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">_freq_interval</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">_freq_interval</span>
             <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">64</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pattern_json</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
 
@@ -492,13 +557,14 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as monthly_relative with the parameters provided</span>
 <span class="sd">        send only required keys to change only those values</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;relative_time&quot;: relative day of the schedule (str) &#39;first&#39;,</span>
 <span class="sd">                                                                                        &#39;second&#39;,..</span>
 <span class="sd">                                 &quot;relative_weekday&quot;: Day to run schedule (str) &#39;sunday&#39;,&#39;monday&#39;...</span>
-<span class="sd">                                 &quot;on_month&quot;: month to run the schedule(str) January, Febuary...</span>
+<span class="sd">                                 &quot;on_month&quot;: month to run the schedule(str) January, February...</span>
 <span class="sd">                        }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="mi">1</span>
@@ -547,15 +613,16 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as one time with the parameters provided,</span>
 <span class="sd">        send only required keys to change only those values</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                {</span>
 <span class="sd">                                 job_interval: interval between jobs in mins(int)</span>
 <span class="sd">                }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">_freq_recurrence_factor</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_interval&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
-        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">30</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_freq_recurrence_factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> \
-            <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">30</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">_freq_recurrence_factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">_freq_recurrence_factor</span>
         <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4096</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pattern_json</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
 
@@ -563,7 +630,8 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">                sets the pattern type as one time with the parameters provided,</span>
 <span class="sd">                send only required keys to change only those values</span>
-<span class="sd">                :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">                Args:</span>
+<span class="sd">                     pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                         min_interval_hours: minimum hours between jobs(int)</span>
 <span class="sd">                                         min_interval_minutes: minimum minutes between jobs(int)</span>
@@ -678,17 +746,34 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">automatic_pattern</span>
 
+<div class="viewcode-block" id="SchedulePattern.exception_dates"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.SchedulePattern.exception_dates">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">exception_dates</span><span class="p">(</span><span class="n">day_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Provided a Scheduler version of exception as an on day number</span>
+<span class="sd">        Args:</span>
+<span class="sd">            day_list (list) -- List of exception dates [1,2,3]</span>
+
+<span class="sd">        Returns (int) -- on_day number for the pattern json</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">on_day</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">day_list</span><span class="p">:</span>
+            <span class="n">on_day</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">on_day</span></div>
+
 <div class="viewcode-block" id="SchedulePattern.create_schedule_pattern"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.SchedulePattern.create_schedule_pattern">[docs]</a>    <span class="k">def</span> <span class="nf">create_schedule_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        calls the required type of schedule module and forms the pattern json</span>
-<span class="sd">        :param pattern_dict:</span>
+<span class="sd">        Args:</span>
+<span class="sd">        pattern_dict (Dict) --</span>
 
 <span class="sd">        freq_type is mandatory, all other fields specified below can be skipped and system</span>
 <span class="sd">                                                                            defaults will be set</span>
 
 <span class="sd">        for reference on pattern_dict check create_schedule</span>
 
-<span class="sd">        :return: pattern which can be plugged into the create or modify task request to</span>
+<span class="sd">        Returns:</span>
+<span class="sd">             pattern which can be plugged into the create or modify task request to</span>
 <span class="sd">                                                                        create or modify schedules</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -697,7 +782,10 @@
                                <span class="s2">&quot;Frequency type is required to create pattern&quot;</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">())(</span><span class="n">pattern_dict</span><span class="p">)</span>
+            <span class="nb">getattr</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="s1">&#39;_&#39;</span> <span class="o">+</span>
+                <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">())(</span><span class="n">pattern_dict</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span>
 
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
@@ -707,7 +795,8 @@
 <div class="viewcode-block" id="SchedulePattern.create_schedule"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.SchedulePattern.create_schedule">[docs]</a>    <span class="k">def</span> <span class="nf">create_schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_req</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        returns a schedule task_req after including pattern</span>
-<span class="sd">        :param task_req: task_req for immediate job operation to be converted to a schedule</span>
+<span class="sd">        Args:</span>
+<span class="sd">        task_req: task_req for immediate job operation to be converted to a schedule</span>
 
 <span class="sd">        freq_type is mandatory, all other fields specified below can be skipped and system</span>
 <span class="sd">                                                                            defaults will be set</span>
@@ -796,8 +885,9 @@
 <span class="sd">        if schedule_pattern:</span>
 <span class="sd">            request_json = SchedulePattern().create_schedule(task_req,schedule_pattern)</span>
 
-<span class="sd">        :param pattern_dict: schedule pattern to be merged with the task request</span>
-<span class="sd">        :return: returns a schedule task request</span>
+<span class="sd">        pattern_dict (Dict) -- schedule pattern to be merged with the task request</span>
+<span class="sd">        Returns:</span>
+<span class="sd">             Schedule task request</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">_automatic_pattern</span> <span class="o">=</span> <span class="p">{}</span>
@@ -811,7 +901,8 @@
         <span class="n">_task_info</span> <span class="o">=</span> <span class="n">task_req</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">]</span>
         <span class="n">_task_info</span><span class="p">[</span><span class="s2">&quot;task&quot;</span><span class="p">][</span><span class="s2">&quot;taskType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="k">for</span> <span class="n">subtask</span> <span class="ow">in</span> <span class="n">_task_info</span><span class="p">[</span><span class="s1">&#39;subTasks&#39;</span><span class="p">]:</span>
-            <span class="n">subtask</span><span class="p">[</span><span class="s2">&quot;subTask&quot;</span><span class="p">][</span><span class="s1">&#39;subTaskName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;schedule_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">subtask</span><span class="p">[</span><span class="s2">&quot;subTask&quot;</span><span class="p">][</span><span class="s1">&#39;subTaskName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pattern_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;schedule_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
             <span class="n">subtask</span><span class="p">[</span><span class="s2">&quot;pattern&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pattern</span>
             <span class="k">if</span> <span class="n">pattern_dict</span><span class="p">[</span><span class="s2">&quot;freq_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;automatic&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="s1">&#39;options&#39;</span> <span class="ow">in</span> <span class="n">subtask</span><span class="p">:</span>
@@ -823,11 +914,9 @@
                             <span class="p">{</span><span class="s2">&quot;automaticSchedulePattern&quot;</span><span class="p">:</span> <span class="n">_automatic_pattern</span><span class="p">}</span>
 
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;commonOpts&#39;</span><span class="p">:</span>
-                        <span class="p">{</span>
-                            <span class="s1">&#39;automaticSchedulePattern&#39;</span><span class="p">:</span> <span class="n">_automatic_pattern</span>
-                        <span class="p">}</span>
-                    <span class="p">}</span>
+                    <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;commonOpts&#39;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s1">&#39;automaticSchedulePattern&#39;</span><span class="p">:</span> <span class="n">_automatic_pattern</span><span class="p">}}</span>
 
         <span class="n">task_req</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_task_info</span>
         <span class="k">return</span> <span class="n">task_req</span></div></div>
@@ -866,28 +955,29 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">class_object</span>
             <span class="k">if</span> <span class="n">operation_type</span> <span class="o">==</span> <span class="n">OperationType</span><span class="o">.</span><span class="n">REPORTS</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;REPORT_SCHEDULES&#39;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Reports in Commcell: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Reports in Commcell: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">class_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">operation_type</span> <span class="o">==</span> <span class="n">OperationType</span><span class="o">.</span><span class="n">DATA_AGING</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;OPTYPE_SCHEDULES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">operation_type</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Dataging in Commcell: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;OPTYPE_SCHEDULES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">operation_type</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Dataging in Commcell: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">class_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="n">operation_type</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;COMMCELL_SCHEDULES&#39;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Schedules in Commcell: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Schedules in Commcell: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">class_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLIENT_SCHEDULES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">class_object</span><span class="o">.</span><span class="n">client_id</span>
-            <span class="p">)</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Client: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Agent</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;AGENT_SCHEDULES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">class_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span>
-                <span class="n">class_object</span><span class="o">.</span><span class="n">agent_id</span>
-            <span class="p">)</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="n">class_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Agent: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span>
 
@@ -897,7 +987,8 @@
                 <span class="n">class_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">,</span>
                 <span class="n">class_object</span><span class="o">.</span><span class="n">backupset_id</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Backupset: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Backupset: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Subclient</span><span class="p">):</span>
@@ -907,7 +998,8 @@
                 <span class="n">class_object</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">,</span>
                 <span class="n">class_object</span><span class="o">.</span><span class="n">subclient_id</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Subclient: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">subclient_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Subclient: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">subclient_name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
@@ -974,9 +1066,11 @@
                         <span class="k">for</span> <span class="n">subtask</span> <span class="ow">in</span> <span class="n">schedule</span><span class="p">[</span><span class="s1">&#39;subTasks&#39;</span><span class="p">]:</span>
                             <span class="n">schedule_id</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;subTask&#39;</span><span class="p">][</span><span class="s1">&#39;subTaskId&#39;</span><span class="p">]</span>
                             <span class="k">if</span> <span class="s1">&#39;description&#39;</span> <span class="ow">in</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;subTask&#39;</span><span class="p">]:</span>
-                                <span class="n">description</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                                <span class="n">description</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                                <span class="p">)</span>
                             <span class="k">if</span> <span class="s1">&#39;subTaskName&#39;</span> <span class="ow">in</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;subTask&#39;</span><span class="p">]:</span>
-                                <span class="n">subtask_name</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;subTask&#39;</span><span class="p">][</span><span class="s1">&#39;subTaskName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                                <span class="n">subtask_name</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;subTask&#39;</span><span class="p">][</span><span class="s1">&#39;subTaskName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                                <span class="p">)</span>
                             <span class="k">elif</span> <span class="n">description</span><span class="p">:</span>
                                 <span class="n">subtask_name</span> <span class="o">=</span> <span class="n">description</span>
                             <span class="k">else</span><span class="p">:</span>
@@ -1010,23 +1104,27 @@
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if type of the schedule name argument is not string</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">schedule_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">schedule_id</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
+                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">schedule_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">schedule_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_id</span><span class="p">,</span><span class="nb">int</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">schedule_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">schedule_id</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="ow">and</span> <span class="n">schedule_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">subtask_name</span><span class="p">,</span><span class="n">subtask_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">subtask_name</span><span class="p">,</span> <span class="n">subtask_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">subtask_dict</span><span class="p">[</span><span class="s1">&#39;task_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">schedule_id</span><span class="p">:</span>
                     <span class="k">return</span> <span class="kc">True</span>
             <span class="k">return</span> <span class="kc">False</span></div>
+
 
 <div class="viewcode-block" id="Schedules.get"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.Schedules.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schedule_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">schedule_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a schedule object of the specified schedule name.</span>
@@ -1044,9 +1142,12 @@
 
 <span class="sd">                    if no schedule exists with the given name</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">schedule_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">schedule_id</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
+                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">schedule_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
@@ -1065,7 +1166,9 @@
                 <span class="p">)</span>
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Schedule exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">schedule_name</span><span class="p">))</span></div>
+                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;No Schedule exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">schedule_name</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Schedules.delete"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.Schedules.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schedule_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">schedule_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;deletes the specified schedule name.</span>
@@ -1079,11 +1182,14 @@
 <span class="sd">                            if type of the schedule name argument is not string</span>
 <span class="sd">                            if no schedule exists with the given name</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">schedule_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">schedule_id</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
+                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">schedule_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_id</span><span class="p">,</span><span class="nb">int</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">schedule_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">schedule_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
@@ -1111,8 +1217,7 @@
                 <span class="n">modify_schedule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">]</span>
 
                 <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-                    <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">modify_schedule</span><span class="p">,</span> <span class="n">request_json</span>
-                <span class="p">)</span>
+                    <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">modify_schedule</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -1128,8 +1233,7 @@
                     <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
                         <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
                     <span class="n">exception_message</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete schedule</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">response_string</span>
-                    <span class="p">)</span>
+                        <span class="n">response_string</span><span class="p">)</span>
 
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">exception_message</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1146,13 +1250,12 @@
 <div class="viewcode-block" id="Schedule"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.Schedule">[docs]</a><span class="k">class</span> <span class="nc">Schedule</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing operations for a specific Schedule.&quot;&quot;&quot;</span>
 
-
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">,</span> <span class="n">schedule_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">schedule_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="sd">&quot;&quot;&quot;Initialise the Schedule class instance.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                commcell_object (object)     --  instance of CommCell Object</span>
+<span class="sd">                class_object (object)     --  instance of Class Object</span>
 
 <span class="sd">                schedule_name      (str)     --  name of the Schedule</span>
 
@@ -1175,7 +1278,9 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">schedule_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">schedule_id</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
+                <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Either Schedule Name or Schedule Id is needed&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">schedule_name</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">schedule_name</span> <span class="o">=</span> <span class="n">schedule_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
@@ -1237,7 +1342,7 @@
     <span class="k">def</span> <span class="nf">_get_subtask_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Gets the subtask id for the schedule</span>
-<span class="sd">        :return: Subtask id (int)</span>
+<span class="sd">        Returns (int) -- Subtask id</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_task_option</span><span class="p">[</span><span class="s1">&#39;subTaskId&#39;</span><span class="p">]</span>
 
@@ -1245,15 +1350,14 @@
     <span class="k">def</span> <span class="nf">subtask_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Property which returns subtask id of the schedule</span>
-<span class="sd">        :return: Subtask id (int)</span>
+<span class="sd">        Returns (int) -- Subtask id</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subtask_id</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_get_schedule_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Gets a schedule ID dict for the schedule</span>
-<span class="sd">        :return:</span>
-<span class="sd">            int - schedule ID</span>
+<span class="sd">        Returns (int) -- schedule ID</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_object</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">schedules</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_name</span><span class="p">)</span><span class="o">.</span><span class="n">schedule_id</span>
@@ -1270,7 +1374,8 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULE</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULE</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;taskInfo&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -1299,8 +1404,8 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_task_options</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span>
                         <span class="k">if</span> <span class="s1">&#39;commonOpts&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_options</span><span class="p">:</span>
                             <span class="k">if</span> <span class="s1">&#39;automaticSchedulePattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_options</span><span class="p">[</span><span class="s2">&quot;commonOpts&quot;</span><span class="p">]:</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_options</span><span class="p">[</span><span class="s2">&quot;commonOpts&quot;</span><span class="p">][</span>
-                                    <span class="s1">&#39;automaticSchedulePattern&#39;</span><span class="p">]</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_options</span><span class="p">[</span>
+                                    <span class="s2">&quot;commonOpts&quot;</span><span class="p">][</span><span class="s1">&#39;automaticSchedulePattern&#39;</span><span class="p">]</span>
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
@@ -1313,7 +1418,8 @@
     <span class="k">def</span> <span class="nf">schedule_freq_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        get the schedule frequency type</span>
-<span class="sd">        :return: returns the schedule frequency type (str)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (str) the schedule frequency type</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_freq_type</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]]</span>
 
@@ -1321,7 +1427,8 @@
     <span class="k">def</span> <span class="nf">one_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the one time schedule pattern</span>
-<span class="sd">        :return: return a dict with the schedule pattern</span>
+<span class="sd">        Returns:</span>
+<span class="sd">             (dict) The schedule pattern</span>
 <span class="sd">                {</span>
 <span class="sd">                     &quot;active_start_date&quot;: date_in_%m/%d/%y (str),</span>
 <span class="sd">                     &quot;active_start_time&quot;: time_in_%h:%m (str)</span>
@@ -1344,9 +1451,10 @@
     <span class="nd">@one_time</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">one_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        sets the pattern type as one time with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        sets the pattern type as one time with the parameters provided,</span>
+<span class="sd">        send only required keys to change only those values</span>
+<span class="sd">        Args:</span>
+<span class="sd">             pattern_dict (dict) -- Dictonary with the schedule pattern</span>
 <span class="sd">                {</span>
 <span class="sd">                                 &quot;active_start_date&quot;: date_in_%m/%d/%y (str),</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%h:%m (str)</span>
@@ -1363,7 +1471,7 @@
     <span class="k">def</span> <span class="nf">daily</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            gets the daily schedule</span>
-<span class="sd">            :return: return a dict with the schedule pattern</span>
+<span class="sd">            Returns: (dict) -- The schedule pattern</span>
 <span class="sd">                    {</span>
 <span class="sd">                                     &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                     &quot;repeat_days&quot;: days_to_repeat (int)</span>
@@ -1372,9 +1480,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span> <span class="o">==</span> <span class="s1">&#39;Daily&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
-                                            <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span> <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-                    <span class="s1">&#39;repeat_days&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span>
-                    <span class="p">}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span> <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;repeat_days&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
@@ -1382,8 +1490,9 @@
     <span class="k">def</span> <span class="nf">daily</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">                sets the pattern type as daily with the parameters provided</span>
-<span class="sd">                send True if values have to set to default</span>
-<span class="sd">                :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">                send only required keys to change only those values</span>
+<span class="sd">                Args:</span>
+<span class="sd">                     pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                  {</span>
 <span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                         &quot;repeat_days&quot;: days_to_repeat (int)</span>
@@ -1400,7 +1509,7 @@
     <span class="k">def</span> <span class="nf">weekly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the weekly schedule</span>
-<span class="sd">        :return: return a dict with the schedule pattern</span>
+<span class="sd">        Returns (dict) -- The schedule pattern</span>
 <span class="sd">                {</span>
 <span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                         &quot;repeat_weeks&quot;: weeks_to_repeat (int)</span>
@@ -1410,13 +1519,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span> <span class="o">==</span> <span class="s1">&#39;Weekly&#39;</span><span class="p">:</span>
             <span class="n">_freq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span>
-                        <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
-                                                        <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-                    <span class="s1">&#39;repeat_weeks&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">],</span>
-                    <span class="s1">&#39;weekdays&#39;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_days_to_run</span><span class="p">[</span><span class="n">x</span><span class="p">]</span>
-                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_days_to_run</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="n">_freq</span> <span class="o">&amp;</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]}</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span>
+                    <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;repeat_weeks&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;weekdays&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_days_to_run</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span>
+                        <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_days_to_run</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="n">_freq</span> <span class="o">&amp;</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
@@ -1424,8 +1535,9 @@
     <span class="k">def</span> <span class="nf">weekly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as weekly with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        send only required keys to change only those values</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                         &quot;repeat_weeks&quot;: weeks_to_repeat (int)</span>
@@ -1444,7 +1556,7 @@
     <span class="k">def</span> <span class="nf">monthly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the monthly schedule</span>
-<span class="sd">                :return: return a dict with the schedule pattern</span>
+<span class="sd">        Returns: (dict) -- the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;repeat_months&quot;: months_to_repeat (int)</span>
@@ -1453,12 +1565,13 @@
 <span class="sd">                False: if schedule type is wrong</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span> <span class="o">==</span> <span class="s1">&#39;Monthly&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span>
-                        <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
-                                                        <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-                    <span class="s1">&#39;repeat_months&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">],</span>
-                    <span class="s1">&#39;on_day&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span>
-                    <span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span>
+                    <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;repeat_months&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;on_day&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
@@ -1466,8 +1579,9 @@
     <span class="k">def</span> <span class="nf">monthly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as monthly with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        send only required keys to change only those values</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;repeat_months&quot;: months_to_repeat (int)</span>
@@ -1485,7 +1599,7 @@
     <span class="k">def</span> <span class="nf">monthly_relative</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the monthly_relative schedule</span>
-<span class="sd">                :return: return a dict with the schedule pattern</span>
+<span class="sd">            Returns: (dict) -- The schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                             &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                             &quot;relative_time&quot;: relative day of the schedule (str)&#39;first&#39;,&#39;second&#39;,..</span>
@@ -1495,15 +1609,16 @@
 <span class="sd">                False: if schedule type is wrong</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span> <span class="o">==</span> <span class="s1">&#39;Monthly_Relative&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span>
-                        <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
-                                                        <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-                    <span class="s1">&#39;relative_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_relative_day</span>
-                    <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_relative_interval&#39;</span><span class="p">]],</span>
-                    <span class="s1">&#39;relative_weekday&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_relative_weekday</span>
-                    <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]],</span>
-                    <span class="s1">&#39;repeat_months&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]</span>
-                    <span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span>
+                    <span class="kc">False</span><span class="p">),</span>
+                <span class="s1">&#39;relative_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_relative_day</span><span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_relative_interval&#39;</span><span class="p">]],</span>
+                <span class="s1">&#39;relative_weekday&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_relative_weekday</span><span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]],</span>
+                <span class="s1">&#39;repeat_months&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
@@ -1511,14 +1626,16 @@
     <span class="k">def</span> <span class="nf">monthly_relative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the pattern type as monthly_relative with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
-<span class="sd">                    {</span>
-<span class="sd">                             &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
-<span class="sd">                             &quot;relative_time&quot;: relative day of the schedule (str)&#39;first&#39;,&#39;second&#39;,..</span>
-<span class="sd">                             &quot;relative_weekday&quot;: Day to run schedule (str) &#39;sunday&#39;,&#39;monday&#39;...</span>
-<span class="sd">                             &quot;repeat_months&quot;: months_to_repeat</span>
-<span class="sd">                    }</span>
+<span class="sd">        send only required keys to change only those values</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
+<span class="sd">                        {</span>
+<span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                 &quot;relative_time&quot;: relative day of the schedule (str) &#39;first&#39;,</span>
+<span class="sd">                                                                                        &#39;second&#39;,..</span>
+<span class="sd">                                 &quot;relative_weekday&quot;: Day to run schedule (str) &#39;sunday&#39;,&#39;monday&#39;...</span>
+<span class="sd">                                 &quot;repeat_months&quot;: months_to_repeat</span>
+<span class="sd">                        }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="n">pattern_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1531,7 +1648,7 @@
     <span class="k">def</span> <span class="nf">yearly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the yearly schedule</span>
-<span class="sd">                :return: return a dict with the schedule pattern</span>
+<span class="sd">                Returns: (dict) -- The schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;on_month&quot;: month to run schedule (str) January, Febuary...</span>
@@ -1541,8 +1658,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span> <span class="o">==</span> <span class="s1">&#39;Yearly&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span>
-                        <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
-                                                        <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                    <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
+                                                    <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
                     <span class="s1">&#39;on_month&#39;</span><span class="p">:</span> <span class="n">calendar</span><span class="o">.</span><span class="n">month_name</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_recurrence_factor&#39;</span><span class="p">]],</span>
                     <span class="s1">&#39;on_day&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_interval&#39;</span><span class="p">]</span>
                     <span class="p">}</span>
@@ -1552,9 +1669,10 @@
     <span class="nd">@yearly</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">yearly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        sets the pattern type as yearly with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        sets the pattern type as monthly with the parameters provided</span>
+<span class="sd">        send only required keys to change only those values</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                                 &quot;on_month&quot;: month to run schedule (str) January, Febuary...</span>
@@ -1572,7 +1690,7 @@
     <span class="k">def</span> <span class="nf">yearly_relative</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the yearly_relative schedule</span>
-<span class="sd">                :return: return a dict with the schedule pattern</span>
+<span class="sd">                Returns: (dict) The schedule pattern</span>
 <span class="sd">                    {</span>
 <span class="sd">                             &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
 <span class="sd">                             &quot;relative_time&quot;: relative day of the schedule (str)&#39;first&#39;,&#39;second&#39;,..</span>
@@ -1583,8 +1701,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span> <span class="o">==</span> <span class="s1">&#39;Yearly_Relative&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span>
-                        <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
-                                                        <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                    <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
+                                                    <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
                     <span class="s1">&#39;relative_time&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_relative_day</span>
                     <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;freq_relative_interval&#39;</span><span class="p">]],</span>
                     <span class="s1">&#39;relative_weekday&#39;</span><span class="p">:</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_relative_weekday</span>
@@ -1597,15 +1715,17 @@
     <span class="nd">@yearly_relative</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">yearly_relative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        sets the pattern type as yearly_relative with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
+<span class="sd">        sets the pattern type as monthly_relative with the parameters provided</span>
+<span class="sd">        send only required keys to change only those values</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
 <span class="sd">                        {</span>
-<span class="sd">                             &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
-<span class="sd">                             &quot;relative_time&quot;: relative day of the schedule (str)&#39;first&#39;,&#39;second&#39;,..</span>
-<span class="sd">                             &quot;relative_weekday&quot;: Day to run schedule (str) &#39;sunday&#39;,&#39;monday&#39;...</span>
-<span class="sd">                             &quot;on_month&quot;: month to run the schedule(str) January, Febuary...</span>
-<span class="sd">                    }</span>
+<span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                 &quot;relative_time&quot;: relative day of the schedule (str) &#39;first&#39;,</span>
+<span class="sd">                                                                                        &#39;second&#39;,..</span>
+<span class="sd">                                 &quot;relative_weekday&quot;: Day to run schedule (str) &#39;sunday&#39;,&#39;monday&#39;...</span>
+<span class="sd">                                 &quot;on_month&quot;: month to run the schedule(str) January, February...</span>
+<span class="sd">                        }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="n">pattern_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1618,7 +1738,7 @@
     <span class="k">def</span> <span class="nf">continuous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the continuous schedule</span>
-<span class="sd">                :return: return a dict with the schedule pattern</span>
+<span class="sd">                Returns: (dict) -- The schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 job_interval: interval between jobs in mins(int)</span>
 <span class="sd">                }</span>
@@ -1634,10 +1754,11 @@
     <span class="nd">@continuous</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">continuous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        sets the pattern type as continuous with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
-<span class="sd">                        {</span>
+<span class="sd">        sets the pattern type as one time with the parameters provided,</span>
+<span class="sd">        send only required keys to change only those values</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_dict (dict) -- Dictionary with the schedule pattern</span>
+<span class="sd">                {</span>
 <span class="sd">                                 job_interval: interval between jobs in mins(int)</span>
 <span class="sd">                }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1652,7 +1773,7 @@
     <span class="k">def</span> <span class="nf">automatic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the automatic schedule</span>
-<span class="sd">                :return: return a dict with the schedule pattern</span>
+<span class="sd">                Returns: (dict) -- The schedule pattern</span>
 <span class="sd">                        {</span>
 <span class="sd">                                 min_interval_hours: minimum hours between jobs(int)</span>
 <span class="sd">                                 min_interval_minutes: minimum minutes between jobs(int)</span>
@@ -1676,67 +1797,60 @@
 <span class="sd">                False: if schedule type is wrong</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span> <span class="o">==</span> <span class="s1">&#39;Automatic&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{</span>
-                <span class="s2">&quot;min_interval_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minBackupInterval&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;min_interval_minutes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minBackupIntervalMinutes&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;max_interval_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;maxBackupInterval&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;max_interval_minutes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;maxBackupIntervalMinutes&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;min_sync_interval_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minSyncInterval&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;min_sync_interval_minutes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minSyncIntervalMinutes&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;ignore_opwindow_past_maxinterval&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span>
-                    <span class="s1">&#39;ignoreOpWindowPastMaxInterval&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;wired_network_connection&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;wiredNetworkConnection&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span>
-                        <span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;min_network_bandwidth&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;minNetworkBandwidth&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span>
-                        <span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;specific_network&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;specfificNetwork&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;dont_use_metered_network&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dontUseMeteredNetwork&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span>
-                        <span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;ac_power&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;acPower&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;stop_if_on_battery&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stopIfOnBattery&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;stop_sleep_if_runningjob&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stopSleepIfBackUp&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span>
-                        <span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;cpu_utilization_below&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cpuUtilization&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;cpu_utilization_above&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cpuUtilizationAbove&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span>
-                        <span class="s1">&#39;enabled&#39;</span><span class="p">]</span>
-
-            <span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;min_interval_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minBackupInterval&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;min_interval_minutes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minBackupIntervalMinutes&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;max_interval_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;maxBackupInterval&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;max_interval_minutes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;maxBackupIntervalMinutes&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;min_sync_interval_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minSyncInterval&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;min_sync_interval_minutes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;minSyncIntervalMinutes&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;ignore_opwindow_past_maxinterval&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="p">[</span><span class="s1">&#39;ignoreOpWindowPastMaxInterval&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;wired_network_connection&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;wiredNetworkConnection&#39;</span><span class="p">,</span>
+                                                                            <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;min_network_bandwidth&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;minNetworkBandwidth&#39;</span><span class="p">,</span>
+                                                                         <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;specific_network&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;specfificNetwork&#39;</span><span class="p">,</span>
+                                                                    <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;dont_use_metered_network&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dontUseMeteredNetwork&#39;</span><span class="p">,</span>
+                                                                            <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;ac_power&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;acPower&#39;</span><span class="p">,</span>
+                                                            <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;stop_if_on_battery&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stopIfOnBattery&#39;</span><span class="p">,</span>
+                                                                      <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;stop_sleep_if_runningjob&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stopSleepIfBackUp&#39;</span><span class="p">,</span>
+                                                                            <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;cpu_utilization_below&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cpuUtilization&#39;</span><span class="p">,</span>
+                                                                         <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;cpu_utilization_above&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_automatic_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cpuUtilizationAbove&#39;</span><span class="p">,</span>
+                                                                         <span class="p">{</span><span class="s1">&#39;enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@automatic</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">automatic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        sets the pattern type as automatic with the parameters provided</span>
-<span class="sd">        send True if values have to set to default</span>
-<span class="sd">        :param pattern_dict: (dict) with the schedule pattern</span>
-<span class="sd">                       {</span>
-<span class="sd">                                 min_interval_hours: minimum hours between jobs(int)</span>
-<span class="sd">                                 min_interval_minutes: minimum minutes between jobs(int)</span>
-<span class="sd">                                 max_interval_hours: maximum hours between jobs(int)</span>
-<span class="sd">                                 max_interval_minutes: maximum minutes between jobs(int)</span>
-<span class="sd">                                 min_sync_interval_hours: minimum sync hours</span>
-<span class="sd">                                                                        between jobs(int)</span>
-<span class="sd">                                 min_sync_interval_minutes: minimum sync minutes</span>
-<span class="sd">                                                                        between jobs(int)</span>
-<span class="sd">                                 ignore_opwindow_past_maxinterval: (bool)</span>
-<span class="sd">                                 wired_network_connection: (bool)</span>
-<span class="sd">                                 min_network_bandwidth: (int) kbps</span>
-<span class="sd">                                 specific_network: (dict){ip_address:(str),subnet:(int)}</span>
-<span class="sd">                                 dont_use_metered_network: (bool)</span>
-<span class="sd">                                 ac_power: (bool)</span>
-<span class="sd">                                 stop_if_on_battery: (bool)</span>
-<span class="sd">                                 stop_sleep_if_runningjob: (bool)</span>
-<span class="sd">                                 cpu_utilization_below : (int)%</span>
-<span class="sd">                                 cpu_utilization_above : (int)%</span>
+<span class="sd">        sets the pattern type as one time with the parameters provided,</span>
+<span class="sd">                send only required keys to change only those values</span>
+<span class="sd">                Args:</span>
+<span class="sd">                     pattern_dict (dict) -- Dictionary with the schedule pattern</span>
+<span class="sd">                        {</span>
+<span class="sd">                                         min_interval_hours: minimum hours between jobs(int)</span>
+<span class="sd">                                         min_interval_minutes: minimum minutes between jobs(int)</span>
+<span class="sd">                                         max_interval_hours: maximum hours between jobs(int)</span>
+<span class="sd">                                         max_interval_minutes: maximum minutes between jobs(int)</span>
+<span class="sd">                                         min_sync_interval_hours: minimum sync hours</span>
+<span class="sd">                                                                                between jobs(int)</span>
+<span class="sd">                                         min_sync_interval_minutes: minimum sync minutes</span>
+<span class="sd">                                                                                between jobs(int)</span>
+<span class="sd">                                         ignore_opwindow_past_maxinterval: (bool)</span>
+<span class="sd">                                         wired_network_connection: (bool)</span>
+<span class="sd">                                         min_network_bandwidth: (int) kbps</span>
+<span class="sd">                                         specific_network: (dict){ip_address:(str),subnet:(int)}</span>
+<span class="sd">                                         dont_use_metered_network: (bool)</span>
+<span class="sd">                                         ac_power: (bool)</span>
+<span class="sd">                                         stop_if_on_battery: (bool)</span>
+<span class="sd">                                         stop_sleep_if_runningjob: (bool)</span>
+<span class="sd">                                         cpu_utilization_below : (int)%</span>
+<span class="sd">                                         cpu_utilization_above : (int)%</span>
 <span class="sd">                        }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
@@ -1758,42 +1872,168 @@
     <span class="k">def</span> <span class="nf">active_start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        gets the start date of the schedule</span>
-<span class="sd">        :return: date in %m/%d/%Y (str)</span>
+<span class="sd">        Returns: (str) -- date in %m/%d/%Y</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">],</span>
-                                               <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@active_start_date</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">active_start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_start_date</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the start date of the schedule</span>
-<span class="sd">        :param active_start_date: date in %m/%d/%Y (str)</span>
-<span class="sd">        :return:</span>
+<span class="sd">        Args:</span>
+<span class="sd">            active_start_date (str) -- date in %m/%d/%Y</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_start_date</span>
         <span class="n">schedule_pattern</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span>
-            <span class="p">{</span><span class="s1">&#39;active_start_date&#39;</span><span class="p">:</span> <span class="n">active_start_date</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_modify_task_properties</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">active_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">                gets the start time of the schedule</span>
-<span class="sd">                :return: time in %H/%S (str)</span>
+<span class="sd">                Returns: (str) -- time in %H/%S</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span>
-                                               <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">],</span> <span class="s1">&#39;%H:%M&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@active_start_time</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">active_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_start_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        sets the start time of the schedule</span>
-<span class="sd">        :param active_start_time: time in %H/%S (str)</span>
-<span class="sd">        :return:</span>
+<span class="sd">        Args:</span>
+<span class="sd">            active_start_time (str) -- time in %H/%S</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_start_time</span>
         <span class="n">schedule_pattern</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span>
-            <span class="p">{</span><span class="s1">&#39;active_start_time&#39;</span><span class="p">:</span> <span class="n">active_start_time</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_task_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">active_end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the end date of the schedule if present</span>
+<span class="sd">        Returns: (str) -- date in %m/%d/%Y</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;active_end_date&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s2">&quot;active_end_date&quot;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s1">&#39;active_end_date&#39;</span><span class="p">],</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@active_end_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">active_end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_start_date</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the end date for the schedule</span>
+<span class="sd">        Args:</span>
+<span class="sd">        active_start_date (str) -- date in %m/%d/%Y</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;active_end_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_start_date</span>
+        <span class="n">schedule_pattern</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_task_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">exception_dates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns a list of exception days if present</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (list) -- exception days in a schedule</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="s2">&quot;repeatPattern&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">repeat_pattern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s2">&quot;repeatPattern&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">repeat_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;exception&quot;</span><span class="p">):</span>
+                    <span class="n">_on_day_number</span> <span class="o">=</span> <span class="n">repeat_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;onDayNumber&quot;</span><span class="p">)</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">while</span> <span class="n">day</span> <span class="o">&lt;=</span> <span class="mi">31</span> <span class="ow">and</span> <span class="n">_on_day_number</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">_on_day_number</span> <span class="o">&amp;</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">exceptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">day</span><span class="p">)</span>
+                        <span class="n">_on_day_number</span> <span class="o">=</span> <span class="n">_on_day_number</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
+                        <span class="n">day</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">return</span> <span class="n">exceptions</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@exception_dates</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">exception_dates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">day_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets exception days provided as input for the schedule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            day_list: (list) -- exception days to set for the schedule</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;exception_dates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">day_list</span>
+        <span class="n">schedule_pattern</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_task_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_after</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the maximum occurence of the schedule if present</span>
+<span class="sd">        Returns: (int) -- end occurence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;active_end_occurence&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@end_after</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">end_after</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_after</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the end date for the schedule</span>
+<span class="sd">        Args:</span>
+<span class="sd">        end_after: (int) -- number of times the schedule should run</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span>
+        <span class="n">pattern_dict</span><span class="p">[</span><span class="s1">&#39;end_after&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end_after</span>
+        <span class="n">schedule_pattern</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span><span class="n">pattern_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modify_task_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">repeat_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the repeat pattern in a schedule if present</span>
+<span class="sd">        Returns: (dict) -- the repeat pattern</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;repeat_every&quot;: repeat_every,</span>
+<span class="sd">                    &quot;repeat_end&quot;: repeat_end</span>
+<span class="sd">                    }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;freq_subday_interval&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">_subday_interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s2">&quot;freq_subday_interval&quot;</span><span class="p">]</span>
+            <span class="n">repeat_every</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">:0</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_subday_interval</span> <span class="o">/</span> <span class="mi">3600</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span>
+                <span class="p">((</span><span class="n">_subday_interval</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span> <span class="o">-</span> <span class="p">((</span><span class="n">_subday_interval</span> <span class="o">/</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span><span class="p">))))</span>
+            <span class="n">repeat_end</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="o">.</span><span class="n">_time_converter</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">[</span><span class="s2">&quot;active_end_time&quot;</span><span class="p">],</span> <span class="s2">&quot;%H:%M&quot;</span><span class="p">,</span> <span class="n">utc_to_epoch</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;repeat_every&quot;</span><span class="p">:</span> <span class="n">repeat_every</span><span class="p">,</span>
+                <span class="s2">&quot;repeat_end&quot;</span><span class="p">:</span> <span class="n">repeat_end</span>
+            <span class="p">}</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@repeat_pattern</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">repeat_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets a repeat pattern for the schedule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern_json: (Dict) -- containing the repeat every and repeat end parameters</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern_json</span><span class="p">[</span><span class="s1">&#39;freq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_freq_type</span>
+        <span class="n">schedule_pattern</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">schedule_pattern</span><span class="o">.</span><span class="n">create_schedule_pattern</span><span class="p">(</span><span class="n">pattern_json</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_modify_task_properties</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Schedule.run_now"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.Schedule.run_now">[docs]</a>    <span class="k">def</span> <span class="nf">run_now</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1831,7 +2071,8 @@
                 <span class="n">job_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;jobIds&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">return</span> <span class="n">job_id</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;JobID not found in response&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;JobID not found in response&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span></div>
 
@@ -1905,10 +2146,9 @@
 
                     <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                            <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to enable Schedule</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                                <span class="n">error_message</span>
-                            <span class="p">)</span>
-                        <span class="p">)</span>
+                            <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;Failed to enable Schedule</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                             <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Failed to enable Schedule&quot;</span><span class="p">)</span>
@@ -1951,28 +2191,29 @@
 
                     <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                            <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to disable Schedule</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                                <span class="n">error_message</span>
-                            <span class="p">)</span>
-                        <span class="p">)</span>
+                            <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;Failed to disable Schedule</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                             <span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Failed to disable Schedule&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_process_schedule_update_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        processes the response received post update request</span>
-<span class="sd">        :param flag: True or false based on response (bool)</span>
-<span class="sd">        :param response: response from modify request (dict)</span>
-<span class="sd">        :return:</span>
-<span class="sd">            flag: Bool based on success and failure</span>
-<span class="sd">            error_code: error_code from response (int)</span>
-<span class="sd">            error_message: error_message from the response if any (str)</span>
+<span class="sd">        Args:</span>
+<span class="sd">        flag: (bool) -- True or false based on response</span>
+<span class="sd">        response: (dict) response from modify request</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            flag: (Bool) -- based on success and failure</span>
+<span class="sd">            error_code: (int) -- error_code from response</span>
+<span class="sd">            error_message: (str) -- error_message from the response if any</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">task_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
@@ -1999,7 +2240,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Schedule.refresh"><a class="viewcode-back" href="../../schedules.html#cvpysdk.schedules.Schedule.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2008,6 +2250,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -2040,8 +2283,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 
