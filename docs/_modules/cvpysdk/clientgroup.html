@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.clientgroup &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.clientgroup &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.clientgroup</h1><div class="highlight"><pre>
@@ -137,6 +139,8 @@
 
 <span class="sd">    refresh()                      -- refresh the properties of the client group</span>
 
+<span class="sd">    push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes</span>
+
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -149,6 +153,7 @@
 
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">.network</span> <span class="k">import</span> <span class="n">Network</span>
+<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
 
 
 <div class="viewcode-block" id="ClientGroups"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups">[docs]</a><span class="k">class</span> <span class="nc">ClientGroups</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -1562,6 +1567,45 @@
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="ClientGroup.push_servicepack_and_hotfix"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.push_servicepack_and_hotfix">[docs]</a>    <span class="k">def</span> <span class="nf">push_servicepack_and_hotfix</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">reboot_client</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;triggers installation of service pack and hotfixes</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reboot_client (bool)            -- boolean to specify whether to reboot the client</span>
+<span class="sd">            or not</span>
+
+<span class="sd">                default: False</span>
+
+<span class="sd">            run_db_maintenance (bool)      -- boolean to specify whether to run db</span>
+<span class="sd">            maintenance not</span>
+
+<span class="sd">                default: True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object - instance of the Job class for this download job</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if Download job failed</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if another download job is already running</span>
+
+<span class="sd">        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">install</span> <span class="o">=</span> <span class="n">Install</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">install</span><span class="o">.</span><span class="n">push_servicepack_and_hotfix</span><span class="p">(</span>
+                                    <span class="n">client_computer_groups</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_name</span><span class="p">],</span>
+                                    <span class="n">reboot_client</span><span class="o">=</span><span class="n">reboot_client</span><span class="p">,</span>
+                                    <span class="n">run_db_maintenance</span><span class="o">=</span><span class="n">run_db_maintenance</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="ClientGroup.refresh"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the ClientGroup.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_clientgroup_properties</span><span class="p">()</span>
@@ -1569,6 +1613,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -1601,8 +1646,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

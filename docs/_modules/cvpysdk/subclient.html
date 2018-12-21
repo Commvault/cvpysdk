@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclient &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.subclient &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.subclient</h1><div class="highlight"><pre>
@@ -49,6 +51,7 @@
 
 
 <span class="sd">Subclients:</span>
+<span class="sd">===========</span>
 <span class="sd">    __init__(class_object)      --  initialise object of subclients object associated with</span>
 <span class="sd">    the specified backup set/instance.</span>
 
@@ -80,6 +83,7 @@
 
 
 <span class="sd">Subclient:</span>
+<span class="sd">==========</span>
 <span class="sd">    __init__()                  --  initialise instance of the Subclient class,</span>
 <span class="sd">    associated to the specified backupset</span>
 
@@ -112,9 +116,13 @@
 
 <span class="sd">    enable_backup()             --  enables the backup for the subclient</span>
 
+<span class="sd">    enable_trueup()             --  enables true up option for the subclient</span>
+
+<span class="sd">    enable_trueup_days()        --  enables true up option and sets days for backup</span>
+
 <span class="sd">    enable_backup_at_time()     --  enables backup for the subclient at the input time specified</span>
 
-<span class="sd">    disble_backup()             --  disbles the backup for the subclient</span>
+<span class="sd">    disble_backup()             --  disables the backup for the subclient</span>
 
 <span class="sd">    backup()                    --  run a backup job for the subclient</span>
 
@@ -138,6 +146,18 @@
 <span class="sd">    which includes current running job also.</span>
 
 <span class="sd">    refresh()                   --  refresh the properties of the subclient</span>
+
+
+<span class="sd">Subclient Instance Attributes:</span>
+<span class="sd">==============================</span>
+
+<span class="sd">    **snapshot_engine_name**            --  returns snapshot engine name associated</span>
+<span class="sd">    with the subclient</span>
+
+<span class="sd">    **is_default_subclient**            --  returns True if the subclient is default</span>
+<span class="sd">    subclient else returns False</span>
+
+<span class="sd">    **is_blocklevel_backup_enabled**    --  returns True if block level backup is enabled</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -222,7 +242,9 @@
         <span class="kn">from</span> <span class="nn">.subclients.nassubclient</span> <span class="k">import</span> <span class="n">NASSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.hanasubclient</span> <span class="k">import</span> <span class="n">SAPHANASubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.oraclesubclient</span> <span class="k">import</span> <span class="n">OracleSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.lndbsubclient</span> <span class="k">import</span> <span class="n">LNDbSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndbsubclient</span> <span class="k">import</span> <span class="n">LNDbSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndocsubclient</span> <span class="k">import</span> <span class="n">LNDocSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndmsubclient</span> <span class="k">import</span> <span class="n">LNDmSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.sybasesubclient</span> <span class="k">import</span> <span class="n">SybaseSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.saporaclesubclient</span> <span class="k">import</span> <span class="n">SAPOracleSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.exchsubclient</span> <span class="k">import</span> <span class="n">ExchangeSubclient</span>
@@ -230,6 +252,7 @@
         <span class="kn">from</span> <span class="nn">.subclients.exchange.exchange_database_subclient</span> <span class="k">import</span> <span class="n">ExchangeDatabaseSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.postgressubclient</span> <span class="k">import</span> <span class="n">PostgresSubclient</span>
         <span class="kn">from</span> <span class="nn">.subclients.informixsubclient</span> <span class="k">import</span> <span class="n">InformixSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.adsubclient</span> <span class="k">import</span> <span class="n">ADSubclient</span>
 
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;BigDataAppsSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BigDataAppsSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;FileSystemSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FileSystemSubclient</span>
@@ -240,6 +263,8 @@
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;SAPHANASubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAPHANASubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;OracleSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">OracleSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;LNDbSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LNDbSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;LNDocSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LNDocSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;LNDmSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LNDmSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;SybaseSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SybaseSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;SAPOracleSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAPOracleSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;ExchangeSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ExchangeSubclient</span>
@@ -247,6 +272,7 @@
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;ExchangeDatabaseSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ExchangeDatabaseSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;PostgresSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PostgresSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;InformixSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">InformixSubclient</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;ADSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ADSubclient</span>
 
         <span class="c1"># add the agent name to this dict, and its class as the value</span>
         <span class="c1"># the appropriate class object will be initialized based on the agent</span>
@@ -256,17 +282,21 @@
             <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="n">VirtualServerSubclient</span><span class="p">,</span>
             <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="n">CloudAppsSubclient</span><span class="p">,</span>
             <span class="s1">&#39;sql server&#39;</span><span class="p">:</span> <span class="n">SQLServerSubclient</span><span class="p">,</span>
-            <span class="s1">&#39;ndmp&#39;</span><span class="p">:</span> <span class="n">NASSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;nas&#39;</span><span class="p">:</span> <span class="n">NASSubclient</span><span class="p">,</span>        <span class="c1"># SP11 or lower CS honors NAS as the Agent Name</span>
+            <span class="s1">&#39;ndmp&#39;</span><span class="p">:</span> <span class="n">NASSubclient</span><span class="p">,</span>       <span class="c1"># SP12 and above honors NDMP as the Agent Name</span>
             <span class="s1">&#39;sap hana&#39;</span><span class="p">:</span> <span class="n">SAPHANASubclient</span><span class="p">,</span>
             <span class="s1">&#39;oracle&#39;</span><span class="p">:</span> <span class="n">OracleSubclient</span><span class="p">,</span>
             <span class="s1">&#39;notes database&#39;</span><span class="p">:</span> <span class="n">LNDbSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;notes document&#39;</span><span class="p">:</span> <span class="n">LNDocSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;domino mailbox archiver&#39;</span><span class="p">:</span> <span class="n">LNDmSubclient</span><span class="p">,</span>
             <span class="s1">&#39;sybase&#39;</span><span class="p">:</span> <span class="n">SybaseSubclient</span><span class="p">,</span>
             <span class="s1">&#39;sap for oracle&#39;</span><span class="p">:</span> <span class="n">SAPOracleSubclient</span><span class="p">,</span>
             <span class="s2">&quot;exchange mailbox&quot;</span><span class="p">:</span> <span class="n">ExchangeSubclient</span><span class="p">,</span>
             <span class="s1">&#39;mysql&#39;</span><span class="p">:</span> <span class="n">MYSQLSubclient</span><span class="p">,</span>
             <span class="s1">&#39;exchange database&#39;</span><span class="p">:</span> <span class="n">ExchangeDatabaseSubclient</span><span class="p">,</span>
             <span class="s1">&#39;postgresql&#39;</span><span class="p">:</span> <span class="n">PostgresSubclient</span><span class="p">,</span>
-            <span class="s1">&#39;informix&#39;</span><span class="p">:</span> <span class="n">InformixSubclient</span>
+            <span class="s1">&#39;informix&#39;</span><span class="p">:</span> <span class="n">InformixSubclient</span><span class="p">,</span>
+            <span class="s1">&#39;active directory&#39;</span> <span class="p">:</span> <span class="n">ADSubclient</span>
         <span class="p">}</span>
 
         <span class="c1"># sql server subclient type dict</span>
@@ -829,6 +859,12 @@
             <span class="s1">&#39;_json_restore_subtask&#39;</span>
         <span class="p">]</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupcopy_interfaces</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;FILESYSTEM&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;RMAN&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;VOLUME&#39;</span><span class="p">:</span> <span class="mi">3</span>
+        <span class="p">}</span>
+
         <span class="k">if</span> <span class="n">subclient_id</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">subclient_id</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1141,7 +1177,7 @@
 <span class="sd">            Returns:</span>
 <span class="sd">                (dict)  -   generated advanced options dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="n">options</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_json_task</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1210,9 +1246,35 @@
     <span class="k">def</span> <span class="nf">is_intelli_snap_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the is intelli snap enabled as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;snapCopyInfo&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">:</span>
-            <span class="n">snap_copy_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;snapCopyInfo&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="s1">&#39;isSnapBackupEnabled&#39;</span> <span class="ow">in</span> <span class="n">snap_copy_info</span><span class="p">:</span>
-                <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">snap_copy_info</span><span class="p">[</span><span class="s1">&#39;isSnapBackupEnabled&#39;</span><span class="p">])</span>
+            <span class="n">snap_copy_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;snapCopyInfo&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">snap_copy_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isSnapBackupEnabled&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_blocklevel_backup_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns True if block level backup is enabled else returns false&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;postgreSQLSubclientProp&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isUseBlockLevelBackup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">snapshot_engine_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns snapshot engine name associated with the subclient&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_intelli_snap_enabled</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;snapCopyInfo&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">:</span>
+                <span class="n">snap_copy_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;snapCopyInfo&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;snapToTapeSelectedEngine&#39;</span> <span class="ow">in</span> <span class="n">snap_copy_info</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;snapShotEngineName&#39;</span> <span class="ow">in</span> <span class="n">snap_copy_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;snapToTapeSelectedEngine&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="n">snap_copy_info</span><span class="p">[</span><span class="s1">&#39;snapToTapeSelectedEngine&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                            <span class="s1">&#39;snapShotEngineName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Cannot fetch snap engine name.&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_trueup_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the True up enabled as a property of the Subclient class.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;isTrueUpOptionEnabled&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;isTrueUpOptionEnabled&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_on_demand_subclient</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1322,6 +1384,12 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;readBuffersize&#39;</span><span class="p">]</span>
             <span class="p">)</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_default_subclient</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True if the subclient is default</span>
+<span class="sd">        subclient else returns False&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isDefaultSubclient&#39;</span><span class="p">)</span>
+
     <span class="nd">@read_buffer_size</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">read_buffer_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets the read buffer size for the subclient</span>
@@ -1412,6 +1480,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;enableBackup&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Subclient.enable_trueup"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_trueup">[docs]</a>    <span class="k">def</span> <span class="nf">enable_trueup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter for the TrueUp Option for a Subclient&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;isTrueUpOptionEnabled&#39;</span><span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;isTrueUpOptionEnabled&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Subclient.enable_trueup_days"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_trueup_days">[docs]</a>    <span class="k">def</span> <span class="nf">enable_trueup_days</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter for the TrueUp Option with reconcile after x days&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enable_trueup</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_commonProperties[&#39;runTrueUpJobAfterDays&#39;]&quot;</span><span class="p">,</span> <span class="n">days</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Subclient.enable_backup_at_time"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Backup if not already disabled, and enables at the time specified.</span>
 
@@ -1457,7 +1535,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
             <span class="s2">&quot;_commonProperties[&#39;enableBackup&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Subclient.enable_intelli_snap"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">[docs]</a>    <span class="k">def</span> <span class="nf">enable_intelli_snap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snap_engine_name</span><span class="p">):</span>
+<div class="viewcode-block" id="Subclient.exclude_from_sla"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.exclude_from_sla">[docs]</a>    <span class="k">def</span> <span class="nf">exclude_from_sla</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Exclude subclient from SLA.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to exclude the subclient from SLA</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_commonProperties[&#39;excludeFromSLA&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Subclient.enable_intelli_snap"><a class="viewcode-back" href="../../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">[docs]</a>    <span class="k">def</span> <span class="nf">enable_intelli_snap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snap_engine_name</span><span class="p">,</span> <span class="n">proxy_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enables Intelli Snap for the subclient.</span>
 
 <span class="sd">            Args:</span>
@@ -1476,6 +1564,21 @@
                 <span class="s2">&quot;snapShotEngineName&quot;</span><span class="p">:</span> <span class="n">snap_engine_name</span>
             <span class="p">}</span>
         <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">proxy_options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;snap_proxy&quot;</span> <span class="ow">in</span> <span class="n">proxy_options</span><span class="p">:</span>
+                <span class="n">properties_dict</span><span class="p">[</span><span class="s2">&quot;snapToTapeProxyToUse&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">proxy_options</span><span class="p">[</span><span class="s2">&quot;snap_proxy&quot;</span><span class="p">]</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="s2">&quot;backupcopy_proxy&quot;</span> <span class="ow">in</span> <span class="n">proxy_options</span><span class="p">:</span>
+                <span class="n">properties_dict</span><span class="p">[</span><span class="s2">&quot;useSeparateProxyForSnapToTape&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">properties_dict</span><span class="p">[</span><span class="s2">&quot;separateProxyForSnapToTape&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">proxy_options</span><span class="p">[</span><span class="s2">&quot;backupcopy_proxy&quot;</span><span class="p">]</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="s2">&quot;use_source_if_proxy_unreachable&quot;</span> <span class="ow">in</span> <span class="n">proxy_options</span><span class="p">:</span>
+                <span class="n">properties_dict</span><span class="p">[</span><span class="s2">&quot;snapToTapeProxyToUseSource&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
             <span class="s2">&quot;_commonProperties[&#39;snapCopyInfo&#39;]&quot;</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">)</span></div>
@@ -1705,6 +1808,13 @@
 <span class="sd">                        all_versions        : if set to True restores all the versions of the</span>
 <span class="sd">                                                specified file</span>
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
+<span class="sd">                        validate_only       : To validate data backed up for restore</span>
+
+
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
 
 <span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
 
@@ -1792,6 +1902,13 @@
 <span class="sd">                                                specified file</span>
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
 <span class="sd">                        media_agent         : Media Agent need to be used for Browse and restore</span>
+<span class="sd">                        validate_only       : To validate data backed up for restore</span>
+
+
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
 
 <span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
 
@@ -2127,6 +2244,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -2159,8 +2277,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

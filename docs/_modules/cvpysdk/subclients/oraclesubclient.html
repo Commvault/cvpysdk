@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.subclients.oraclesubclient &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.subclients.oraclesubclient &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.subclients.oraclesubclient</h1><div class="highlight"><pre>
@@ -48,19 +50,37 @@
 <span class="sd">                        and to perform operations on that subclient</span>
 
 <span class="sd">OracleSubclient:</span>
-<span class="sd">    __init__()                          -- constructor for the class</span>
+<span class="sd">    __init__()                          --  constructor for the class</span>
 
-<span class="sd">    data_sp()                           -- Getters and setters for data storage policy</span>
+<span class="sd">    _get_subclient_properties()         --  gets the subclient related properties of</span>
+<span class="sd">                                            Oracle subclient</span>
 
-<span class="sd">    _get_oracle_restore_json            -- Method to get restore JSON for an oracle instance</span>
+<span class="sd">    _get_subclient_properties_json()    --  returns subclient property json for oracle</span>
 
-<span class="sd">    _oracle_cumulative_backup_json      -- Get cumulative backup JSON for oracle instance</span>
+<span class="sd">    data()                              --  Getter and Setter for enabling data mode in oracle</span>
 
-<span class="sd">    is_snapenabled()                    -- Check if intellisnap has been enabled in the subclient</span>
+<span class="sd">    selective_online_full()             --  Getter and Setter to enable selective online option</span>
 
-<span class="sd">    backup                              -- Method to backup database</span>
+<span class="sd">    set_backupcopy_interface()          --  Setter for the backupcopy interface</span>
 
-<span class="sd">    restore                             -- Method to restore databases</span>
+<span class="sd">    data_stream()                       --  Getter and Setter for data stream</span>
+
+<span class="sd">    backup()                            --  Performs backup database</span>
+
+<span class="sd">    restore()                           --  Performs restore databases</span>
+
+<span class="sd">    backup_archive_log()                --  Getter ans Setter for enaling/disabling</span>
+<span class="sd">                                            archive log mode</span>
+
+<span class="sd">    archive_files_per_bfs()             --  Getter and Setter for archive files per BFS</span>
+
+<span class="sd">    data_sp()                           --  Getters and setters for data storage policy</span>
+
+<span class="sd">    _get_oracle_restore_json            --  To get restore JSON for an oracle instance</span>
+
+<span class="sd">    _oracle_cumulative_backup_json      --  Get cumulative backup JSON for oracle instance</span>
+
+<span class="sd">    is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
@@ -86,11 +106,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">OracleSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+        <span class="c1">#self._oracle_properties = {}</span>
 
     <span class="k">def</span> <span class="nf">_oracle_cumulative_backup_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to add oracle options to oracle backup</span>
+<span class="sd">        Adds oracle options to oracle backup</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict    -- dict containing request JSON</span>
@@ -109,6 +130,177 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">request_json</span>
 
+    <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the subclient  related properties of Oracle subclient.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">OracleSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_subclient_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;oracleSubclientProp&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns subclient property json for oracle</span>
+<span class="sd">           Returns:</span>
+<span class="sd">                dict - all subclient properties put inside a dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subclient_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;proxyClient&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxyClient</span><span class="p">,</span>
+                    <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
+                    <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
+                    <span class="s2">&quot;oracleSubclientProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_subclient_properties</span><span class="p">,</span>
+                <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">subclient_json</span>
+
+<div class="viewcode-block" id="OracleSubclient.set_prop_for_orcle_subclient"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.set_prop_for_orcle_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">set_prop_for_orcle_subclient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span> <span class="n">snap_engine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">archivefilebfs</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the subclient properties.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                storage_policy      (str)   --  name of the storage policy to be associated</span>
+<span class="sd">                with the subclient</span>
+
+<span class="sd">                snap_engine         (str)   --  Snap Engine to be set for subclient (optional)</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if storage policy argument is not of type string</span>
+
+<span class="sd">                    if failed to update subclient</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">archivefilebfs</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">archive_files_per_bfs</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">archive_files_per_bfs</span> <span class="o">=</span> <span class="mi">32</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">archive_files_per_bfs</span> <span class="o">=</span> <span class="n">archivefilebfs</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_stream</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy</span> <span class="o">=</span> <span class="n">storage_policy</span>
+        <span class="k">if</span> <span class="n">snap_engine</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enable_intelli_snap</span><span class="p">(</span><span class="n">snap_engine</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to fetch if data enabled in oracle subclient or not</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool     --  True if data is enabled on the subclient. Else False</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+
+    <span class="nd">@data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables  data for oracle subclient</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                data      (bool) --   True if data to be enabled on the subclient. Else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_oracle_subclient_properties[&#39;data&#39;]&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_archive_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to fetch if archive log backup enabled or not</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                    bool     --  True if archivelog is enabled on the subclient. Else False</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;backupArchiveLog&quot;</span><span class="p">)</span>
+
+    <span class="nd">@backup_archive_log</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backup_archive_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_archive_log</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setter to enable backup archive log in oracle subclient</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                backup_archive_log    (bool)    --  True if archive log to be enabled</span>
+<span class="sd">                                                    on the subclient.Else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_oracle_subclient_properties[&#39;backupArchiveLog&#39;]&quot;</span><span class="p">,</span> <span class="n">backup_archive_log</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">selective_online_full</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to fetch if selective online full enabled or not</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                    bool     --  True if selective online is enabled on the subclient. Else False</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;selectiveOnlineFull&quot;</span><span class="p">)</span>
+
+    <span class="nd">@selective_online_full</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">selective_online_full</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selective_online_full</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setter to enable backup archive log in oracle subclient</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                selective_online_full    (bool)    --  True if selective online to be enabled</span>
+<span class="sd">                                                        on the subclient.Else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backup_archive_log</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_oracle_subclient_properties[&#39;selectiveOnlineFull&#39;]&quot;</span><span class="p">,</span> <span class="n">selective_online_full</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">archive_files_per_bfs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to fetch archive files per BFS</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                    (int)    --     value for archive files per BFS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;archiveFilesPerBFS&quot;</span><span class="p">)</span>
+
+    <span class="nd">@archive_files_per_bfs</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">archive_files_per_bfs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archive_files_per_bfs</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setter to set parameter  archive files per BFS</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">               archive_files_per_bfs    (int)    --     value for archive files per BFS</span>
+<span class="sd">                                                        default : 32</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_oracle_subclient_properties[&#39;archiveFilesPerBFS&#39;]&quot;</span><span class="p">,</span> <span class="n">archive_files_per_bfs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to fetch data stream count</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                    int     --  data backup stream count at subclient level</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dataThresholdStreams&quot;</span><span class="p">)</span>
+
+    <span class="nd">@data_stream</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">data_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_stream</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setter to set data backup stream count at subclient level</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                data_stream    (int)    --  data backup stream count at subclient level</span>
+<span class="sd">                                            default = 1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_oracle_subclient_properties[&#39;dataThresholdStreams&#39;]&quot;</span><span class="p">,</span> <span class="n">data_stream</span><span class="p">)</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">data_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -117,7 +309,19 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            string - string representing data storage policy</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">][</span><span class="s1">&#39;dataBackupStoragePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">][</span>
+            <span class="s1">&#39;dataBackupStoragePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_table_browse_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter to check whether the subclient has table browse enabled</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Bool - True if table browse is enabled on the subclient. Else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># return self._oracle_subclient_properties[&#39;enableTableBrowse&#39;]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;oracleSubclientProp&#39;</span><span class="p">][</span><span class="s1">&#39;enableTableBrowse&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_snapenabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -126,8 +330,49 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Bool - True if snap is enabled on the subclient. Else False</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;snapCopyInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isSnapBackupEnabled&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">][</span><span class="s1">&#39;snapCopyInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isSnapBackupEnabled&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="OracleSubclient.enable_table_browse"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.enable_table_browse">[docs]</a>    <span class="k">def</span> <span class="nf">enable_table_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables Table Browse for the subclient.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if failed to enable tablebrowse for subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_oracle_subclient_properties[&#39;enableTableBrowse&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OracleSubclient.disable_table_browse"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.disable_table_browse">[docs]</a>    <span class="k">def</span> <span class="nf">disable_table_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables Table Browse for the subclient.</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                        if failed to disable tablebrowse for subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
+            <span class="s2">&quot;_oracle_subclient_properties[&#39;enableTableBrowse&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="OracleSubclient.set_backupcopy_interface"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.set_backupcopy_interface">[docs]</a>    <span class="k">def</span> <span class="nf">set_backupcopy_interface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interface</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the backup copy interafce for the subclient.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                interface (str) -- type of the backup copy interface</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to disable intelli snap for subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">interface</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupcopy_interfaces</span><span class="p">:</span>
+            <span class="n">interface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupcopy_interfaces</span><span class="p">[</span><span class="n">interface</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">[</span><span class="s1">&#39;snapCopyInfo&#39;</span><span class="p">][</span><span class="s1">&#39;backupCopyInterface&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">interface</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s2">&quot;Subclient&quot;</span><span class="p">,</span> <span class="s2">&quot;101&quot;</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -168,19 +413,87 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="OracleSubclient.restore"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">oracle_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to restore the entire database using latest backup</span>
+<div class="viewcode-block" id="OracleSubclient.inline_backupcopy"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.inline_backupcopy">[docs]</a>    <span class="k">def</span> <span class="nf">inline_backupcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_level</span><span class="o">=</span><span class="n">InstanceBackupType</span><span class="o">.</span><span class="n">FULL</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs inline backupcopy on an oracle subclient</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            destination_client (str) -- destination client name</span>
-<span class="sd">            common_options (str) -- common options to be passed on for restore</span>
+<span class="sd">            backup_level (str)  -- Level of backup. Can be full or incremental</span>
+<span class="sd">                default: full</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object -- instance of Job class</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if backup level is incorrect</span>
+
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response does not succeed</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;103&#39;</span><span class="p">)</span>
+
+        <span class="n">backupcopy_level</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">backup_opts</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;dataOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;skipCatalogPhaseForSnapBackup&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;createBackupCopyImmediately&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;useCatalogServer&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;followMountPoints&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;enableIndexCheckPointing&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;backupCopyType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;enforceTransactionLogUsage&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;skipConsistencyCheck&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;collectVMGranularRecoveryMetadataForBkpCopy&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;createNewIndex&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;verifySynthFull&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span>
+            <span class="n">backupcopy_level</span><span class="p">,</span>
+            <span class="n">incremental_backup</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">incremental_level</span><span class="o">=</span><span class="n">backupcopy_level</span><span class="p">,</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="n">backup_opts</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OracleSubclient.restore"><a class="viewcode-back" href="../../../subclients/subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">common_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">browse_option</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">oracle_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs restore the entire/partial database using latest backup/backupcopy</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files               (dict) -- dictionary containing file options</span>
 <span class="sd">                default -- None</span>
-<span class="sd">            oracle_options (dict): dictionary containing other oracle options</span>
+
+<span class="sd">            destination_client  (str) -- destination client name</span>
+<span class="sd">                default -- None</span>
+
+<span class="sd">            common_options      (dict) -- common options to be passed on for restore</span>
+<span class="sd">                default -- None</span>
+
+<span class="sd">            browse_option       (dict) -- dictionary containing browse options</span>
+
+<span class="sd">            oracle_options      (dict) -- dictionary containing other oracle options</span>
 <span class="sd">                default -- By default it restores the controlfile and datafiles</span>
 <span class="sd">                                from latest backup</span>
+
+<span class="sd">            tag                 (str)  --  Type of the restore to be performed</span>
+<span class="sd">                default:    None</span>
+
 <span class="sd">                Example: {</span>
 <span class="sd">                            &quot;resetLogs&quot;: 1,</span>
 <span class="sd">                            &quot;switchDatabaseMode&quot;: True,</span>
@@ -190,16 +503,19 @@
 <span class="sd">                            &quot;recoverFrom&quot;: 3,</span>
 <span class="sd">                            &quot;restoreData&quot;: True,</span>
 <span class="sd">                            &quot;restoreFrom&quot;: 3</span>
+
 <span class="sd">                        }</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            object -- Job containing restore details</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">destination_client</span><span class="p">,</span>
-                                                               <span class="n">common_options</span><span class="p">,</span>
-                                                               <span class="n">oracle_options</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">,</span>
+                                                               <span class="n">common_options</span><span class="p">,</span> <span class="n">browse_option</span><span class="p">,</span>
+                                                               <span class="n">oracle_options</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -232,8 +548,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

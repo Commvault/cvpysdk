@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Array Management &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>Array Management &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -30,6 +30,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="module-cvpysdk.array_management">
@@ -44,6 +46,9 @@
 <p>unmount()                   –  Method for unmount operation</p>
 <p>delete()                    –  Method for delete operation</p>
 <p>revert()                    –  Method for revert operation</p>
+<p>reconcile()                 –  Method for recon operation</p>
+<p>add_array()                 –  Method to add array</p>
+<p>delete_array()              –  Method to delete array</p>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.array_management.ArrayManagement">
@@ -51,12 +56,45 @@
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for representing all the array management activities with the commcell.</p>
 <dl class="method">
+<dt id="cvpysdk.array_management.ArrayManagement.add_array">
+<code class="descname">add_array</code><span class="sig-paren">(</span><em>vendor_name</em>, <em>array_name</em>, <em>username</em>, <em>password</em>, <em>control_host=None</em>, <em>is_ocum=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/array_management.html#ArrayManagement.add_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.array_management.ArrayManagement.add_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will help in adding array entry in the array management
+Args :</p>
+<blockquote>
+<div><p>vendor_name         (str)               – vendor name</p>
+<p>array_name          (str)               – name of the array</p>
+<p>username            (str)               – username of the array</p>
+<p>password            (str)               – password to access array</p>
+<p>control_host        (str)               – control host of the array</p>
+<dl class="docutils">
+<dt>is_ocum             (bool)              – used for netapp to specify whether</dt>
+<dd>to use Primary file server or OCUM</dd>
+</dl>
+</div></blockquote>
+<p>Return :</p>
+<blockquote>
+<div>errorMessage   (string) :  Error message</div></blockquote>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.array_management.ArrayManagement.delete">
 <code class="descname">delete</code><span class="sig-paren">(</span><em>volume_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/array_management.html#ArrayManagement.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.array_management.ArrayManagement.delete" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes Snap of the given volume id</p>
 <p>Args:</p>
 <blockquote>
 <div>volume_id    (int)        – volume id of the snap backup job</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.array_management.ArrayManagement.delete_array">
+<code class="descname">delete_array</code><span class="sig-paren">(</span><em>control_host_array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/array_management.html#ArrayManagement.delete_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.array_management.ArrayManagement.delete_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method Deletes an array from the array management
+Args :</p>
+<blockquote>
+<div>control_host_array  (str)               – array id of the snap array</div></blockquote>
+<p>Return :</p>
+<blockquote>
+<div>errorMessage   (string) :  Error message</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -69,6 +107,15 @@
 <p>client_name  (str)        – name of the destination client, default: None</p>
 <p>MountPath    (str)        – MountPath for Snap operation, default: None</p>
 </div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.array_management.ArrayManagement.reconcile">
+<code class="descname">reconcile</code><span class="sig-paren">(</span><em>control_host</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/array_management.html#ArrayManagement.reconcile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.array_management.ArrayManagement.reconcile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs Reconcile Snap of the given control host id</p>
+<p>Args:</p>
+<blockquote>
+<div>control_host    (int)        – control host id of the array</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -95,6 +142,7 @@
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -136,8 +184,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/array_management.rst.txt"

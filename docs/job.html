@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Job &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>Job &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -30,6 +30,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="module-cvpysdk.job">
@@ -61,7 +63,6 @@ with the commcell it is associated with</p>
 <p>active_jobs()               –  returns the dict of active jobs and their details</p>
 <p>finished_jobs()             –  retutns the dict of finished jobs and their details</p>
 <p>get()                       –  returns the Job class instance for the given job id</p>
-<p>modify_jobmanagement_options – executes a request to modify job management options on commcell</p>
 <p>kill_all_jobs()             – Kills all jobs on the commcell</p>
 <p>resume_all_jobs()           – Resumes all jobs on the commcell</p>
 <p>suspend_all_jobs()          – Suspends all jobs on the commcell</p>
@@ -91,25 +92,27 @@ to given status, whichever is earlier</p>
 </div></blockquote>
 <div class="section" id="job-instance-attributes">
 <h3>Job instance Attributes<a class="headerlink" href="#job-instance-attributes" title="Permalink to this headline">¶</a></h3>
-<p><strong>job.is_finished</strong>         –  specifies whether the job is finished or not    (True / False)</p>
-<p><strong>job.client_name</strong>         –  returns the name of the client, job is running for</p>
-<p><strong>job.agent_name</strong>          –  returns the name of the agent, job is running for</p>
-<p><strong>job.instance_name</strong>       –  returns the name of the instance, job is running for</p>
-<p><strong>job.backupset_name</strong>      –  returns the name of the backupset, job is running for</p>
-<p><strong>job.subclient_name</strong>      –  returns the name of the subclient, job is running for</p>
-<p><strong>job.status</strong>              –  returns the current status of the job</p>
+<p><strong>job.is_finished</strong>                 –  specifies whether the job is finished or not    (True / False)</p>
+<p><strong>job.client_name</strong>                 –  returns the name of the client, job is running for</p>
+<p><strong>job.agent_name</strong>                  –  returns the name of the agent, job is running for</p>
+<p><strong>job.instance_name</strong>               –  returns the name of the instance, job is running for</p>
+<p><strong>job.backupset_name</strong>              –  returns the name of the backupset, job is running for</p>
+<p><strong>job.subclient_name</strong>              –  returns the name of the subclient, job is running for</p>
+<p><strong>job.status</strong>                      –  returns the current status of the job</p>
 <blockquote>
 <div>(Completed / Suspended / Waiting / … / etc.)</div></blockquote>
-<p><strong>job.job_id</strong>              –  returns the id of the job</p>
-<p><strong>job.job_type</strong>            –  returns the type of the job</p>
-<p><strong>job.backup_level</strong>        –  returns the backup level (if applicable), otherwise None</p>
-<p><strong>job.start_time</strong>          –  returns the start time of the job</p>
-<p><strong>job.end_time</strong>            –  returns the end time of the job</p>
-<p><strong>job.delay_reason</strong>        –  reason why the job was delayed</p>
-<p><strong>job.pending_reason</strong>      –  reason if job went into pending state</p>
-<p><strong>job.phase</strong>               –  returns the current phase of the job</p>
-<p><strong>job.summary</strong>             –  returns the dictionary consisting of the full summary of the job</p>
-<p><strong>job.details</strong>             –  returns the dictionary consisting of the full details of the job</p>
+<p><strong>job.job_id</strong>                      –  returns the id of the job</p>
+<p><strong>job.job_type</strong>                    –  returns the type of the job</p>
+<p><strong>job.backup_level</strong>                –  returns the backup level (if applicable), otherwise None</p>
+<p><strong>job.start_time</strong>                  –  returns the start time of the job</p>
+<p><strong>job.end_time</strong>                    –  returns the end time of the job</p>
+<p><strong>job.delay_reason</strong>                –  reason why the job was delayed</p>
+<p><strong>job.pending_reason</strong>              –  reason if job went into pending state</p>
+<p><strong>job.phase</strong>                       –  returns the current phase of the job</p>
+<p><strong>job.summary</strong>                     –  returns the dictionary consisting of the full summary of the job</p>
+<p><strong>job.details</strong>                     –  returns the dictionary consisting of the full details of the job</p>
+<p><strong>job.num_of_files_transferred</strong>    – returns the current number of files transferred for the job.</p>
+<p><strong>job.state</strong>                       – returns the current state of the job.</p>
 <dl class="class">
 <dt id="cvpysdk.job.Job">
 <em class="property">class </em><code class="descclassname">cvpysdk.job.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>job_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.Job" title="Permalink to this definition">¶</a></dt>
@@ -206,6 +209,12 @@ to given status, whichever is earlier</p>
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.num_of_files_transferred">
+<code class="descname">num_of_files_transferred</code><a class="headerlink" href="#cvpysdk.job.Job.num_of_files_transferred" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the number of files transferred as a read-only attribute.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="cvpysdk.job.Job.pause">
 <code class="descname">pause</code><span class="sig-paren">(</span><em>wait_for_job_to_pause=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#Job.pause"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.Job.pause" title="Permalink to this definition">¶</a></dt>
@@ -276,6 +285,12 @@ to given status, whichever is earlier</p>
 <dt id="cvpysdk.job.Job.start_time">
 <code class="descname">start_time</code><a class="headerlink" href="#cvpysdk.job.Job.start_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the start time as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.job.Job.state">
+<code class="descname">state</code><a class="headerlink" href="#cvpysdk.job.Job.state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the job state as a read-only attribute.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -544,30 +559,6 @@ as the key, and their details as its value</dd>
 </dd></dl>
 
 <dl class="method">
-<dt id="cvpysdk.job.JobController.modify_jobmanagement_options">
-<code class="descname">modify_jobmanagement_options</code><span class="sig-paren">(</span><em>property_name</em>, <em>property_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#JobController.modify_jobmanagement_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.JobController.modify_jobmanagement_options" title="Permalink to this definition">¶</a></dt>
-<dd><p>Executes a request to modify job management options on commcell</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><p class="first">property_name (str)   –  property Name to modify/update in Job Management</p>
-<p class="last">propery_value (str)   –  property Value to modify/update in Job Management</p>
-</dd>
-<dt>Returns:</dt>
-<dd>None</dd>
-<dt>Raises:</dt>
-<dd><dl class="first last docutils">
-<dt>SDKException:</dt>
-<dd><ul class="first last simple">
-<li>Failed to execute the api to modify property</li>
-<li>response is empty</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
 <dt id="cvpysdk.job.JobController.resume_all_jobs">
 <code class="descname">resume_all_jobs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/job.html#JobController.resume_all_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.job.JobController.resume_all_jobs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resumes all the jobs on the commserver</p>
@@ -587,6 +578,7 @@ as the key, and their details as its value</dd>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -640,8 +632,8 @@ as the key, and their details as its value</dd>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/job.rst.txt"

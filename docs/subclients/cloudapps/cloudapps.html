@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Cloud Apps Subclients &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>Cloud Apps Subclients &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -30,6 +30,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="cloud-apps-subclients">
@@ -149,7 +151,7 @@ default: None for restores to backup or proxy client.</dd>
 </div>
 <div class="section" id="module-cvpysdk.subclients.cloudapps.google_subclient">
 <span id="google"></span><h2>Google<a class="headerlink" href="#module-cvpysdk.subclients.cloudapps.google_subclient" title="Permalink to this headline">¶</a></h2>
-<p>File for operating on a GMail/GDrive Subclient.</p>
+<p>File for operating on a GMail/GDrive/OneDrive Subclient.</p>
 <p>GoogleSubclient is the only class defined in this file.</p>
 <p>GoogleSubclient:    Derived class from CloudAppsSubclient Base class, representing a
 GMail/GDrive/OneDrive subclient, and to perform operations on that subclient</p>
@@ -157,7 +159,8 @@ GMail/GDrive/OneDrive subclient, and to perform operations on that subclient</p>
 <blockquote>
 <div><p>_get_subclient_properties()         –  gets the properties of Google Subclient</p>
 <p>_get_subclient_properties_json()    –  gets the properties JSON of Google Subclient</p>
-<p>content()                           –  update the content of the subclient</p>
+<p>content()                           –  gets the content of the subclient</p>
+<p>groups()                            –  gets the groups associated with the subclient</p>
 <p>restore_out_of_place()              –  runs out-of-place restore for the subclient</p>
 <p>discover()                          –  runs user discovery on subclient</p>
 </div></blockquote>
@@ -170,11 +173,7 @@ and to perform operations on that subclient.</p>
 <dl class="attribute">
 <dt id="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.content">
 <code class="descname">content</code><a class="headerlink" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.content" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the appropriate content from the Subclient relevant to the user.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>list - list of content associated with the subclient</dd>
-</dl>
+<dd><p>Returns the subclient content dict</p>
 </dd></dl>
 
 <dl class="method">
@@ -206,6 +205,19 @@ and to perform operations on that subclient.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.groups">
+<code class="descname">groups</code><a class="headerlink" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of groups assigned to the subclient if any.
+Groups can be azure AD group or Google groups.
+Groups are assigned only if auto discovery is enabled for groups.</p>
+<blockquote>
+<div><p>Returns:</p>
+<blockquote>
+<div>list - list of groups associated with the subclient</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -257,6 +269,19 @@ at the specified destionation location.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.set_auto_discovery">
+<code class="descname">set_auto_discovery</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/cvpysdk/subclients/cloudapps/google_subclient.html#GoogleSubclient.set_auto_discovery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.set_auto_discovery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the auto discovery value for subclient.
+You can either set a RegEx value or a user group,
+depending on the auto discovery type selected at instance level.</p>
+<blockquote>
+<div><p>Args:</p>
+<blockquote>
+<div>value   (list)  –  List of RegEx or user groups</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 </dd></dl>
@@ -681,6 +706,7 @@ gets contents till current day if not specified</div></blockquote>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -735,8 +761,8 @@ gets contents till current day if not specified</div></blockquote>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="../../_sources/subclients/cloudapps/cloudapps.rst.txt"

@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.client &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.client &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -28,10 +28,13 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.client</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># pylint: disable=R1705, R0205</span>
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
@@ -189,6 +192,8 @@
 
 <span class="sd">    reconfigure_client()         --  reapplies license to the client</span>
 
+<span class="sd">    push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes</span>
+
 <span class="sd">Client Attributes</span>
 <span class="sd">-----------------</span>
 
@@ -259,6 +264,8 @@
 <span class="sd">    **consumed_licenses**           --  returns dictionary of all the license details</span>
 <span class="sd">    which is consumed by the client</span>
 
+<span class="sd">    **cvd_port**                    -- returns cvd port of the client</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
@@ -276,6 +283,7 @@
 <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agents</span>
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
 
 <span class="kn">from</span> <span class="nn">.network</span> <span class="k">import</span> <span class="n">Network</span>
 
@@ -591,9 +599,12 @@
 <span class="sd">                None    -   if no client has the same hostname as the given input</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">hostname</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">[</span><span class="n">client</span><span class="p">][</span><span class="s1">&#39;hostname&#39;</span><span class="p">]:</span>
-                <span class="k">return</span> <span class="n">client</span>
+        <span class="c1"># verify there is no client in the Commcell with the same name as the given hostname</span>
+        <span class="c1"># for multi-instance clients</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span> <span class="ow">and</span> <span class="n">hostname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">hostname</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">[</span><span class="n">client</span><span class="p">][</span><span class="s1">&#39;hostname&#39;</span><span class="p">]:</span>
+                    <span class="k">return</span> <span class="n">client</span>
 
     <span class="k">def</span> <span class="nf">_get_hidden_client_from_hostname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if hidden client associated given hostname exists and returns the hidden client</span>
@@ -608,9 +619,12 @@
 <span class="sd">                None    -   if no client has the same hostname as the given input</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">hidden_client</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">hostname</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">[</span><span class="n">hidden_client</span><span class="p">][</span><span class="s1">&#39;hostname&#39;</span><span class="p">]:</span>
-                <span class="k">return</span> <span class="n">hidden_client</span>
+        <span class="c1"># verify there is no client in the Commcell with the same name as the given hostname</span>
+        <span class="c1"># for multi-instance clients</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span> <span class="ow">and</span> <span class="n">hostname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">hidden_client</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">hostname</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">[</span><span class="n">hidden_client</span><span class="p">][</span><span class="s1">&#39;hostname&#39;</span><span class="p">]:</span>
+                    <span class="k">return</span> <span class="n">hidden_client</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">all_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -670,22 +684,24 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_virtualization_clients</span>
 
 <div class="viewcode-block" id="Clients.has_client"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Clients.has_client">[docs]</a>    <span class="k">def</span> <span class="nf">has_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Checks if a client exists in the commcell with the input client name.</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a client exists in the commcell with the given client name / hostname.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                client_name (str)  --  name of the client</span>
+<span class="sd">                client_name     (str)   --  name / hostname of the client</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                bool - boolean output whether the client exists in the commcell or not</span>
+<span class="sd">                bool    -   boolean output whether the client exists in the commcell or not</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if type of the client name argument is not string</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span> <span class="ow">and</span> <span class="n">client_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span></div>
+        <span class="k">return</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span> <span class="ow">and</span> <span class="n">client_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">)</span> <span class="ow">or</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_from_hostname</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Clients.has_hidden_client"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Clients.has_hidden_client">[docs]</a>    <span class="k">def</span> <span class="nf">has_hidden_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if a client exists in the commcell with the input client name as a hidden client.</span>
@@ -695,7 +711,7 @@
 
 <span class="sd">            Returns:</span>
 <span class="sd">                bool - boolean output whether the client exists in the commcell or not as a hidden</span>
-<span class="sd">                        client</span>
+<span class="sd">                client</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -704,7 +720,8 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span> <span class="ow">and</span> <span class="n">client_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span></div>
+        <span class="k">return</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span> <span class="ow">and</span> <span class="n">client_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">)</span> <span class="ow">or</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_hidden_client_from_hostname</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Clients.add_vmware_client"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Clients.add_vmware_client">[docs]</a>    <span class="k">def</span> <span class="nf">add_vmware_client</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -979,7 +996,7 @@
 <span class="sd">            compare specified name with host names of existing clients</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                name (str)  --  name of the client</span>
+<span class="sd">                name (str)  --  name / hostname of the client</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Client class for the given client name</span>
@@ -998,25 +1015,22 @@
             <span class="n">client_id</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-                <span class="n">client_name</span> <span class="o">=</span> <span class="n">name</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_from_hostname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">client_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_from_hostname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">client_from_hostname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_from_hostname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_hidden_client</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-                <span class="n">client_name</span> <span class="o">=</span> <span class="n">name</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hidden_client_from_hostname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">client_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hidden_client_from_hostname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">client_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">client_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">[</span><span class="n">client_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="n">client_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">[</span><span class="n">client_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
-
-                <span class="k">return</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">client_id</span><span class="p">)</span>
+                <span class="n">client_from_hostname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hidden_client_from_hostname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No client exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-                <span class="p">)</span></div>
+                    <span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No client exists with given name/hostname: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="n">client_name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">client_from_hostname</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">client_from_hostname</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">client_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">[</span><span class="n">client_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">client_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_clients</span><span class="p">[</span><span class="n">client_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+
+            <span class="k">return</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">client_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Clients.delete"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Clients.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the client from the commcell.</span>
@@ -1161,6 +1175,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_job_results_directory</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log_directory</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvd_port</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
@@ -1198,7 +1213,7 @@
                 <span class="n">os_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;osInfo&#39;</span><span class="p">]</span>
                 <span class="n">processor_type</span> <span class="o">=</span> <span class="n">os_info</span><span class="p">[</span><span class="s1">&#39;OsDisplayInfo&#39;</span><span class="p">][</span><span class="s1">&#39;ProcessorType&#39;</span><span class="p">]</span>
                 <span class="n">os_name</span> <span class="o">=</span> <span class="n">os_info</span><span class="p">[</span><span class="s1">&#39;OsDisplayInfo&#39;</span><span class="p">][</span><span class="s1">&#39;OSName&#39;</span><span class="p">]</span>
-
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cvd_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;cvdPort&#39;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_os_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> </span><span class="si">{1}</span><span class="s1"> </span><span class="si">{2}</span><span class="s1">  --  </span><span class="si">{3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="n">processor_type</span><span class="p">,</span>
                     <span class="n">os_info</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">],</span>
@@ -2459,7 +2474,7 @@
             <span class="s1">&#39;Authtoken&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">],</span>
             <span class="s1">&#39;Accept&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
             <span class="s1">&#39;FileName&#39;</span><span class="p">:</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">file_name</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)),</span>
-            <span class="s1">&#39;FileSize&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;FileSize&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_size</span><span class="p">),</span>
             <span class="s1">&#39;ParentFolderPath&#39;</span><span class="p">:</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">destination_folder</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
         <span class="p">}</span>
 
@@ -2467,19 +2482,16 @@
 
         <span class="k">if</span> <span class="n">file_size</span> <span class="o">&lt;=</span> <span class="n">chunk_size</span><span class="p">:</span>
             <span class="n">upload_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;UPLOAD_FULL_FILE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
-            <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;FileSize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_size</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_make_request</span><span class="p">(</span><span class="n">upload_url</span><span class="p">,</span> <span class="n">file_stream</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">headers</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">upload_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;UPLOAD_CHUNKED_FILE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
             <span class="k">while</span> <span class="n">file_size</span> <span class="o">&gt;</span> <span class="n">chunk_size</span><span class="p">:</span>
                 <span class="n">file_size</span> <span class="o">=</span> <span class="n">file_size</span> <span class="o">-</span> <span class="n">chunk_size</span>
-                <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;FileSize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span>
                 <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;FileEOF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">request_id</span><span class="p">,</span> <span class="n">chunk_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_request</span><span class="p">(</span>
                     <span class="n">upload_url</span><span class="p">,</span> <span class="n">file_stream</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">),</span> <span class="n">headers</span><span class="p">,</span> <span class="n">request_id</span><span class="p">,</span> <span class="n">chunk_offset</span>
                 <span class="p">)</span>
 
-            <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;FileSize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_size</span><span class="p">)</span>
             <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;FileEOF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_make_request</span><span class="p">(</span>
                 <span class="n">upload_url</span><span class="p">,</span> <span class="n">file_stream</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_size</span><span class="p">),</span> <span class="n">headers</span><span class="p">,</span> <span class="n">request_id</span><span class="p">,</span> <span class="n">chunk_offset</span>
@@ -2721,30 +2733,35 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_network</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="Client.set_encryption_property"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Client.set_encryption_property">[docs]</a>    <span class="k">def</span> <span class="nf">set_encryption_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                <span class="n">value</span><span class="p">,</span>
+                                <span class="n">enc_setting</span><span class="o">=</span><span class="s2">&quot;USE_SPSETTINGS&quot;</span><span class="p">,</span>
                                 <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                 <span class="n">key_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;updates encryption properties on client</span>
+
 <span class="sd">        Args:</span>
-<span class="sd">            value   (str)   --  enable(True) or disable (False) encryption</span>
-<span class="sd">            key     (str)   --  cipher type</span>
-<span class="sd">            key_len  (str)   --  cipher key length</span>
 
+<span class="sd">            enc_setting (str)   --  sets encryption level on client</span>
+<span class="sd">                                    (USE_SPSETTINGS / OFF/ ON_CLIENT)</span>
+<span class="sd">            default : USE_SPSETTINGS</span>
 
-<span class="sd">            to enable encryption : give value, key, key_len params</span>
-<span class="sd">            to disable: give value param</span>
+<span class="sd">            key         (str)   --  cipher type</span>
+
+<span class="sd">            key_len     (str)   --  cipher key length</span>
+
+<span class="sd">            to enable encryption    : client_object.set_encryption_property(&quot;ON_CLIENT&quot;, &quot;TwoFish&quot;, &quot;256&quot;)</span>
+<span class="sd">            to disable encryption   : client_object.set_encryption_property(&quot;OFF&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">client_props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;clientProps&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;CipherType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
-            <span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;EnableEncryption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-            <span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;EncryptKeyLength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">key_len</span><span class="p">)</span>
-
+        <span class="k">if</span> <span class="n">enc_setting</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;encryptionSettings&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enc_setting</span>
+            <span class="k">if</span> <span class="n">enc_setting</span> <span class="ow">is</span> <span class="s2">&quot;ON_CLIENT&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key_len</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+                <span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;CipherType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;EncryptKeyLength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">key_len</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;EnableEncryption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_client_props_json</span><span class="p">(</span><span class="n">client_props</span><span class="p">)</span>
 
@@ -2809,7 +2826,6 @@
 <span class="sd">                                32768</span>
 <span class="sd">                                65536</span>
 <span class="sd">                                131072</span>
-
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">prop_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prop_value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
@@ -2907,7 +2923,7 @@
                               <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}]</span>
         <span class="p">}</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_client_props_json</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENT</span><span class="p">,</span> <span class="n">request_json</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
@@ -2921,8 +2937,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Client.delete_additional_setting"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Client.delete_additional_setting">[docs]</a>    <span class="k">def</span> <span class="nf">delete_additional_setting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">,</span> <span class="n">key_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes registry key from the client property</span>
@@ -2946,7 +2961,7 @@
                               <span class="s2">&quot;keyName&quot;</span><span class="p">:</span> <span class="n">key_name</span><span class="p">}]</span>
         <span class="p">}</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_client_props_json</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENT</span><span class="p">,</span> <span class="n">request_json</span>
         <span class="p">)</span>
 
@@ -2961,8 +2976,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Client.release_license"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Client.release_license">[docs]</a>    <span class="k">def</span> <span class="nf">release_license</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">license_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Releases a license from a client</span>
@@ -2991,7 +3005,8 @@
         <span class="n">license_type_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">app_type_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">platform_type</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">license_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">license_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumed_licenses</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">license_name</span><span class="p">):</span>
                 <span class="n">license_type_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumed_licenses</span><span class="p">[</span><span class="n">license_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;licenseType&#39;</span><span class="p">)</span>
                 <span class="n">app_type_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumed_licenses</span><span class="p">[</span><span class="n">license_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;appType&#39;</span><span class="p">)</span>
@@ -3012,7 +3027,7 @@
                 <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
             <span class="p">}</span>
         <span class="p">}</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RELEASE_LICENSE&#39;</span><span class="p">],</span> <span class="n">request_json</span>
         <span class="p">)</span>
 
@@ -3028,8 +3043,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Client.reconfigure_client"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Client.reconfigure_client">[docs]</a>    <span class="k">def</span> <span class="nf">reconfigure_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reapplies license to the client</span>
@@ -3049,7 +3063,7 @@
             <span class="p">},</span>
             <span class="s2">&quot;platformTypes&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="p">}</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RECONFIGURE_LICENSE&#39;</span><span class="p">],</span> <span class="n">request_json</span>
         <span class="p">)</span>
 
@@ -3065,8 +3079,47 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Client.push_servicepack_and_hotfix"><a class="viewcode-back" href="../../client.html#cvpysdk.client.Client.push_servicepack_and_hotfix">[docs]</a>    <span class="k">def</span> <span class="nf">push_servicepack_and_hotfix</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">reboot_client</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;triggers installation of service pack and hotfixes</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reboot_client (bool)            -- boolean to specify whether to reboot the client</span>
+<span class="sd">            or not</span>
+
+<span class="sd">                default: False</span>
+
+<span class="sd">            run_db_maintenance (bool)      -- boolean to specify whether to run db</span>
+<span class="sd">            maintenance not</span>
+
+<span class="sd">                default: True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object - instance of the Job class for this download job</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if Download job failed</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if another download job is already running</span>
+
+<span class="sd">        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">install</span> <span class="o">=</span> <span class="n">Install</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">install</span><span class="o">.</span><span class="n">push_servicepack_and_hotfix</span><span class="p">(</span>
+            <span class="n">client_computers</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="p">],</span>
+            <span class="n">reboot_client</span><span class="o">=</span><span class="n">reboot_client</span><span class="p">,</span>
+            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="n">run_db_maintenance</span>
+        <span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">consumed_licenses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -3110,7 +3163,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
                 <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;LIST_LICENSES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
@@ -3132,12 +3185,18 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span></div>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cvd_port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns CVD port of the client&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvd_port</span></div>
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -3170,8 +3229,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

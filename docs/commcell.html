@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Commcell &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>Commcell &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -30,6 +30,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="module-cvpysdk.commcell">
@@ -63,7 +65,14 @@ class instance
 run_data_aging()            –  triggers data aging job from the commcell level</p>
 <p>get_saml_token()            –  returns the SAML token for the currently logged-in user</p>
 <p>add_additional_setting()    –  adds registry key to the commserve property</p>
-<p class="last">delete_additional_setting() –  deletes registry key from the commserve property</p>
+<p>delete_additional_setting() –  deletes registry key from the commserve property</p>
+<p>download_software()         –  triggers the Download Software job with the given options</p>
+<p>push_servicepack_and_hotfixes() – triggers installation of service pack and hotfixes</p>
+<p>install_software()              – triggers the install Software job with the given options</p>
+<dl class="last docutils">
+<dt>enable_auth_code()              – Executes the request on the server to enable Auth Code for installation on</dt>
+<dd>commcell.</dd>
+</dl>
 </dd>
 </dl>
 <div class="section" id="commcell-instance-attributes">
@@ -138,12 +147,14 @@ to interact with the Events associated on the Commcell</p>
 to run disaster recovery backup , restore operations.</p>
 <p><strong>commserv_client</strong>         –  returns the client object associated with the
 commserver</p>
-<p><strong>Commcell_Migration</strong>      –  returns the instance of the ‘CommCellMigration’ class,
+<p><strong>identity_management</strong>     –  returns the instance of the ‘IdentityManagementApps
+class to perform identity management operations on the commcell class</p>
+<p><strong>commcell_migration</strong>      –  returns the instance of the ‘CommCellMigration’ class,
 to interact with the Commcell Export &amp; Import on the Commcell</p>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.commcell.Commcell">
-<em class="property">class </em><code class="descclassname">cvpysdk.commcell.</code><code class="descname">Commcell</code><span class="sig-paren">(</span><em>webconsole_hostname</em>, <em>commcell_username=None</em>, <em>commcell_password=None</em>, <em>authtoken=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">cvpysdk.commcell.</code><code class="descname">Commcell</code><span class="sig-paren">(</span><em>webconsole_hostname</em>, <em>commcell_username=None</em>, <em>commcell_password=None</em>, <em>authtoken=None</em>, <em>force_https=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for establishing a session to the Commcell via Commvault REST API.</p>
 <dl class="attribute">
@@ -339,6 +350,98 @@ to interact with the Commcell Export &amp; Import on the Commcell</p>
 <dd><p>Returns the instance of the DownloadCenter class.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.download_software">
+<code class="descname">download_software</code><span class="sig-paren">(</span><em>options=None</em>, <em>os_list=None</em>, <em>service_pack=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.download_software"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.download_software" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads the os packages on the commcell</p>
+<p>Args:</p>
+<blockquote>
+<div><p>options      (enum)            –  Download option to download software</p>
+<p>os_list      (list of enum)    –  list of windows/unix packages to be downloaded</p>
+<p>service_pack (int)             –  service pack to be downloaded</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this download job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if Download job failed</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if another download job is running</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Usage:</p>
+<ul>
+<li><p class="first">if download_software is not given any parameters it takes default value of latest
+service pack for options and downloads WINDOWS_64 package</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">commcell_obj</span><span class="o">.</span><span class="n">download_software</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">DownloadOptions and DownloadPackages enum is used for providing input to the
+download software method, it can be imported by</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cvpysdk.deployment.deploymentconstants</span> <span class="k">import</span> <span class="n">DownloadOptions</span>
+<span class="go">    from cvpysdk.deployment.deploymentconstants import DownloadPackages</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">sample method calls for different options, for latest service pack</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">commcell_obj</span><span class="o">.</span><span class="n">download_software</span><span class="p">(</span>
+<span class="go">        options=DownloadOptions.LATEST_SERVICEPACK.value,</span>
+<span class="go">        os_list=[DownloadPackages.WINDOWS_64.value]</span>
+<span class="go">        )</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">For Latest hotfixes for the installed service pack</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">commcell_obj</span><span class="o">.</span><span class="n">download_software</span><span class="p">(</span>
+<span class="go">        options=&#39;DownloadOptions.LATEST_HOTFIXES.value&#39;,</span>
+<span class="go">        os_list=[DownloadPackages.WINDOWS_64.value,</span>
+<span class="go">                DownloadPackages.UNIX_LINUX64.value]</span>
+<span class="go">        )</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">For service pack and hotfixes</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">commcell_obj</span><span class="o">.</span><span class="n">download_software</span><span class="p">(</span>
+<span class="go">        options=&#39;DownloadOptions.SERVICEPACK_AND_HOTFIXES.value&#39;,</span>
+<span class="go">        os_list=[DownloadPackages.UNIX_MAC.value],</span>
+<span class="go">        service_pack=13</span>
+<span class="go">        )</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>NOTE:</strong> service_pack parameter must be specified for third option</p>
+</div></blockquote>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.enable_auth_code">
+<code class="descname">enable_auth_code</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.enable_auth_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.enable_auth_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the request on the server to enable Auth Code for installation on commcell</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>None</dd>
+<dt>Returns:</dt>
+<dd>str     -   auth code generated from the server</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to enable auth code generation</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.event_viewer">
 <code class="descname">event_viewer</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.event_viewer" title="Permalink to this definition">¶</a></dt>
@@ -364,6 +467,76 @@ to interact with the Commcell Export &amp; Import on the Commcell</p>
 <dt id="cvpysdk.commcell.Commcell.global_filters">
 <code class="descname">global_filters</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.global_filters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the GlobalFilters class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.commcell.Commcell.identity_management">
+<code class="descname">identity_management</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.identity_management" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the instance of the IdentityManagementApps class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.install_software">
+<code class="descname">install_software</code><span class="sig-paren">(</span><em>client_computers=None</em>, <em>windows_features=None</em>, <em>unix_features=None</em>, <em>username=None</em>, <em>password=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.install_software"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.install_software" title="Permalink to this definition">¶</a></dt>
+<dd><p>Installs the selected features in the selected clients
+Args:</p>
+<blockquote>
+<div><p>client_computers    (list)      – list of hostnames/IP address to install the
+features on</p>
+<blockquote>
+<div>default : None</div></blockquote>
+<p>windows_features (list of enum) – list of windows features to be installed</p>
+<blockquote>
+<div>default : None</div></blockquote>
+<p>unix_features (list of enum)    – list of unix features to be installed</p>
+<blockquote>
+<div>default : None</div></blockquote>
+<p>username    (str)               – username of the machine to install features on</p>
+<blockquote>
+<div>default : None</div></blockquote>
+<p>password    (str)               – base64 encoded password</p>
+<blockquote>
+<div>default : None</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this install_software job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if install job failed</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Usage:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing
+input to the install_software method, it can be imported by</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cvpysdk.deployment.deploymentconstants</span> <span class="k">import</span> <span class="n">UnixDownloadFeatures</span>
+<span class="go">    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">sample method call</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">commcell_obj</span><span class="o">.</span><span class="n">install_software</span><span class="p">(</span>
+<span class="go">                client_computers=[win_machine1, win_machine2],</span>
+<span class="go">                windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],</span>
+<span class="go">                unix_features=None,</span>
+<span class="go">                username=&#39;username&#39;,</span>
+<span class="go">                password=&#39;password&#39;)</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>NOTE:</strong> Either Unix or Windows clients_computers should be chosen and
+not both</p>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
 </dd></dl>
 
 <dl class="attribute">
@@ -429,6 +602,47 @@ Args:</p>
 <dt>Returns:</dt>
 <dd>vm_dict -  all properties of VM prtotected for passed days</dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.push_servicepack_and_hotfix">
+<code class="descname">push_servicepack_and_hotfix</code><span class="sig-paren">(</span><em>client_computers=None</em>, <em>client_computer_groups=None</em>, <em>all_client_computers=False</em>, <em>all_client_computer_groups=False</em>, <em>reboot_client=False</em>, <em>run_db_maintenance=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.push_servicepack_and_hotfix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.push_servicepack_and_hotfix" title="Permalink to this definition">¶</a></dt>
+<dd><p>triggers installation of service pack and hotfixes</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">client_computers    (list)      – Client machines to install service pack on</p>
+<p>client_computer_groups (list)   – Client groups to install service pack on</p>
+<p>all_client_computers (bool)     – boolean to specify whether to install on all client
+computers or not</p>
+<blockquote>
+<div>default: False</div></blockquote>
+<p>all_client _computer_groups (bool) – boolean to specify whether to install on all
+client computer groups or not</p>
+<blockquote>
+<div>default: False</div></blockquote>
+<p>reboot_client (bool)            – boolean to specify whether to reboot the client
+or not</p>
+<blockquote>
+<div>default: False</div></blockquote>
+<p>run_db_maintenance (bool)      – boolean to specify whether to run db
+maintenance not</p>
+<blockquote class="last">
+<div>default: True</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this download job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if Download job failed</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if another download job is already running</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p><strong>NOTE:</strong> push_serivcepack_and_hotfixes cannot be used for revision upgrades</p>
 </dd></dl>
 
 <dl class="method">
@@ -526,6 +740,28 @@ be sent</p>
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.commcell.Commcell.set_default_plan">
+<code class="descname">set_default_plan</code><span class="sig-paren">(</span><em>plan_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/commcell.html#Commcell.set_default_plan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.set_default_plan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the request on the server to set Default Plan at commcell level.
+This is independent of the organization, as id is 0.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>plan_name (str)    - Plan name</dd>
+<dt>Returns:</dt>
+<dd>None</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if failed to set Default plan</p>
+<p>if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="cvpysdk.commcell.Commcell.storage_policies">
 <code class="descname">storage_policies</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.storage_policies" title="Permalink to this definition">¶</a></dt>
@@ -576,6 +812,7 @@ of the Commcell class, after the user was logged out.</p>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -625,8 +862,8 @@ of the Commcell class, after the user was logged out.</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/commcell.rst.txt"

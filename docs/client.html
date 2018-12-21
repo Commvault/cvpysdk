@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Client &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>Client &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -30,6 +30,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="module-cvpysdk.client">
@@ -126,6 +128,7 @@ and id, and associated to the commcell</p>
 <p>delete_additional_setting()  –  deletes registry key from the client property</p>
 <p>release_license()            –  releases a license from a client</p>
 <p>reconfigure_client()         –  reapplies license to the client</p>
+<p>push_servicepack_and_hotfixes() – triggers installation of service pack and hotfixes</p>
 </div></blockquote>
 <div class="section" id="client-attributes">
 <h3>Client Attributes<a class="headerlink" href="#client-attributes" title="Permalink to this headline">¶</a></h3>
@@ -170,6 +173,7 @@ client are running or not, and whether the CommServ is able to communicate with 
 <p><strong>set_dedup_prop</strong>              –     Set DDB properties</p>
 <p><strong>consumed_licenses</strong>           –  returns dictionary of all the license details
 which is consumed by the client</p>
+<p><strong>cvd_port</strong>                    – returns cvd port of the client</p>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.client.Client">
@@ -312,6 +316,12 @@ installed / configured on the Client.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.client.Client.cvd_port">
+<code class="descname">cvd_port</code><a class="headerlink" href="#cvpysdk.client.Client.cvd_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns CVD port of the client</p>
 </dd></dl>
 
 <dl class="method">
@@ -753,6 +763,37 @@ SDKException:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.client.Client.push_servicepack_and_hotfix">
+<code class="descname">push_servicepack_and_hotfix</code><span class="sig-paren">(</span><em>reboot_client=False</em>, <em>run_db_maintenance=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.push_servicepack_and_hotfix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.push_servicepack_and_hotfix" title="Permalink to this definition">¶</a></dt>
+<dd><p>triggers installation of service pack and hotfixes</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">reboot_client (bool)            – boolean to specify whether to reboot the client
+or not</p>
+<blockquote>
+<div>default: False</div></blockquote>
+<p>run_db_maintenance (bool)      – boolean to specify whether to run db
+maintenance not</p>
+<blockquote class="last">
+<div>default: True</div></blockquote>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the Job class for this download job</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if Download job failed</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p class="last">if another download job is already running</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p><strong>NOTE:</strong> push_serivcepack_and_hotfixes cannot be used for revision upgrades</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.client.Client.reconfigure_client">
 <code class="descname">reconfigure_client</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.reconfigure_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.reconfigure_client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reapplies license to the client</p>
@@ -923,15 +964,19 @@ maxCacheDB: Valid values are:</p>
 
 <dl class="method">
 <dt id="cvpysdk.client.Client.set_encryption_property">
-<code class="descname">set_encryption_property</code><span class="sig-paren">(</span><em>value</em>, <em>key=None</em>, <em>key_len=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.set_encryption_property"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.set_encryption_property" title="Permalink to this definition">¶</a></dt>
-<dd><p>updates encryption properties on client
-Args:</p>
+<code class="descname">set_encryption_property</code><span class="sig-paren">(</span><em>enc_setting='USE_SPSETTINGS'</em>, <em>key=None</em>, <em>key_len=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Client.set_encryption_property"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Client.set_encryption_property" title="Permalink to this definition">¶</a></dt>
+<dd><p>updates encryption properties on client</p>
+<p>Args:</p>
 <blockquote>
-<div><p>value   (str)   –  enable(True) or disable (False) encryption
-key     (str)   –  cipher type
-key_len  (str)   –  cipher key length</p>
-<p>to enable encryption : give value, key, key_len params
-to disable: give value param</p>
+<div><dl class="docutils">
+<dt>enc_setting (str)   –  sets encryption level on client</dt>
+<dd>(USE_SPSETTINGS / OFF/ ON_CLIENT)</dd>
+</dl>
+<p>default : USE_SPSETTINGS</p>
+<p>key         (str)   –  cipher type</p>
+<p>key_len     (str)   –  cipher key length</p>
+<p>to enable encryption    : client_object.set_encryption_property(“ON_CLIENT”, “TwoFish”, “256”)
+to disable encryption   : client_object.set_encryption_property(“OFF”)</p>
 </div></blockquote>
 </dd></dl>
 
@@ -1174,7 +1219,7 @@ We check if specified name matches any of the existing client names else
 compare specified name with host names of existing clients</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd>name (str)  –  name of the client</dd>
+<dd>name (str)  –  name / hostname of the client</dd>
 <dt>Returns:</dt>
 <dd>object - instance of the Client class for the given client name</dd>
 <dt>Raises:</dt>
@@ -1191,12 +1236,12 @@ compare specified name with host names of existing clients</p>
 <dl class="method">
 <dt id="cvpysdk.client.Clients.has_client">
 <code class="descname">has_client</code><span class="sig-paren">(</span><em>client_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/client.html#Clients.has_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.has_client" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checks if a client exists in the commcell with the input client name.</p>
+<dd><p>Checks if a client exists in the commcell with the given client name / hostname.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd>client_name (str)  –  name of the client</dd>
+<dd>client_name     (str)   –  name / hostname of the client</dd>
 <dt>Returns:</dt>
-<dd>bool - boolean output whether the client exists in the commcell or not</dd>
+<dd>bool    -   boolean output whether the client exists in the commcell or not</dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
 <dt>SDKException:</dt>
@@ -1214,11 +1259,8 @@ compare specified name with host names of existing clients</p>
 <dt>Args:</dt>
 <dd>client_name (str)  –  name of the client</dd>
 <dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>bool - boolean output whether the client exists in the commcell or not as a hidden</dt>
-<dd>client</dd>
-</dl>
-</dd>
+<dd>bool - boolean output whether the client exists in the commcell or not as a hidden
+client</dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
 <dt>SDKException:</dt>
@@ -1306,6 +1348,7 @@ compare specified name with host names of existing clients</p>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -1362,8 +1405,8 @@ compare specified name with host names of existing clients</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/client.rst.txt"

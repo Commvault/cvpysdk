@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.security.user &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.security.user &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.security.user</h1><div class="highlight"><pre>
@@ -108,7 +110,9 @@
 
 <span class="sd">    refresh()                           --  refreshes the properties of this user</span>
 
-<span class="sd">    update_security_associations        --  updates 3-way security associations on user</span>
+<span class="sd">    update_security_associations()      --  updates 3-way security associations on user</span>
+
+<span class="sd">    request_OTP()                       --  fetches OTP for user</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -247,8 +251,8 @@
 
 <div class="viewcode-block" id="Users.add"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.user.Users.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">user_name</span><span class="p">,</span>
-            <span class="n">full_name</span><span class="p">,</span>
             <span class="n">email</span><span class="p">,</span>
+            <span class="n">full_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">system_generated_password</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -278,7 +282,7 @@
 
 <span class="sd">                system_generated_password     (bool)    --  if set to true system</span>
 <span class="sd">                                                            defined password will be used</span>
-<span class="sd">                    default: False</span>
+<span class="sd">                                                            default: False</span>
 
 <span class="sd">                entity_dictionary   --      combination of entity_type, entity names</span>
 <span class="sd">                                            and role</span>
@@ -330,12 +334,8 @@
             <span class="n">system_generated_password</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">username</span> <span class="o">=</span> <span class="n">user_name</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">password</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">system_generated_password</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;User&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;Both password and system_generated_password are not set.&#39;</span>
-                    <span class="s1">&#39;Please specify password or mark system_generated_password as true&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">password</span><span class="p">:</span>
+                <span class="n">system_generated_password</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">email</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
@@ -836,10 +836,42 @@
                 <span class="s2">&quot;associations&quot;</span><span class="p">:</span><span class="n">sec_request</span>
                 <span class="p">}</span>
         <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_user_props</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_user_props</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="User.request_otp"><a class="viewcode-back" href="../../../security/security.html#cvpysdk.security.user.User.request_otp">[docs]</a>    <span class="k">def</span> <span class="nf">request_otp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;fetches OTP for user</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            OTP generated for user</span>
+<span class="sd">        Raises:</span>
+<span class="sd">                Exception:</span>
+<span class="sd">                    if response is not successful</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">has_user</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_name</span><span class="p">):</span>
+            <span class="n">get_otp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;OTP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">get_otp</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">&#39;value&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+
+
+
+
+
+
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -872,8 +904,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

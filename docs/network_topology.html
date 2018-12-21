@@ -1,0 +1,419 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Network Topology &#8212; Developer SDK - Python 11.14 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Operation Window" href="operation_window.html" />
+    <link rel="prev" title="Network" href="network.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cvpysdk.network_topology">
+<span id="network-topology"></span><h1>Network Topology<a class="headerlink" href="#module-cvpysdk.network_topology" title="Permalink to this headline">¶</a></h1>
+<p>Main file for performing network topology operations.</p>
+<p>NetworkTopologies and NetworkTopology are 2 classes defined in this file.</p>
+<p>NetworkTopologies: Class for representing all the network topologies in
+the commcell</p>
+<p>NetworkTopology: class for a single topology in commcell</p>
+<dl class="docutils">
+<dt>NetworkTopologies:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(class_object)              –  initialize object of NetworkTopologies</dt>
+<dd>class associated with the commcell</dd>
+<dt>__repr__()                          –  returns the string to represent the instance</dt>
+<dd>of the NetworkTopologies class</dd>
+<dt>all_network_topologies()            – returns dict of all the network topologies</dt>
+<dd>in the commcell</dd>
+<dt>__len__()                           –  returns the number of topologies associated</dt>
+<dd>with the Commcell</dd>
+</dl>
+<p>add(topology_name)                  – adds a new network topology to the commcell</p>
+<dl class="last docutils">
+<dt>get(topology_name)                  –  returns the NetworkTopology class object of</dt>
+<dd>the input topology name</dd>
+<dt>delete(topology_name)               –  deletes the specified network topology</dt>
+<dd>from the commcell</dd>
+<dt>refresh()                           – refresh the network topologies associated</dt>
+<dd>with the commcell</dd>
+</dl>
+</dd>
+</dl>
+<p>NetworkTopology:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>__init__(commcell_object,</dt>
+<dd><blockquote class="first">
+<div><p>network_topology_name,
+network_topology_id=None)      – initialize object of NetworkTopology class</p>
+<blockquote>
+<div>with the specified network topology name and id</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>__repr__()                              – return the network topology name, the instance</dt>
+<dd>is associated with</dd>
+<dt>_get_network_topology_id()              – method to get the network topology id if</dt>
+<dd>not specified</dd>
+<dt>_initialize_network_topology_properties()– initializes the properties of this network</dt>
+<dd>topology</dd>
+</dl>
+<p>update()                                – update properties of existing network topology</p>
+<p>network_topology_name()                 – updates new name for network topology</p>
+<p>description()                           – updates description for network topology</p>
+<p>network_topology_type()                 – updates network topology type</p>
+<p>firewall_groups()                       – updates client groups associated with the topology</p>
+<dl class="docutils">
+<dt>push_network_config()                   – performs a push network configuration on</dt>
+<dd>network topology</dd>
+</dl>
+<p class="last">refresh()                               – refresh the properties of  network topology</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.network_topology.NetworkTopologies">
+<em class="property">class </em><code class="descclassname">cvpysdk.network_topology.</code><code class="descname">NetworkTopologies</code><span class="sig-paren">(</span><em>commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopologies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopologies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for getting all the network topologies associated with client groups in commcell.</p>
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopologies.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>network_topology_name</em>, <em>client_groups=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopologies.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopologies.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new Network Topology to the Commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>network_topology_name        (str)        –  name of the new network</dt>
+<dd>topology to add</dd>
+<dt>client_groups               (list of dict) – client group names and</dt>
+<dd>client group types</dd>
+</dl>
+<p>[{‘group_type’:2, ‘group_name’: “test1”, ‘is_mnemonic’: False },
+{‘group_type’:1, ‘group_name’: “test2”, ‘is_mnemonic’: False },
+{‘group_type’:3, ‘group_name’: “test3”, ‘is_mnemonic’: False }]</p>
+<dl class="docutils">
+<dt>** kwargs               (dict)       – Key value pairs for supported</dt>
+<dd>arguments</dd>
+</dl>
+<p>Supported argument values:</p>
+<dl class="docutils">
+<dt>use_wildcardproxy   (boolean)  –   option to use wildcard proxy for proxy type</dt>
+<dd>topology
+Default value: False</dd>
+<dt>is_smart_topology   (boolean)  –   specified as true for smart topology</dt>
+<dd>Default value: False</dd>
+</dl>
+<p>topology_type        (int)     –   to specify type of network topology</p>
+<p>topology_description (str)     –   to specify topology description</p>
+<dl class="docutils">
+<dt>display_type         (int)     –   to specify display type for firewall extended</dt>
+<dd>properties
+Default value: 0</dd>
+</dl>
+<p>Possible input values:</p>
+<p>topology_type :
+1 — for proxy topology
+2 — for one-way topology
+3 — for two-way topology</p>
+<p>display_type:
+0 — servers
+1 — laptops</p>
+<p>group_type for client_groups:
+2: first client group in GUI screen
+1: second client group in GUI screen
+3: third client group in GUI screen</p>
+<p class="last">is_mnemonic for client_groups:
+True: if the specified group is a mnemonic
+False: if the specified group is a client group</p>
+</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the NetworkTopology class created by this method</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if topology creation fails</p>
+<p>if topology with same name already exists</p>
+<p class="last">if client group specified is already a part of some topology</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.network_topology.NetworkTopologies.all_network_topologies">
+<code class="descname">all_network_topologies</code><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopologies.all_network_topologies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of all the network topologies associated with the commcell</p>
+<dl class="docutils">
+<dt>dict - consists of all network topologies of the commcell</dt>
+<dd><dl class="first docutils">
+<dt>{</dt>
+<dd><p class="first">“network_topology_name”: network_topology_id,</p>
+<p class="last">“network_topology_name”: network_topology_id</p>
+</dd>
+</dl>
+<p class="last">}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopologies.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>network_topology_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopologies.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopologies.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the Network Topology from the commcell.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>network_topology_name (str)  –  name of the network topology</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the network topology name argument is not string</p>
+<p>if failed to delete the network topology</p>
+<p class="last">if no network topology exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopologies.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>network_topology_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopologies.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopologies.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the network topology object of the specified network topology name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>network_topology_name (str)  –  name of the network topology</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the NetworkTopology class for the given network topology name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the network topology name argument is not string</p>
+<p class="last">if no network topology exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopologies.has_network_topology">
+<code class="descname">has_network_topology</code><span class="sig-paren">(</span><em>network_topology_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopologies.has_network_topology"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopologies.has_network_topology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a network topology exists in the commcell with the input network topology name.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>network_topology_name (str)  –  name of network topology</dd>
+<dt>Returns:</dt>
+<dd>bool - boolean output whether the network topology exists in the commcell or not</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of the network topology name argument is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopologies.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopologies.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopologies.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the network topologies associated with the Commcell.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.network_topology.NetworkTopology">
+<em class="property">class </em><code class="descclassname">cvpysdk.network_topology.</code><code class="descname">NetworkTopology</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>network_topology_name</em>, <em>network_topology_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopology"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for performing operations for a specific network topology.</p>
+<dl class="attribute">
+<dt id="cvpysdk.network_topology.NetworkTopology.description">
+<code class="descname">description</code><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the network topology description as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.network_topology.NetworkTopology.extended_properties">
+<code class="descname">extended_properties</code><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.extended_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the extended properties as read-only attribute</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.network_topology.NetworkTopology.firewall_groups">
+<code class="descname">firewall_groups</code><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.firewall_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the associated client groups as read only attribute</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_id">
+<code class="descname">network_topology_id</code><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.network_topology_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the network topology id as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_name">
+<code class="descname">network_topology_name</code><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.network_topology_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the network topology name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_type">
+<code class="descname">network_topology_type</code><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.network_topology_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the network topology type as read-only attribute</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopology.push_network_config">
+<code class="descname">push_network_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopology.push_network_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.push_network_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a push network configuration on network topology</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><p class="first">SDKException:</p>
+<blockquote class="last">
+<div><p>if failed to push configuration on network topology</p>
+<p>if response is not success</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopology.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopology.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties of Network Topology</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.network_topology.NetworkTopology.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>firewall_groups=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/network_topology.html#NetworkTopology.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.network_topology.NetworkTopology.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the network topology properties of network topology.</p>
+<p>Args:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>firewall_groups(list of dict)  –   client group names and client</dt>
+<dd>group types</dd>
+</dl>
+<p>[{‘group_type’:2, ‘group_name’: “test1”, ‘is_mnemonic’: False },
+{‘group_type’:1, ‘group_name’: “test2”, ‘is_mnemonic’: False },
+{‘group_type’:3, ‘group_name’: “test3”, ‘is_mnemonic’: False }]</p>
+<p><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs             (dict)  – Key value pairs for supported arguments</p>
+<p>Supported arguments:</p>
+<p>network_topology_name   (str)       –  new name of the network topology</p>
+<p>description             (str)       –  description for the network topology</p>
+<p>topology_type           (int)       – network topology type</p>
+<dl class="docutils">
+<dt>wildcard_proxy          (boolean)   – option to use wildcard proxy for</dt>
+<dd>proxy type topology</dd>
+</dl>
+<p>is_smart_topology       (boolean)   – specified as true for smart topology</p>
+<p>Possible input values:</p>
+<p>topology_type :
+1 — for proxy topology
+2 — for one-way topology
+3 — for two-way topology</p>
+<p>group_type for client_groups:
+2: first client group in GUI screen
+1: second client group in GUI screen
+3: third client group in GUI screen</p>
+<p>is_mnemonic for client_groups:
+True: if the specified group is a mnemonic
+False: if the specified group is a client group</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if response is empty</p>
+<p class="last">if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="developer_sdk.html">Developer SDK - Python</a><ul>
+      <li>Previous: <a href="network.html" title="previous chapter">Network</a></li>
+      <li>Next: <a href="operation_window.html" title="next chapter">Operation Window</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/network_topology.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+      |
+      <a href="_sources/network_topology.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

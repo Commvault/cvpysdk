@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Policies &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>Policies &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -30,6 +30,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="policies">
@@ -215,6 +217,12 @@ ConfigurationPolicies instance, and returns an object of corresponding policy_ty
 <dt id="cvpysdk.policies.configuration_policies.ArchivePolicy.name">
 <code class="descname">name</code><a class="headerlink" href="#cvpysdk.policies.configuration_policies.ArchivePolicy.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the name as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.policies.configuration_policies.ArchivePolicy.password">
+<code class="descname">password</code><a class="headerlink" href="#cvpysdk.policies.configuration_policies.ArchivePolicy.password" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the password as a read-only attribute.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -686,6 +694,12 @@ common operations among all Configuration Policies</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.policies.configuration_policies.JournalPolicy.password">
+<code class="descname">password</code><a class="headerlink" href="#cvpysdk.policies.configuration_policies.JournalPolicy.password" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the password as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.policies.configuration_policies.JournalPolicy.path">
 <code class="descname">path</code><a class="headerlink" href="#cvpysdk.policies.configuration_policies.JournalPolicy.path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the path as a read-only attribute.</p>
@@ -840,10 +854,16 @@ StoragePolicy instance</p>
 <p>_initialize_storage_policy_properties() –  initializes storage policy properties</p>
 <p>has_copy()                              –  checks if copy with given name exists</p>
 <p>create_secondary_copy()                 –  creates a storage policy copy</p>
+<dl class="docutils">
+<dt>create_snap_copy()                      –  creates snap, snapvault, snapmirror, replica</dt>
+<dd>and replica mirror copies</dd>
+</dl>
 <p>create_dedupe_secondary_copy()          –  create secondary copy with dedupe enabled</p>
 <p>delete_secondary_copy()                 –  deletes storage policy copy</p>
 <p>copies()                                –  returns the storage policy copies associated with
 this storage policy</p>
+<p>get_copy_precedence()                   –  returns the copy precedence value associated with
+the copy name</p>
 <p>run_backup_copy()                       –  Runs the backup copy job from Commcell</p>
 <p>run_snapshot_cataloging()               –  Runs the deferred catalog job from Commcell</p>
 <p>run_aux_copy()                          –  starts a aux copy job for this storage policy and
@@ -851,10 +871,29 @@ returns the job object</p>
 <p>refresh()                               –  refresh the properties of the storage policy</p>
 <p>update_transactional_ddb()              –  enable/disable transactional DDB option on a DDB</p>
 <p>seal_ddb()                              –  seal a DDB store</p>
-<p>delete_job()                            – delete a job from storage policy node</p>
-<p>add_ddb_partition()                     – Adds a new DDB partition</p>
-<p>move_dedupe_store()                     – Moves a deduplication store</p>
-<p class="last">run_ddb_verification()                  – Runs DDB verification job</p>
+<p>add_ddb_partition()                     –  Adds a new DDB partition</p>
+<p>move_dedupe_store()                     –  Moves a deduplication store</p>
+<p>run_ddb_verification()                  –  Runs DDB verification job</p>
+<p class="last">get_copy()                              –  Returns the StoragePolicyCopy class object of the input copy</p>
+</dd>
+<dt>StoragePolicyCopy:</dt>
+<dd><dl class="first docutils">
+<dt>__init__(self, commcell_object,</dt>
+<dd><p class="first">storage_policy_name,
+copy_name, copy_id)         –  initialize the instance of StoragePolicy class for</p>
+<blockquote class="last">
+<div>a specific storage policy of the commcell</div></blockquote>
+</dd>
+<dt>__repr__()                              –  returns a string representation of the</dt>
+<dd>StoragePolicy instance</dd>
+</dl>
+<p>get_copy_id()                                   –  Gets the storage policy id asscoiated with the storage policy</p>
+<p>refresh()                                   –      Refresh the properties of the StoragePolicy</p>
+<p>_get_request_json()                     –  Gets all the storage policy copy properties</p>
+<p>_get_copy_properties()                      –      Gets the storage policy copy properties</p>
+<p>_set_copy_properties()                      –      sets the properties of this storage policy copy</p>
+<p>delete_job()                            –  delete a job from storage policy copy node</p>
+<p class="last">recopy_jobs()                           –  recopies a job on a secondary copy</p>
 </dd>
 </dl>
 <dl class="class">
@@ -864,7 +903,7 @@ returns the job object</p>
 <p>Class for getting all the storage policies associated with the commcell.</p>
 <dl class="method">
 <dt id="cvpysdk.policies.storage_policies.StoragePolicies.add">
-<code class="descname">add</code><span class="sig-paren">(</span><em>storage_policy_name</em>, <em>library</em>, <em>media_agent</em>, <em>dedup_path=None</em>, <em>incremental_sp=None</em>, <em>retention_period=5</em>, <em>number_of_streams=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicies.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicies.add" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add</code><span class="sig-paren">(</span><em>storage_policy_name</em>, <em>library</em>, <em>media_agent</em>, <em>dedup_path=None</em>, <em>incremental_sp=None</em>, <em>retention_period=5</em>, <em>number_of_streams=None</em>, <em>ocum_server=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicies.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicies.add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a new Storage Policy to the Commcell.</p>
 <dl class="docutils">
 <dt>Args:</dt>
@@ -881,7 +920,9 @@ default: None</p>
 <p>retention_period    (int)         –  time period in days to retain
 the data backup for
 default: 5</p>
-<p class="last">number_of_streams   (int)         –  the number of streams for the storage policy
+<p>number_of_streams   (int)         –  the number of streams for the storage policy
+default: None</p>
+<p class="last">ocum_server         (str)         –  On Command Unified Server Name
 default: None</p>
 </dd>
 <dt>Raises:</dt>
@@ -1059,7 +1100,10 @@ to add the policy to</p>
 <p>library_name            (str)   –  library name to be assigned</p>
 <p>media_agent_name        (str)   –  media_agent to be assigned</p>
 <p>path                    (str)   –  path where deduplication store is to be hosted</p>
-<p>ddb_media_agent         (str)   –  media agent name on which deduplication store is to be hosted</p>
+<dl class="docutils">
+<dt>ddb_media_agent         (str)   –  media agent name on which deduplication store</dt>
+<dd>is to be hosted</dd>
+</dl>
 <p>dash_full               (bool)  –  enable DASH full on deduplication store (True/False)
 Default None</p>
 <p>source_side_disk_cache  (bool)  – enable source side disk cache (True/False)
@@ -1108,21 +1152,33 @@ default: False</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="cvpysdk.policies.storage_policies.StoragePolicy.delete_job">
-<code class="descname">delete_job</code><span class="sig-paren">(</span><em>job_id</em>, <em>copy_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.delete_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.delete_job" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Deletes a job on Storage Policy</dt>
-<dd><dl class="first last docutils">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.create_snap_copy">
+<code class="descname">create_snap_copy</code><span class="sig-paren">(</span><em>copy_name</em>, <em>is_mirror_copy</em>, <em>is_snap_copy</em>, <em>library_name</em>, <em>media_agent_name</em>, <em>source_copy</em>, <em>provisioning_policy=None</em>, <em>resource_pool=None</em>, <em>is_replica_copy=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.create_snap_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.create_snap_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates Snap copy for this storage policy</p>
+<dl class="docutils">
 <dt>Args:</dt>
-<dd><p class="first">job_id      (str)   –  ID for the job to be deleted</p>
-<p class="last">copy_name   (str)   –  name of the copy</p>
-</dd>
-</dl>
+<dd><p class="first">copy_name           (str)   –  copy name to create</p>
+<p>is_mirror_copy      (bool)   –  if true then copyType will be Mirror</p>
+<p>is_snap_copy        (bool)   –  if true then copyType will be Snap</p>
+<p>library_name        (str)   –  library name to be assigned</p>
+<p>media_agent_name    (str)   –  media_agent to be assigned</p>
+<p>source_copy         (str)   –  Name of the Source Copy for this copy</p>
+<p>provisioning_policy (str)   –  Name of the provisioning Policy to add
+default : None</p>
+<p>resource_pool       (str)   –  Name of the resource pool to add
+default : None</p>
+<p class="last">is_replica_copy     (bool)   –  if true then Replica Copy will be created
+default : None</p>
 </dd>
 <dt>Raises:</dt>
 <dd><dl class="first last docutils">
 <dt>SDKException:</dt>
-<dd>if type of input parameters is not string</dd>
+<dd><p class="first">if type of inputs in not string</p>
+<p>if copy with given name already exists</p>
+<p>if failed to create copy</p>
+<p>if response received is empty</p>
+<p class="last">if response is not success</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1144,6 +1200,45 @@ default: False</p>
 <p>if response received is empty</p>
 <p class="last">if response is not success</p>
 </dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.get_copy">
+<code class="descname">get_copy</code><span class="sig-paren">(</span><em>copy_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.get_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.get_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a storage policy copy object if copy exists</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>copy_name (str)  –  name of the storage policy copy</dd>
+<dt>Returns:</dt>
+<dd>object - instance of the StoragePolicyCopy class for the given copy name</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd><p class="first">if type of the copy name argument is not string</p>
+<p class="last">if no copy exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.get_copy_precedence">
+<code class="descname">get_copy_precedence</code><span class="sig-paren">(</span><em>copy_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.get_copy_precedence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.get_copy_precedence" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the copy precedence value associated with the copy name</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>copy_name           (str)   –  Storage copy name</dd>
+<dt>Returns:</dt>
+<dd>copy_precedence     (int)   –  Copy precedence number of
+storage copy</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>Exception:</dt>
+<dd>if unable to find the given copy name</dd>
 </dl>
 </dd>
 </dl>
@@ -1227,7 +1322,10 @@ Args:</p>
 <p>media_agent              (str)  –  name of the media agent</p>
 <p>use_scale                (bool) –  use Scalable Resource Management (True/False)</p>
 <p>streams                  (int)  –  number of streams to use</p>
-<p>all_copies               (bool) – run auxcopy job on all copies or select copy (True/False)</p>
+<dl class="docutils">
+<dt>all_copies               (bool) – run auxcopy job on all copies or select copy</dt>
+<dd>(True/False)</dd>
+</dl>
 <p>total_jobs_to_process    (int)  – Total number jobs to process for the auxcopy job</p>
 </div></blockquote>
 <dl class="docutils">
@@ -1377,6 +1475,104 @@ QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)</dd>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy">
+<em class="property">class </em><code class="descclassname">cvpysdk.policies.storage_policies.</code><code class="descname">StoragePolicyCopy</code><span class="sig-paren">(</span><em>commcell_object</em>, <em>storage_policy</em>, <em>copy_name</em>, <em>copy_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicyCopy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for performing storage policy copy operations for a specific storage policy copy</p>
+<dl class="attribute">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.all_copies">
+<code class="descname">all_copies</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.all_copies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of  the storage policy copy associated with this storage policy</p>
+<dl class="docutils">
+<dt>dict - consists of stoarge policy copy properties</dt>
+<dd>“copyType”: copy_type,
+“active”: active,
+“copyId”: copy_id,
+“libraryName”: library_name,
+“copyPrecedence”: copy_precedence</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_client_side_dedup">
+<code class="descname">copy_client_side_dedup</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_client_side_dedup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the copy deduplication setting as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_dash_full">
+<code class="descname">copy_dedupe_dash_full</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_dash_full" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the copy deduplication setting as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_disk_cache">
+<code class="descname">copy_dedupe_disk_cache</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_disk_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the copy deduplication setting as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_reencryption">
+<code class="descname">copy_reencryption</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_reencryption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the secondary copy encryption as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_retention">
+<code class="descname">copy_retention</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_retention" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the copy retention as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.delete_job">
+<code class="descname">delete_job</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicyCopy.delete_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.delete_job" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Deletes a job on Storage Policy</dt>
+<dd><dl class="first last docutils">
+<dt>Args:</dt>
+<dd>job_id      (str)   –  ID for the job to be deleted</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of input parameters is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_id">
+<code class="descname">get_copy_id</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicyCopy.get_copy_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the storage policy id asscoiated with the storage policy</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.recopy_jobs">
+<code class="descname">recopy_jobs</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicyCopy.recopy_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.recopy_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>recopies a job on a secondary copy</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>job_id      (str)   – Job Id that needs to be deleted</dd>
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if type of input parameters is not string</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicyCopy.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties of the StoragePolicy.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-cvpysdk.policies">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cvpysdk.policies" title="Permalink to this headline">¶</a></h2>
@@ -1386,6 +1582,7 @@ QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)</dd>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -1438,8 +1635,8 @@ QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)</dd>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="../_sources/policies/policies.rst.txt"

@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.drorchestration.drorchestrationoperations &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>cvpysdk.drorchestration.drorchestrationoperations &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for cvpysdk.drorchestration.drorchestrationoperations</h1><div class="highlight"><pre>
@@ -237,35 +239,30 @@
         <span class="n">initiatedFrom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
             <span class="s2">&quot;initiatedfromMonitor&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
+        <span class="n">_dr_orchestration_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">)),</span>
+            <span class="s2">&quot;initiatedfromMonitor&quot;</span><span class="p">:</span> <span class="n">initiatedFrom</span><span class="p">,</span>
+            <span class="s2">&quot;advancedOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
         <span class="c1"># if initiated from monitor set To True</span>
         <span class="k">if</span> <span class="n">initiatedFrom</span><span class="p">:</span>
 
-            <span class="n">_dr_orchestration_json</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">)),</span>
-                <span class="s2">&quot;initiatedfromMonitor&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                <span class="s2">&quot;advancedOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-                <span class="p">},</span>
-                <span class="s2">&quot;replicationInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;replicationId&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;replicationIds&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">_dr_orchestration_json</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                    <span class="s2">&quot;replicationInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;replicationId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;replicationIds&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                     <span class="p">}</span>
-                <span class="p">}</span>
-
-            <span class="p">}</span>
+            <span class="p">})</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">_dr_orchestration_json</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">)),</span>
-                <span class="s2">&quot;initiatedfromMonitor&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;advancedOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skipDisableNetworkAdapter&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-                <span class="p">},</span>
+            <span class="n">_dr_orchestration_json</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
                 <span class="s2">&quot;vApp&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;vAppId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;failoverGroupId&quot;</span><span class="p">)),</span>
                     <span class="s2">&quot;vAppName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;failoverGroupName&quot;</span><span class="p">)</span>
                 <span class="p">}</span>
-            <span class="p">}</span>
+            <span class="p">})</span>
 
         <span class="k">return</span> <span class="n">_dr_orchestration_json</span>
 
@@ -853,6 +850,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -885,8 +883,8 @@
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

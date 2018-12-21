@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Subclient &#8212; Developer SDK - Python 11.13 documentation</title>
+    <title>Subclient &#8212; Developer SDK - Python 11.14 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -30,6 +30,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="module-cvpysdk.subclient">
@@ -38,9 +40,10 @@
 <p>Subclients and Subclient are 2 classes defined in this file.</p>
 <p>Subclients: Class for representing all the subclients associated with a backupset / instance</p>
 <p>Subclient: Base class consisting of all the common properties and operations for a Subclient</p>
-<dl class="docutils">
-<dt>Subclients:</dt>
-<dd><p class="first">__init__(class_object)      –  initialise object of subclients object associated with
+<div class="section" id="subclients">
+<h2>Subclients:<a class="headerlink" href="#subclients" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>__init__(class_object)      –  initialise object of subclients object associated with
 the specified backup set/instance.</p>
 <p>__str__()                   –  returns all the subclients associated with the backupset</p>
 <p>__repr__()                  –  returns the string for the instance of the Subclients class</p>
@@ -55,10 +58,13 @@ or the details for the given subclient name</p>
 <p>add()                       –  adds a new subclient to the backupset</p>
 <p>get(subclient_name)         –  returns the subclient object of the input subclient name</p>
 <p>delete(subclient_name)      –  deletes the subclient (subclient name) from the backupset</p>
-<p class="last">refresh()                   –  refresh the subclients associated with the Backupset / Instance</p>
-</dd>
-<dt>Subclient:</dt>
-<dd><p class="first">__init__()                  –  initialise instance of the Subclient class,
+<p>refresh()                   –  refresh the subclients associated with the Backupset / Instance</p>
+</div></blockquote>
+</div>
+<div class="section" id="id1">
+<h2>Subclient:<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>__init__()                  –  initialise instance of the Subclient class,
 associated to the specified backupset</p>
 <p>__getattr__()               –  provides access to restore helper methods</p>
 <p>__repr__()                  –  return the subclient name, the instance is associated with</p>
@@ -75,8 +81,10 @@ Browse operation or Find operation</p>
 <p>description()               –  update the description of the subclient</p>
 <p>content()                   –  update the content of the subclient</p>
 <p>enable_backup()             –  enables the backup for the subclient</p>
+<p>enable_trueup()             –  enables true up option for the subclient</p>
+<p>enable_trueup_days()        –  enables true up option and sets days for backup</p>
 <p>enable_backup_at_time()     –  enables backup for the subclient at the input time specified</p>
-<p>disble_backup()             –  disbles the backup for the subclient</p>
+<p>disble_backup()             –  disables the backup for the subclient</p>
 <p>backup()                    –  run a backup job for the subclient</p>
 <p>browse()                    –  gets the content of the backup for this subclient
 at the path specified</p>
@@ -90,9 +98,18 @@ to the input client, at the specified destionation location</p>
 <p>set_backup_nodes()          – Set Backup Nodes for NFS Share Pseudo client’s subclient.</p>
 <p>find_latest_job()           –  Finds the latest job for the subclient
 which includes current running job also.</p>
-<p class="last">refresh()                   –  refresh the properties of the subclient</p>
-</dd>
-</dl>
+<p>refresh()                   –  refresh the properties of the subclient</p>
+</div></blockquote>
+</div>
+<div class="section" id="subclient-instance-attributes">
+<h2>Subclient Instance Attributes:<a class="headerlink" href="#subclient-instance-attributes" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p><strong>snapshot_engine_name</strong>            –  returns snapshot engine name associated
+with the subclient</p>
+<p><strong>is_default_subclient</strong>            –  returns True if the subclient is default
+subclient else returns False</p>
+<p><strong>is_blocklevel_backup_enabled</strong>    –  returns True if block level backup is enabled</p>
+</div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.subclient.Subclient">
 <em class="property">class </em><code class="descclassname">cvpysdk.subclient.</code><code class="descname">Subclient</code><span class="sig-paren">(</span><em>backupset_object</em>, <em>subclient_name</em>, <em>subclient_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient" title="Permalink to this definition">¶</a></dt>
@@ -285,7 +302,7 @@ from browse operation</p>
 
 <dl class="method">
 <dt id="cvpysdk.subclient.Subclient.enable_intelli_snap">
-<code class="descname">enable_intelli_snap</code><span class="sig-paren">(</span><em>snap_engine_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.enable_intelli_snap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.enable_intelli_snap" title="Permalink to this definition">¶</a></dt>
+<code class="descname">enable_intelli_snap</code><span class="sig-paren">(</span><em>snap_engine_name</em>, <em>proxy_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.enable_intelli_snap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.enable_intelli_snap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Enables Intelli Snap for the subclient.</p>
 <dl class="docutils">
 <dt>Args:</dt>
@@ -299,10 +316,36 @@ from browse operation</p>
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.enable_trueup">
+<code class="descname">enable_trueup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.enable_trueup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.enable_trueup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setter for the TrueUp Option for a Subclient</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.enable_trueup_days">
+<code class="descname">enable_trueup_days</code><span class="sig-paren">(</span><em>days=30</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.enable_trueup_days"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.enable_trueup_days" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setter for the TrueUp Option with reconcile after x days</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="cvpysdk.subclient.Subclient.encryption_flag">
 <code class="descname">encryption_flag</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.encryption_flag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the value of encryption flag settings on the Subclient.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclient.Subclient.exclude_from_sla">
+<code class="descname">exclude_from_sla</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cvpysdk/subclient.html#Subclient.exclude_from_sla"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.exclude_from_sla" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exclude subclient from SLA.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>SDKException:</dt>
+<dd>if failed to exclude the subclient from SLA</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -318,7 +361,7 @@ and returns all the files matching the filters given.</p>
 <blockquote class="last">
 <div><dl class="docutils">
 <dt>find({</dt>
-<dd><p class="first">‘file_name’: ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.txt’,</p>
+<dd><p class="first">‘file_name’: ‘<a href="#id2"><span class="problematic" id="id3">*</span></a>.txt’,</p>
 <p>‘show_deleted’: True,</p>
 <p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
 <p class="last">‘to_time’: ‘2016-04-31 12:00:00’</p>
@@ -336,7 +379,7 @@ and returns all the files matching the filters given.</p>
 <blockquote class="last">
 <div><dl class="docutils">
 <dt>find(</dt>
-<dd><p class="first">file_name=’<a href="#id3"><span class="problematic" id="id4">*</span></a>.txt’,</p>
+<dd><p class="first">file_name=’<a href="#id4"><span class="problematic" id="id5">*</span></a>.txt’,</p>
 <p>show_deleted=True,</p>
 <p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
 <p class="last">to_time=‘2016-04-31 12:00:00’</p>
@@ -428,6 +471,19 @@ give the values <strong>comma(,)</strong> separated</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.is_blocklevel_backup_enabled">
+<code class="descname">is_blocklevel_backup_enabled</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_blocklevel_backup_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns True if block level backup is enabled else returns false</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.is_default_subclient">
+<code class="descname">is_default_subclient</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_default_subclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the subclient is default
+subclient else returns False</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.subclient.Subclient.is_intelli_snap_enabled">
 <code class="descname">is_intelli_snap_enabled</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_intelli_snap_enabled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the is intelli snap enabled as a read-only attribute.</p>
@@ -437,6 +493,12 @@ give the values <strong>comma(,)</strong> separated</p>
 <dt id="cvpysdk.subclient.Subclient.is_on_demand_subclient">
 <code class="descname">is_on_demand_subclient</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_on_demand_subclient" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the on demand subclient as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.is_trueup_enabled">
+<code class="descname">is_trueup_enabled</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.is_trueup_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the True up enabled as a property of the Subclient class.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -494,11 +556,19 @@ give the values <strong>comma(,)</strong> separated</p>
 <dt>all_versions <span class="classifier-delimiter">:</span> <span class="classifier">if set to True restores all the versions of the</span></dt>
 <dd>specified file</dd>
 </dl>
-<p class="last">versions            : list of version numbers to be backed up</p>
+<p class="last">versions            : list of version numbers to be backed up
+validate_only       : To validate data backed up for restore</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p>schedule_pattern (dict) – scheduling options to be included for the task</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Please refer schedules.schedulePattern.createSchedule()</dt>
+<dd>doc for the types of Jsons</dd>
+</dl>
+</div></blockquote>
 <p>schedule_pattern (dict) – scheduling options to be included for the task</p>
 <blockquote class="last">
 <div><dl class="docutils">
@@ -571,11 +641,19 @@ impersonate_password: Impersonate password option for restore</p>
 <dd>specified file</dd>
 </dl>
 <p class="last">versions            : list of version numbers to be backed up
-media_agent         : Media Agent need to be used for Browse and restore</p>
+media_agent         : Media Agent need to be used for Browse and restore
+validate_only       : To validate data backed up for restore</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p>schedule_pattern (dict) – scheduling options to be included for the task</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Please refer schedules.schedulePattern.createSchedule()</dt>
+<dd>doc for the types of Jsons</dd>
+</dl>
+</div></blockquote>
 <p>schedule_pattern (dict) – scheduling options to be included for the task</p>
 <blockquote class="last">
 <div><dl class="docutils">
@@ -622,6 +700,12 @@ as backup nodes for NFS share subclient</dd>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.subclient.Subclient.snapshot_engine_name">
+<code class="descname">snapshot_engine_name</code><a class="headerlink" href="#cvpysdk.subclient.Subclient.snapshot_engine_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns snapshot engine name associated with the subclient</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -814,13 +898,25 @@ with the subclient</p>
 </dd></dl>
 
 </div>
+</div>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Subclient</a><ul>
+<li><a class="reference internal" href="#subclients">Subclients:</a></li>
+<li><a class="reference internal" href="#id1">Subclient:</a></li>
+<li><a class="reference internal" href="#subclient-instance-attributes">Subclient Instance Attributes:</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
@@ -858,8 +954,8 @@ with the subclient</p>
       &copy;2018, Commvault Systems® Inc. All Rights Reserved.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/subclient.rst.txt"
