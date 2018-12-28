@@ -263,7 +263,9 @@ SERVICES_DICT_TEMPLATE = {
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',
     'PUSH_TOPOLOGY': '{0}FirewallTopology/%s/Push',
 
-    'CERTIFICATES': '{0}CommServ/Certificates'
+    'CERTIFICATES': '{0}CommServ/Certificates',
+
+    'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo'  # only for Exchange DAG
 }
 
 

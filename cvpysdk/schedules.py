@@ -878,6 +878,34 @@ class SchedulePattern(object):
                         _task_options["commonOpts"] = \
                             {"automaticSchedulePattern": _automatic_pattern}
 
+                    if 'run_synthetic_full' in pattern_dict:
+                        synthetic_pattern = pattern_dict['run_synthetic_full']
+
+                        if synthetic_pattern == 'every_x_days':
+                            synthetic_interval = pattern_dict.get(
+                                'days_between_synthetic_full', 30)
+                        else:
+                            synthetic_interval = 30
+
+                        _data_opt = {
+                            'autoCopy': True,
+                            'daysBetweenSyntheticBackup': synthetic_interval,
+                            'useAutomaticIntervalForSyntheticFull': (
+                                    synthetic_pattern == 'extended_retention'),
+                            'enableRunFullConsolidationBackup': (
+                                    synthetic_pattern == 'space_reclaim')
+                        }
+
+                        if 'backupOpts' in _task_options:
+                            if 'dataOpt' in _task_options["backupOpts"]:
+                                _task_options['backupOpts']['dataOpt'].update(_data_opt)
+                            else:
+                                _task_options['backupOpts']['dataOpt'] = _data_opt
+                        else:
+                            _task_options['backupOpts'] = {
+                                'dataOpt': _data_opt
+                            }
+
                 else:
                     subtask['options'] = {
                         'commonOpts': {
@@ -1372,6 +1400,12 @@ class Schedule(object):
                                 self._automatic_pattern = self._task_options[
                                     "commonOpts"]['automaticSchedulePattern']
 
+                        if 'backupOpts' in self._task_options:
+                            if 'dataOpt' in self._task_options['backupOpts']:
+                                if isinstance(self._automatic_pattern, dict):
+                                    _data_opt = self._task_options['backupOpts']['dataOpt']
+                                    self._automatic_pattern.update(_data_opt)
+
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1758,35 +1792,56 @@ class Schedule(object):
                                  stop_sleep_if_runningjob: (bool)
                                  cpu_utilization_below : (int)%
                                  cpu_utilization_above : (int)%
+                                 run_synthetic_full : (str: every_x_days/extended_retention/
+                                 space_reclaim)
+                                 days_between_synthetic_full : (int)
                         }
                 False: if schedule type is wrong
         """
         if self.schedule_freq_type == 'Automatic':
-            return {"min_interval_hours": self._automatic_pattern['minBackupInterval'],
-                    "min_interval_minutes": self._automatic_pattern['minBackupIntervalMinutes'],
-                    "max_interval_hours": self._automatic_pattern['maxBackupInterval'],
-                    "max_interval_minutes": self._automatic_pattern['maxBackupIntervalMinutes'],
-                    "min_sync_interval_hours": self._automatic_pattern['minSyncInterval'],
-                    "min_sync_interval_minutes": self._automatic_pattern['minSyncIntervalMinutes'],
-                    "ignore_opwindow_past_maxinterval": self._automatic_pattern['ignoreOpWindowPastMaxInterval'],
-                    "wired_network_connection": self._automatic_pattern.get('wiredNetworkConnection',
-                                                                            {'enabled': False})['enabled'],
-                    "min_network_bandwidth": self._automatic_pattern.get('minNetworkBandwidth',
-                                                                         {'enabled': False})['enabled'],
-                    "specific_network": self._automatic_pattern.get('specfificNetwork',
-                                                                    {'enabled': False})['enabled'],
-                    "dont_use_metered_network": self._automatic_pattern.get('dontUseMeteredNetwork',
-                                                                            {'enabled': False})['enabled'],
-                    "ac_power": self._automatic_pattern.get('acPower',
-                                                            {'enabled': False})['enabled'],
-                    "stop_if_on_battery": self._automatic_pattern.get('stopIfOnBattery',
-                                                                      {'enabled': False})['enabled'],
-                    "stop_sleep_if_runningjob": self._automatic_pattern.get('stopSleepIfBackUp',
-                                                                            {'enabled': False})['enabled'],
-                    "cpu_utilization_below": self._automatic_pattern.get('cpuUtilization',
-                                                                         {'enabled': False})['enabled'],
-                    "cpu_utilization_above": self._automatic_pattern.get('cpuUtilizationAbove',
-                                                                         {'enabled': False})['enabled']}
+            pattern = {
+                "min_interval_hours": self._automatic_pattern['minBackupInterval'],
+                "min_interval_minutes": self._automatic_pattern['minBackupIntervalMinutes'],
+                "max_interval_hours": self._automatic_pattern['maxBackupInterval'],
+                "max_interval_minutes": self._automatic_pattern['maxBackupIntervalMinutes'],
+                "min_sync_interval_hours": self._automatic_pattern['minSyncInterval'],
+                "min_sync_interval_minutes": self._automatic_pattern['minSyncIntervalMinutes'],
+                "ignore_opwindow_past_maxinterval": self._automatic_pattern['ignoreOpWindowPastMaxInterval'],
+                "wired_network_connection": self._automatic_pattern.get('wiredNetworkConnection',
+                                                                        {'enabled': False})['enabled'],
+                "min_network_bandwidth": self._automatic_pattern.get('minNetworkBandwidth',
+                                                                     {'enabled': False})['enabled'],
+                "specific_network": self._automatic_pattern.get('specfificNetwork',
+                                                                {'enabled': False})['enabled'],
+                "dont_use_metered_network": self._automatic_pattern.get('dontUseMeteredNetwork',
+                                                                        {'enabled': False})['enabled'],
+                "ac_power": self._automatic_pattern.get('acPower',
+                                                        {'enabled': False})['enabled'],
+                "stop_if_on_battery": self._automatic_pattern.get('stopIfOnBattery',
+                                                                  {'enabled': False})['enabled'],
+                "stop_sleep_if_runningjob": self._automatic_pattern.get('stopSleepIfBackUp',
+                                                                        {'enabled': False})['enabled'],
+                "cpu_utilization_below": self._automatic_pattern.get('cpuUtilization',
+                                                                     {'enabled': False})['enabled'],
+                "cpu_utilization_above": self._automatic_pattern.get('cpuUtilizationAbove',
+                                                                     {'enabled': False})['enabled'],
+                "run_synthetic_full": 'every_x_days'
+            }
+
+            if ('useAutomaticIntervalForSyntheticFull' in self._automatic_pattern and
+                    self._automatic_pattern['useAutomaticIntervalForSyntheticFull']):
+                pattern['run_synthetic_full'] = 'extended_retention'
+
+            if ('enableRunFullConsolidationBackup' in self._automatic_pattern and
+                    self._automatic_pattern['enableRunFullConsolidationBackup']):
+                pattern['run_synthetic_full'] = 'space_reclaim'
+
+            if ('daysBetweenSyntheticBackup' in self._automatic_pattern and
+                    self._automatic_pattern['daysBetweenSyntheticBackup']):
+                pattern['days_between_synthetic_full'] = self._automatic_pattern[
+                    'daysBetweenSyntheticBackup']
+
+            return pattern
         else:
             return False
 
@@ -1798,24 +1853,27 @@ class Schedule(object):
                 Args:
                      pattern_dict (dict) -- Dictionary with the schedule pattern
                         {
-                                         min_interval_hours: minimum hours between jobs(int)
-                                         min_interval_minutes: minimum minutes between jobs(int)
-                                         max_interval_hours: maximum hours between jobs(int)
-                                         max_interval_minutes: maximum minutes between jobs(int)
-                                         min_sync_interval_hours: minimum sync hours
-                                                                                between jobs(int)
-                                         min_sync_interval_minutes: minimum sync minutes
-                                                                                between jobs(int)
-                                         ignore_opwindow_past_maxinterval: (bool)
-                                         wired_network_connection: (bool)
-                                         min_network_bandwidth: (int) kbps
-                                         specific_network: (dict){ip_address:(str),subnet:(int)}
-                                         dont_use_metered_network: (bool)
-                                         ac_power: (bool)
-                                         stop_if_on_battery: (bool)
-                                         stop_sleep_if_runningjob: (bool)
-                                         cpu_utilization_below : (int)%
-                                         cpu_utilization_above : (int)%
+                             min_interval_hours: minimum hours between jobs(int)
+                             min_interval_minutes: minimum minutes between jobs(int)
+                             max_interval_hours: maximum hours between jobs(int)
+                             max_interval_minutes: maximum minutes between jobs(int)
+                             min_sync_interval_hours: minimum sync hours
+                                                                    between jobs(int)
+                             min_sync_interval_minutes: minimum sync minutes
+                                                                    between jobs(int)
+                             ignore_opwindow_past_maxinterval: (bool)
+                             wired_network_connection: (bool)
+                             min_network_bandwidth: (int) kbps
+                             specific_network: (dict){ip_address:(str),subnet:(int)}
+                             dont_use_metered_network: (bool)
+                             ac_power: (bool)
+                             stop_if_on_battery: (bool)
+                             stop_sleep_if_runningjob: (bool)
+                             cpu_utilization_below : (int)%
+                             cpu_utilization_above : (int)%
+                             run_synthetic_full : (str: every_x_days/extended_retention/
+                             space_reclaim)
+                             days_between_synthetic_full : (int)
                         }
         """
         if isinstance(pattern_dict, bool):
@@ -1830,6 +1888,34 @@ class Schedule(object):
             self._task_options["commonOpts"] = \
                 {"automaticSchedulePattern": schedule_pattern.create_schedule_pattern(
                     pattern_dict)}
+
+        if 'run_synthetic_full' in pattern_dict:
+            synthetic_pattern = pattern_dict['run_synthetic_full']
+
+            if synthetic_pattern == 'every_x_days':
+                synthetic_interval = pattern_dict.get(
+                    'days_between_synthetic_full', 30)
+            else:
+                synthetic_interval = 30
+
+            _data_opt = {
+                'autoCopy': True,
+                'daysBetweenSyntheticBackup': synthetic_interval,
+                'useAutomaticIntervalForSyntheticFull': (
+                        synthetic_pattern == 'extended_retention'),
+                'enableRunFullConsolidationBackup': (
+                        synthetic_pattern == 'space_reclaim')
+            }
+
+            if 'backupOpts' in self._task_options:
+                if 'dataOpt' in self._task_options["backupOpts"]:
+                    self._task_options['backupOpts']['dataOpt'].update(_data_opt)
+                else:
+                    self._task_options['backupOpts']['dataOpt'] = _data_opt
+            else:
+                self._task_options['backupOpts'] = {
+                    'dataOpt': _data_opt
+                }
 
         self._modify_task_properties()
 

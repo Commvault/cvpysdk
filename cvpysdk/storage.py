@@ -64,6 +64,11 @@ MediaAgent:
 
     refresh()                               --  refresh the properties of the media agent
 
+    change_index_cache()                    --  runs catalog migration
+
+    index_cache_path()                      --  returns index cache path of the media agent
+
+    index_cache_enabled()                   --  returns index cache enabled status
 
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
@@ -108,17 +113,14 @@ DiskLibrary instance Attributes
 
 
 """
-
 from __future__ import absolute_import
 from __future__ import unicode_literals
+import uuid
 
 from base64 import b64encode
-
 from past.builtins import basestring
 from future.standard_library import install_aliases
-
 from .exception import SDKException
-from .job import Job
 
 install_aliases()
 
@@ -323,6 +325,10 @@ class MediaAgent(object):
         self._MEDIA_AGENT = self._commcell_object._services['MEDIA_AGENT'] % (
             self._media_agent_name
         )
+        self._CREATE_TASK = self._commcell_object._services['CREATE_TASK']
+        self._MEDIA_AGENTS = self._commcell_object._services['GET_MEDIA_AGENTS'] + "/{0}".format(
+            self.media_agent_id
+        )
 
         self.refresh()
 
@@ -356,13 +362,13 @@ class MediaAgent(object):
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._MEDIA_AGENT
+            'GET', self._MEDIA_AGENTS
         )
 
         if flag:
-            if response.json() and 'mediaAgentInfo' in response.json():
-                self._media_agent_info = response.json()['mediaAgentInfo']
-                return response.json()['mediaAgentInfo']
+            if response.json() and 'mediaAgentList' in response.json():
+                self._media_agent_info = response.json()['mediaAgentList'][0]
+                return response.json()
             else:
                 raise SDKException('Response', '102')
         else:
@@ -373,18 +379,24 @@ class MediaAgent(object):
         """Initializes the properties for this Media Agent"""
         self._status = None
         self._platform = None
+        self._index_cache_enabled = None
+        self._index_cache = None
 
         properties = self._get_media_agent_properties()
 
-        if 'status' in properties:
-            status = properties['status']
-            if status.lower() == 'ready':
-                self._is_online = True
-            else:
-                self._is_online = False
+        if properties['mediaAgentList']:
+            mediaagent_list = properties['mediaAgentList'][0]
+        else:
+            raise SDKException('Response', '102')
 
-        if 'osVersion' in properties:
-            platform = properties['osVersion']
+        status = mediaagent_list.get('status')
+        if status == 1:
+            self._is_online = True
+        else:
+            self._is_online = False
+
+        if mediaagent_list['osInfo']['OsDisplayInfo']['OSName']:
+            platform = mediaagent_list['osInfo']['OsDisplayInfo']['OSName']
             if 'windows' in platform.lower():
                 self._platform = 'WINDOWS'
             elif 'unix' in platform.lower() or 'linux' in platform.lower():
@@ -392,10 +404,116 @@ class MediaAgent(object):
             else:
                 self._platform = platform
 
+        if mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps']['cacheEnabled']:
+            self._index_cache_enabled = mediaagent_list['mediaAgentProps'][
+                                    'mediaAgentIdxCacheProps']['cacheEnabled']
+
+        if mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps']['cachePath']['path']:
+            self._index_cache = mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps'
+                                                           ]['cachePath']['path']
+
+    def change_index_cache(self, old_index_cache_path, new_index_cache_path):
+
+        """
+        Begins a catalog migration job via the CreateTask end point.
+
+            Args :
+                old_index_cache_path - source index cache path
+
+                new_index_cache_path - destination index cache path
+
+            Returns :
+                Returns job object of catalog migration job
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        conf_guid = str(uuid.uuid4())
+
+        xml_options_string = '''<Indexing_IdxDirectoryConfiguration configurationGuid="{0}" 
+        icdPath="{1}" maClientFocusName="{2}" maGuid="" oldIcdPath="{3}" 
+        opType="0" />''' .format(
+            conf_guid, new_index_cache_path, self.media_agent_name, old_index_cache_path)
+
+        request_json = {
+            "taskInfo": {
+                "taskOperation": 1,
+                "task": {
+                    "isEZOperation": False,
+                    "description": "",
+                    "ownerId": 1,
+                    "runUserId": 1,
+                    "taskType": 1,
+                    "ownerName": "",
+                    "alertName": "",
+                    "sequenceNumber": 0,
+                    "isEditing": False,
+                    "GUID": "",
+                    "isFromCommNetBrowserRootNode": False,
+                    "initiatedFrom": 3,
+                    "policyType": 0,
+                    "associatedObjects": 0,
+                    "taskName": "",
+                    "taskFlags": {
+                        "notRunnable": False,
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskOrder": 0,
+                            "subTaskType": 1,
+                            "flags": 0,
+                            "operationType": 5018,
+                            "subTaskId": 1
+                        },
+                        "options": {
+                            "originalJobId": 0,
+                            "adminOpts": {
+                                "catalogMigrationOptions": {
+                                    "xmlOptions": xml_options_string,
+                                    "mediaAgent": {
+                                        "mediaAgentId": int(self._media_agent_id),
+                                        "_type_": 11
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CREATE_TASK, request_json
+        )
+
+        if flag:
+            if response.json() and 'jobIds' in response.json() and response.json()['jobIds'][0]:
+
+                response_json = response.json()
+                catalogmigration_jobid = response_json["jobIds"][0]
+                catalogmigration_job_obj = self._commcell_object.job_controller.get(
+                    catalogmigration_jobid)
+                return catalogmigration_job_obj
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            raise SDKException('Response', '101')
+
     @property
     def name(self):
         """Returns the media agent display name"""
-        return self._media_agent_info['mediaAgentName']
+        return self._media_agent_info['mediaAgent']['displayName']
 
     @property
     def media_agent_name(self):
@@ -416,6 +534,16 @@ class MediaAgent(object):
     def platform(self):
         """Treats the platform as read-only attribute"""
         return self._platform
+
+    @property
+    def index_cache_path(self):
+        """Treats the index cache path as a read-only attribute"""
+        return self._index_cache
+
+    @property
+    def index_cache_enabled(self):
+        """Treats the cache enabled value as a read-only attribute"""
+        return self._index_cache_enabled
 
     def refresh(self):
         """Refresh the properties of the MediaAgent."""
@@ -739,7 +867,7 @@ class DiskLibrary(object):
         else:
             self._library_id = self._get_library_id()
         self._library_properties_service = self._commcell_object._services[
-            'GET_LIBRARY_PROPERTIES'] % (self._library_id)
+                                               'GET_LIBRARY_PROPERTIES'] % (self._library_id)
         self._library_properties = self._get_library_properties()
         if library_details is not None:
             self.mountpath = library_details.get('mountPath', None)
@@ -820,17 +948,17 @@ class DiskLibrary(object):
 
         request_json = {
             "EVGui_ConfigureStorageLibraryReq":
-            {
-                "isConfigRequired": 1,
-                "library": {
-                    "opType": 4,
-                    "mediaAgentName": media_agent,
-                    "libraryName": self._library_name,
-                    "mountPath": mount_path,
-                    "loginName": username,
-                    "password": b64encode(password.encode()).decode(),
+                {
+                    "isConfigRequired": 1,
+                    "library": {
+                        "opType": 4,
+                        "mediaAgentName": media_agent,
+                        "libraryName": self._library_name,
+                        "mountPath": mount_path,
+                        "loginName": username,
+                        "password": b64encode(password.encode()).decode(),
+                    }
                 }
-            }
         }
 
         exec_command = self._commcell_object._services['EXECUTE_QCOMMAND']
@@ -899,11 +1027,11 @@ class DiskLibrary(object):
         self.library = {
             "opType": 64,
             "mediaAgentName": "%s" %
-            self.mediaagent,
+                              self.mediaagent,
             "libraryName": "%s" %
-            self.library_name,
+                           self.library_name,
             "mountPath": "%s" %
-            self.mountpath}
+                         self.mountpath}
         self.libNewprop = {
             "deviceAccessType": 22,
             "password": "",
@@ -913,10 +1041,10 @@ class DiskLibrary(object):
             "proxyPassword": ""}
         request_json = {
             "EVGui_ConfigureStorageLibraryReq":
-            {
-                "library": self.library,
-                "libNewProp": self.libNewprop
-            }
+                {
+                    "library": self.library,
+                    "libNewProp": self.libNewprop
+                }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(

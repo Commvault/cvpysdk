@@ -79,6 +79,9 @@ User
 
     request_OTP()                       --  fetches OTP for user
 
+    user_security_associations()        --  returns sorted roles and custom roles present on the
+                                            different entities.
+
 """
 
 from base64 import b64encode
@@ -530,7 +533,10 @@ class User(object):
         if flag:
             if response.json() and 'users' in response.json():
                 self._properties = response.json()['users'][0]
-
+                self._security_properties = self._properties.get('securityAssociations', {}).get(
+                    'associations', {})
+                self._security_associations = SecurityAssociation.fetch_security_association(
+                    security_dict=self._security_properties)
                 if 'enableUser' in self._properties:
                     self._user_status = self._properties['enableUser']
 
@@ -679,6 +685,11 @@ class User(object):
             for usergroup in self._associated_usergroups:
                 usergroups.append(usergroup['userGroupName'])
         return usergroups
+
+    @property
+    def user_security_associations(self):
+        """Returns security associations from properties of the User."""
+        return self._security_associations
 
     @property
     def status(self):
@@ -832,9 +843,3 @@ class User(object):
             else:
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
-
-
-
-
-
-

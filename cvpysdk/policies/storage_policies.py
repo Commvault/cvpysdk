@@ -2001,7 +2001,7 @@ class StoragePolicyCopy(object):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self.update_response(response.text))
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
     def _set_copy_properties(self):
         """sets the properties of this storage policy copy.
@@ -2099,7 +2099,7 @@ class StoragePolicyCopy(object):
 
         """
         if not isinstance(value, bool):
-            raise SDKException('Response', '101')
+            raise SDKException('Storage', '101')
 
         if value is False:
             if 'enableSourceSideDiskCache' in self._dedupe_flags:
@@ -2127,7 +2127,7 @@ class StoragePolicyCopy(object):
         """
 
         if not isinstance(value, bool):
-            raise SDKException('Response', '101')
+            raise SDKException('Storage', '101')
         self._dedupe_flags['enableSourceSideDiskCache'] = int(value)
 
         self._set_copy_properties()
@@ -2151,7 +2151,7 @@ class StoragePolicyCopy(object):
 
         """
         if not isinstance(value, bool):
-            raise SDKException('Response', '101')
+            raise SDKException('Storage', '101')
 
         self._dedupe_flags['enableClientSideDedup'] = int(value)
 
@@ -2207,7 +2207,7 @@ class StoragePolicyCopy(object):
             self._data_encryption = self._copy_properties["dataEncryption"]
 
         if not isinstance(encryption_values[0], bool):
-            raise SDKException('Response', '101')
+            raise SDKException('Storage', '101')
 
         if int(encryption_values[0]) == 0:
             if int(encryption_values[3]) == 1:
@@ -2276,6 +2276,151 @@ class StoragePolicyCopy(object):
                                    self._commcell_object._update_response_(response.text))
             else:
                 return True
+
+    @property
+    def extended_retention_rules(self):
+        """Treats the extended retention rules setting as a read-only attribute."""
+
+        mapping = {
+            2: "EXTENDED_ALLFULL",
+            4: "EXTENDED_WEEK",
+            8: "EXTENDED_MONTH",
+            16: "EXTENDED_QUARTER",
+            32: "EXTENDED_HALFYEAR",
+            64: "EXTENDED_YEAR",
+            128: "MANUALLY_PIN",
+            256: "EXTENDED_GRACE_WEEK",
+            512: "EXTENDED_GRACE_MONTH",
+            1024: "EXTENDED_GRACE_QUARTER",
+            2048: "EXTENDED_GRACE_HALFYEAR",
+            4096: "EXTENDED_GRACE_YEAR",
+            8192: "EXTENDED_CANDIDATE_WEEK",
+            16384: "EXTENDED_CANDIDATE_MONTH",
+            32768: "EXTENDED_CANDIDATE_QUARTER",
+            65536: "EXTENDED_CANDIDATE_HALFYEAR",
+            131072: "EXTENDED_CANDIDATE_YEAR",
+            262144: "EXTENDED_HOUR",
+            524288: "EXTENDED_DAY",
+            1048576: "EXTENDED_CANDIDATE_HOUR",
+            2097152: "EXTENDED_CANDIDATE_DAY",
+            4194304: "EXTENDED_GRACE_HOUR",
+            8388608: "EXTENDED_GRACE_DAY",
+            16777216: "EXTENDED_LAST_JOB",
+            33554432: "EXTENDED_FIRST",
+        }
+        rule_one = dict()
+        rule_two = dict()
+        rule_three = dict()
+        if 'extendedRetentionRuleOne' in self._retention_rules:
+            rule_one['isEnabled'] = self._retention_rules['extendedRetentionRuleOne']['isEnabled']
+            rule_one['rule'] = mapping[self._retention_rules['extendedRetentionRuleOne']['rule']]
+            rule_one['endDays'] = self._retention_rules['extendedRetentionRuleOne']['endDays']
+            rule_one['graceDays'] = self._retention_rules['extendedRetentionRuleOne']['graceDays']
+        else:
+            rule_one = False
+
+        if 'extendedRetentionRuleTwo' in self._retention_rules:
+            rule_two['isEnabled'] = self._retention_rules['extendedRetentionRuleTwo']['isEnabled']
+            rule_two['rule'] = mapping[self._retention_rules['extendedRetentionRuleTwo']['rule']]
+            rule_two['endDays'] = self._retention_rules['extendedRetentionRuleTwo']['endDays']
+            rule_two['graceDays'] = self._retention_rules['extendedRetentionRuleTwo']['graceDays']
+        else:
+            rule_two = False
+
+        if 'extendedRetentionRuleThree' in self._retention_rules:
+            rule_three['isEnabled'] = self._retention_rules['extendedRetentionRuleThree']['isEnabled']
+            rule_three['rule'] = mapping[self._retention_rules['extendedRetentionRuleThree']['rule']]
+            rule_three['endDays'] = self._retention_rules['extendedRetentionRuleThree']['endDays']
+            rule_three['graceDays'] = self._retention_rules['extendedRetentionRuleThree']['graceDays']
+        else:
+            rule_three = False
+        return rule_one, rule_two, rule_three
+
+    @extended_retention_rules.setter
+    def extended_retention_rules(self, extended_retention):
+        """Sets the copy extended retention rules as the value provided as input
+
+            Args:
+                extended_retention   (tuple)     --  to set extended_retention rules
+
+                    tuple:
+                        **int**    -   which rule to set (1/2/3)
+
+                        **bool**    -   value for isEnabled
+
+                        **str**     -   value for rule
+
+                        Example valid values:
+                            EXTENDED_ALLFULL
+                            EXTENDED_WEEK
+                            EXTENDED_MONTH
+                            EXTENDED_QUARTER
+                            EXTENDED_HALFYEAR
+                            EXTENDED_YEAR
+
+                        **int**     -   value for endDays
+
+                        **int**     -   value for graceDays
+
+                    e.g.:
+
+                        >>> copy_obj.extended_retention_rules = [1, True, "EXTENDED_ALLFULL", 0, 0]
+
+            Raises:
+                SDKException:
+                    if failed to update extended Retention Rule on copy
+
+        """
+        mapping = {
+            1: 'extendedRetentionRuleOne',
+            2: 'extendedRetentionRuleTwo',
+            3: 'extendedRetentionRuleThree'
+        }
+
+        rule = mapping[extended_retention[0]]
+        if rule not in self._copy_properties:
+            self._retention_rules[rule] = {
+                "isEnabled": "",
+                "rule": "",
+                "endDays": "",
+                "graceDays": ""}
+
+        if extended_retention[0] is not None:
+            self._retention_rules[rule]['isEnabled'] = int(extended_retention[1])
+            self._retention_rules[rule]['rule'] = extended_retention[2]
+            self._retention_rules[rule]['endDays'] = extended_retention[3]
+            self._retention_rules[rule]['graceDays'] = extended_retention[4]
+        else:
+            raise SDKException('Storage', '110')
+
+        self._set_copy_properties()
+
+    @property
+    def copy_retention_managed_disk_space(self):
+        """Treats managed disk space setting as a read-only attribute"""
+        return 'enableManagedDiskSpace' in self._retention_rules
+
+    @copy_retention_managed_disk_space.setter
+    def copy_retention_managed_disk_space(self, managed_disk_space_value):
+        """Sets managed disk space attribute value with provided input value
+
+            Args:
+             managed_disk_space_value (Bool) -- managed disk space value to be enabled/disabled
+
+            Raises:
+                SDKException:
+
+                    if the type of value input is not correct
+
+        """
+        if not isinstance(managed_disk_space_value, bool):
+            raise SDKException('Storage', '101')
+
+        if managed_disk_space_value == False:
+            self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 0
+        if managed_disk_space_value == True:
+            self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 1
+        self._set_copy_properties()
 
     def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
         """ Method to add SVM association on Replica/vault and Mirror Copy

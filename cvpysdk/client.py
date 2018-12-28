@@ -158,6 +158,8 @@ Client
     reconfigure_client()         --  reapplies license to the client
 
     push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
+    
+    get_dag_member_servers()     --   Gets the member servers of an Exchange DAG client.
 
 Client Attributes
 -----------------
@@ -3101,6 +3103,40 @@ class Client(object):
             reboot_client=reboot_client,
             run_db_maintenance=run_db_maintenance
         )
+
+    def get_dag_member_servers(self):
+        """Gets the member servers for an Exchange DAG client.
+
+            Returns:
+                list - list consisting of the member servers
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        member_servers = []
+        url = self._services['GET_DAG_MEMBER_SERVERS'] % self.client_id
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+        if flag:
+            if response.json():
+                response = response.json()
+
+                if response.get('errorCode', 0) != 0:
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Failed to fetch details.\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
+
+                for member in response['dagSetup']['dagMemberServers']:
+                    member_servers.append(member['serverName'])
+
+                return member_servers
+
+            else:
+                    raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
     @property
     def consumed_licenses(self):

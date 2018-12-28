@@ -15,30 +15,30 @@ UserGroups: Class for representing all the user groups associated with a commcel
 UserGroup:  Class for representing a single User Group of the commcell
 
 UserGroups:
-    __init__(commcell_object)       --  initialise instance of the UserGroups
+    __init__(commcell_object)       --  Initialise instance of the UserGroups
                                         associated with the specified commcell
 
-    __str__()                       --  returns all the user groups associated with
+    __str__()                       --  Returns all the user groups associated with
                                         the commcell
 
-    __repr__()                      --  returns the string for the instance of the
+    __repr__()                      --  Returns the string for the instance of the
                                         UserGroups class
 
-    _get_usergroups()               --  gets all the usergroups associated with the
+    _get_usergroups()               --  Gets all the usergroups associated with the
                                         commcell specified
 
-    has_user_group()                --  checks if a user group exists with the given
+    has_user_group()                --  Checks if a user group exists with the given
                                         name or not
 
-    get(user_group_name)            --  returns the instance of the UserGroup class,
+    get(user_group_name)            --  Returns the instance of the UserGroup class,
                                         for the the input user group name
 
-    add()                           --  adds local/external user group on this
+    add()                           --  Adds local/external user group on this
                                         commserver
 
-    delete(user_group_name)         --  deletes the user group from the commcell
+    delete(user_group_name)         --  Deletes the user group from the commcell
 
-    refresh()                       --  refresh the user groups associated with the
+    refresh()                       --  Refresh the user groups associated with the
                                         commcell
 
     all_user_groups()               --  Returns all the usergroups present in the commcell
@@ -62,7 +62,7 @@ UserGroup:
 
     refresh()                       --  refresh the properties of the user group
 
-    status()                        --  sets status for users (enable\disable)
+    status()                        --  sets status for users (enable or disable)
 
     update_security_associations()  --  updates 3-way security associations on usergroup
 
@@ -74,7 +74,8 @@ UserGroup:
 
     users()                         --  returns users who are members of this usergroup
 
-    usergroups()                    --  returns external usergroups who are members of this usergroup
+    usergroups()                    --  returns external usergroups who are members of this
+                                        usergroup
 
     user_group_id()                 --  returns group id of this user group
 
@@ -83,6 +84,8 @@ UserGroup:
     description()                   --  returns the description set for this user group
 
     email()                         --  returns the email of this user group
+
+    associations()                  --  Returns security associations present on the usergroup
 
 """
 
@@ -303,9 +306,8 @@ class UserGroups(object):
                 "associationsOperationType": "ADD",
                 "associations": security_request
             }
-        if users_list is None:
-            user_json = []
-        else:
+        user_json = []
+        if users_list:
             user_json = [{"userName": uname} for uname in users_list]
 
         external_usergroup_json = []
@@ -482,7 +484,6 @@ class UserGroup(object):
         self._description = None
         self._properties = None
         self._email = None
-        self._security_associations = {}
         self._users = []
         self._usergroups = []
         self._usergroup_status = None
@@ -532,46 +533,10 @@ class UserGroup(object):
                 if 'email' in self._properties:
                     self._email = self._properties['email']
 
-                if 'securityAssociations' in self._properties:
-                    if 'associations' in self._properties['securityAssociations']:
-                        associations = self._properties['securityAssociations']['associations']
-
-                        for association in associations:
-                            entity = association['entities']['entity'][0]
-
-                            if 'commCellName' in entity:
-                                name = entity['commCellName']
-                            elif 'userGroupName' in entity:
-                                name = entity['userGroupName']
-                            else:
-                                return
-
-                            properties = association['properties']
-
-                            if name not in self._security_associations:
-                                self._security_associations[name] = {
-                                    'permissions': set([]),
-                                    'roles': set([])
-                                }
-
-                            permission = None
-                            role = None
-
-                            if 'categoryPermission' in properties:
-                                permissions = properties['categoryPermission']
-                                permission_list = permissions['categoriesPermissionList'][0]
-                                permission = permission_list['permissionName']
-                            elif 'permissions' in properties:
-                                permission = properties['permissions'][0]['permissionName']
-                            elif 'role' in properties:
-                                role = properties['role']['roleName']
-
-                            if permission is not None:
-                                self._security_associations[name]['permissions'].add(
-                                    permission
-                                )
-                            if role is not None:
-                                self._security_associations[name]['roles'].add(role)
+                security_properties = self._properties.get('securityAssociations', {}).get(
+                    'associations', {})
+                self._security_associations = SecurityAssociation.fetch_security_association(
+                            security_dict=security_properties)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -661,8 +626,8 @@ class UserGroup(object):
         return user_groups
 
     @property
-    def assocaitions(self):
-        """Returns the list of associated external usergroups with this usergroup"""
+    def associations(self):
+        """Returns security associations present on th usergroup"""
         return self._security_associations
 
     def update_security_associations(self, entity_dictionary, request_type):

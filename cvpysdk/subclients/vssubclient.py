@@ -1468,8 +1468,7 @@ class VirtualServerSubclient(Subclient):
 
         # check if inputs are correct
         if not(isinstance(destination_path, basestring) and
-               (isinstance(vm_name, basestring)) and
-               (isinstance(folder_to_restore, basestring))):
+               (isinstance(vm_name, basestring))):
             raise SDKException('Subclient', '105')
 
         if vm_name not in _vm_names:
@@ -1490,9 +1489,11 @@ class VirtualServerSubclient(Subclient):
         if isinstance(folder_to_restore, list):
             _folder_to_restore_list = folder_to_restore
 
-        else:
+        elif isinstance(folder_to_restore, basestring):
             _folder_to_restore_list = []
             _folder_to_restore_list.append(folder_to_restore)
+        else:
+            raise SDKException('Subclient', '105')
 
         _file_restore_option["paths"] = []
         for _each_folder in _folder_to_restore_list:
