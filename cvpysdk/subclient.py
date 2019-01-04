@@ -220,6 +220,7 @@ class Subclients(object):
         from .subclients.adsubclient import ADSubclient
         from .subclients.sharepointsubclient import SharepointSubclient
         from .subclients.vminstancesubclient import VMInstanceSubclient
+        from .subclients.casesubclient import CaseSubclient
 
         globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
         globals()['FileSystemSubclient'] = FileSystemSubclient
@@ -242,6 +243,7 @@ class Subclients(object):
         globals()['ADSubclient'] = ADSubclient
         globals()['SharepointSubclient'] = SharepointSubclient
         globals()['VMInstanceSubclient'] = VMInstanceSubclient
+        globals()['CaseSubclient'] = CaseSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -260,12 +262,12 @@ class Subclients(object):
             'domino mailbox archiver': LNDmSubclient,
             'sybase': SybaseSubclient,
             'sap for oracle': SAPOracleSubclient,
-            "exchange mailbox": ExchangeSubclient,
+            "exchange mailbox": [ExchangeSubclient, CaseSubclient],
             'mysql': MYSQLSubclient,
             'exchange database': ExchangeDatabaseSubclient,
             'postgresql': PostgresSubclient,
             'informix': InformixSubclient,
-            'active directory' : ADSubclient,
+            'active directory': ADSubclient,
             'sharepoint server': SharepointSubclient
         }
 
@@ -556,7 +558,7 @@ class Subclients(object):
                 description         (str)   --  description for the subclient (optional)
 
                     default: ''
-                
+
                 advanced_options    (dict)  --  dict of additional options needed to create
                                                 subclient with additional properties
                                                 default : None
@@ -650,10 +652,10 @@ class Subclients(object):
         }
         if pre_scan_cmd is not None:
             request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = \
-                                                {
-                                                    "runAs": 1,
-                                                    "preScanCommand": pre_scan_cmd,
-                                                }
+                {
+                "runAs": 1,
+                "preScanCommand": pre_scan_cmd,
+            }
 
         if self._agent_object.agent_name == 'sql server':
             request_json['subClientProperties']['mssqlSubClientProp'] = {
@@ -723,6 +725,9 @@ class Subclients(object):
             if self.has_subclient(subclient_name):
                 if isinstance(self._subclients_dict[agent_name], list):
                     if self._instance_object.instance_name == "vminstance":
+                        subclient = self._subclients_dict[agent_name][-1]
+                    elif int(self._client_object.client_type) == 36:
+                        # client type 36 is case manager client
                         subclient = self._subclients_dict[agent_name][-1]
                     else:
                         subclient = self._subclients_dict[agent_name][0]

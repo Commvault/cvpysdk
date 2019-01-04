@@ -263,9 +263,13 @@ SERVICES_DICT_TEMPLATE = {
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',
     'PUSH_TOPOLOGY': '{0}FirewallTopology/%s/Push',
 
+    'ADVANCED_JOB_DETAIL_TYPE': '{0}Job/%s/AdvancedDetails?infoType=%s',
+    
     'CERTIFICATES': '{0}CommServ/Certificates',
 
-    'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo'  # only for Exchange DAG
+    'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo',  # only for Exchange DAG
+
+    'CASEDEFINITION': '{0}EDiscoveryClients/CaseDefinitions'
 }
 
 

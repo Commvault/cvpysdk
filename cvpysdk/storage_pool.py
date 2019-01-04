@@ -359,6 +359,13 @@ class StoragePools:
                             ]
                         }
                     ]
+                },
+                "library": {
+                    "libraryName": mountpath,
+                },
+                "mediaAgent": {
+                    "mediaAgentId": int(media_agent.media_agent_id),
+                    "mediaAgentName": media_agent.media_agent_name
                 }
             }
         }

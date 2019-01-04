@@ -83,6 +83,8 @@ Job
 
     refresh()                   --  refresh the properties of the Job
 
+    advanced_job_details()      --  Returns advanced properties for the job
+
 
 Job instance Attributes
 -----------------------
@@ -136,6 +138,7 @@ from __future__ import unicode_literals
 import time
 
 from .exception import SDKException
+from .constants import AdvancedJobDetailType
 
 
 class JobController(object):
@@ -1183,3 +1186,40 @@ class Job(object):
         """Refresh the properties of the Job."""
         self._initialize_job_properties()
         self.is_finished
+
+    def advanced_job_details(self, info_type):
+        """Returns advanced properties for the job
+
+            Args:
+                infoType    (object)  --  job detail type to be passed from AdvancedJobDetailType
+                enum from the constants
+
+            Returns:
+                dict -  dictionary with advanced details of the job info type given
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if not isinstance(info_type, AdvancedJobDetailType):
+            raise SDKException('Response', '107')
+        url = self._services['ADVANCED_JOB_DETAIL_TYPE'] % (self.job_id, info_type.value)
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+
+        if flag:
+            if response.json():
+               response = response.json()
+
+               if response.get('errorCode', 0) != 0:
+                   error_message = response.json()['errorMessage']
+                   o_str = 'Failed to fetch details.\nError: "{0}"'.format(error_message)
+                   raise SDKException('Job', '102', o_str)
+
+               return response
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

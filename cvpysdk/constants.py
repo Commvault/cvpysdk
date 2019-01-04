@@ -16,6 +16,8 @@ InstanceBackupType      --  Enum for backup type for instance
 
 SQLDefines              --  Class which maintains the defines list for SQL Server
 
+AdvancedJobDetailType   --  Enum to maintain advanced job details info type
+
 """
 
 from enum import Enum
@@ -115,3 +117,13 @@ class SharepointDefines:
     # sharepoint strings
     CONTENT_WEBAPP = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}'
     CONTENT_DB = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}\\{1}'
+
+class AdvancedJobDetailType(Enum):
+    """Class to maintain advanced job details info type
+    """
+
+    RETENTION_INFO = 1
+    REFERNCE_COPY_INFO = 2
+    DASH_COPY_INFO = 4
+    ADMIN_DATA_INFO = 8
+    BKUP_INFO = 16

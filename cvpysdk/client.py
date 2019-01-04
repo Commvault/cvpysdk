@@ -62,6 +62,8 @@ Clients
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
+    add_case_client()                     --  adds a new Case Manger Client to the Commcell
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -158,7 +160,7 @@ Client
     reconfigure_client()         --  reapplies license to the client
 
     push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
-    
+
     get_dag_member_servers()     --   Gets the member servers of an Exchange DAG client.
 
 Client Attributes
@@ -253,6 +255,7 @@ from .exception import SDKException
 from .deployment.install import Install
 
 from .network import Network
+from .network_throttle import NetworkThrottle
 
 from .security.user import Users
 
@@ -957,6 +960,113 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_case_client(
+            self,
+            client_name,
+            server_plan,
+            dc_plan,
+            hold_type):
+        """Adds a new Exchange Mailbox Client to the Commcell.
+
+            Args:
+                client_name             (str)   --  name of the new Case Client
+
+                server_plan             (str)   --  Server plan to assocaite to case
+
+                dc_plan                (str)    --  DC plan to assocaite to case
+
+                hold_type              (int)    --  Type of client (values: 1, 2, 3)
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        plans_list = []
+        dc_plan_dict = {}
+        if self._commcell_object.plans.has_plan(dc_plan):
+            dc_plan_object = self._commcell_object.plans.get(dc_plan)
+            dc_plan_dict = {
+                "planId": int(dc_plan_object.plan_id),
+                "planType": int(dc_plan_object.plan_type)
+            }
+            plans_list.append(dc_plan_dict)
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id),
+                "planType": int(server_plan_object.plan_type)
+            }
+            plans_list.append(server_plan_dict)
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 36,
+                "edgeDrivePseudoClientProperties": {
+                    "eDiscoveryInfo": {
+                        "custodians": ""
+                    }
+                },
+                "plan": dc_plan_dict,
+                "exchangeOnePassClientProperties": {
+                    "backupSetTypeToCreate": hold_type
+                },
+                "caseManagerPseudoClientProperties": {
+                    "eDiscoveryInfo": {
+                        "eDiscoverySubType": 1,
+                        "additionalPlans": plans_list,
+                        "appTypeIds": [
+                            137
+                        ]
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name,
+                "_type_": 3
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_EXCHANGE_CLIENT, request_json
+        )
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def get(self, name):
         """Returns a client object if client name or host name matches specified name
             We check if specified name matches any of the existing client names else
@@ -1122,7 +1232,7 @@ class Client(object):
         self._schedules = None
         self._users = None
         self._network = None
-
+        self._network_throttle = None
         self._association_object = None
 
         self._properties = None
@@ -1144,7 +1254,6 @@ class Client(object):
         self._log_directory = None
         self._license_info = None
         self._cvd_port = None
-
 
         self.refresh()
 
@@ -1767,6 +1876,14 @@ class Client(object):
             self._network = Network(self)
 
         return self._network
+
+    @property
+    def network_throttle(self):
+        """Returns the object of NetworkThrottle class"""
+        if self._network_throttle is None:
+            self._network_throttle = NetworkThrottle(self)
+
+        return self._network_throttle
 
     def enable_backup(self):
         """Enable Backup for this Client.
@@ -3134,7 +3251,7 @@ class Client(object):
                 return member_servers
 
             else:
-                    raise SDKException('Response', '102')
+                raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101')
 
@@ -3216,3 +3333,9 @@ class Client(object):
         """Returns client GUID"""
 
         return self._properties.get('client', {}).get('clientEntity', {}).get('clientGUID', {})
+
+    @property
+    def client_type(self):
+        """Returns client Type"""
+
+        return self._properties.get('pseudoClientInfo', {}).get('clientType', "")

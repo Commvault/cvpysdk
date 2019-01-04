@@ -144,17 +144,21 @@ class ExchangeDatabaseSubclient(Subclient):
 
         return restore_json
 
-    def restore_in_place(self, paths):
+    def restore_in_place(self, paths, client=None):
         """
          Run inplace restore for Exchange database subclient
         
          Args:
-             paths      (list) -- list of path used for inplace restore
+             paths      (list)   -- list of path used for inplace restore
+
+             client     (object) -- object of client class
              
         Returns:
             object  -   Job class object for restore job
         """
-        restore_json = self._restore_json(paths=paths)
+        if client is None:
+            client = self._client_object
+        restore_json = self._restore_json(paths=paths, client=client)
 
         return self._process_restore_response(restore_json)
 

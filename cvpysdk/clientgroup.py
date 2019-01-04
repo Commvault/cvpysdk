@@ -118,6 +118,7 @@ from past.builtins import basestring
 
 from .exception import SDKException
 from .network import Network
+from .network_throttle import NetworkThrottle
 from .deployment.install import Install
 
 
@@ -1146,6 +1147,16 @@ class ClientGroup(object):
 
         return self._networkprop
 
+
+    @property
+    def network_throttle(self):
+        """Returns the object of NetworkThrottle class"""
+        if self._network_throttle is None:
+            self._network_throttle = NetworkThrottle(self)
+
+        return self._network_throttle
+
+
     @property
     def client_group_filter(self):
         """Returns the client group filters"""
@@ -1185,6 +1196,7 @@ class ClientGroup(object):
 
         self._process_request_(request_json)
         self.refresh()
+
 
     def enable_backup(self):
         """Enable Backup for this ClientGroup.
@@ -1620,3 +1632,5 @@ class ClientGroup(object):
         """Refresh the properties of the ClientGroup."""
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
+        self._network_throttle = None
+
