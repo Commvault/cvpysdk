@@ -155,6 +155,10 @@ class FileSystemSubclient(Subclient):
                     "contentOperationType": 1
                 }
         }
+
+        if 'isDDBSubclient' in self._fs_subclient_prop:
+            if self._fs_subclient_prop['isDDBSubclient']:
+                del subclient_json["subClientProperties"]["content"]
         return subclient_json
 
     @property

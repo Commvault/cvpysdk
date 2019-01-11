@@ -59,6 +59,8 @@ Plan
 
     _get_plan_properties()      -- get the properties of this plan
 
+    _update_plan_props()        -- method to update plan properties
+
     derive_and_add()            -- add new plan by deriving from the parent Plan object
 
     plan_name                   --  returns the name of the plan
@@ -69,7 +71,25 @@ Plan
 
     associate_user()            --  associates users to the plan
 
+Plan Attributes
+----------------
+    **plan_id**                 --  returns the id of the plan
 
+    **plan_name**               --  returns the name of the plan
+
+    **sla_in_minutes**          --  returns the SLA/RPO of the plan
+
+    **plan_type**               --  returns the type of the plan
+
+    **subtype**                 --  returns the subtype of the plan
+
+    **override_entities**       --  returns the override restrictions of the plan
+
+    **storage_policy**          --  returns the storage policy of the plan
+
+    **schedule_policies**       --  returns the schedule policy of the plan
+
+    **subclient_policy**        --  returns the subclient policy of the plan
 """
 
 from __future__ import unicode_literals
@@ -327,17 +347,23 @@ class Plans(object):
 
                 flag, response = self._cvpysdk_object.make_request('DELETE', delete_plan)
 
-                error_code = -1
+                error_code = 0
 
                 if flag:
-                    if 'errorCode' in response.json():
-                        error_code = response.json()['errorCode']
+                    if 'error' in response.json():
+                        if isinstance(response.json()['error'], list):
+                            error_code = response.json()['error'][0]['status']['errorCode']
+                        else:
+                            error_code = response.json()['errorCode']
 
                     if error_code != 0:
                         o_str = 'Failed to delete plan'
-                        error_message = response.json()['errorMessage']
-                        if error_message:
-                            o_str += '\nError: "{0}"'.format(error_message)
+                        if isinstance(response.json()['error'], list):
+                            error_message = response.json()['error'][0]['status']['errorMessage']
+                        else:
+                            error_message = response.json()['errorMessage']
+                        o_str += '\nError: "{0}"'.format(error_message)
+                        raise SDKException('Plan', '102', o_str)
                     else:
                         # initialize the plan again
                         # so the plan object has all the plan
@@ -420,7 +446,8 @@ class Plans(object):
                     'Plan', '102', 'Plan "{0}" already exists'.format(plan_name)
                 )
 
-        storage_pool_id = int(self._commcell_object.storage_pools.get(storage_pool_name))
+        storage_pool_id = int(self._commcell_object.storage_pools.get(
+            storage_pool_name).storage_pool_id)
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
 
@@ -431,6 +458,16 @@ class Plans(object):
         request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
             "storagePolicyId": storage_pool_id
         }
+        if plan_sub_type is "Server" and 'database' in request_json['plan']:
+            request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
+                'useGlobalDedupStore'] = 1
+            request_json['plan']['database']['storageLog']['copy'][0].pop(
+                'DDBPartitionInfo', None
+            )
+            request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
+                'useGlobalPolicy'] = {
+                    "storagePolicyId": storage_pool_id
+                }
 
         if isinstance(override_entities, dict):
             request_json['plan']['summary']['restrictions'] = 0
@@ -633,6 +670,9 @@ class Plan(object):
             if response.json() and 'plan' in response.json():
                 self._plan_properties = response.json()['plan']
 
+                if 'planName' in self._plan_properties['summary']['plan']:
+                    self._plan_name = self._plan_properties['summary']['plan']['planName']
+
                 if 'slaInMinutes' in self._plan_properties['summary']:
                     self._sla_in_minutes = self._plan_properties['summary']['slaInMinutes']
 
@@ -642,8 +682,14 @@ class Plan(object):
                 if 'subtype' in self._plan_properties['summary']:
                     self._subtype = self._plan_properties['summary']['subtype']
 
-                if 'useGlobalPolicy' in self._plan_properties['storage']['copy'][0]:
-                    self._storage_pool = self._plan_properties['storage']['copy'][0]['useGlobalPolicy']
+                if self._subtype == 33554437 and len(self._plan_properties['storage']['copy']) > 1:
+                    copy_index = 1
+                else:
+                    copy_index = 0
+
+                if 'useGlobalPolicy' in self._plan_properties['storage']['copy'][copy_index]:
+                    self._storage_pool = self._plan_properties['storage']['copy'][
+                        copy_index]['useGlobalPolicy']
 
                 if self._subtype == 33554439:
                     if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
@@ -665,8 +711,9 @@ class Plan(object):
                     self._child_policies['schedulePolicy'] = self._plan_properties['schedule'][
                         'task']['taskName']
 
-                if self._subtype != 33554437:
+                if 'laptop' in self._plan_properties:
                     if 'backupContent' in self._plan_properties['laptop']['content']:
+                        self._child_policies['subclientPolicyIds'].clear()
                         for ida in self._plan_properties['laptop']['content']['backupContent']:
                             self._child_policies['subclientPolicyIds'].append(
                                 ida['subClientPolicy']['backupSetEntity']['backupsetId']
@@ -767,8 +814,8 @@ class Plan(object):
             request_json['plan']['storage']['copy'][0]['dedupeFlags']['useGlobalDedupStore'] = 1
 
             if storage_pool_name is not None:
-                storage_pool_id = int(
-                    self._commcell_object.storage_pools.get(storage_pool_name))
+                storage_pool_id = int(self._commcell_object.storage_pools.get(
+                    storage_pool_name).storage_pool_id)
             else:
                 storage_pool_id = None
 
@@ -897,6 +944,16 @@ class Plan(object):
                 request_json['plan']['laptop']['content']['definesSubclientMac'] = temp_defines_key
                 request_json['plan']['laptop']['content']['definesSubclientWin'] = temp_defines_key
 
+            if self._subtype == 33554437 and 'database' in request_json['plan']:
+                request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
+                    'useGlobalDedupStore'] = 1
+                request_json['plan']['database']['storageLog']['copy'][0].pop(
+                    'DDBPartitionInfo', None
+                )
+                request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
+                    'useGlobalPolicy'] = request_json['plan']['storage']['copy'][0][
+                        'useGlobalPolicy'
+                    ]
             add_plan_service = self._commcell_object.plans._PLANS
             headers = self._commcell_object._headers.copy()
             headers['LookupNames'] = 'False'
@@ -942,25 +999,96 @@ class Plan(object):
         else:
             raise SDKException('Plan', '102', 'Inheritance disabled for plan')
 
+    def _update_plan_props(self, props):
+        """Updates the properties of the plan
+
+            Args:
+                props   (dict)  --  dictionary containing the properties to be updated
+                                    {
+                                        'planName': 'NewName'
+                                    }
+
+            Raises:
+                SDKException
+                    if there is failure in updating the plan
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._PLAN, props
+        )
+        if flag:
+            if response.json():
+                error_code = str(response.json()["errors"][0]["status"]["errorCode"])
+                error_message = str(response.json()["errors"][0]["status"]["errorMessage"])
+
+                if error_code == "0":
+                    self.refresh()
+                    return (True, error_code)
+                else:
+                    return (False, error_code, error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def plan_id(self):
         """Treats the plan id as a read-only attribute."""
         return self._plan_id
 
     @property
-    def name(self):
-        """Returns the Plan display name"""
-        return self._plan_properties['summary']['plan']['planName']
-
-    @property
     def plan_name(self):
         """Treats the plan name as a read-only attribute."""
         return self._plan_name
 
+    @plan_name.setter
+    def plan_name(self, value):
+        """modifies the plan name"""
+        if isinstance(value, basestring):
+            req_json = {
+                'summary': {
+                    'plan': {
+                        'planName': value
+                    }
+                }
+            }
+            resp = self._update_plan_props(req_json)
+
+            if resp[0]:
+                return
+            else:
+                o_str = 'Failed to update the plan name\nError: "{0}"'
+                raise SDKException('Plan', '102', o_str.format(resp[2]))
+        else:
+            raise SDKException(
+                'Plan', '102', 'Plan name must be a string value'
+            )
+
     @property
     def sla_in_minutes(self):
-        """Treats the plan SLA as a read-only attribute."""
+        """Treats the plan SLA/RPO as a read-only attribute."""
         return self._sla_in_minutes
+
+    @sla_in_minutes.setter
+    def sla_in_minutes(self, value):
+        """Modifies the plan SLA/RPO"""
+        if isinstance(value, int):
+            req_json = {
+                'summary': {
+                    'slaInMinutes': value
+                }
+            }
+            resp = self._update_plan_props(req_json)
+
+            if resp[0]:
+                return
+            else:
+                o_str = 'Failed to update the plan SLA\nError: "{0}"'
+                raise SDKException('Plan', '102', o_str.format(resp[2]))
+        else:
+            raise SDKException(
+                'Plan', '102', 'Plan SLA must be an int value'
+            )
 
     @property
     def plan_type(self):
@@ -976,6 +1104,44 @@ class Plan(object):
     def override_entities(self):
         """Treats the plan override_entities as a read-only attribute."""
         return self._override_entities
+
+    @override_entities.setter
+    def override_entities(self, value):
+        """Sets the override restrictions for the plan"""
+        req_json = {
+            "inheritance": {
+                "isSealed": False,
+                "enforcedEntitiesOperationType": 1,
+                "privateEntitiesOperationType": 1
+            }
+        }
+        if isinstance(value, dict):
+            req_json['inheritance'].update(value)
+            resp = self._update_plan_props(req_json)
+            if resp[0]:
+                return
+            else:
+                o_str = 'Failed to update the plan override restrictions\nError: "{0}"'
+                raise SDKException('Plan', '102', o_str.format(resp[2]))
+        else:
+            raise SDKException(
+                'Plan', '102', 'Override restrictions must be defined in a dict'
+            )
+
+    @property
+    def storage_policy(self):
+        """Treats the plan storage policy as a read-only attribute"""
+        return self._child_policies['storagePolicy']
+
+    @property
+    def schedule_policies(self):
+        """Treats the plan schedule policies as read-only attribute"""
+        return self._child_policies['schedulePolicy']
+
+    @property
+    def subclient_policy(self):
+        """Treats the plan subclient policy as a read-only attribute"""
+        return self._child_policies['subclientPolicyIds']
 
     def refresh(self):
         """Refresh the properties of the Plan."""

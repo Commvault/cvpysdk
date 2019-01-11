@@ -114,6 +114,7 @@ VirtualServerSubclient:
 """
 
 import os
+import re
 from enum import Enum
 import copy
 import xml.etree.ElementTree as ET

@@ -23,6 +23,8 @@ ArrayManagement:
 
     delete()                    --  Method for delete operation
 
+    force_delete()              --  Method for force delete operation
+
     revert()                    --  Method for revert operation
 
     reconcile()                 --  Method for recon operation
@@ -62,6 +64,7 @@ class ArrayManagement(object):
                         mountpath=None,
                         do_vssprotection=True,
                         control_host=None,
+                        flags=False,
                         reconcile=False):
         """ Common Method for Snap Operations
 
@@ -80,6 +83,8 @@ class ArrayManagement(object):
                 control_host (int)        -- Control host for the Snap recon operation,
                 defaullt: None
 
+                flags        (bool)       -- True when snap needs to be force deleted
+
                 reconcile    (bool)       -- Uses Reconcile json if true
 
             Return :
@@ -91,6 +96,11 @@ class ArrayManagement(object):
             client_id = 0
         else:
             client_id = int(self._commcell_object.clients.get(client_name).client_id)
+
+        if flags:
+            flags = 2
+        else:
+            flags = 0
 
         if reconcile:
             request_json = {
@@ -123,7 +133,7 @@ class ArrayManagement(object):
                                                     'destClientId': client_id,
                                                     'destPath': mountpath,
                                                     'serverType':0,
-                                                    'flags':0,
+                                                    'flags': flags,
                                                     'serverName':"",
                                                     'userCredentials': {},
                                                     'volumeId':int(volume_id[i][0]),
@@ -180,6 +190,15 @@ class ArrayManagement(object):
                 volume_id    (int)        -- volume id of the snap backup job
         """
         return self._snap_operation(2, volume_id)
+
+    def force_delete(self, volume_id):
+        """ Deletes Snap of the given volume id
+
+            Args:
+
+                volume_id    (int)        -- volume id of the snap backup job
+        """
+        return self._snap_operation(2, volume_id, flags=True)
 
     def revert(self, volume_id):
         """ Reverts Snap of the given volume id

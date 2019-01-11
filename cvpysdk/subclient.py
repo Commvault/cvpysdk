@@ -726,7 +726,7 @@ class Subclients(object):
                 if isinstance(self._subclients_dict[agent_name], list):
                     if self._instance_object.instance_name == "vminstance":
                         subclient = self._subclients_dict[agent_name][-1]
-                    elif int(self._client_object.client_type) == 36:
+                    elif self._client_object.client_type and int(self._client_object.client_type) == 36:
                         # client type 36 is case manager client
                         subclient = self._subclients_dict[agent_name][-1]
                     else:

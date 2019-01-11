@@ -94,6 +94,9 @@ StoragePolicy:
 
     get_copy()                              --  Returns the StoragePolicyCopy class object of the input copy
 
+    mark_for_recovery()                     --  Marks Deduplication store for recovery
+
+    run_recon()                             --  Runs non-mem DB Reconstruction job
 
 
 StoragePolicyCopy:
@@ -1885,6 +1888,72 @@ class StoragePolicy(object):
             raise SDKException(
                 'Storage', '102', 'No copy exists with name: {0}'.format(copy_name)
             )
+
+    def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
+        """ Marks Deduplication store for recovery
+
+            Args:
+               store_id         (str)  --  SIDB store id
+
+               sub_store_id     (str)  --  SIDB substore id
+
+               media_agent_name (str)  --  name of the media agent on which DDB is hosted
+
+               dedupe_path      (str)  --  SIDB store path
+        """
+
+        request_xml = """
+                <EVGui_IdxSIDBSubStoreOpReq><info SIDBStoreId="{0}" SubStoreId="{1}" opType="1" path="{3}">
+                <mediaAgent name="{2}"/>
+                </info>
+                </EVGui_IdxSIDBSubStoreOpReq>
+                """.format(store_id, sub_store_id, media_agent_name, dedupe_path)
+        self._commcell_object._qoperation_execute(request_xml)
+
+    def run_recon(self, copy_name, sp_name, store_id):
+        """ Runs non-mem DB Reconstruction job
+
+            Args:
+               copy_name    (str)  --  name of the storage policy copy
+
+               sp_name      (str)  --  name of the storage policy
+
+               store_id     (str)  --  SIDB store id associated with the copy
+        """
+        request_xml = """
+        <TMMsg_DedupSyncTaskReq flags="0">
+            <taskInfo><associations _type_="0" appName="" applicationId="0" backupsetId="0" backupsetName="" 
+            clientId="0" clientName="" clientSidePackage="1" commCellId="0" consumeLicense="1" copyName="{0}" 
+            instanceId="1" instanceName="" srmReportSet="0" srmReportType="0" storagePolicyName="{1}" 
+            subclientId="0" subclientName="" type="0"/>
+            <subTasks>
+                <options>
+                    <adminOpts>
+                        <contentIndexingOption subClientBasedAnalytics="0"/>
+                        <dedupDBSyncOption SIDBStoreId="{2}"/>
+                        <reconstructDedupDBOption allowMaximum="0" flags="0" noOfStreams="0">
+                        <mediaAgent _type_="11" mediaAgentId="0" mediaAgentName="&lt;ANY MEDIAAGENT>"/>
+                        </reconstructDedupDBOption>
+                    </adminOpts>
+                    <restoreOptions>
+                        <virtualServerRstOption isBlockLevelReplication="0"/>
+                    </restoreOptions>
+                </options>
+                <subTask operationType="4036" subTaskType="1"/>
+            </subTasks>
+            <task initiatedFrom="1" ownerId="1" ownerName="admin" policyType="0" sequenceNumber="0" 
+            taskId="0" taskType="1"><taskFlags disabled="0"/>
+            </task>
+            </taskInfo>
+        </TMMsg_DedupSyncTaskReq>
+        """.format(copy_name, sp_name, store_id)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
 
 
 class StoragePolicyCopy(object):

@@ -33,8 +33,7 @@ Commcell:
 
     _qoperation_execute()       --  runs the qoperation execute rest api on specified input xml
 
-    _qoperation_execscript()    --  runs the qoperation execute script rest api with
-    specified arguements
+    _qoperation_execscript()    --  runs the qoperation execute qscript with specified arguements
 
     _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)
 
@@ -589,7 +588,7 @@ class Commcell(object):
         return self._id
 
     def _qoperation_execscript(self, arguments):
-        """Makes a qoperation execute rest api call
+        """Makes a qoperation execute qscript with specified arguements
 
             Args:
                 arguments     (str)   --  arguements that is to be passed
@@ -608,8 +607,11 @@ class Commcell(object):
             'POST', self._services['EXECUTE_QSCRIPT'] % arguments)
 
         if flag:
-            if response.json():
-                return response.json()
+            if response.ok:
+                try:
+                    return response.json()
+                except ValueError:
+                    return {'output': response.text}
             else:
                 raise SDKException('Response', '102')
         else:
