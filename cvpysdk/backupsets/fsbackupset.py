@@ -30,6 +30,10 @@ FSBackupset:
 
     run_bmr_restore()           --  Triggers the VIrtualize Me to VMWare job
 
+    _restore_aix_1touch_admin_json()    --Returns the restore JSON required for BMR operations.
+
+    run_bmr_aix_restore()               --Triggers the Aix 1-touch restore Job
+
 
 """
 
@@ -232,7 +236,7 @@ class FSBackupset(Backupset):
         options['operation'] = 'all_versions'
 
         return self._do_browse(options)
-		
+
     def _restore_bmr_admin_json(self, ipconfig, hwconfig):
         """"setter for the BMR options required  for 1-touch restore
 
@@ -262,41 +266,50 @@ class FSBackupset(Backupset):
                                     "isIndexCacheInUSB": True, "firewallCS": "",
                                     "backupSet": {
                                         "backupsetName": "defaultBackupSet"
-                                    }, "netconfig": {
-                                        "wins": {
+                                    }, "netconfig":{
+                                        "wins":{
                                             "useDhcp": False
-                                        }, "firewall": {
+                                        },
+                                        "firewall": {
                                             "certificatePath": "", "certificateBlob": "",
-                                        "configBlob": ""
+                                            "configBlob": ""
                                         }, "hosts": [
                                             {
-                                                "fqdn": "", "alias": "", "ip": {
+                                                "fqdn": "", "alias": "", "ip": {}
                                             }
-                                            }
-                                        ], "dns": {
+                                        ],
+                                        "dns":
+                                        {
                                             "suffix": "", "useDhcp": False
-                                    }, "ipinfo": ipconfig
-                                }, "platformConfig": {
-                                    "platformCfgBlob": "", "win_passPhrase": "",
-                                    "win_licenceKey": "", "type": 1,
-                                    "goToMiniSetUp": 0, "Win_DomainCreds": {
-                                        "isClientInDomain": True, "DomainCreds": {
-                                            "password": "", "domainName": "idcprodcert.loc",
-                                            "confirmPassword": "",
-                                            "userName": ""
-                                        }
+                                        }, "ipinfo": ipconfig
+                                    },
+                                    "platformConfig":
+                                        {
+                                            "platformCfgBlob": "", "win_passPhrase": "",
+                                            "win_licenceKey": "", "type": 1,
+                                            "goToMiniSetUp": 0, "Win_DomainCreds":
+                                            {
+                                                "isClientInDomain": True, "DomainCreds":
+                                                {
+                                                    "password": "", "domainName": "idcprodcert.loc",
+                                                    "confirmPassword": "",
+                                                    "userName": ""
+                                                }
+                                            }
+                                        },
+                                    "firewallLocal": {
+                                        "certificatePath": "", "certificateBlob": "", "configBlob": ""
+                                    },
+                                    "client": {
+                                        "hostName": " ", "clientName": " ",
+                                        "type": 0
+                                    },
+                                    "indexPathCreds": {
+                                        "password": "", "domainName": "", "confirmPassword": "",
+                                        "userName": ""
+                                    }, "newclient": {
+                                        "hostName": "", "clientName": ""
                                     }
-                                }, "firewallLocal": {
-                                    "certificatePath": "", "certificateBlob": "", "configBlob": ""
-                                }, "client": {
-                                    "hostName": " ", "clientName": " ",
-                                    "type": 0
-                                }, "indexPathCreds": {
-                                    "password": "", "domainName": "", "confirmPassword": "",
-                                    "userName": ""
-                                }, "newclient": {
-                                    "hostName": "", "clientName": ""
-                                }
                                 }
                             ], "csinfo": {
                                 "firewallPort": 0, "cvdPort": 0, "evmgrPort": 0,
@@ -313,10 +326,10 @@ class FSBackupset(Backupset):
                                     "password": " ",
                                     "domainName": "", "confirmPassword": "", "userName": "admin"
                                 }
-                            }, "hwconfig": hwconfig
-                                           , "netconfig": {
-                                               "wins": {
-                                                   "useDhcp": False
+                            }, "hwconfig": hwconfig,
+                            "netconfig": {
+                                "wins": {
+                                    "useDhcp": False
                                 }, "firewall": {
                                     "certificatePath": "", "certificateBlob": "", "configBlob": ""
                                 }, "dns": {
@@ -326,23 +339,21 @@ class FSBackupset(Backupset):
                                 }
                             }, "dataBrowseTime": {
 
-                            }, "maInfo": {
-                                "clientName": ""
-                            }, "datastoreList": {
-
-                            }
+                            }, "maInfo":
+                                {
+                                    "clientName": ""
+                                }, "datastoreList": {}
                         }, "vmInfo": {
                             "registerWithFailoverCluster": False, "proxyClient": {
                                 "clientName": " "
-                        }, "vmLocation": {
-                            "pathName": " ", "inventoryPath": "",
-                            "hostName": " ", "resourcePoolPath": "", "dataCenterName": "",
-                            "vCenter": " ", "datastore": {
-                                "name": " "
-                            }
-                        }, "expirationTime": {
+                            }, "vmLocation": {
+                                "pathName": " ", "inventoryPath": "",
+                                "hostName": " ", "resourcePoolPath": "", "dataCenterName": "",
+                                "vCenter": " ", "datastore": {
+                                    "name": " "
+                                    }
+                                }, "expirationTime": {}
                         }
-                    }
                     }
                 ]
             }
@@ -509,3 +520,243 @@ class FSBackupset(Backupset):
         response_json['taskInfo']['subTasks'][0]['subTask']['operationType'] = 4041
 
         return self._process_restore_response(response_json)
+
+    def _restore_aix_1touch_admin_json(self):
+        """"setter for the BMR options required  for 1-touch restore
+
+                Returns :
+                            returns the JSON required for BMR
+                """
+
+        bmr_restore_aix1touch_json = {
+
+            "restoreFromBackupBeforeDate": False, "recoverAllVolumeGroups": True,
+            "automaticClientReboot": True, "preserveExistingVolumeGroups": False, "responseData":
+                [
+                    {
+                        "copyPrecedence": 0, "version": "", "platform": 0, "dateCreated": "",
+                        "automationTest": False, "autoReboot": True, "clients": [
+                            {
+                                "platform": 0, "isBlockLevelBackup": False, "indexCachePath": "", "isClientMA": False,
+                                "clone": True, "isIndexCacheInUSB": True, "firewallCS": "", "backupSet":
+                                {
+                                    "_type_": 6
+                                }, "netconfig":
+                                {
+                                    "wins":
+                                    {
+                                        "useDhcp": False
+                                    },
+                                    "firewall":
+                                        {
+                                            "certificatePath": "", "certificateBlob": "", "configBlob": ""
+                                        },
+                                    "hosts": [
+                                        {
+                                            "fqdn": "", "alias": "",
+                                            "ip": {}
+                                        }
+                                    ], "dns": {
+                                        "suffix": "", "useDhcp": False, "nameservers":
+                                        [
+                                            {
+                                                "address": "", "family": 32
+                                            }
+                                        ]
+                                    }, "ipinfo": {
+                                        "defaultgw": "", "interfaces":
+                                            [
+                                                {
+                                                    "adapter": 0, "networkLabel": "", "vlan": 0,
+                                                    "macAddressType": 0,
+                                                    "isEnabled": True, "name": "", "mac": "",
+                                                    "classicname": "", "wins":
+                                                    {
+                                                        "useDhcp": False
+                                                    }, "dns":{
+                                                        "suffix": "", "useDhcp": False
+                                                    }, "protocols":[
+                                                        {
+                                                            "gw": "", "subnetId": "", "netmask": "",
+                                                            "networkAddress": "", "useDhcp": False,
+                                                            "ip":
+                                                                {
+                                                                    "address": ""
+                                                                }
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }, "platformConfig": {
+                                        "platformCfgBlob": "", "win_passPhrase": "", "win_licenceKey": "", "type": 0,
+                                        "goToMiniSetUp": 0, "Win_DomainCreds": {
+                                            "isClientInDomain": False, "DomainCreds":{
+                                                "password": "", "domainName": "", "confirmPassword": "", "userName": ""
+                                            }
+                                        }
+                                    }, "firewallLocal": {
+                                        "certificatePath": "", "certificateBlob": "", "configBlob": ""
+                                    }, "client": {},
+                                "indexPathCreds": {
+                                    "password": "", "domainName": "", "confirmPassword": "", "userName": ""
+                                }, "newclient": {
+                                    "hostName": "", "clientName": ""
+                                }
+                            }
+                        ], "csinfo": {
+                            "firewallPort": 0, "cvdPort": 0, "evmgrPort": 0, "fwClientGroupName": "",
+                            "mediaAgentInfo": {
+                                "_type_": 3
+                            }, "mediaAgentIP": {
+                            }, "ip": {
+                                "address": ""
+                            }, "commservInfo": {
+                                "hostName": "", "clientName": ""
+                            }, "creds": {
+                                "password": "", "domainName": "",
+                                "confirmPassword": "", "userName": ""
+                            }
+                        }, "hwconfig": {
+                            "minMemoryMB": 0, "vmName": "", "magicno": "", "enableDynamicMemory": False,
+                            "bootFirmware": 0, "version": "", "mem_size": 0, "cpu_count": 1, "maxMemoryMB": 0,
+                            "nic_count": 1, "overwriteVm": False, "useMtptSelection": False, "ide_count": 0,
+                            "mtpt_count": 0, "scsi_count": 0, "diskType": 1, "optimizeStorage": False, "systemDisk": {
+                                "forceProvision": False, "bus": 0, "refcnt": 0, "size": 0, "scsiControllerType": 0,
+                                "name": "", "dataStoreName": "", "vm_disk_type": 0, "slot": 0, "diskType": 1,
+                                "tx_type": 0
+                            }
+                        }, "netconfig": {
+                            "wins": {
+                                "useDhcp": False
+                            }, "firewall": {
+                                "certificatePath": "", "certificateBlob": "", "configBlob": ""
+                            }, "dns": {
+                                "suffix": "", "useDhcp": False
+                            }, "ipinfo": {
+                                "defaultgw": ""
+                            }
+                        }, "dataBrowseTime": {
+                            "_type_": 55
+                        }, "maInfo": {
+                            "clientName": ""
+                        }, "datastoreList": {
+                        }
+                    }
+                ]
+        }
+        return bmr_restore_aix1touch_json
+
+    def run_bmr_aix_restore(self, **restore_options):
+        """
+                Calling the create task API with the final restore JSON
+
+                Args :
+
+
+                        Clone Clinet Name  (String)     : Clone machine name
+
+                        Clone Hostname  (String)        :Clone machine host name
+
+                        DNS Suffix      (String)        :Dns suffix name
+
+                        DNS IP  (Integer)                :Ip of Dns Address
+
+                        Clone IP    (Integer)            :Clone Machine IP
+
+                        Clone Netmask (Integer)          :Clone Machine NetMask
+
+                        Clone Gateway (Integer)          :Clone Machine Gateway
+
+                        Auto Reboot   (Boolean)          :Client machine Auto reboot(True or False)
+
+                        Clone          (Boolean)         :Is Clone enabled(True or False)
+
+                        CS_Username   (String)    : The username for the Comcell
+
+                        CS_Password   (String)     : The password for the comcell
+
+                Returns :
+                            returns the task object
+
+                """
+        self._instance_object._restore_association = self._backupset_association
+        request_json = self._restore_json(paths=[''])
+        restore_json_aix_system_state = self._restore_aix_1touch_admin_json()
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'oneTouchRestoreOption'] = restore_json_aix_system_state
+        hwconfig_aix = restore_json_aix_system_state['responseData'][0]['hwconfig']
+        ipconfig_aix = restore_json_aix_system_state['responseData'][0]['clients'][0]['netconfig']['ipinfo']
+        vmjson = self._restore_bmr_admin_json(ipconfig_aix, hwconfig_aix)
+        request_json['taskInfo']['subTasks'][0]['options']['adminOpts'] = vmjson
+        is_clone = restore_options.get('clone', None)
+        subtask_json = {
+            'subTaskType' : 3,
+            'operationType': 1006
+        }
+        common_options = {
+            'systemStateBackup' : True,
+            'copyToObjectStore' :False,
+            'restoreToDisk' : False,
+            'skipIfExists' : False,
+            'SyncRestore' : False
+        }
+        onetouch_restore_option = {
+            "responseData": [{
+                "clients": [{
+                    "clone": is_clone,
+                    "netconfig": {
+                        "dns": {
+                            "suffix": restore_options.get('dns_suffix', None),
+                            "nameservers": [{
+                                "address": restore_options.get('dns_ip', None),
+                            }]
+                        },
+                        "ipinfo": {
+                            "interfaces": [{
+                                "protocols": [{
+                                    "gw": restore_options.get('clone_machine_gateway', None),
+                                    "netmask": restore_options.get('clone_machine_netmask', None),
+                                    "ip": {
+                                        "address": restore_options.get('clone_ip_address', None)
+                                    }
+                                }]
+                            }]
+                        }
+                    },
+                    "newclient": {
+                        "hostName": restore_options.get('clone_client_hostname', None),
+                        "clientName": restore_options.get('clone_client_name', None)
+                    }
+                }],
+                "csinfo": {
+                    "ip": {
+                        "address": restore_options.get('CS_IP', None)
+                    },
+                    "commservInfo": {
+                        "hostName": restore_options.get('CS_Hostname'),
+                        "clientName": restore_options.get('CS_ClientName', None)
+                    },
+                    "creds": {
+                        "password": restore_options.get('CS_Password', None),
+                        "confirmPassword": restore_options.get('CS_Password', None),
+                        "userName": restore_options.get('CS_Username', None)
+                    }
+                },
+            }]
+        }
+        request_json['taskInfo']['subTasks'][0]['subTask'] = subtask_json
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions'] = common_options
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'][
+            0] = restore_options.get('onetouch_server_directory', None)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
+            'destClient']['clientName'] = restore_options.get('onetouch_server', None)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'oneTouchRestoreOption']['automaticClientReboot'] = restore_options.get('automaticClientReboot', None)
+        if is_clone:
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchRestoreOption'][
+                'responseData'][0]['clients'][0]['netconfig'][
+                    'dns']['nameservers'][0]['address'] = restore_options.get('dns_ip', None)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchRestoreOption']['responseData'][
+            0] = onetouch_restore_option
+        return self._process_restore_response(request_json)

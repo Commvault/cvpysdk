@@ -142,7 +142,8 @@ EXCEPTION_DICT = {
         '114': 'Type of backupset should either be the Backupset class instance or string',
         '115': 'Class object should be an instance of Agent / Instance / Backupset class',
         '116': 'Auto discovery values should be a list',
-        '117': 'Auto discovery is disabled at instance level'
+        '117': 'Auto discovery is disabled at instance level',
+        '118': 'Failed to run the backup copy job'
     },
     'Job': {
         '101': 'Incorrect JobId',

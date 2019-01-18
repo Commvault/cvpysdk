@@ -68,7 +68,15 @@ FileSystemSubclient:
 
     system_state_option()				--	Enable/Disable System state option for the subclient
 
+    onetouch_option()                   --  Enable/Disable One-Touch option for the subclient
+
+    onetouch_server()                   --  Provides the 1-touch server name
+
+    onetouch_server_directory()         --  Provides the 1-touch server directory
+    
     backup()                            --  run a backup job for the subclient
+
+    run_backup_copy()                   --  Runs the backup copy job from Subclient
 
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
@@ -86,6 +94,7 @@ from past.builtins import basestring
 
 from ..subclient import Subclient
 from ..exception import SDKException
+from ..job import Job
 
 
 def _nested_dict(source, update_dict):
@@ -464,6 +473,86 @@ class FileSystemSubclient(Subclient):
             trueup_option_value
         )
 
+    def run_backup_copy(self):
+        """
+        Runs the backup copy from Commcell for the given subclient
+
+        Args:
+                None
+
+        Returns:
+                object - instance of the Job class for this backup copy job
+        Raises:
+            SDKException:
+
+                    if backup copy job failed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "clientName": self._client_object._client_name,
+                        "subclientName": self._subclient_name,
+                        "backupsetName": self._backupset_object._backupset_name,
+                        "storagePolicyName": self.storage_policy,
+                        "_type_": 17,
+                        "appName": self._agent_object._agent_name
+                    }
+                ],
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "taskId": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4028
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "snapToTapeOption": {
+                                    "allowMaximum": True,
+                                    "noofJobsToRun": 1
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        backup_copy = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', backup_copy, request_json)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Backup copy job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Subclient', '118', o_str)
+                else:
+                    raise SDKException('Subclient', '118', 'Failed to run the backup copy job')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+
     @property
     def backup_retention(self):
         """return if backup retention is enabled or not
@@ -617,8 +706,54 @@ class FileSystemSubclient(Subclient):
         """
         Enables the system state property for the subclient
         """
-        self._set_subclient_properties("_fsSubClientProp['backupSystemState']",
-                                        backup_system_state )
+        self._set_subclient_properties("_fsSubClientProp['backupSystemState']", backup_system_state)
+
+    @property
+    def onetouch_option(self):
+        """Checks whether the onetouch option is enabled
+
+        Returns:
+            True    -   if system state property is enabled for the subclient
+
+            False   -   if system state property is not enabled for the subclient
+        """
+        return self._fsSubClientProp.get('oneTouchSubclient')
+
+    @onetouch_option.setter
+    def onetouch_option(self, backup_onetouch):
+        """
+        Enables the system state property for the subclient
+        """
+        self._set_subclient_properties("_fsSubClientProp['oneTouchSubclient']", backup_onetouch)
+    
+    @property
+    def onetouch_server(self):
+        """
+        Returns: Onetouch Server Name
+        """
+        return self._fsSubClientProp.get('oneTouchServer', {}).get('clientName')
+
+    @onetouch_server.setter
+    def onetouch_server(self, onetouch_server):
+        """
+        Sets the onetouch server property
+        """
+        self._set_subclient_properties("_fsSubClientProp['oneTouchServer']['clientName']", onetouch_server)
+
+    @property
+    def onetouch_server_directory(self):
+        """
+        Returns the onetouch server directory
+        """
+        return self._fsSubClientProp.get('oneTouchServerDirectory')
+
+    @onetouch_server_directory.setter
+    def onetouch_server_directory(self, onetouch_server_directory):
+        """
+        Sets the onetouch server directory
+        """
+        self._set_subclient_properties("_fsSubClientProp['oneTouchServerDirectory']", onetouch_server_directory)
+
 
     @property
     def trueup_days(self):
@@ -1086,7 +1221,7 @@ class FileSystemSubclient(Subclient):
 
 
     @software_compression.setter
-    def software_compression(self,sw_compression_value):
+    def software_compression(self, sw_compression_value):
         """Updates the software compression property for a subclient.
 
             Args:
@@ -1102,7 +1237,7 @@ class FileSystemSubclient(Subclient):
 
                     if software_compression_value is invalid
         """
-        if isinstance(sw_compression_value, int) and sw_compression_value in range(1,5):
+        if isinstance(sw_compression_value, int) and sw_compression_value in range(1, 5):
             attr_name = "_commonProperties['storageDevice']['softwareCompression']"
             self._set_subclient_properties(attr_name, sw_compression_value)
         else:

@@ -53,6 +53,14 @@ class LicenseDetails(object):
         return self._commcell_id
 
     @property
+    def commcell_id_hex(self):
+        """returns the hexadecimal value of commcell id"""
+        ccid = self._commcell_id
+        if ccid == -1:
+            return 'FFFFF'
+        return hex(ccid).split('x')[1].upper()
+
+    @property
     def oem_name(self):
         """returns the oem_name"""
         return self._oemname
