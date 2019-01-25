@@ -1251,6 +1251,11 @@ class Instance(object):
         if restore_option.get('overwrite') is not None:
             restore_option['unconditional_overwrite'] = restore_option['overwrite']
 
+        if restore_option.get('live_browse'):
+            restore_option['liveBrowse'] = True
+        else:
+            restore_option['liveBrowse'] = False
+
         # restore_option should use client key for destination client info
         client = restore_option.get("client", self._agent_object._client_object)
 
@@ -1767,6 +1772,7 @@ class Instance(object):
             "useExactIndex": False,
             "noImage": value.get("no_image", False),
             "commCellId": 2,
+            "liveBrowse": value.get('live_browse',False),
             "mediaOption": {
                 "mediaAgent": {
                     "mediaAgentName": value.get("media_agent", "")

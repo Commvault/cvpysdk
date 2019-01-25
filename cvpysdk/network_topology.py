@@ -770,6 +770,12 @@ class NetworkTopology(object):
 
         self.update(val)
 
+    @property
+    def wildcard_proxy(self):
+        """Treats the use wildcard proxy option as read only attribute"""
+
+        return self._properties.get('useWildcardProxy', False)
+
     def push_network_config(self):
         """Performs a push network configuration on network topology
 
