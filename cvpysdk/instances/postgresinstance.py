@@ -48,6 +48,8 @@ PostgreSQLInstance instance Attributes
     **maintenance_database**             --  returns the maintenance database associated
     with postgres server
 
+    **postgres_version**                 --  returns the postgres server version
+
 """
 
 from __future__ import absolute_import
@@ -144,6 +146,16 @@ class PostgreSQLInstance(Instance):
             'Instance',
             '105',
             "Could not fetch maintenance database.")
+
+    @property
+    def postgres_version(self):
+        """Returns the postgres server version"""
+        if self._properties.get('version'):
+            return self._properties['version']
+        raise SDKException(
+            'Instance',
+            '105',
+            "Could not fetch postgres version.")
 
     def _restore_json(self, **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.
@@ -247,6 +259,10 @@ class PostgreSQLInstance(Instance):
             database_list = set(database_list)
             for database_name in database_list:
                 self.postgres_restore_json["auxilaryMap"].append({"sourceDB": database_name})
+
+        if value.get("redirect_path"):
+            self.postgres_restore_json["redirectEnabled"] = True
+            self.postgres_restore_json["redirectItems"] = [value.get("redirect_path")]
 
     def restore_in_place(
             self,

@@ -38,6 +38,7 @@ class HypervisorType(Enum):
     Azure_Stack = "Azure Stack"
     Rhev = "Red Hat Virtualization"
     AMAZON_AWS = "Amazon"
+    VCLOUD = "vCloud Director"
 
 
 class AppIDAType(Enum):

@@ -39,6 +39,8 @@ CVPySDK:
     _logout()                   --  sign out the current logged in user from the commcell,
     and ends the session
 
+    _request()                  --  executes the request on the server and return the Response
+
     who_am_i()                  --  Fetches the username of the user to whom authtoken is mapped
 
     make_request()              --  run the http request specified on the URL/WebService provided,
@@ -56,7 +58,7 @@ import xmltodict
 
 try:
     # Python 2 import
-    import httplib as httplib
+    import httplib
 except ImportError:
     # Python 3 import
     import http.client as httplib
@@ -70,17 +72,24 @@ class CVPySDK(object):
         Also contains common method for running all HTTP requests.
     """
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object, certificate_path=None):
         """Initialize the CVPySDK object for running various operations.
 
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
+
+
+                certificate_path        (str)   --  path of the CA_BUNDLE or directory with
+                certificates of trusted CAs (including trusted self-signed certificates)
+
+                    default: None
 
             Returns:
                 object  -   instance of the CVPySDK class
 
         """
         self._commcell_object = commcell_object
+        self._certificate_path = certificate_path
 
     def _is_valid_service(self):
         """Checks if the service url is a valid url or not.
@@ -99,46 +108,16 @@ class CVPySDK(object):
 
         """
         try:
-            response = requests.get(self._commcell_object._web_service, timeout=184)
+            response = self._request(
+                method='GET',
+                url=self._commcell_object._web_service,
+                timeout=184
+            )
 
             # Valid service if the status code is 200 and response is True
             return response.status_code == httplib.OK and response.ok
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
             raise error
-
-    def who_am_i(self, authtoken=None):
-        """Get the username of the user, to whom the Authtoken belongs to.
-
-            Args:
-                authtoken   (str)   --  QSDK or SAML authentication token
-
-            Returns:
-                str     -   username of the user respective to the token
-
-            Raises:
-                SDKException:
-                    if no user mapping found
-
-        """
-        temp_headers = self._commcell_object._headers.copy()
-
-        if authtoken:
-            temp_headers['Authtoken'] = authtoken
-
-        flag, response = self.make_request(
-            'POST', self._commcell_object._services['WHO_AM_I'], headers=temp_headers
-        )
-
-        if flag:
-            user_dict = xmltodict.parse(response.content)
-
-            if 'CvEntities_ProcessingInstructionInfo' in user_dict:
-                return user_dict['CvEntities_ProcessingInstructionInfo']['user']['@userName']
-            else:
-                raise SDKException('CVPySDK', '107')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
 
     def _login(self):
         """Posts a login request to the server.
@@ -255,6 +234,62 @@ class CVPySDK(object):
         else:
             return 'User already logged out'
 
+    def _request(self, **kwargs):
+        """Executes the request on the Server with the given parameters.
+
+            If the certificate path is given and the Web Service starts with **https**,
+            it adds the **verify** parameter to the request, and passes the certificate path as
+            its value.
+
+            Args:
+                **kwargs    --  dict of keyword arguments, same as accepted by the
+
+                    **requests.request** method
+
+            Returns:
+                object  -   **requests.Response** class instance, as received from calling the
+                **requests.request** method
+
+        """
+        if self._certificate_path and self._commcell_object._web_service.startswith('https'):
+            return requests.request(**kwargs, verify=self._certificate_path)
+
+        return requests.request(**kwargs)
+
+    def who_am_i(self, authtoken=None):
+        """Get the username of the user, to whom the Authtoken belongs to.
+
+            Args:
+                authtoken   (str)   --  QSDK or SAML authentication token
+
+            Returns:
+                str     -   username of the user respective to the token
+
+            Raises:
+                SDKException:
+                    if no user mapping found
+
+        """
+        temp_headers = self._commcell_object._headers.copy()
+
+        if authtoken:
+            temp_headers['Authtoken'] = authtoken
+
+        flag, response = self.make_request(
+            'POST', self._commcell_object._services['WHO_AM_I'], headers=temp_headers
+        )
+
+        if flag:
+            user_dict = xmltodict.parse(response.content)
+
+            if 'CvEntities_ProcessingInstructionInfo' in user_dict:
+                return user_dict['CvEntities_ProcessingInstructionInfo']['user']['@userName']
+            else:
+                raise SDKException('CVPySDK', '107')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def make_request(
             self,
             method,
@@ -304,9 +339,15 @@ class CVPySDK(object):
 
                     default: False
 
-                files     (dict)          --  file to upload in the form of {'file': open('report.txt', 'rb')}
+
+                files       (dict)          --  file to upload in the form of
+
+                        {
+                            'file': open('report.txt', 'rb')
+                        }
 
                     default: None
+
             Returns:
                 tuple:
                     (True, response)    -   in case of success
@@ -330,9 +371,11 @@ class CVPySDK(object):
             if method == 'POST':
                 if isinstance(payload, (dict, list)):
                     if files is not None:
-                        response = requests.post(url, files=files, data=payload)
+                        response = self._request(method=method, url=url, files=files, data=payload)
                     else:
-                        response = requests.post(url, headers=headers, json=payload, stream=stream)
+                        response = self._request(
+                            method=method, url=url, headers=headers, json=payload, stream=stream
+                        )
                 else:
                     try:
                         # call encode on the payload in case the characters in the payload
@@ -350,13 +393,15 @@ class CVPySDK(object):
                         except ExpatError:
                             headers['Content-type'] = 'text/plain'
 
-                    response = requests.post(url, headers=headers, data=payload, stream=stream)
+                    response = self._request(
+                        method=method, url=url, headers=headers, data=payload, stream=stream
+                    )
             elif method == 'GET':
-                response = requests.get(url, headers=headers, stream=stream)
+                response = self._request(method=method, url=url, headers=headers, stream=stream)
             elif method == 'PUT':
-                response = requests.put(url, headers=headers, json=payload)
+                response = self._request(method=method, url=url, headers=headers, json=payload)
             elif method == 'DELETE':
-                response = requests.delete(url, headers=headers)
+                response = self._request(method=method, url=url, headers=headers)
             else:
                 raise SDKException('CVPySDK', '102', 'HTTP method {} not supported'.format(method))
 

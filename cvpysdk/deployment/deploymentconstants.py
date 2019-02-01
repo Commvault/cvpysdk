@@ -85,4 +85,5 @@ class WindowsDownloadFeatures(Enum):
     WEB_CONSOLE = 726
     TEST_AUTOMATION = 719
     PYTHON_SDK = 754
+    COMMSERVE_LITE = 25
 

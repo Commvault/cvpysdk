@@ -248,7 +248,8 @@ class Commcell(object):
             commcell_username=None,
             commcell_password=None,
             authtoken=None,
-            force_https=False):
+            force_https=False,
+            certificate_path=None):
         """Initialize the Commcell object with the values required for doing the API operations.
 
             Commcell Username and Password can be None, if QSDK / SAML token is being given
@@ -282,6 +283,7 @@ class Commcell(object):
 
                     default: None
 
+
                 force_https             (bool)  --  boolean flag to specify whether to force the
                 connection to the commcell only via HTTPS
 
@@ -291,6 +293,12 @@ class Commcell(object):
                 if flag is set to **True**, it'll only try via HTTPS, and exit if it fails
 
                     default: False
+
+
+                certificate_path        (str)   --  path of the CA_BUNDLE or directory with
+                certificates of trusted CAs (including trusted self-signed certificates)
+
+                    default: None
 
 
             Returns:
@@ -323,7 +331,7 @@ class Commcell(object):
 
         self._device_id = socket.getfqdn()
 
-        self._cvpysdk_object = CVPySDK(self)
+        self._cvpysdk_object = CVPySDK(self, certificate_path)
 
         # Checks if the service is running or not
         for service in web_service:
@@ -556,8 +564,11 @@ class Commcell(object):
         )
 
         if flag:
-            if response.json():
-                return response.json()
+            if response.ok:
+                try:
+                    return response.json()
+                except ValueError:
+                    return {'output': response}
             else:
                 raise SDKException('Response', '102')
         else:

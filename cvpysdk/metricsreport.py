@@ -531,6 +531,25 @@ class PrivateMetrics(_Metrics):
             self._update_service_state('Charge Back', self._enable_service)
         self._update_chargeback_flags(daily, weekly, monthly)
 
+    def enable_forwarding(self, forwarding_url):
+        """
+        Enables forwarding
+        Args:
+            forwarding_url: Webconsole url where metrics data to be forwarded
+        """
+        fwd_info = [{
+            "httpServerURL": forwarding_url,
+            "isPublic": False,
+            "urlPwd": "",
+            "urlUser": ""
+        }]
+        self._metrics_config['config']['tieringActive'] = True
+        self._metrics_config['config']['HttpServerInfo']["httpServer"] = fwd_info
+
+    def disable_forwarding(self):
+        """Disables forwarding"""
+        self._metrics_config['config']['tieringActive'] = False
+
 
 class CloudMetrics(_Metrics):
     """Class for operations in Cloud Metrics reporting"""

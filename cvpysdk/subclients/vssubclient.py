@@ -187,6 +187,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.amazonsubclient import AmazonVirtualServerSubclient
             return object.__new__(AmazonVirtualServerSubclient)
 
+        elif instance_name == hv_type.VCLOUD.value.lower():
+            from .virtualserver.vcloudsubclient import VcloudVirtualServerSubclient
+            return object.__new__(VcloudVirtualServerSubclient)
+
         else:
             raise SDKException(
                 'Subclient',
