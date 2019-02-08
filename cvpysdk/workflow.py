@@ -22,44 +22,81 @@ WorkFlows:
 
     __repr__()                          --  returns all the workflows deployed in the commcell
 
-    __len__()                           --  returns the number of workflows associated with the
-    Commcell
+    __len__()                           --  returns the number of workflows associated with the Commcell
 
     __getitem__()                       --  returns the name of the workflow for the given WF ID
-    or the details for the given workflow name
+                                                or the details for the given workflow name
 
     _get_workflows()                    --  gets all the workflows deployed on the commcell
 
     _get_activities()                   --  gets all the workflow activities deployed
-    on the commcell
+                                                on the commcell
 
     has_workflow(workflow_name)         --  checks if the workflow exists with given name or not
 
     has_activity(activity_name)         --  checks if the workflow activity exists with given name
-    or not
+                                                or not
 
     import_workflow(workflow_xml)       --  imports a workflow to the Commcell
 
     import_activity(activity_xml)       --  imports a workflow activity to the Commcell
 
-    delete_workflow()                   --  deletes a workflow from the commcell
-
     download_workflow_from_store()      --  downloads given workflow from the cloud.commvault.com
+
+    get()                               --  returns the instance of a specific workflow on commcell
+
+    delete_workflow()                   --  deletes a workflow from the commcell
 
     refresh()                           --  refresh the workflows added to the Commcell
 
     refresh_activities()                --  refresh the workflow activities added to the commcell
 
+    get_interaction_properties()        --  Returns a workflow interaction properties to the user
+
+    submit_initeraction()               --  Submits a given interaction with specified action
+
+    all_interactions()                  --  Returns all interactive interactions for workflows on commcell
+
+    @Property
+    all_workflows                       --  returns all workflows on Commcell
+
+    all_activities                      --  returns all activities on Commcell
+
 
 Workflow:
 
+    @Private Modules
     _read_inputs()                      --  gets the values for a workflow input
 
-    deploy_workflow()                   --  deploys a workflow to the Commcell
+    _get_workflow_id()                  --  Get Workflow id
 
-    execute_workflow()                  --  executes a workflow and returns the job instance
+    _read_inputs()                      --  Gets the values from the user for a workflow input.
 
-    export_workflow()                   --  exports a workflow and returns the workflow xml path
+    _set_workflow_properties()          --  Sets Workflow properties
+
+    _get_workflow_properties()          --  Get workflow properties
+
+    @Class Modules
+    set_workflow_configuration()        -- Set workflow configuration
+
+    enable()                            --  Enables the workflow
+
+    disable()                           --  Disables the workflow
+
+    deploy_workflow()                   --  Deploys a workflow to the Commcell
+
+    execute_workflow()                  --  Executes a workflow and returns the job instance
+
+    export_workflow()                   --  Exports a workflow and returns the workflow xml path
+
+    refresh()                           --  Refreshes the workflow properties
+
+    @Property
+    workflow_name                       -- Returns workflow name
+
+    workflow_id                         -- Returns workflow id
+
+    workflow_description                -- Returns workflow description
 
 """
 
@@ -101,6 +138,8 @@ class WorkFlows(object):
         self._update_response_ = commcell_object._update_response_
 
         self._WORKFLOWS = self._services['GET_WORKFLOWS']
+        self._INTERACTIONS = self._services['GET_INTERACTIONS']
+        self._INTERACTION = self._services['GET_INTERACTION']
 
         self._workflows = None
         self._activities = None
@@ -121,7 +160,7 @@ class WorkFlows(object):
 
         for index, workflow in enumerate(self._workflows):
             workflow_vals = self._workflows[workflow]
-            workflow_desciption = workflow_vals['description']
+            workflow_desciption = workflow_vals.get('description', '')
 
             if 'client' in workflow_vals:
                 workflow_client = workflow_vals['client']
@@ -248,7 +287,7 @@ class WorkFlows(object):
                 for workflow in response.json()['container']:
                     workflow_name = workflow['entity']['workflowName'].lower()
                     workflow_id = str(workflow['entity']['workflowId'])
-                    workflow_description = workflow['description']
+                    workflow_description = workflow.get('description', '')
 
                     if 'deployments' in workflow:
                         workflow_client = workflow['deployments'][0]['client']['clientName']
@@ -634,6 +673,123 @@ class WorkFlows(object):
         """Refresh the list of workflow activities deployed on the Commcell."""
         self._activities = self._get_activities()
 
+    def get_interaction_properties(self, interaction_id):
+        """Returns a workflow interaction properties to the user
+
+            Args:
+                interaction_id (int)  --  Workflow interaction id
+
+            Returns:
+                dictionary - Workflow interaction id properties
+
+            Raises:
+                SDKException:
+                    - if response is empty
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._INTERACTION % interaction_id)
+
+        if flag:
+            if response.json() and 'request' in response.json():
+                return response.json()['request']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def submit_interaction(self, interaction, input_xml, action):
+        """ Submits a given interaction with specified action
+
+            Args:
+                interaction (dict)    --  Interaction dictionary
+                e.g:
+                    {
+                        "interactionId": 3871,
+                        "created": 1547524940,
+                        "subject": "Delete Backupset [  ->  ->  ] requested by [ 11111_Automation_45_651 ]",
+                        "activityName": "Get Authorization",
+                        "flags": 1,
+                        "description": "",
+                        "sessionId": "a38b32dc-f505-45c5-9d61-3eaee226b50c",
+                        "processStepId": 648993,
+                        "jobId": 2804488,
+                        "status": 0,
+                        "workflow": {
+                            "workflowName": "GetAndProcessAuthorization",
+                            "workflowId": 2095
+                        },
+                        "commCell": {
+                            "commCellName": "WIN-K2DCEJR56MG",
+                            "commCellId": 2
+                        },
+                        "client": {
+                            "clientId": 2,
+                            "clientName": "WIN-K2DCEJR56MG"
+                        },
+                        "user": {
+                            "userName": "11111_Automation_01-14-2019_23_01_45_651",
+                            "userId": 1418
+                        }
+                    }
+
+                input_xml (str)       --  Input XML string for completing the interaction.
+                                            e.g : This is very specific to the user input interaction.
+                                                    Construct the input XML based on workflow being executed and send
+                                                    to this module.
+
+                action   (str)        --  Interaction action
+                                            This is very specific to workflow being executed and the expected options
+                                                for the given interaction
+
+            Raises:
+                Exception:
+                    Failed to submit workflow interaction request
+        """
+        if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+            raise SDKException('Workflow', '101')
+
+        from xml.sax.saxutils import escape
+        escaped_xml = escape(input_xml)
+        commserve_name = self._commcell_object.commserv_name
+
+        request_xml = """
+            <Workflow_SetWebFormInteractionRequest action="{0}" flags="1" inputXml="{1}" interactionId="{2}"
+                jobId="{3}" okClicked="0" processStepId="{4}" sessionId="">
+                <commCell commCellName="{5}"/>
+                <client clientName="{6}"/>
+            </Workflow_SetWebFormInteractionRequest>""".format(
+                action, escaped_xml, str(interaction['interactionId']), str(interaction['jobId']),
+                str(interaction['processStepId']), commserve_name, commserve_name
+            )
+        response = self._commcell_object._qoperation_execute(request_xml)
+
+        if response.get('errorCode', 1) != 0:
+            o_str = 'Error: ' + response.get('errorMessage', '')
+            raise SDKException('Workflow', '102', 'Failed to submit workflow interaction request. Error: '+o_str)
+
+    def all_interactions(self):
+        """ Returns all interactive interactions for workflows on commcell
+            Args:
+                None
+
+            Raises:
+                SDKException:
+
+                    if response is empty
+
+                    if there are no interactions
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._INTERACTIONS)
+
+        if flag:
+            if response.json() and 'request' in response.json():
+                return response.json()['request']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     @property
     def all_workflows(self):
         """Returns the dictionary consisting of all the workflows and their info."""
@@ -669,15 +825,17 @@ class WorkFlow(object):
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
         self._workflow_name = workflow_name.lower()
-
         self._workflow_id = str(workflow_id) if workflow_id else self._get_workflow_id()
 
         self._DEPLOY_WORKFLOW = self._services['DEPLOY_WORKFLOW']
         self._EXECUTE_WORKFLOW = self._services['EXECUTE_WORKFLOW']
-        self._GET_WORKFLOW = self._services['GET_WORKFLOW']
+        self._GET_WORKFLOW = self._services['GET_WORKFLOW'] % (self._workflow_id)
 
         self._workflows = self._commcell_object.workflows.all_workflows
         self._activities = self._commcell_object.workflows.all_activities
+
+        self._properties = None
+        self._description = None
 
     def _get_workflow_id(self):
         """Gets the workflow id associated with this Workflow.
@@ -731,6 +889,125 @@ class WorkFlow(object):
             return input_dict['default_value']
         else:
             return self._read_inputs(input_dict)
+
+    def _set_workflow_properties(self, attrname, attrval):
+        """Set Workflow Properties
+
+            Args:
+                attrname    (str)    : Attribute Name
+                                            e.g:    flags,
+                                                    description
+
+                attrval     (str)    : Attribute value
+                                                    0, 1, 2, 19
+                                                    "This is workflow description"
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Setting workflow properties failed
+        """
+        request_xml = {
+            "Workflow_SetWorkflowProperties":
+            {
+                attrname: attrval,
+                "workflow":{
+                    "workflowName": self._workflow_name,
+                    "workflowId": self._workflow_id
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                if response.json()['errorCode'] != 0:
+                    raise SDKException('Workflow', '105')
+                else:
+                    self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_workflow_properties(self):
+        """Gets the workflow properties
+
+            Returns:
+                dict - dictionary consisting of the properties of workflow
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._GET_WORKFLOW)
+
+        if flag:
+            if response.json() and 'container' in response.json():
+                self._properties = response.json()['container']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def set_workflow_configuration(self, config_xml):
+        """Set Workflow configuration
+
+            Args:
+                config_xml    (xml)    : Configuration inputs for the workflow's properties->configuration tab
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed
+        """
+        config_xml = "<configuration>{0}</configuration>".format(config_xml)
+        from xml.sax.saxutils import escape
+        escaped_xml = escape(config_xml)
+
+        request_xml = """<Workflow_SetConfigurationSettings configSettings="{0}">
+            <workflow workflowId="{1}" workflowName="{2}"/>
+        </Workflow_SetConfigurationSettings> """.format(escaped_xml, self._workflow_id, self._workflow_name)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                if response.json()['errorCode'] != 0:
+                    raise SDKException('Workflow', '105')
+                else:
+                    self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def enable(self):
+        """ Enable Worklfow
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Enabling workflow fails
+        """
+        self._set_workflow_properties('flags', '0')
+
+    def disable(self):
+        """ Disable Worklfow
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Disabling workflow fails
+        """
+        self._set_workflow_properties('flags', '1')
 
     def deploy_workflow(self, workflow_engine=None, workflow_xml=None):
         """Deploys a workflow on the Commcell.
@@ -890,7 +1167,7 @@ class WorkFlow(object):
             if workflow_inputs is None:
                 if 'inputs' in workflow_vals:
                     o_str = 'Workflow Name: \t\t"{0}"\n'.format(workflow_name)
-                    o_str += 'Workflow Description: \t"{0}"\n'.format(workflow_vals['description'])
+                    o_str += 'Workflow Description: \t"{0}"\n'.format(workflow_vals.get('description', ''))
 
                     print(o_str)
 
@@ -1004,6 +1281,10 @@ class WorkFlow(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def refresh(self):
+        """Refreshes the properties of the workflow."""
+        self._get_workflow_properties()
+
     @property
     def workflow_name(self):
         """Treats the workflow name as a read-only attribute."""
@@ -1013,3 +1294,40 @@ class WorkFlow(object):
     def workflow_id(self):
         """Treats the workflow id as a read-only attribute."""
         return self._workflow_id
+
+    @property
+    def version(self):
+        """Treats the workflow version as a property of the Workflow class."""
+        return self._properties['version']
+
+    @property
+    def revision(self):
+        """Treats the workflow revision as a property of the Workflow class."""
+        return self._properties['revision']
+
+    @property
+    def flags(self):
+        """Treats the workflow flags as a property of the Workflow class."""
+        return self._properties['flags']
+
+    @property
+    def description(self):
+        """Treats the workflow description as a property of the Workflow class."""
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        """Sets the description of the workflow
+
+            Raises:
+                SDKException:
+                    if failed to update description of workflow
+
+                    if the type of value input is not string
+        """
+        if isinstance(value, basestring):
+            self._set_workflow_properties("description", value)
+        else:
+            raise SDKException(
+                'Workflow', '102', 'Failed to set workflow description'
+            )

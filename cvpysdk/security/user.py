@@ -178,7 +178,8 @@ class Users(object):
                 if 'response' in response.json():
                     response_json = response.json()['response'][0]
                     error_code = response_json['errorCode']
-
+                    if 'errorString' in response_json:
+                        error_message = response_json['errorString']
                 elif 'errorCode' in response.json():
                     error_code = response.json()['errorCode']
                     if 'errorMessage' in response:

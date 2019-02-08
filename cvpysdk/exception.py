@@ -194,7 +194,8 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Input is not valid XML / file path',
-        '104': 'No Workflow exists with the given name'
+        '104': 'No Workflow exists with the given name',
+        '105': 'Failed to set workflow properties'
     },
     'Datacube': {
         '101': 'Data type of the input(s) is not valid',
@@ -291,7 +292,8 @@ EXCEPTION_DICT = {
         '102': ''
     },
     'Snap': {
-        '102': 'Failed to run the job for Snap Operation'
+        '102': 'Failed to run the job for Snap Operation',
+        '103': 'Failed to update Snap Configs'
     },
     'OperationWindow': {
         '101': 'Failed to create a operation window',
@@ -335,6 +337,14 @@ EXCEPTION_DICT = {
         '101': 'Array already exist',
         '102': 'Failed to add array',
         '103': 'Failed to delete array'
+    },
+    'NameChange' : {
+
+        '101' : 'Client hostname not provided',
+        '102' : 'Commcell hostname not provided',
+        '103' : 'Old domain name not provided',
+        '104' : 'New domain name not provided',
+        '105' : 'Client ID list not provided'
     }
 }
 

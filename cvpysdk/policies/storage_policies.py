@@ -867,7 +867,7 @@ class StoragePolicy(object):
                             <library _type_="9" libraryName="{7}" />
                             <mediaAgent _type_="11" mediaAgentName="{8}" />
                             <spareMediaGroup _type_="67" libraryName="{7}" />
-                            <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="0" />
+                            <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1" />
                             <sourceCopy _type_="18" copyName="{9}" storagePolicyName="{4}" />
                             <resourcePoolsList operation="1" resourcePoolName="{10}" />
                         </storagePolicyCopyInfo>

@@ -191,6 +191,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.vcloudsubclient import VcloudVirtualServerSubclient
             return object.__new__(VcloudVirtualServerSubclient)
 
+        elif instance_name == hv_type.Nutanix.value.lower():
+            from .virtualserver.nutanixsubclient import nutanixsubclient
+            return object.__new__(nutanixsubclient)
+
         else:
             raise SDKException(
                 'Subclient',

@@ -97,6 +97,8 @@ Commcell instance Attributes
 
     **device_id**               --  returns the id associated with the calling machine
 
+    *name_change*               --  returns the name change object of the commcell
+
     **clients**                 --  returns the instance of the `Clients` class,
     to interact with the clients added on the Commcell
 
@@ -231,6 +233,7 @@ from .identity_management import IdentityManagementApps
 from .commcell_migration import CommCellMigration
 from .deployment.download import Download
 from .deployment.install import Install
+from .name_change import NameChange
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -709,6 +712,11 @@ class Commcell(object):
             return self._device_id
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def name_change(self):
+        """Returns an instance of Namechange class"""
+        return NameChange(self)
 
     @property
     def clients(self):

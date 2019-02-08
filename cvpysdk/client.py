@@ -161,7 +161,9 @@ Client
 
     push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
 
-    get_dag_member_servers()     --   Gets the member servers of an Exchange DAG client.
+    get_dag_member_servers()     --  Gets the member servers of an Exchange DAG client.
+
+    create_pseudo_client()       --  Creates a pseudo client
 
 Client Attributes
 -----------------
@@ -258,6 +260,8 @@ from .network import Network
 from .network_throttle import NetworkThrottle
 
 from .security.user import Users
+
+from .name_change import NameChange
 
 
 class Clients(object):
@@ -614,6 +618,66 @@ class Clients(object):
 
         """
         return self._clients
+
+    def create_pseudo_client(self, client_name):
+        """ Creates a pseudo client
+
+            Args:
+                client_name (str)    --  client name
+
+            Returns:
+                client object for the created client.
+
+            Raises:
+                SDKException:
+                    if client name type is incorrect
+
+                    if response is empty
+
+                    if failed to get client id from response
+
+        """
+        if not isinstance(client_name, str):
+            raise SDKException('Client', '101')
+
+        request_json = {
+            'App_CreatePseudoClientRequest':
+            {
+                "registerClient": "false",
+                "clientInfo":{
+                    "clientType":0,
+                    "openVMSProperties":{
+                        "cvdPort":0
+                    },
+                    "ibmiInstallOptions":{}
+                },
+                "entity":{
+                    "hostName":client_name,
+                    "clientName":client_name,
+                    "clientId":0,
+                    "_type_":3
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+                error_string = response.json()['response'].get('errorString', '')
+                if error_code == 0:
+                    self.refresh()
+                    return self.get(client_name)
+                else:
+                    o_str = 'Failed to create pseudo client. Error: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
     def hidden_clients(self):
@@ -1144,19 +1208,22 @@ class Clients(object):
 
                 if flag:
                     if response.json() and 'response' in response.json():
+                        o_str = 'Failed to delete client'
                         if 'response' in response.json():
                             if response.json()['response'][0]['errorCode'] == 0:
                                 # initialize the clients again
                                 # so the client object has all the clients
                                 self.refresh()
+                            else:
+                                error_message = response.json()['response'][0]['errorString']
+                                o_str += '\nError: "{0}"'.format(error_message)
+                                raise SDKException('Client', '102', o_str)
                         else:
                             if 'errorCode' in response.json():
                                 error_code = response.json()['errorCode']
 
                             if 'warningCode' in response.json():
                                 warning_code = response.json()['warningCode']
-
-                            o_str = 'Failed to delete client'
 
                             if error_code != 0:
                                 error_message = response.json()['errorMessage']
@@ -1718,8 +1785,23 @@ class Client(object):
 
     @property
     def name(self):
-        """Returns the Client display name"""
+        """Returns the Client name"""
         return self._properties['client']['clientEntity']['clientName']
+
+    @property
+    def display_name(self):
+        """Returns the Client display name"""
+        return self._properties['client']['displayName']
+
+    @property
+    def commcell_name(self):
+        """Returns the Client's commcell name"""
+        return self._properties['client']['clientEntity']['commCellName']
+
+    @property
+    def name_change(self):
+        """Returns an instance of Namechange class"""
+        return NameChange(self)
 
     @property
     def _security_association(self):

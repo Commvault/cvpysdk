@@ -435,8 +435,8 @@ class MediaAgent(object):
 
         conf_guid = str(uuid.uuid4())
 
-        xml_options_string = '''<Indexing_IdxDirectoryConfiguration configurationGuid="{0}" 
-        icdPath="{1}" maClientFocusName="{2}" maGuid="" oldIcdPath="{3}" 
+        xml_options_string = '''<Indexing_IdxDirectoryConfiguration configurationGuid="{0}"
+        icdPath="{1}" maClientFocusName="{2}" maGuid="" oldIcdPath="{3}"
         opType="0" />''' .format(
             conf_guid, new_index_cache_path, self.media_agent_name, old_index_cache_path)
 
@@ -780,12 +780,8 @@ class DiskLibraries(object):
                         }
                 }
         }
-
         exec_command = self._commcell_object._services['EXECUTE_QCOMMAND']
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            exec_command,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', exec_command, request_json)
 
         if flag:
             if response.json():
@@ -796,10 +792,12 @@ class DiskLibraries(object):
                         if _response['errorCode'] == 0:
                             self.refresh()
                         else:
-                            raise SDKException('Storage',
-                                               '102',
-                                               _response['errorMessage'])
+                            raise SDKException('Storage', '102', _response['errorMessage'])
                 else:
+                    if 'errorMessage' in response.json():
+                        o_str = 'Error: ' + response.json()['errorMessage']
+                        raise SDKException('Response', '102', o_str)
+
                     raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')

@@ -32,6 +32,8 @@ ArrayManagement:
     add_array()                 --  Method to add array
 
     delete_array()              --  Method to delete array
+
+    update_snap_config()        --  Method to Update Snap Configuration for the Array
 """
 
 from __future__ import unicode_literals
@@ -72,7 +74,7 @@ class ArrayManagement(object):
 
                 operation    (int)        -- snap Operation value
 
-                volume_id    (int)        -- volume id of the snap backup job
+                volume_id    (list)        -- volume id's of the snap backup job
 
                 client_name  (str)        -- name of the destination client, default: None
 
@@ -392,3 +394,62 @@ class ArrayManagement(object):
                 raise SDKException('StorageArray', '103')
             else:
                 error_message = response.json()['errorMessage']
+
+    def update_snap_config(self, control_host_id, master_config_id, value, config_update_level):
+        """Method to Update Snap Configuration for the Array
+        Args:
+            control_host_id        (int)        -- Control Host Id of the Array
+
+            master_config_id       (int)        -- Master config Id of Snap config
+
+            value                  (str)        -- Value to Update
+
+            config_update_level    (str)        -- update level for the Snap config
+            ex: "array", "subclient", "copy", "client"
+        """
+
+        request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
+        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
+            'GET', request_json_service
+        )
+
+        if config_update_level == "array":
+            config_update_level = 3
+        elif config_update_level == "copy":
+            config_update_level = 6
+        elif config_update_level == "subclient":
+            config_update_level = 9
+        elif config_update_level == "client":
+            config_update_level = 8
+
+        request_json = request_json.json()
+
+        update_dict = {
+            "add": False,
+            "forceAdd": False,
+            "assocType": config_update_level
+            }
+        request_json.update(update_dict)
+
+        for config in request_json['configList']['configList']:
+            if config['masterConfigId'] == int(master_config_id):
+                config['value'] = str(value)
+
+        request_json['configs'] = request_json.pop('configList')
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self.storage_arrays, request_json
+        )
+
+        if response.json() and 'errorCode' in response.json():
+            error_code = response.json()['errorCode']
+
+            if error_code != 0:
+                if error_code == 1:
+                    raise SDKException('StorageArray', '101')
+
+                error_message = response.json().get('errorMessage', '')
+                o_str = 'Failed to update Snap Configs\nError: "{0}"'.format(error_message)
+                raise SDKException('StorageArray', '103', o_str)
+        else:
+            raise SDKException('StorageArray', '103')

@@ -118,6 +118,8 @@ SERVICES_DICT_TEMPLATE = {
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
     'EXECUTE_WORKFLOW': '{0}wapi/%s',
     'GET_WORKFLOW': '{0}Workflow/%s',
+    'GET_INTERACTIONS': '{0}WorkflowInteractions',
+    'GET_INTERACTION': '{0}Workflow/Interaction/%s',
 
     'INSTANCE_BROWSE': '{0}Client/%s/%s/Instance/%s/Browse',
 
@@ -264,7 +266,7 @@ SERVICES_DICT_TEMPLATE = {
     'PUSH_TOPOLOGY': '{0}FirewallTopology/%s/Push',
 
     'ADVANCED_JOB_DETAIL_TYPE': '{0}Job/%s/AdvancedDetails?infoType=%s',
-    
+
     'CERTIFICATES': '{0}CommServ/Certificates',
 
     'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo',  # only for Exchange DAG

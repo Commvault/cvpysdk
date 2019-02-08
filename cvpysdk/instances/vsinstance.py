@@ -97,6 +97,10 @@ class VirtualServerInstance(Instance):
             from .virtualserver.VCloudInstance import VcloudInstance
             return object.__new__(VcloudInstance)
 
+        elif instance_name == hv_type.Nutanix.value.lower():
+            from .virtualserver.nutanixinstance import nutanixinstance
+            return object.__new__(nutanixinstance)
+
     def _get_instance_properties(self):
         """Gets the properties of this instance.
 
