@@ -209,6 +209,8 @@ SERVICES_DICT_TEMPLATE = {
     'ORGANIZATION': '{0}Organization/%s',
     'UPDATE_ORGANIZATION': '{0}Organization?organizationId=%s',
     'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
+    'ACTIVATE_ORGANIZATION': '{0}Organization/%s/action/activate',
+    'DEACTIVATE_ORGANIZATION': '{0}Organization/%s/action/deactivate',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
@@ -271,7 +273,15 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo',  # only for Exchange DAG
 
-    'CASEDEFINITION': '{0}EDiscoveryClients/CaseDefinitions'
+    'CASEDEFINITION': '{0}EDiscoveryClients/CaseDefinitions',
+
+    'REGISTRATION': '{0}/RegFrgnCell',
+    'UNREGISTRATION': '{0}/UnRegisterCommCell',
+    'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/CommCell/registered?getOnlyServiceCommcells=true',
+    'GET_USERSPACE_SERVICE' : '{0}/ServiceCommcell/UserSpace',
+    'POLL_USER_SERVICE' : '{0}/ServiceCommcell/IsUserPresent?userName=%s',
+    'POLL_MAIL_SERVICE' : '{0}/ServiceCommcell/IsUserPresent?email=%s',
+    'POLL_REQUEST_ROUTER' : '{0}/CommcellRedirect/RedirectListforUser?user=%s'
 }
 
 

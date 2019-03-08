@@ -262,7 +262,7 @@ class AzureRMSubclient(VirtualServerSubclient):
             restore_option = {}
 
         # check mandatory input parameters are correct
-        if not (isinstance(azure_client, basestring)):
+        if not isinstance(azure_client, basestring):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -287,6 +287,119 @@ class AzureRMSubclient(VirtualServerSubclient):
             volume_level_restore=1,
             destination_instance=instance.instance_name,
             backupset_client_name=instance._agent_object._client_object.client_name
+        )
+
+
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_amazon(
+            self,
+            amazon_client,
+            guest_options=None,
+            vm_to_restore=None,
+            proxy_client=None,
+            is_aws_proxy=True,
+            amazon_bucket=None,
+            overwrite=True,
+            power_on=True,
+            copy_precedence=0):
+        """
+                This converts the AzureRM to Amazon
+                Args:
+                        vm_to_restore          (list):     provide the VM names to restore
+
+                        amazon_client    (basestring):     name of the Amazon client
+                                                           where the VM should be
+                                                           restored.
+
+                        overwrite              (bool):     overwrite the existing VM
+                                                           default: True
+
+                        power_on               (bool):     power on the  restored VM
+                                                           default: True
+
+                        copy_precedence         (int):     copy precedence value
+                                                           default: 0
+
+                        proxy_client      (basestring):    destination proxy client
+
+                        is_aws_proxy      (basestring):     boolean value whether
+                                                            proxy resides in AWS
+                                                            or not
+                                                            default: True
+
+                        amazon_bucket    (basestring) :     Amazon bucket (required
+                                                            when non-AWS proxy
+                                                            is used)
+
+                    Returns:
+                        object - instance of the Job class for this restore job
+
+                    Raises:
+                        SDKException:
+                            if inputs are not of correct type as per definition
+
+                            if failed to initialize job
+
+                            if response is empty
+
+                            if response is not success
+
+        """
+        restore_option = {}
+
+        # check mandatory input parameters are correct
+        if not isinstance(amazon_client, basestring):
+            raise SDKException('Subclient', '101')
+
+        subclient = self._set_vm_conversion_defaults(amazon_client, restore_option)
+        dest_vm = subclient.content[0]["display_name"]
+        amazon_options = subclient.amazon_defaults(dest_vm, restore_option)
+
+        instance = subclient._backupset_object._instance_object
+        instance_dict = instance._properties['instance']
+        if proxy_client is None:
+            proxy_client = instance.server_host_name[0]
+
+        if vm_to_restore:
+            vm_to_restore = [vm_to_restore]
+
+        if not is_aws_proxy:
+            if not amazon_bucket:
+                raise SDKException('Subclient', 104)
+            restore_option['datastore'] = amazon_bucket
+        if guest_options is None:
+            guest_options = {}
+
+
+        self._set_restore_inputs(
+            restore_option,
+            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            in_place=False,
+            esx_server_name=instance_dict["clientName"],
+            esx_server=proxy_client,
+            volume_level_restore=1,
+            client_name=proxy_client,
+            unconditional_overwrite=overwrite,
+            power_on=power_on,
+            copy_precedence=copy_precedence,
+            is_aws_proxy=is_aws_proxy,
+            destComputerName=guest_options.get('name', None),
+            destComputerUserName=guest_options.get('user_name', None),
+            instanceAdminPassword=guest_options.get('password', None),
+            datacenter=amazon_options.get('datacenter', None),
+            resourcePoolPath=amazon_options.get('resourcePoolPath', None),
+            optimizationEnabled=False,
+            datastore=restore_option.get('datastore', None),
+            availability_zone=amazon_options.get('esx_host', None),
+            esx_host=amazon_options.get('esx_host', None),
+            ami=amazon_options.get('ami', None),
+            vmSize=amazon_options.get('instance_type', None),
+            iamRole=amazon_options.get('iam_role', None),
+            securityGroups=amazon_options.get('security_groups', None),
+            keyPairList=amazon_options.get('keypair_list', None),
+            terminationProtected=amazon_options.get('termination_protected', False)
         )
 
 

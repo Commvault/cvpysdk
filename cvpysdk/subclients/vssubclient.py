@@ -297,6 +297,26 @@ class VirtualServerSubclient(Subclient):
         return content
 
     @property
+    def subclient_proxy(self):
+        """
+            Gets the List of proxies at the Subclient
+
+            Returns:
+                    list         (list) :    Proxies at the subclient
+        """
+        return self._get_subclient_proxies()
+
+    @property
+    def instance_proxy(self):
+        """
+        Gets the proxy at instance level
+
+        Returns:
+                string          (string) :      Proxy at instane
+        """
+        return self._proxyClient['clientName']
+
+    @property
     def vm_filter(self):
         """Gets the appropriate filter from the Subclient relevant to the user.
 
@@ -746,12 +766,15 @@ class VirtualServerSubclient(Subclient):
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
 
         for network_card_dict in vm_nics_list:
+            _destnetwork = value.get("destination_network", network_card_dict['name'])
+            if value.get('network'):
+                _destnetwork = value.get('network')
             nics = {
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": "",
-                "networkName": value.get("destination_network", network_card_dict['name']),
-                "destinationNetwork": value.get("destination_network", network_card_dict['name'])
+                "networkName": "",
+                "destinationNetwork": _destnetwork
             }
 
             nics_list.append(nics)
@@ -848,6 +871,13 @@ class VirtualServerSubclient(Subclient):
             self._advanced_option_restore_json["roleInfo"] = {
                 "name": value["iamRole"]
             }
+        if "destComputerName" in value and value["destComputerName"] is not None:
+            self._advanced_option_restore_json["destComputerName"] = value["destComputerName"]
+        if "destComputerUserName" in value and value["destComputerUserName"] is not None:
+            self._advanced_option_restore_json["destComputerUserName"] = value["destComputerUserName"]
+        if "instanceAdminPassword" in value and value["instanceAdminPassword"] is not None:
+            self._advanced_option_restore_json["instanceAdminPassword"] = value["instanceAdminPassword"]
+
 
         if self.disk_pattern.datastore.value == "DestinationPath":
             self._advanced_option_restore_json["DestinationPath"] = value.get("datastore", "")
@@ -1886,9 +1916,9 @@ class VirtualServerSubclient(Subclient):
             folder_path = ''
             instanceSize = ''
 
-        if 'resourcePoolPath' in restore_option:
+        if 'resourcePoolPath' in restore_option and restore_option['resourcePoolPath'] is None:
             restore_option['resourcePoolPath'] = vs_metadata['resourcePoolPath']
-        if 'datacenter' in restore_option:
+        if 'datacenter' in restore_option and restore_option['datacenter'] is None:
             restore_option['datacenter'] = vs_metadata.get('dataCenter', '')
         if ('terminationProtected' in restore_option and
                 restore_option['terminationProtected'] is None):
@@ -1941,26 +1971,27 @@ class VirtualServerSubclient(Subclient):
         restore_option["disks"] = vm_disks
 
         # prepare nics info json
-        nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
-        restore_option["nics"] = nics_list
-        if "source_ip" in restore_option and "destination_ip" in restore_option:
-            if restore_option["source_ip"] and restore_option["destination_ip"]:
-                vm_ip = self._json_vmip_advanced_restore_options(restore_option)
-                restore_option["vm_ip_address_options"] = vm_ip
-        if restore_option["in_place"]:
-            if "hyper" in restore_option["destination_instance"]:
-                restore_option["client_name"] = vs_metadata['esxHost']
-                restore_option["esx_server"] = vs_metadata['esxHost']
-            elif 'Red' in restore_option["destination_instance"]:
-                restore_option["esxHost"] = vs_metadata['clusterName']
-                restore_option["cluster"] = vs_metadata['clusterName']
-                vs_metadata["esxHost"] = vs_metadata['clusterName']
+        if "nics" not in restore_option:
+            nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
+            restore_option["nics"] = nics_list
+            if "source_ip" in restore_option and "destination_ip" in restore_option:
+                if restore_option["source_ip"] and restore_option["destination_ip"]:
+                    vm_ip = self._json_vmip_advanced_restore_options(restore_option)
+                    restore_option["vm_ip_address_options"] = vm_ip
+            if restore_option["in_place"]:
+                if "hyper" in restore_option["destination_instance"]:
+                    restore_option["client_name"] = vs_metadata['esxHost']
+                    restore_option["esx_server"] = vs_metadata['esxHost']
+                elif 'Red' in restore_option["destination_instance"]:
+                    restore_option["esxHost"] = vs_metadata['clusterName']
+                    restore_option["cluster"] = vs_metadata['clusterName']
+                    vs_metadata["esxHost"] = vs_metadata['clusterName']
 
         # populate VM Specific values
         self._set_restore_inputs(
             restore_option,
             disks=vm_disks,
-            esx_host=vs_metadata['esxHost'],
+            esx_host=restore_option.get('esx_host',vs_metadata['esxHost']),
             instanceSize=restore_option.get('instanceSize', instanceSize),
             new_name="Delete" + vm_to_restore
         )
@@ -2005,6 +2036,41 @@ class VirtualServerSubclient(Subclient):
             }
         ]
         return keypair_list
+
+    def amazon_defaults(self, vm_to_restore, restore_option):
+        """
+               set all the VMconversion changes need to be performed
+               specfic to Amazon
+               Args:
+                   vm_to_restore  (str)  :  content of destination subclient object
+
+                   restore_option (dict) :  dictionary with all VM restore options
+
+        """
+
+        browse_result = self.vm_files_browse()
+
+        # vs metadata from browse result
+        _metadata = browse_result[1][('\\' + vm_to_restore)]
+        vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
+
+
+        restore_option['resourcePoolPath'] = vs_metadata['resourcePoolPath']
+        restore_option['datacenter'] = vs_metadata.get('dataCenter', '')
+        restore_option['terminationProtected'] = vs_metadata.get('terminationProtected', '')
+        restore_option['iamRole'] = vs_metadata.get('role', '')
+        _security_groups = self._find_security_groups(vs_metadata['networkSecurityGroups'])
+        restore_option['securityGroups'] = _security_groups
+        _keypair_list = self._find_keypair_list(vs_metadata['loginKeyPairs'])
+        restore_option['keyPairList'] = _keypair_list
+        restore_option['esx_host'] = vs_metadata.get('esxHost', '')
+        restore_option['datastore'] = vs_metadata.get('datastore', '')
+
+        nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
+        restore_option["nics"] = nics_list
+
+        return restore_option
+
 
     def _prepare_filelevel_restore_json(self, _file_restore_option):
         """

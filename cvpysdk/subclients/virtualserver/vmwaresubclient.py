@@ -222,6 +222,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             proxy_client=None,
             source_ip=None,
             destination_ip=None,
+            network=None,
             indexing_v2=False
     ):
         """Restores the FULL Virtual machine specified in the input list
@@ -269,6 +270,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 source_ip           (basestring)    --  IP of the source VM
 
                 destination_ip      (basestring)    --  IP of the destination VM
+
+                network           (basestring)    --  Network of the detination vm
 
                 indexing_v2           (boolean)     --  true if restore has to be performed from
                                                         child vm for v2
@@ -338,7 +341,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     volume_level_restore=1,
                     source_item=[],
                     source_ip=source_ip,
-                    destination_ip=destination_ip
+                    destination_ip=destination_ip,
+                    network=network
                 )
                 request_json = self._prepare_fullvm_restore_json(restore_option)
 
@@ -378,7 +382,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 volume_level_restore=1,
                 source_item=[],
                 source_ip=source_ip,
-                destination_ip=destination_ip
+                destination_ip=destination_ip,
+                network=network
             )
 
             request_json = self._prepare_fullvm_restore_json(restore_option)

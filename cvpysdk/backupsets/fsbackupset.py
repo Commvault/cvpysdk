@@ -34,12 +34,20 @@ FSBackupset:
 
     run_bmr_aix_restore()               --Triggers the Aix 1-touch restore Job
 
+    index_pruning_type()                --  Sets the index pruning type
+
+    index_pruning_days_retention()      --  Sets the number of days to be maintained in
+                                            the index database
+
+    index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in
+                                            the index database
 
 """
 
 from __future__ import unicode_literals
 
 from ..backupset import Backupset
+from ..exception import SDKException
 
 
 class FSBackupset(Backupset):
@@ -760,3 +768,102 @@ class FSBackupset(Backupset):
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchRestoreOption']['responseData'][
             0] = onetouch_restore_option
         return self._process_restore_response(request_json)
+
+    @property
+    def index_pruning_type(self):
+        """Returns index pruning type for the backupset"""
+        return self._properties["indexSettings"]["indexPruningType"]
+
+    @property
+    def index_pruning_days_retention(self):
+        """Returns number of days to be maintained in index by index pruning for the backupset"""
+
+        return self._properties["indexSettings"]["indexRetDays"]
+
+    @property
+    def index_pruning_cycles_retention(self):
+        """Returns number of cycles to be maintained in index by index pruning for the backupset"""
+
+        return self._properties["indexSettings"]["indexRetCycles"]
+
+    @index_pruning_type.setter
+    def index_pruning_type(self, value):
+        """Updates the pruning type for the backupset when backupset level indexing is enabled.
+        Can be days based pruning or cycles based pruning.
+        Days based pruning will set index retention on the basis of days,
+        cycles based pruning will set index retention on basis of cycles.
+
+        Args:
+            value    (str)  --  "days_based" or "cycles_based"
+
+        """
+
+        if value.lower() == "cycles_based":
+            final_value = 1
+
+        elif value.lower() == "days_based":
+            final_value = 2
+
+        elif value.lower() == "infinite":
+            final_value = 0
+
+        else:
+            raise SDKException('Backupset', '104')
+
+        request_json = {
+            "backupsetProperties": {
+                "indexSettings": {
+                    "indexRetCycle": 0,
+                    "overrideIndexPruning": 1,
+                    "indexRetDays": 0,
+                    "isPruningEnabled": 1,
+                    "indexPruningType": final_value
+
+                }
+            }
+        }
+
+        self._process_update_reponse(request_json)
+
+    @index_pruning_days_retention.setter
+    def index_pruning_days_retention(self, value):
+        """Sets index pruning days value at backupset level for days-based index pruning"""
+
+        if isinstance(value, int) and value >= 2:
+            request_json = {
+                "backupsetProperties": {
+                    "indexSettings": {
+                        "indexRetCycle": 0,
+                        "overrideIndexPruning": 1,
+                        "indexRetDays": value,
+                        "isPruningEnabled": 1,
+                        "indexPruningType": 2
+                    }
+                }
+            }
+
+            self._process_update_reponse(request_json)
+        else:
+            raise SDKException('Backupset', '105')
+
+    @index_pruning_cycles_retention.setter
+    def index_pruning_cycles_retention(self, value):
+        """Sets index pruning cycles value at backupset level for cycles-based index pruning"""
+
+        if isinstance(value, int) and value >= 2:
+            request_json = {
+                "backupsetProperties": {
+                    "indexSettings": {
+                        "indexRetCycle": value,
+                        "overrideIndexPruning": 1,
+                        "indexRetDays": 0,
+                        "isPruningEnabled": 1,
+                        "indexPruningType": 1
+                    }
+                }
+            }
+
+            self._process_update_reponse(request_json)
+        else:
+            raise SDKException('Backupset', '105')
+

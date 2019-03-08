@@ -81,7 +81,15 @@ FileSystemSubclient:
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
 
-	catalog_acl()                       --  To enable/disable ACL on the subclient
+    catalog_acl()                       --  To enable/disable ACL on the subclient
+
+    index_pruning_type()                --  Sets the index pruning type
+
+    index_pruning_days_retention()      --  Sets the number of days to be maintained in
+                                            subclient index
+
+    index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in
+                                            subclient index
 
 FileSystemSubclient Instance Attributes:
 =======================================
@@ -1529,3 +1537,71 @@ class FileSystemSubclient(Subclient):
             self._set_subclient_properties("_fsSubClientProp['catalogACL']", value)
         else:
             raise SDKException('Subclient', '102', 'argument value should be boolean')
+
+    @property
+    def index_pruning_type(self):
+        """Treats the subclient pruning type as a read-only attribute."""
+
+        index_settings = self._commonProperties['indexSettings']
+        if 'indexPruningType' in index_settings:
+            pruning_type = index_settings['indexPruningType']
+            return pruning_type
+
+    @property
+    def index_pruning_days_retention(self):
+        """Returns number of days to be maintained in index by index pruning for the subclient"""
+
+        return self._commonProperties["indexSettings"]["indexRetDays"]
+
+    @property
+    def index_pruning_cycles_retention(self):
+        """Returns number of cycles to be maintained in index by index pruning for the subclient"""
+
+        return self._commonProperties["indexSettings"]["indexRetCycles"]
+
+    @index_pruning_type.setter
+    def index_pruning_type(self, value):
+        """Updates the pruning type for the subclient when subclient level indexing is enabled.
+        Can be days based pruning or cycles based pruning.
+        Days based pruning will set index retention on the basis of days,
+        cycles based pruning will set index retention on basis of cycles.
+
+        Args:
+            value    (str)  --  "days_based" or "cycles_based"
+
+        """
+
+        if value.lower() == "cycles_based":
+            final_value = 1
+
+        elif value.lower() == "days_based":
+            final_value = 2
+
+        elif value.lower() == "infinite":
+            final_value = 0
+
+        else:
+            raise SDKException('Subclient', '119')
+
+        self._set_subclient_properties(
+            "_commonProperties['indexSettings']['indexPruningType']", final_value)
+
+    @index_pruning_days_retention.setter
+    def index_pruning_days_retention(self, value):
+        """Sets index pruning days value at subclient level for days-based index pruning"""
+
+        if isinstance(value, int) and value >= 2:
+            self._set_subclient_properties(
+                "_commonProperties['indexSettings']['indexRetDays']", value)
+        else:
+            raise SDKException('Subclient', '120')
+
+    @index_pruning_cycles_retention.setter
+    def index_pruning_cycles_retention(self, value):
+        """Sets index pruning cycles value at subclient level for cycles-based index pruning"""
+
+        if isinstance(value, int) and value >= 2:
+            self._set_subclient_properties(
+                "_commonProperties['indexSettings']['indexRetCycle']", value)
+        else:
+            raise SDKException('Subclient', '120')

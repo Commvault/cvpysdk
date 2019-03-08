@@ -65,6 +65,18 @@ Commcell:
 
     execute_qcommand()              --  executes the ExecuteQCommand API on the commcell
 
+    _get_registered_service_commcells() -- gets the list of registered service commcells
+
+    register_commcell()             -- registers a commcell
+
+    unregister_commcell()           -- unregisters a commcell
+
+    is_commcell_registered()       -- checks if the commcell is registered
+
+    _get_redirect_rules_service_commcell()    -- gets the redirect rules of service commcell
+
+    get_eligible_service_commcells()             -- gets the eligible service commcells to redirect
+
 
 Commcell instance Attributes
 ============================
@@ -187,6 +199,7 @@ Commcell instance Attributes
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from past.builtins import basestring
 
 import getpass
 import socket
@@ -421,6 +434,8 @@ class Commcell(object):
         self._commserv_client = None
         self._identity_management = None
         self._commcell_migration = None
+        self._registered_commcells = None
+        self._redirect_rules_service = None
 
         self.refresh()
 
@@ -1021,6 +1036,36 @@ class Commcell(object):
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
+    @property
+    def registered_routing_commcells(self):
+        """Returns the dictionary consisting of all registered commcells and
+        their info
+
+        dict - consists of all registered routing commcells
+            {
+                "commcell_name1:{
+                    details related to commcell_name1
+                },
+                "commcell_name2:{
+                    details related to commcell_name2
+                }
+            }
+        """
+        if self._registered_commcells is None:
+            self._registered_commcells = self._get_registered_service_commcells()
+        return self._registered_commcells
+
+    @property
+    def redirect_rules_of_service(self):
+        """Returns the list of redirect rules from service commcell
+
+        list - consists of redirect rules of service commcell
+            ['abc.com','commvault-nj']
+        """
+        if self._redirect_rules_service is None:
+            self._redirect_rules_service = self._get_redirect_rules_service_commcell()
+        return self._redirect_rules_service
+
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
@@ -1167,6 +1212,8 @@ class Commcell(object):
         self._identity_management = None
         self._commcell_migration = None
         self._get_commserv_details()
+        self._registered_commcells = None
+        self._redirect_rules_service = None
 
     def run_data_aging(
             self,
@@ -1731,3 +1778,255 @@ class Commcell(object):
             return response
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_registered_service_commcells(self):
+        """Gets the registered routing commcells
+
+            Returns:
+                dict - consists of all registered routing commcells
+                    {
+                        "commcell_name1": {
+                            related information of commcell1
+                        },
+                        "commcell_name2:: {
+                            related information of commcell2
+                        }
+                    }
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_REGISTERED_ROUTER_COMMCELLS']
+        )
+
+        if flag:
+            if response.json() and 'commcellsList' in response.json():
+                register_commcells_dict = {}
+
+                for registered_commcell in response.json()['commcellsList']:
+                    register_commcells_dict[registered_commcell['commCell']['commCellName']] = registered_commcell
+                return register_commcells_dict
+            else:
+                return {}
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_redirect_rules_service_commcell(self):
+        """gets the redirect rules from service commcell
+
+        Returns:
+            list - consisting of all redirect rules associated with service commcell
+
+                ['abc.com', 'abc', 'commvault-nj']
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_USERSPACE_SERVICE']
+        )
+
+        if flag:
+            if response.json() and 'redirectRules' in response.json():
+                redirect_rules_list = []
+                redirect_rules_list = response.json()['redirectRules']['domains'] + \
+                                      response.json()['redirectRules']['rules']
+                return redirect_rules_list
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def is_commcell_registered(self, commcell_name):
+        """checks if a commcell is registered in the commcell
+                    with the provided name
+            Args:
+                commcell_name (str) -- name of the commcell
+
+            Returns:
+                bool - boolean output whether the commcell is registered or not
+
+            Raises:
+                SDKException:
+                    if type of the commcell_name is not string
+        """
+        if not isinstance(commcell_name, basestring):
+            raise SDKException('CommcellRegistration', '104')
+
+        return self.registered_routing_commcells and commcell_name.lower() in self.registered_routing_commcells
+
+    def register_commcell(
+            self,
+            commcell_name,
+            registered_for_routing=False,
+            admin_username=None,
+            admin_password=None):
+        """Registers a commcell
+
+        Args:
+
+            commcell_name   (str)   -- name of the commcell
+
+        Raises:
+
+            SDKException:
+
+                if the registration fails
+                if response is empty
+                if there is no response
+
+        """
+        commcell_name = commcell_name.lower()
+        if (registered_for_routing):
+            registered_for_routing = 1
+        else:
+            registered_for_routing = 0
+        xml_to_execute = """
+        <EVGui_CN2CellRegReq>
+            <commcell isRegisteredForRouting="{0}" adminPwd="{1}" adminUsr="{2}" interfaceName="{3}" ccClientName="{4}">
+                <commCell commCellName="{5}" />
+            </commcell>
+        </EVGui_CN2CellRegReq>
+        """.format(
+            registered_for_routing,
+            admin_password,
+            admin_username,
+            commcell_name,
+            commcell_name,
+            commcell_name
+        )
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['REGISTRATION'], xml_to_execute
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['resultCode']
+
+                if error_code != 0:
+                    error_string = response.json()['resultMessage']
+                    raise SDKException(
+                        'CommcellRegistration',
+                        '101',
+                        'Registration Failed\n Error: "{0}"'.format(
+                            error_string
+                        )
+                    )
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def unregister_commcell(self, commcell_name):
+        """Unregisters a commcell
+
+        Args:
+
+            commcell_name       (str) - Name of the service commcell that has to be unregistered
+
+        Raises:
+
+            if Unregistration fails
+            if the response is empty
+            if there is no response
+
+        """
+        if not isinstance(commcell_name, basestring):
+            raise SDKException('CommcellRegistration', '104')
+        else:
+            commcell_name = commcell_name.lower()
+            if self.is_commcell_registered(commcell_name):
+                xml_to_execute = """
+                <EVGui_CN2RemoveCellRegReq>
+                    <commcell ccClientId="{0}" ccClientName="{1}" interfaceName="{2}">
+                        <commCell _type_="{3}" commCellId="{4}" csGUID="{5}"/>
+                    </commcell>
+                </EVGui_CN2RemoveCellRegReq>
+                """.format(
+                    self._registered_commcells[commcell_name]['ccClientId'],
+                    self._registered_commcells[commcell_name]['ccClientName'],
+                    self._registered_commcells[commcell_name]['interfaceName'],
+                    self._registered_commcells[commcell_name]['commCell']['_type_'],
+                    self._registered_commcells[commcell_name]['commCell']['commCellId'],
+                    self._registered_commcells[commcell_name]['commCell']['csGUID']
+                )
+
+                flag, response = self._cvpysdk_object.make_request(
+                    'POST', self._services['UNREGISTRATION'], xml_to_execute
+                )
+
+                if flag:
+                    if response.json():
+                        error_code = response.json()['resultCode']
+
+                        if error_code != 0:
+                            error_string = response.json()['resultMessage']
+                            raise SDKException(
+                                'CommcellRegistration',
+                                '103',
+                                'UnRegistration Failed\n Error: "{0}"'.format(
+                                    error_string
+                                )
+                            )
+                        self.refresh()
+                    else:
+                        raise SDKException('Response', '102')
+                else:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+
+    def get_eligible_service_commcells(self, login_name_or_email=None):
+        """Gets the redirect service commcells based on login_name or email provided
+
+        Args:
+
+            login_name_or_email      (str)   -- Login name or email of the user
+
+                default: current logged in user
+
+        Raises:
+
+            if the response is empty
+            if there is no response
+
+        Returns:
+
+            list_of_service_commcells   (list)  -- list of service commcells
+
+        """
+        if not login_name_or_email:
+            login_name_or_email = self.commcell_username
+
+        login_name_or_email = login_name_or_email.lower()
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['POLL_REQUEST_ROUTER'] %
+            login_name_or_email
+        )
+        if flag:
+            if response.json() and 'AvailableRedirects' in response.json():
+                service_commcell_list = []
+                for ser_comm in response.json()['AvailableRedirects']:
+                    if ser_comm.get('isLocalCommcell', False):
+                        continue
+                    service_commcell_list.append(ser_comm['commcellName'])
+                return service_commcell_list
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

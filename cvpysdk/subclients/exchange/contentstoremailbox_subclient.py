@@ -101,9 +101,9 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
                     is_auto_discover_user = str(
                         child['contentStoreMailbox']['isAutoDiscoveredUser'])
                     for policy in child['policies']['emailPolicies']:
-                        if policy['detail']['emailPolicy']['emailPolicyType'] == 4:
+                        if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 4:
                             journal_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 3:
+                        elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
                             retention_policy = str(policy['policyEntity']['policyName'])
 
                     temp_dict = {
@@ -130,8 +130,8 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
                 dict    -   dictionary for a single client to be associated
         """
         client_dict = {
-                "clientName": client_object.client_name,
-                "clientId": int(client_object.client_id),
+            "clientName": client_object.client_name,
+            "clientId": int(client_object.client_id),
         }
 
         return client_dict

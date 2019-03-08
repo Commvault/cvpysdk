@@ -153,6 +153,8 @@ class Instances(object):
             self._client_object.client_id
         )
 
+        self._general_properties = None
+        self._instance_properties = None
         self._instances = None
         self.refresh()
 
@@ -170,6 +172,7 @@ class Instances(object):
         from .instances.postgresinstance import PostgreSQLInstance
         from .instances.informixinstance import InformixInstance
         from .instances.vminstance import VMInstance
+        from .instances.db2instance import DB2Instance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -186,7 +189,8 @@ class Instances(object):
             'notes document': LNDOCInstance,
             'domino mailbox archiver': LNDMInstance,
             'postgresql': PostgreSQLInstance,
-            'informix': InformixInstance
+            'informix': InformixInstance,
+            'db2': DB2Instance
         }
 
     def __str__(self):
@@ -668,6 +672,135 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_db2_instance(self, db2_options):
+        """
+            Method to Add new Db2 Instance to given Client
+                Args:
+                        Dictionary of db2 instance creation options:
+                            Example:
+                               db2_options = {
+                                    'instance_name': 'db2inst1',
+                                    'data_storage_policy': 'data_sp',
+                                    'log_storage_policy': 'log_sp',
+                                    'command_storage_policy': 'cmd_sp',
+                                    'home_directory':'/home/db2inst1',
+                                    'password':'db2inst1',
+                                    'user_name':'db2inst1'
+                                }
+                    Raises:
+                        SDKException:
+                            if None value in db2 options
+
+                            if db2 instance with same name already exists
+
+                            if given storage policy does not exists in commcell
+
+        """
+        if not all(
+            key in db2_options for key in(
+                "instance_name",
+                "data_storage_policy",
+                "log_storage_policy",
+                "command_storage_policy",
+                "home_directory",
+                "password",
+                "user_name")):
+            raise SDKException(
+                'Instance',
+                '102',
+                "Not all db2_options are provided")
+
+        if not db2_options.get("instance_name"):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.')
+
+        storage_policy = db2_options.get('storage_policy')
+
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    db2_options["data_storage_policy"])
+            )
+
+        # encodes the plain text password using base64 encoding
+
+        #enable_auto_discovery = db2_options["enable_auto_discovery"]
+        db2_password = b64encode(db2_options["password"].encode()).decode()
+
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._client_object.client_name,
+                    "appName": "db2",
+                    "instanceName": db2_options["instance_name"],
+                },
+                "db2Instance": {
+                    "homeDirectory": db2_options["home_directory"],
+                    "userAccount": {
+                        "domainName": db2_options.get("domain_name", ''),
+                        "password": db2_password,
+                        "userName": db2_options["user_name"],
+                    },
+
+                    "DB2StorageDevice": {
+                        "networkAgents":
+                        db2_options.get("network_agents", 1),
+
+                            "softwareCompression":
+                                db2_options.get("software_compression", 0),
+
+                            # "throttleNetworkBandwidth":
+                            #    db2_options.get("throttle_network_bandwidth", 500),
+
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy,
+                        },
+                        "commandLineStoragePolicy": {
+                                "storagePolicyName": storage_policy,
+                        },
+                        "logBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy,
+                        },
+                        "deDuplicationOptions": {
+                                "generateSignature":
+                                    db2_options.get("generate_signature", 1),
+                        }
+                    },
+                    "overrideDataPathsForCmdPolicy":
+                        db2_options.get("override_data_paths_for_cmd_policy", False)
+                }
+            }
+        }
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json)
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'].get('errorCode')
+
+                if error_code != 0:
+                    error_string = response.json()['response'].get('errorString')
+                    raise SDKException(
+                        'Instance',
+                        '102',
+                        'Error while creating instance\nError: "{0}"'.format(error_string))
+                else:
+                    if 'entity' in response.json()['response']:
+                        self.refresh()
+                        return self._instances_dict[self._agent_object.agent_name](
+                            self._agent_object,
+                            response.json()['response']['entity'].get('instanceName'),
+                            response.json()['response']['entity'].get('instanceId')
+                        )
+                    else:
+                        raise SDKException('Instance', '102', 'Unable to get instance name and id'
+                                           )
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
     def add_big_data_apps_instance(self, distributed_options):
         """
             Method to add big data apps instance to the given client.
@@ -821,7 +954,7 @@ class Instances(object):
         else:
             description = ''
 
-        self._set_instance_properties_json(cloud_options)
+        self.instance_properties_json = cloud_options
         request_json = {
             "instanceProperties": {
                 "description": description,
@@ -830,7 +963,7 @@ class Instances(object):
                     "instanceName": cloud_options.get("instance_name"),
                     "appName": self._agent_object.agent_name,
                 },
-                "cloudAppsInstance": self._set_instance_properties_json
+                "cloudAppsInstance": self.instance_properties_json
             }
         }
         add_instance = self._commcell_object._services['ADD_INSTANCE']
@@ -864,7 +997,13 @@ class Instances(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _set_general_properties_json(self, value):
+    @property
+    def _general_properties_json(self):
+        """Returns the general properties json."""
+        return self._general_properties
+
+    @_general_properties_json.setter
+    def _general_properties_json(self, value):
         """setter for general cloud properties in instance JSON.
 
         Args:
@@ -881,7 +1020,7 @@ class Instances(object):
 
         """
 
-        self._set_general_properties_json = {
+        self._general_properties = {
             "numberOfBackupStreams": value.get("number_of_streams"),
             "proxyServers": [
                 {
@@ -895,14 +1034,20 @@ class Instances(object):
             }
         }
 
-    def _set_instance_properties_json(self, value):
+    @property
+    def _instance_properties_json(self):
+        """Returns the instance properties json."""
+        return self._instance_properties
+
+    @_instance_properties_json.setter
+    def _instance_properties_json(self, value):
         """setter for cloud storage instance properties in instance JSON.
 
         Args:
 
             value    (dict)    --    options needed to set cloud storage instance properties
 
-        Example: 
+        Example:
             value = {
                 "accesskey" : "AKIAJOMLRIFGP3FQUIKA"
                 "secretkey" : " WB3Fo31h28SXJEnHMqoSo/Mq3LJMx1/AxG8YZsLG"
@@ -910,30 +1055,30 @@ class Instances(object):
 
         """
 
-        self._set_general_properties_json(value)
+        self._general_properties_json = value
         if value.get("cloudapps_type") == 's3':
-            self._set_instance_properties_json = {
+            self._instance_properties = {
                 "instanceType": 5,
                 "s3Instance": {
                     "accessKeyId": value.get("accesskey"),
                     "secretAccessKey": value.get("secretkey"),
                     "hostURL": "s3.amazonaws.com"
                 },
-                "generalCloudProperties": self._set_general_properties_json
+                "generalCloudProperties": self._general_properties_json
             }
         elif value.get("cloudapps_type") == 'azure':
-            self._set_instance_properties_json = {
+            self._instance_properties = {
                 "instanceType": 6,
                 "azureInstance": {
                     "accountName": value.get("accountname"),
                     "accessKey": value.get("accesskey"),
                     "hostURL": "blob.core.windows.net"
                 },
-                "generalCloudProperties": self._set_general_properties_json
+                "generalCloudProperties": self._general_properties_json
             }
         elif value.get("cloudapps_type") == 'oraclecloud':
             password = b64encode(value.get("password").encode()).decode()
-            self._set_instance_properties_json = {
+            self._instance_properties = {
                 "instanceType": 14,
                 "oraCloudInstance": {
                     "endpointURL": value.get("endpointurl"),
@@ -942,11 +1087,11 @@ class Instances(object):
                         "userName": value.get("username")
                     }
                 },
-                "generalCloudProperties": self._set_general_properties_json
+                "generalCloudProperties": self._general_properties_json
             }
         elif value.get("cloudapps_type") == 'openstack':
             apikey = b64encode(value.get("apikey").encode()).decode()
-            self._set_instance_properties_json = {
+            self._instance_properties = {
                 "instanceType": 15,
                 "openStackInstance": {
                     "serverName": value.get("servername"),
@@ -955,7 +1100,7 @@ class Instances(object):
                         "userName": value.get("username")
                     }
                 },
-                "generalCloudProperties": self._set_general_properties_json
+                "generalCloudProperties": self._general_properties_json
             }
 
     def refresh(self):
@@ -1324,7 +1469,7 @@ class Instance(object):
             request_json = SchedulePattern().create_schedule(request_json,
                                                              restore_option['schedule_pattern'])
 
-        if "multinode_restore" in restore_option:
+        if restore_option.get("multinode_restore", False) or restore_option.get("no_of_streams", 1) > 1:
 
             self._destination_restore_json["destinationInstance"] = {
                 "instanceName": restore_option.get('destination_instance', self.instance_name)
@@ -1333,11 +1478,12 @@ class Instance(object):
             self._destination_restore_json["noOfStreams"] = restore_option.get('no_of_streams', 2)
 
             self._distributed_restore_json = {
-                "distributedRestore": True,
+                "clientType": restore_option.get('client_type', 0),
+                "distributedRestore": restore_option.get("multinode_restore", False),
                 "dataAccessNodes": {
                     "dataAccessNodes": restore_option.get('data_access_nodes', [])
                 },
-                "isMultiNodeRestore": True,
+                "isMultiNodeRestore": restore_option.get("multinode_restore", False),
                 "backupConfiguration": {
                     "backupDataAccessNodes": restore_option.get('data_access_nodes', [])
                 }
@@ -1772,7 +1918,7 @@ class Instance(object):
             "useExactIndex": False,
             "noImage": value.get("no_image", False),
             "commCellId": 2,
-            "liveBrowse": value.get('live_browse',False),
+            "liveBrowse": value.get('live_browse', False),
             "mediaOption": {
                 "mediaAgent": {
                     "mediaAgentName": value.get("media_agent", "")
@@ -1803,9 +1949,10 @@ class Instance(object):
                 "commcell_id", self._commcell_object.commcell_id)
 
         if value.get('iscsi_server'):
-           self._browse_restore_json['mediaOption']['iSCSIServer'] = {
-               'clientName': value.get("iscsi_server")
-           }
+
+            self._browse_restore_json['mediaOption']['iSCSIServer'] = {
+                'clientName': value.get("iscsi_server")
+            }
 
 
     def _restore_common_options_json(self, value):
@@ -1842,7 +1989,7 @@ class Instance(object):
 
         if "fs_options" in value:
             _fs_option_value = value["fs_options"]
-            if  _fs_option_value is not None:
+            if _fs_option_value is not None:
                 for _key in _advance_fs_keys:
                     if _key in _fs_option_value:
                         self._commonoption_restore_json[_key] = _fs_option_value[_key]

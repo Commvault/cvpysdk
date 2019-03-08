@@ -669,6 +669,9 @@ class DiskLibraries(object):
 
                 password     (str)        --  password to access the mount path
                     default: ""
+                    
+                servertype   (int)        -- provide cloud library server type
+                    default 0, value 59 for HPstore
 
             Returns:
                 object - instance of the DiskLibrary class, if created successfully
@@ -719,6 +722,10 @@ class DiskLibraries(object):
         if servertype > 0:
             request_json["library"]["serverType"] = servertype
             request_json["library"]["isCloud"] = 1
+            if servertype == 59:
+                request_json["library"]["HybridCloudOption"] = {
+                    "enableHybridCloud": "2", "diskLibrary": {"_type_": "9"}}
+                request_json["library"]["savedCredential"] = {"_type_": "9"}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._LIBRARY, request_json

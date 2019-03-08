@@ -53,15 +53,34 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         super(OpenStackVirtualServerSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
+        self.diskExtension = ["none"]
+
 
     def full_vm_restore_in_place(
             self,
             vm_to_restore=None,
+            restored_vm_name=None,
+            vcenter_client=None,
+            destination_client=None,
+            esx_host=None,
+            esx_server=None,
+            datastore=None,
             overwrite=True,
             power_on=True,
-            destination_client=None,
             copy_precedence=0,
-            proxy_client=None):
+            proxy_client=None,
+            source_ip=None,
+            destination_ip=None,
+            datacenter = None,
+            cluster = None):
+            # vm_to_restore=None,
+            # overwrite=True,
+            # power_on=True,
+            # destination_client=None,
+            # copy_precedence=0,
+            # esx_host = None,
+            # esx_server = None,
+            # proxy_client=None):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -110,15 +129,23 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
-            restore_option,
-            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
-            in_place=True,
-            esx_server_name="",
-            volume_level_restore=1,
-            unconditional_overwrite=overwrite,
-            power_on=power_on,
-            copy_precedence=copy_precedence
-        )
+                restore_option,
+                in_place=True,
+                vcenter_client=destination_client,
+                datastore=datastore,
+                esx_host=esx_host,
+                esx_server=esx_server,
+                unconditional_overwrite=overwrite,
+                power_on=power_on,
+                vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+                copy_precedence=copy_precedence,
+                volume_level_restore=1,
+                source_item=[],
+                source_ip=source_ip,
+                destination_ip=destination_ip,
+                data_center = datacenter,
+                cluster = cluster
+    )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
@@ -138,7 +165,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             proxy_client=None,
             source_ip=None,
             destination_ip=None,
-            datacenter = None
+            datacenter = None,
+            cluster = None
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -230,7 +258,9 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             volume_level_restore=1,
             source_item=[],
             source_ip=source_ip,
-            destination_ip=destination_ip
+            destination_ip=destination_ip,
+            data_center = datacenter,
+            cluster = cluster
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

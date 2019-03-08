@@ -259,8 +259,11 @@ class Agents(object):
             agent_name = agent_name.lower()
 
             if self.has_agent(agent_name):
+                updated_agent_name = agent_name
+                if "file system" in agent_name:
+                    updated_agent_name = "file system"
                 return self._agents_dict.get(agent_name, Agent)(
-                    self._client_object, agent_name, self._agents[agent_name]
+                    self._client_object, updated_agent_name, self._agents[agent_name]
                 )
 
             raise SDKException('Agent', '102', 'No agent exists with name: {0}'.format(agent_name))

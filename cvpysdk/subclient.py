@@ -220,6 +220,7 @@ class Subclients(object):
         from .subclients.adsubclient import ADSubclient
         from .subclients.sharepointsubclient import SharepointSubclient
         from .subclients.vminstancesubclient import VMInstanceSubclient
+        from .subclients.db2subclient import DB2Subclient
         from .subclients.casesubclient import CaseSubclient
 
         globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
@@ -239,6 +240,7 @@ class Subclients(object):
         globals()['MYSQLSubclient'] = MYSQLSubclient
         globals()['ExchangeDatabaseSubclient'] = ExchangeDatabaseSubclient
         globals()['PostgresSubclient'] = PostgresSubclient
+        globals()['DB2Subclient'] = DB2Subclient
         globals()['InformixSubclient'] = InformixSubclient
         globals()['ADSubclient'] = ADSubclient
         globals()['SharepointSubclient'] = SharepointSubclient
@@ -266,6 +268,7 @@ class Subclients(object):
             'mysql': MYSQLSubclient,
             'exchange database': ExchangeDatabaseSubclient,
             'postgresql': PostgresSubclient,
+            'db2': DB2Subclient,
             'informix': InformixSubclient,
             'active directory': ADSubclient,
             'sharepoint server': SharepointSubclient

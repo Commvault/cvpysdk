@@ -28,6 +28,7 @@ from past.builtins import basestring
 from ...exception import SDKException
 from ..exchsubclient import ExchangeSubclient
 
+
 class JournalMailboxSubclient(ExchangeSubclient):
     """Derived class from ExchangeSubclient Base class.
 
@@ -51,6 +52,7 @@ class JournalMailboxSubclient(ExchangeSubclient):
             backupset_object, subclient_name, subclient_id)
 
         self._instance_object = backupset_object._instance_object
+        self._discover_journal_users = None
         self._client_object = self._instance_object._agent_object._client_object
         self._SET_EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
             'SET_EMAIL_POLICY_ASSOCIATIONS']
@@ -115,9 +117,9 @@ class JournalMailboxSubclient(ExchangeSubclient):
                     is_auto_discover_user = str(child['userMailBoxInfo']['isAutoDiscoveredUser'])
 
                     for policy in child['policies']['emailPolicies']:
-                        if policy['detail']['emailPolicy']['emailPolicyType'] == 4:
+                        if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 4:
                             journal_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 3:
+                        elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
                             retention_policy = str(policy['policyEntity']['policyName'])
 
                     temp_dict = {

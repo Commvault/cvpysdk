@@ -362,38 +362,39 @@ class ArrayManagement(object):
 
         if response.json() and 'errorCode' in response.json():
             error_code = response.json()['errorCode']
+            error_message = response.json()['errorMessage']
 
             if error_code != 0:
                 if error_code == 1:
                     raise SDKException('StorageArray', '101')
 
                 error_message = response.json().get('errorMessage', '')
-                o_str = 'Failed to add array\nError: "{0}"'.format(error_message)
+                o_str = 'Error: "{0}"'.format(error_message)
                 raise SDKException('StorageArray', '102', o_str)
+            return error_message
         else:
             raise SDKException('StorageArray', '102')
 
     def delete_array(self, control_host_array):
-
         """This method Deletes an array from the array management
             Args :
-                    control_host_array  (str)               -- array id of the snap array
+                control_host_array      (str)        --   Control Host id of the array
             Return :
-
-                errorMessage   (string) :  Error message"""
+                errorMessage            (str)        --   Error message after the execution
+        """
 
         storagearrays_delete_service = self.storage_arrays + '/{0}'.format(control_host_array)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'DELETE', storagearrays_delete_service
         )
 
-        if response.json() and 'errorCode' in response.json():
+        if response.json():
             error_code = response.json()['errorCode']
+            error_message = response.json()['errorMessage']
 
             if error_code != 0:
-                raise SDKException('StorageArray', '103')
-            else:
-                error_message = response.json()['errorMessage']
+                raise SDKException('StorageArray', '103', error_message)
+            return error_message
 
     def update_snap_config(self, control_host_id, master_config_id, value, config_update_level):
         """Method to Update Snap Configuration for the Array

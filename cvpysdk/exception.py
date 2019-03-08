@@ -113,7 +113,9 @@ EXCEPTION_DICT = {
     'Backupset': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
-        '103': 'Class object should be an instance of Agent / Instance class'
+        '103': 'Class object should be an instance of Agent / Instance class',
+        '104': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
+        '105': 'Invalid days/cycles value. Please provide an integer value >= 2.'
     },
     'Instance': {
         '101': 'Data type of the input(s) is not valid',
@@ -143,7 +145,9 @@ EXCEPTION_DICT = {
         '115': 'Class object should be an instance of Agent / Instance / Backupset class',
         '116': 'Auto discovery values should be a list',
         '117': 'Auto discovery is disabled at instance level',
-        '118': 'Failed to run the backup copy job'
+        '118': 'Failed to run the backup copy job',
+        '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
+        '120': 'Invalid days/cycles value. Please provide an integer value >= 2.'
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -271,7 +275,9 @@ EXCEPTION_DICT = {
         '109': 'Failed to disable Auth Code Generation for the Organization',
         '110': 'Failed to update the properties of the Organization',
         '111': ('Plan is not associated with the organization. '
-                'Add plan to the Organization, and then set it as the default')
+                'Add plan to the Organization, and then set it as the default'),
+        '112': 'Failed to activate organization',
+        '113': 'Failed to deactivate organization'
     },
     'StoragePool': {
         '101': 'Data type of the input(s) is not valid',
@@ -333,18 +339,24 @@ EXCEPTION_DICT = {
         '106': 'please provide the client details',
         '107': 'Failed to execute Install job'
     },
-    'StorageArray' : {
+    'StorageArray': {
         '101': 'Array already exist',
         '102': 'Failed to add array',
         '103': 'Failed to delete array'
     },
-    'NameChange' : {
+    'NameChange': {
 
         '101' : 'Client hostname not provided',
         '102' : 'Commcell hostname not provided',
         '103' : 'Old domain name not provided',
         '104' : 'New domain name not provided',
         '105' : 'Client ID list not provided'
+    },
+    'CommcellRegistration': {
+        '101': 'Failed to register commcell',
+        '102': '',
+        '103': 'Failed to unregister commcell',
+        '104': 'Datatype of the input is not valid'
     }
 }
 

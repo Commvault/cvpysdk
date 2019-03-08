@@ -390,6 +390,9 @@ class PostgreSQLInstance(Instance):
         if not path:
             raise SDKException('Instance', '104')
 
+        if not no_of_streams:
+            no_of_streams = 1
+
         request_json = self._restore_json(
             paths=path,
             dest_client_name=dest_client_name,

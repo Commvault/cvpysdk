@@ -26,6 +26,9 @@ This module has classes defined for doing operations for organizations:
 
     #. Update the default plan of the organization
 
+    #. Enabling Operator role for a user
+
+    #. Disabling Operator role for a user
 
 Organizations
 =============
@@ -83,6 +86,11 @@ Organization
 
     disable_auth_code()         --  disable Auth Code generation for the organization
 
+    add_users_as_operator()     -- assigns users as operators
+
+    activate()                  --  To activate the organization
+
+    deactivate()                --  To deactivate the organization
 
 Organization Attributes
 -----------------------
@@ -121,6 +129,9 @@ Organization Attributes
         **plans = ['plan1',
         'plan2']**                  --  update the list of plans associated with the organization
 
+        **operator_role**	    	 -- returns the operator role assigned to an user
+
+        **tenant_operator**			 -- returns the operators associated with the organization
 
 """
 
@@ -129,6 +140,8 @@ import re
 from past.builtins import basestring
 
 from .exception import SDKException
+
+from .security.user import User
 
 
 class Organizations:
@@ -201,13 +214,12 @@ class Organizations:
 
         if value in self.all_organizations:
             return self.all_organizations[value]
-        else:
-            try:
-                return list(
-                    filter(lambda x: x[1]['id'] == value, self.all_organizations.items())
-                )[0][0]
-            except IndexError:
-                raise IndexError('No organization exists with the given Name / Id')
+        try:
+            return list(
+                filter(lambda x: x[1]['id'] == value, self.all_organizations.items())
+            )[0][0]
+        except IndexError:
+            raise IndexError('No organization exists with the given Name / Id')
 
     def _get_organizations(self):
         """Gets all the organizations associated with the Commcell environment.
@@ -241,9 +253,8 @@ class Organizations:
                     organizations[name] = organization_id
 
             return organizations
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+        response_string = self._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 
     @property
     def all_organizations(self):
@@ -407,10 +418,9 @@ class Organizations:
 
                 if error_code == 0:
                     return self.get(name)
-                else:
-                    raise SDKException(
-                        'Organization', '107', 'Response: {0}'.format(response.json())
-                    )
+                raise SDKException(
+                    'Organization', '107', 'Response: {0}'.format(response.json())
+                )
 
             elif 'errorMessage' in response.json():
                 raise SDKException(
@@ -445,8 +455,7 @@ class Organizations:
 
         if self.has_organization(name):
             return Organization(self._commcell_object, name, self._organizations[name])
-        else:
-            raise SDKException('Organization', '103')
+        raise SDKException('Organization', '103')
 
     def delete(self, name):
         """Deletes the organization with the given name from the Commcell.
@@ -470,6 +479,8 @@ class Organizations:
         """
         if not self.has_organization(name):
             raise SDKException('Organization', '103')
+
+        self.get(name).deactivate()
 
         organization_id = self._organizations[name.lower()]
 
@@ -541,6 +552,7 @@ class Organization:
         self._contacts = {}
         self._plans = {}
         self._organization_info = None
+        self._operator_role = None
         self.refresh()
 
     def __repr__(self):
@@ -602,6 +614,8 @@ class Organization:
 
                 for plan in self._organization_info.get('planDetails', []):
                     self._plans[plan['plan']['planName'].lower()] = plan['plan']['planId']
+
+                self._operator_role = organization_properties['operatorRole']['roleName']
 
                 return self._organization_info
             else:
@@ -862,3 +876,144 @@ class Organization:
             self._update_properties()
         except KeyError:
             raise SDKException('Organization', '109')
+
+    @property
+    def tenant_operator(self):
+        """Returns the operators associated to this organization"""
+        tenant_operators = self._organization_info.get('organizationProperties', {}).get('operators', [])
+        return [role['user']['userName'] for role in tenant_operators]
+
+    def add_users_as_operator(self, user_list, request_type):
+        """Update the local user as tenant operator of the company
+
+        Args:
+            user_list		(list) -- list of users
+
+            request_type    (Str)  --  decides whether to UPDATE, DELETE or
+                                       OVERWRITE user security association
+
+        """
+        update_opertaor_request_type = {
+            "NONE": 0,
+            "OVERWRITE": 1,
+            "UPDATE": 2,
+            "DELETE": 3
+        }
+        user_list_object = []
+        for user in user_list:
+            if not isinstance(user, User):
+                user = self._commcell_object.users.get(user)
+                user_list_object.append(user)
+
+        request_operator = {
+            'operators': [{
+                'user': {
+                    'userName': user.user_name,
+                }
+            } for user in user_list_object],
+            'operatorsOperationType': update_opertaor_request_type[request_type.upper()]
+        }
+
+        self._update_properties_json(request_operator)
+        self._update_properties()
+
+    @property
+    def operator_role(self):
+        """Returns the operator role associated to this organization"""
+        return self._operator_role
+
+    @operator_role.setter
+    def operator_role(self, role_name):
+        """Updates the role associated with a tenant operator
+
+        Args:
+            role_name   (str)   -- Role name to be associated
+
+        """
+        role_object = self._commcell_object.roles.get(role_name.lower())
+        request_role = {
+            'operatorRole': {
+                'roleId': role_object.role_id,
+                'roleName': role_name
+            }
+        }
+        self._update_properties_json(request_role)
+        self._update_properties()
+
+    def activate(self):
+        """
+        To activate the organization
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to activate the organization
+
+                if response is empty
+
+                if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ACTIVATE_ORGANIZATION'] % self.organization_id
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Organization', '112', 'Error: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def deactivate(self):
+        """
+        To deactivate the organization
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to deactivate the organization
+
+                if response is empty
+
+                if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['DEACTIVATE_ORGANIZATION'] % self.organization_id
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Organization', '113', 'Error: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

@@ -76,16 +76,19 @@ class CaseSubclient(Subclient):
     def json_hold_info(self):
         """Getter for the hold_info JSON."""
 
+        hold_type_dict = {
+            'user mailbox': 1,
+            'journal mailbox': 2,
+            'contentstore mailbox': 3
+        }
         self._hold_info_ = [
             {
                 "subclientId": int(self.subclient_id),
                 "holdName": self._backupset_object.backupset_name,
                 "appName": "Exchange Mailbox",
-                "holdType": 1
+                "holdType": hold_type_dict[self._backupset_object.backupset_name.lower()]
             },
-
         ]
-
         return self._hold_info_
 
     @property
@@ -93,7 +96,9 @@ class CaseSubclient(Subclient):
         """Getter for the search request JSON."""
 
         self._search_request_ = {
-            "advSearchGrp": {},
+            "advSearchGrp": {
+                'emailFilter': self._filter_list
+            },
             "searchProcessingInfo": {
                 "queryParams": [
                     {
@@ -136,7 +141,7 @@ class CaseSubclient(Subclient):
         """Getter for the data copy options JSON."""
 
         self._data_copy_option_json_ = {
-            "adminOpts": {
+            "backupOpts": {
                 "caseMgrOptions": {
                     "type": 2
                 }
@@ -228,6 +233,35 @@ class CaseSubclient(Subclient):
 
         return request_json
 
+    def _prepare_email_filter_list(self, options):
+        """Prepare Email filter list
+            Args:
+                options  (dict)  --  filter options for case
+
+        """
+
+        filers_list = []
+        for item in options.get('filters'):
+
+            filter_json = {
+                "field": item.get('field'),
+                "intraFieldOp": item.get('intraFieldOp', 0),
+                "fieldValues": {
+                    "values": item.get('values', [])
+                }
+            }
+            filers_list.append(filter_json)
+
+        self._filter_list = [
+            {
+                "interGroupOP": options.get('interGroupOP', 2),
+                "filter": {
+                    "interFilterOP": options.get('interGroupOP', 2),
+                    "filters": filers_list
+                }
+            }
+        ]
+
     def index_copy(self):
         """Runs a Index Copy job for the subclient .
 
@@ -277,7 +311,7 @@ class CaseSubclient(Subclient):
 
         return self._process_restore_response(request_json)
 
-    def add_definition(self, definition_name, custodian_info):
+    def add_definition(self, definition_name, custodian_info, email_filters=None):
         """Add definition for UserMailboxSubclient.
 
             Args:
@@ -307,7 +341,9 @@ class CaseSubclient(Subclient):
             raise SDKException('Subclient', '101')
 
         try:
-
+            self._filter_list = []
+            if email_filters:
+                self._prepare_email_filter_list(email_filters)
             self.custodian_info = []
 
             for mailbox_item in custodian_info:

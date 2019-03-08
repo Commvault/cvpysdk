@@ -38,6 +38,8 @@ Users
 
     all_users()                         --  Returns all the users present in the commcell
 
+    _get_users_on_service_commcell()    -- gets the users from service commcell
+
 User
     __init__()                          --  initiaizes the user class object
 
@@ -105,6 +107,7 @@ class Users(object):
         """
         self._commcell_object = commcell_object
         self._users = self._get_users()
+        self._users_on_service = None
 
     def __str__(self):
         """Representation string consisting of all users of the commcell.
@@ -461,9 +464,53 @@ class Users(object):
             raise SDKException('User', '102', error_message)
         self._users = self._get_users()
 
+    def _get_users_on_service_commcell(self):
+        """gets the userspace from service commcell
+
+        Returns:
+            list  - consisting of all users assciated with service commcell
+
+                    ['user1', 'user2']
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._commcell_object._services['GET_USERSPACE_SERVICE']
+        )
+
+        if flag:
+            if response.json() and 'users' in response.json():
+                users_space_dict = {}
+                for user in response.json()['users']:
+                    users_space_dict[user['userEntity']['userName']] = user
+                return users_space_dict
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response' , '101', response_string)
+
+    @property
+    def service_commcell_users_space(self):
+        """Returns the user space from service commcell
+
+        list - consists of users space from service commcell
+            ['user1','user2']
+        """
+        if self._users_on_service is None:
+            self._users_on_service = self._get_users_on_service_commcell()
+        return self._users_on_service
+
+
     def refresh(self):
         """Refresh the list of Users on this commcell."""
         self._users = self._get_users()
+        self._users_on_service = None
 
     @property
     def all_users(self):
@@ -593,6 +640,7 @@ class User(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+        self.refresh()
 
     def _update_usergroup_request(self, request_type, usergroups_list=None):
         """Updates the usergroups this user is associated to
@@ -669,6 +717,14 @@ class User(object):
     def email(self):
         """Returns the email associated with this commcell user"""
         return self._email
+
+    @email.setter
+    def email(self, value):
+        """""Sets the description for this commcell user"""
+        props_dict = {
+            "email": value
+        }
+        self._update_user_props(props_dict)
 
     @description.setter
     def description(self, value):

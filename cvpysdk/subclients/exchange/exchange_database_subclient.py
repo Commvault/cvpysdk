@@ -23,6 +23,8 @@ ExchangeDatabaseSubclient:
 
     restore_out_of_place                --  runs out of place restore for the subclient
 
+    set_subclient_properties()          -- sets the properties of this sub client
+
 
 Attributes
 ----------
@@ -102,7 +104,7 @@ class ExchangeDatabaseSubclient(Subclient):
             )
 
     def _set_content(self, content):
-        """Sets the subclient content 
+        """Sets the subclient content
 
             Args:
                 content         	(list)      --  list of subclient content
@@ -110,12 +112,12 @@ class ExchangeDatabaseSubclient(Subclient):
         """
         temp = []
         for item in content:
-            temp.append( {
-                    "exchangeDBContent": {
-                        "databaseName": item,
-                        "forceFull": True
-                    }
-                } )
+            temp.append({
+                "exchangeDBContent": {
+                    "databaseName": item,
+                    "forceFull": True
+                }
+            })
 
         self._set_subclient_properties("_content", temp)
 
@@ -147,12 +149,12 @@ class ExchangeDatabaseSubclient(Subclient):
     def restore_in_place(self, paths, client=None):
         """
          Run inplace restore for Exchange database subclient
-        
+
          Args:
              paths      (list)   -- list of path used for inplace restore
 
              client     (object) -- object of client class
-             
+
         Returns:
             object  -   Job class object for restore job
         """
@@ -176,3 +178,14 @@ class ExchangeDatabaseSubclient(Subclient):
         restore_json = self._restore_json(paths=paths, client=client)
 
         return self._process_restore_response(restore_json)
+
+    def set_subclient_properties(self, attr_name, value):
+        """"sets the properties of this sub client.value is updated to instance once when post call
+            succeeds
+
+            Args:
+                attr_name (str)  --  old value of the property. this should be instance variable.
+                value (str)  --  new value of the property. this should be instance variable.
+
+        """
+        self._set_subclient_properties(attr_name, value)

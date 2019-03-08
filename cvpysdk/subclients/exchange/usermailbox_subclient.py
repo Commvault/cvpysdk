@@ -349,11 +349,11 @@ class UsermailboxSubclient(ExchangeSubclient):
                     is_auto_discover_user = str(child['userMailBoxInfo']['isAutoDiscoveredUser'])
 
                     for policy in child['policies']['emailPolicies']:
-                        if policy['detail']['emailPolicy']['emailPolicyType'] == 1:
+                        if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 1:
                             archive_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 2:
+                        elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 2:
                             cleanup_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 3:
+                        elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
                             retention_policy = str(policy['policyEntity']['policyName'])
 
                     temp_dict = {

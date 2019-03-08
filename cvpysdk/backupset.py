@@ -162,6 +162,7 @@ class Backupsets(object):
         from .backupsets.cabackupset import CloudAppsBackupset
         from .backupsets.postgresbackupset import PostgresBackupset
         from .backupsets.adbackupset import ADBackupset
+        from .backupsets.db2backupset import DB2Backupset
 
         self._backupsets_dict = {
             'file system': FSBackupset,
@@ -170,7 +171,8 @@ class Backupsets(object):
             'sap hana': HANABackupset,
             'cloud apps': CloudAppsBackupset,
             'postgresql': PostgresBackupset,
-            "active directory" : ADBackupset
+            "active directory" : ADBackupset,
+            'db2': DB2Backupset
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
@@ -1197,42 +1199,6 @@ class Backupset(object):
                         mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
                     else:
                         mod_time = None
-                        for result in result_set:
-
-                            name = result['displayName']
-                            snap_display_name = result['name']
-                            if 'path' in result:
-                                path = result['path']
-                            else:
-                                path = '\\'.join([options['path'], name])
-
-                            if 'modificationTime' in result:
-                                mod_time = time.localtime(result['modificationTime'])
-                                mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
-                            else:
-                                mod_time = None
-
-                            if 'file' in result['flags']:
-                                if result['flags']['file'] is True:
-                                    file_or_folder = 'File'
-                                else:
-                                    file_or_folder = 'Folder'
-                            else:
-                                file_or_folder = 'Folder'
-
-                            if 'size' in result:
-                                size = result['size']
-                            else:
-                                size = None
-
-                            paths_dict[path] = {
-                                'name': name,
-                                'snap_display_name': snap_display_name,
-                                'size': size,
-                                'modified_time': mod_time,
-                                'type': file_or_folder,
-                                'advanced_data': result['advancedData']
-                            }
 
                     if 'file' in result['flags']:
                         if result['flags']['file'] is True:

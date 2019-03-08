@@ -1509,6 +1509,9 @@ class RetentionPolicy():
         self._name = retention_policy_name
         self._email_policy_type = 3
         self._number_of_days_for_media_pruning = -1
+        self._retention_type = 0
+        self._exchange_folder_retention = 0
+        self._exchange_retention_tags = 0
 
     @property
     def name(self):
@@ -1533,6 +1536,33 @@ class RetentionPolicy():
     def days_for_media_pruning(self, days_for_media_pruning):
         self._number_of_days_for_media_pruning = days_for_media_pruning
 
+    @property
+    def retention_type(self):
+        """Treats the retention_type as a read-only attribute."""
+        return self._retention_type
+
+    @retention_type.setter
+    def retention_type(self, retention_type):
+        self._retention_type = retention_type
+
+    @property
+    def exchange_folder_retention(self):
+        """Treats the exchange_folder_retention as a read-only attribute."""
+        return self._exchange_folder_retention
+
+    @exchange_folder_retention.setter
+    def exchange_folder_retention(self, exchange_folder_retention):
+        self._exchange_folder_retention = exchange_folder_retention
+
+    @property
+    def exchange_retention_tags(self):
+        """Treats the exchange_retention_tags as a read-only attribute."""
+        return self._exchange_retention_tags
+
+    @exchange_retention_tags.setter
+    def exchange_retention_tags(self, exchange_retention_tags):
+        self._exchange_retention_tags = exchange_retention_tags
+
     def _initialize_policy_json(self):
         """
             sets values for creating the add policy json
@@ -1547,7 +1577,12 @@ class RetentionPolicy():
                     "emailPolicy": {
                         "emailPolicyType": 3,
                         "retentionPolicy": {
-                            "numOfDaysForMediaPruning": self.days_for_media_pruning
+                            "numOfDaysForMediaPruning": self.days_for_media_pruning,
+                            "type": self.retention_type,
+                            "advanceRetentionOption": {
+                                "bExchangeFoldersRetention":self.exchange_folder_retention,
+                                "bExchangeRetentionTags":self.exchange_retention_tags
+                            }
                         }
                     }
                 },
