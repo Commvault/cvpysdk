@@ -12,38 +12,18 @@ File for operating on a MYSQL Instance.
 MYSQLInstance is the only class defined in this file.
 
 MYSQLInstance: Derived class from Instance Base class, representing an
-                            MYSQL instance, and to perform operations on that instance
+                MYSQL instance, and to perform operations on that instance
 
 MYSQLInstance:
-
-    port                            -- Setter for MySql Server Port number
-
-    mysql_username                  -- Setter for SAUser username
-
-    nt_username                     -- Setter for NTUsere username
-
-    config_file                     -- Setter for MySql Server config file location
-
-    binary_directory                -- Setter for MySql Server binary directory location
-
-    version                         -- Setter for MySql Server version
-
-    log_data_directory               -- Setter for MySql Server LogData directory location
-
-    log_backup_sp_details           -- Setter for log backup storage policy name and id
-
-    command_line_sp_details         -- Setter for command line storage policy name and id
-
-    autodiscovery_enabled           -- Setter for Enable Auto Discovery Feature
-
-    proxy_options                   -- Setter for proxy options at MySQL Instance level
+==============
 
     _get_instance_properties()      -- method to get the properties of the instance
 
     _restore_json()                 -- returns the apppropriate JSON request to pass for
-                                            Restore In-Place
+    Restore In-Place
 
-    restore_in_place()              -- Gets the restore json and pass the json for restore process
+    restore_in_place()              -- Restores the mysql data/log files specified in the
+    input paths list to the same location
 
     _restore_browse_option_json()   -- setter for  browse option  property in restore
 
@@ -56,6 +36,36 @@ MYSQLInstance:
     _restore_admin_option_json()    -- setter for admin option property in restore
 
     _restore_mysql_option_json()    -- setter for MySQL restore option property in restore
+
+
+MYSQLInstance instance Attributes:
+==================================
+
+    **port**                            -- Returns the MySQL Server Port number
+
+    **mysql_username**                  -- Returns the MySQL Server username
+
+    **nt_username**                     -- Returns the MySQL Server nt username
+
+    **config_file**                     -- Returns the MySQL Server Config File location
+
+    **binary_directory**                -- Returns the MySQL Server Binary File location
+
+    **version**                         -- Returns the MySQL Server version number
+
+    **log_data_directory**              -- Returns the MySQL Server log data directory
+
+    **log_backup_sp_details**           -- Returns the MySQL Server Log backup SP details
+
+    **command_line_sp_details**         -- Returns the MySQL Server commandline SP details
+
+    **autodiscovery_enabled**           -- Returns the MySQL Server auto discovery enabled flag
+
+    **xtrabackup_bin_path**             -- Returns the MySQL Server xtrabackup bin path
+
+    **is_xtrabackup_enabled**           -- Returns the MySQL Server xtrabackup enabled flag
+
+    **proxy_options**                   -- Returns the MySQL Server proxy options
 
 
 """
@@ -79,10 +89,12 @@ class MYSQLInstance(Instance):
                 instance_name   (str)     --  name of the instance
 
                 instance_id     (str)     --  id of the instance
+
                     default: None
 
             Returns:
                 object - instance of the MYSQLInstance class
+
         """
         self._browse_restore_json = None
         self._commonoption_restore_json = None
@@ -95,58 +107,86 @@ class MYSQLInstance(Instance):
 
     @property
     def port(self):
-        """Get the MySQL Server Port number from the Instance Properties.
+        """Returns the MySQL Server Port number.
+
+        Returns:
+            (str)   --  MySql server port number
+
         """
-        return self._properties['mySqlInstance']['port']
+        return self._properties.get('mySqlInstance', {}).get('port', None)
 
     @property
     def mysql_username(self):
-        """Get the MySQL Server Port number from the Instance Properties.
+        """Returns the MySQL Server username.
+
+        Returns:
+            (str)   --  MySql server SA username
+
         """
-        return self._properties['mySqlInstance']['SAUser']['userName']
+        return self._properties.get('mySqlInstance', {}).get('SAUser', {}).get('userName', None)
 
     @property
     def nt_username(self):
-        """Get the MySQL Server Port number from the Instance Properties.
+        """Returns the MySQL Server nt username.
+
+        Returns:
+            (str)   --  MySql server NT username
+
         """
-        return self._properties['mySqlInstance']['NTUser']['userName']
+        return self._properties.get('mySqlInstance', {}).get('NTUser', {}).get('userName', None)
 
     @property
     def config_file(self):
-        """Get the MySQL Server Config File location from the Instance Properties.
+        """Returns the MySQL Server Config File location.
+
+        Returns:
+            (str)   --  MySql server config file location
+
         """
-        return self._properties['mySqlInstance']['ConfigFile']
+        return self._properties.get('mySqlInstance', {}).get('ConfigFile', None)
 
     @property
     def binary_directory(self):
-        """Get the MySQL Server Binary File location from the Instance Properties.
+        """Returns the MySQL Server Binary File location.
+
+        Returns:
+            (str)   --  MySql server binary directory
 
         """
-        return self._properties['mySqlInstance']['BinaryDirectory']
+        return self._properties.get('mySqlInstance', {}).get('BinaryDirectory', None)
 
     @property
     def version(self):
-        """Get the MySQL Server version number from the Instance Properties.
+        """Returns the MySQL Server version number.
+
+        Returns:
+            (str)   --  MySql server version
 
         """
-        return self._properties['mySqlInstance']['version']
+        return self._properties.get('mySqlInstance', {}).get('version', None)
 
     @property
     def log_data_directory(self):
-        """Get the MySQL Server version number from the Instance Properties.
+        """Returns the MySQL Server log data directory.
+
+        Returns:
+            (str)   --  MySql server log directory path
 
         """
-        return self._properties['mySqlInstance']['LogDataDirectory']
+        return self._properties.get('mySqlInstance', {}).get('LogDataDirectory', None)
 
     @property
     def log_backup_sp_details(self):
-        """Get the MySQL Server version number from the Instance Properties.
+        """Returns the MySQL Server Log backup SP details
+
+        Returns:
+            (dict)  --  MySql server log backup storage policy information
 
         """
-        log_storage_policy_name = self._properties[
-            'mySqlInstance']['logStoragePolicy']['storagePolicyName']
-        log_storage_policy_id = self._properties['mySqlInstance']['logStoragePolicy'][
-            'storagePolicyId']
+        log_storage_policy_name = self._properties.get('mySqlInstance', {}).get(
+            'logStoragePolicy', {}).get('storagePolicyName', None)
+        log_storage_policy_id = self._properties.get('mySqlInstance', {}).get(
+            'logStoragePolicy', {}).get('storagePolicyId', None)
 
         log_sp = {"storagePolicyName": log_storage_policy_name,
                   "storagePolicyId": log_storage_policy_id}
@@ -154,13 +194,18 @@ class MYSQLInstance(Instance):
 
     @property
     def command_line_sp_details(self):
-        """Get the MySQL Server version number from the Instance Properties.
+        """Returns the MySQL Server commandline SP details.
+
+        Returns:
+            (dict)  --  MySql server commnadline storage policy information
 
         """
-        cmd_storage_policy_name = self._properties['mySqlInstance'][
-            'mysqlStorageDevice']['commandLineStoragePolicy']['storagePolicyName']
-        cmd_storage_policy_id = self._properties['mySqlInstance'][
-            'mysqlStorageDevice']['commandLineStoragePolicy']['storagePolicyId']
+        cmd_storage_policy_name = self._properties.get('mySqlInstance', {}).get(
+            'mysqlStorageDevice', {}).get('commandLineStoragePolicy', {}).get(
+                'storagePolicyName', None)
+        cmd_storage_policy_id = self._properties.get('mySqlInstance', {}).get(
+            'mysqlStorageDevice', {}).get('commandLineStoragePolicy', {}).get(
+                'storagePolicyId', None)
 
         command_sp = {"storagePolicyName": cmd_storage_policy_name,
                       "storagePolicyId": cmd_storage_policy_id}
@@ -168,26 +213,57 @@ class MYSQLInstance(Instance):
 
     @property
     def autodiscovery_enabled(self):
-        """Get the MySQL Server version number from the Instance Properties.
+        """Returns the MySQL Server auto discovery enabled flag
+
+        Returns:
+            (bool)  --  True if auto discovery enabled
+                        False if auto discovery not enabled
 
         """
-        return self._properties['mySqlInstance']['EnableAutoDiscovery']
+        return self._properties.get('mySqlInstance', {}).get('EnableAutoDiscovery', False)
+
+    @property
+    def xtrabackup_bin_path(self):
+        """Returns the MySQL Server xtrabackup bin path
+
+        Returns:
+            (str)   --  MySql server xtrabackup binary path
+
+        """
+        return self._properties.get(
+            'mySqlInstance', {}).get(
+                'xtraBackupSettings', {}).get('xtraBackupBinPath', "")
+
+    @property
+    def is_xtrabackup_enabled(self):
+        """Returns the MySQL Server xtrabackup enabled flag
+
+        Returns:
+            (bool)  --  True if xtrabackup is enabled
+                        False if xtrabackup is not enabled
+
+        """
+        return self._properties.get(
+            'mySqlInstance', {}).get(
+                'xtraBackupSettings', {}).get('enableXtraBackup', False)
 
     @property
     def proxy_options(self):
-        """Get the MySQL Server version number from the Instance Properties.
+        """Returns the MySQL Server proxy options
+
+        Returns:
+            (dict)  --  MySql server proxy information
 
         """
-        is_use_ssl = self._properties['mySqlInstance']['proxySettings']['isUseSSL']
-        is_proxy_enabled = self._properties['mySqlInstance']['proxySettings']['isProxyEnabled']
-        run_backup_on_proxy = self._properties['mySqlInstance']['proxySettings']['runBackupOnProxy']
-        proxy_instance_id = self._properties['mySqlInstance']['proxySettings']['proxyInstance'][
-            'instanceId']
+        proxy_settings = self._properties.get('mySqlInstance', {}).get('proxySettings', {})
         proxy_opt = {
-            "isUseSSL": is_use_ssl,
-            "isProxyEnabled": is_proxy_enabled,
-            "runBackupOnProxy": run_backup_on_proxy,
-            "instanceId": proxy_instance_id}
+            "isUseSSL": proxy_settings.get('isUseSSL', False),
+            "isProxyEnabled": proxy_settings.get('isProxyEnabled', False),
+            "runBackupOnProxy": proxy_settings.get('runBackupOnProxy', False),
+            "instanceId": proxy_settings.get('proxyInstance', {}).get('instanceId', None),
+            "instanceName": proxy_settings.get('proxyInstance', {}).get('instanceName', None),
+            "clientId": proxy_settings.get('proxyInstance', {}).get('clientId', None),
+            "clientName": proxy_settings.get('proxyInstance', {}).get('clientName', None)}
         return proxy_opt
 
     def _get_instance_properties(self):
@@ -198,6 +274,7 @@ class MYSQLInstance(Instance):
                     if response is empty
 
                     if response is not success
+
         """
         super(MYSQLInstance, self)._get_instance_properties()
         self._instance = {
@@ -219,6 +296,7 @@ class MYSQLInstance(Instance):
 
             Returns:
                 dict - JSON request to pass to the API
+
         """
         rest_json = super(MYSQLInstance, self)._restore_json(**kwargs)
         restore_option = {}
@@ -238,43 +316,64 @@ class MYSQLInstance(Instance):
 
         self._restore_admin_option_json(restore_option)
         self._restore_mysql_option_json(restore_option)
-        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["mySqlRstOption"] = self.mysql_restore_json
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "mySqlRstOption"] = self.mysql_restore_json
         rest_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"] = self.admin_option_json
         return rest_json
 
     def restore_in_place(
             self,
-            path,
-            staging,
-            dest_client_name,
-            dest_instance_name,
-            data_restore,
-            log_restore,
+            path=None,
+            staging=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            data_restore=True,
+            log_restore=False,
             overwrite=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None):
+            to_time=None,
+            media_agent=None,
+            table_level_restore=False,
+            clone_env=False,
+            clone_options=None,
+            redirect_enabled=False,
+            redirect_path=None):
         """Restores the mysql data/log files specified in the input paths list to the same location.
 
             Args:
                 path                    (list)  --  list of database/databases to be restored
 
+                    default: None
+
                 staging                 (str)   --  staging location for mysql logs during restores
 
+                    default: None
+
                 dest_client_name        (str)   --  destination client name where files are to be
-                                                        restored
+                restored
+
+                    default: None
 
                 dest_instance_name      (str)   --  destination mysql instance name of destination
-                                                        client
+                client
+
+                    default: None
 
                 data_restore            (bool)  --  for data only/data+log restore
 
+                    default: True
+
                 log_restore             (bool)  --  for log only/data+log restore
 
+                    default: False
+
                 overwrite               (bool)  --  unconditional overwrite files during restore
+
                     default: True
 
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
+
                     default: None
 
                 from_time               (str)   --  time to retore the contents after
@@ -284,6 +383,45 @@ class MYSQLInstance(Instance):
 
                 to_time                 (str)   --  time to retore the contents before
                         format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                media_agent             (str)   --  media agent associated
+
+                    default: None
+
+                table_level_restore     (bool)  --  Table level restore flag
+
+                    default: False
+
+                clone_env               (bool)  --  boolean to specify whether the database
+                should be cloned or not
+
+                    default: False
+
+                clone_options           (dict)  --  clone restore options passed in a dict
+
+                    default: None
+
+                    Accepted format: {
+                                        "stagingLocaion": "/gk_snap",
+                                        "forceCleanup": True,
+                                        "port": "5595",
+                                        "libDirectory": "",
+                                        "isInstanceSelected": True,
+                                        "reservationPeriodS": 3600,
+                                        "user": "",
+                                        "binaryDirectory": "/usr/bin"
+
+                                     }
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
 
                     default: None
 
@@ -299,13 +437,20 @@ class MYSQLInstance(Instance):
                     if response is empty
 
                     if response is not success
+
         """
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         if path == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException('Instance', '104')
+
+        if dest_client_name is None:
+            dest_client_name = self._agent_object._client_object.client_name
+
+        if dest_instance_name is None:
+            dest_instance_name = self.instance_name
 
         request_json = self._restore_json(
             paths=path,
@@ -317,7 +462,13 @@ class MYSQLInstance(Instance):
             overwrite=overwrite,
             copy_precedence=copy_precedence,
             from_time=from_time,
-            to_time=to_time)
+            to_time=to_time,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path)
 
         return self._process_restore_response(request_json)
 
@@ -325,33 +476,18 @@ class MYSQLInstance(Instance):
         """setter for the Browse options for restore in Json"""
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
-
-        self._browse_restore_json = {
-            "listMedia": False,
-            "useExactIndex": False,
-            "noImage": False,
-            "commCellId": 2,
-            "mediaOption": {
-                "mediaAgent": {},
-                "library": {},
-                "copyPrecedence": {
-                    "copyPrecedenceApplicable": False
-                },
-                "drivePool": {}
-            },
-            "backupset": {
-                "clientName": self._agent_object._client_object.client_name,
-                "backupsetName": "defaultDummyBackupSet"
-            },
-            "timeRange": {}
+            raise SDKException('Instance', '101')
+        super(MYSQLInstance, self)._restore_browse_option_json(value)
+        self._browse_restore_json['backupset'] = {
+            "clientName": self._agent_object._client_object.client_name,
+            "backupsetName": "defaultDummyBackupSet"
         }
 
     def _restore_common_options_json(self, value):
         """setter for the Common options in restore JSON"""
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         self._commonoption_restore_json = {
             "restoreToDisk": False,
@@ -364,7 +500,7 @@ class MYSQLInstance(Instance):
         """setter for the MySQL Destination options in restore JSON"""
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         self._destination_restore_json = {
             "destinationInstance": {
@@ -381,7 +517,7 @@ class MYSQLInstance(Instance):
         """setter for the fileoption restore option in restore JSON"""
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         self._fileoption_restore_json = {
             "sourceItem": value.get("paths", [])
@@ -391,7 +527,7 @@ class MYSQLInstance(Instance):
         """setter for the admin restore option in restore JSON"""
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         self.admin_option_json = {
             "contentIndexingOption": {
@@ -403,7 +539,7 @@ class MYSQLInstance(Instance):
         """setter for the mysql restore option in restore JSON"""
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         self.mysql_restore_json = {
             "destinationFolder": "",
@@ -413,13 +549,23 @@ class MYSQLInstance(Instance):
             "temporaryStagingLocation": value.get("staging", ""),
             "dataStagingLocation": "",
             "logRestoreType": 0,
-            "tableLevelRestore": False,
+            "tableLevelRestore": value.get("table_level_restore", False),
             "pointofTime": False,
             "instanceRestore": True,
-            "isCloneRestore": False,
+            "isCloneRestore": value.get("clone_env", False),
             "fromTime": value.get("from_time", {}),
             "refTime": value.get("to_time", {}),
             "destinationServer": {
                 "name": ""
             }
         }
+        if value.get("table_level_restore"):
+            self.mysql_restore_json['dropTable'] = True
+            self.mysql_restore_json['instanceRestore'] = False
+
+        if value.get("clone_env", False):
+            self.mysql_restore_json["cloneOptions"] = value.get("clone_options", "")
+
+        if value.get("redirect_path"):
+            self.mysql_restore_json["redirectEnabled"] = True
+            self.mysql_restore_json["redirectItems"] = [value.get("redirect_path")]

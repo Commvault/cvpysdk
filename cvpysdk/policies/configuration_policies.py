@@ -1510,8 +1510,8 @@ class RetentionPolicy():
         self._email_policy_type = 3
         self._number_of_days_for_media_pruning = -1
         self._retention_type = 0
-        self._exchange_folder_retention = 0
-        self._exchange_retention_tags = 0
+        self._exchange_folder_retention = False
+        self._exchange_retention_tags = False
 
     @property
     def name(self):
@@ -1580,8 +1580,8 @@ class RetentionPolicy():
                             "numOfDaysForMediaPruning": self.days_for_media_pruning,
                             "type": self.retention_type,
                             "advanceRetentionOption": {
-                                "bExchangeFoldersRetention":self.exchange_folder_retention,
-                                "bExchangeRetentionTags":self.exchange_retention_tags
+                                "bExchangeFoldersRetention": self.exchange_folder_retention,
+                                "bExchangeRetentionTags": self.exchange_retention_tags
                             }
                         }
                     }

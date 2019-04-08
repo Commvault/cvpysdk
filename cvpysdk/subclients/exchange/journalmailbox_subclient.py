@@ -138,6 +138,45 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         return users
 
+    def _set_association_request(self, associations_json):
+        """Runs the emailAssociation as API to set association
+
+            Args:
+                associations_json    (dict)  -- request json sent as payload
+
+            Returns:
+                (str, str):
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
+        )
+
+        if flag:
+            try:
+                if response.json():
+                    if response.json()['resp']['errorCode'] != 0:
+                        error_message = response.json()['errorMessage']
+                        output_string = 'Failed to create assocaition\nError: "{0}"'
+                        raise SDKException(
+                            'Subclient', '102', output_string.format(error_message)
+                        )
+                    else:
+                        self.refresh()
+            except ValueError:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def discover_journal_users(self):
         """"Returns the list of discovered journal users for the JournalMailbox subclient."""
@@ -267,26 +306,82 @@ class JournalMailboxSubclient(ExchangeSubclient):
             }
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
-        )
+        self._set_association_request(associations_json)
 
-        if flag:
-            try:
-                if response.json():
-                    if response.json()['resp']['errorCode'] != 0:
-                        error_message = response.json()['errorMessage']
-                        output_string = 'Failed to create user assocaition\nError: "{0}"'
-                        raise SDKException(
-                            'Exchange Mailbox', '102', output_string.format(error_message)
-                        )
-                    else:
-                        self.refresh()
-            except ValueError:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+    def set_pst_assocaition(self, subclient_content):
+        """Create PST assocaition for JournalMailboxSubclient.
+
+            Args:
+                subclient_content   (dict)  --  dict of the pst to add to the subclient
+
+                    subclient_content = {
+
+                            'pstTaskName' : "Task Name for PST",
+
+                            'folders' : ['list of folders'],
+
+                            'pstOwnerManagement' : {
+
+                                'defaultOwner': "default owner if no owner is determined",
+
+                                'pstDestFolder': "ingest psts under this folder",
+
+                                'usePSTNameToCreateChild': Boolean
+                            }
+                        }
+
+        """
+        if not isinstance(subclient_content, dict):
+            raise SDKException('Subclient', '101')
+
+        try:
+
+            if 'createPstDestFolder' not in subclient_content['pstOwnerManagement']:
+                subclient_content['pstOwnerManagement']['createPstDestFolder'] = True
+            if 'pstDestFolder' not in subclient_content['pstOwnerManagement']:
+                subclient_content['pstOwnerManagement']['pstDestFolder'] = (f'Archived From '
+                                                                            f'Automation')
+
+            pst_dict = {
+                'pstTaskName': subclient_content['pstTaskName'],
+                'taskType': 1,
+                'folders': subclient_content['folders'],
+                'pstOwnerManagement': {
+                    'adProperty': "",
+                    'startingFolderPath': "",
+                    'pstStubsAction': 1,
+                    'managePSTStubs': False,
+                    'mergeintoMailBox': True,
+                    'pstOwnerBasedOnACL': True,
+                    'pstOwnerBasedOnLaptop': False,
+                    'usePSTNameToCreateChildForNoOwner': True,
+                    'createPstDestFolder':
+                        subclient_content["pstOwnerManagement"]["createPstDestFolder"],
+                    'orphanFolder': subclient_content['pstOwnerManagement']['defaultOwner'],
+                    'pstDestFolder': subclient_content['pstOwnerManagement']['pstDestFolder'],
+                    'usePSTNameToCreateChild':
+                        subclient_content['pstOwnerManagement']['usePSTNameToCreateChild'],
+                }
+            }
+
+            subclient_entity = {"_type_": 7, "subclientId": int(self._subclient_id)}
+            discover_info = {
+                'discoverByType': 9,
+                'pstIngestion': pst_dict
+            }
+            _assocaition_json_ = {
+                "emailAssociation":
+                    {
+                        "emailDiscoverinfo": discover_info,
+                        "subclientEntity": subclient_entity
+                    }
+            }
+
+            self._set_association_request(_associations_json)
+        except KeyError as err:
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+        except Exception as excp:
+            raise excp
 
     def refresh(self):
         """Refresh the Journal Mailbox Subclient."""

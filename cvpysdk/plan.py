@@ -630,8 +630,7 @@ class Plan(object):
         self._client_group = None
         self._override_entities = None
         self._parent_plan_id = None
-        # self._security_associations = {}
-
+        self._addons = []
         self.refresh()
 
     def __repr__(self):
@@ -682,14 +681,11 @@ class Plan(object):
                 if 'subtype' in self._plan_properties['summary']:
                     self._subtype = self._plan_properties['summary']['subtype']
 
-                if self._subtype == 33554437 and len(self._plan_properties['storage']['copy']) > 1:
-                    copy_index = 1
-                else:
-                    copy_index = 0
-
-                if 'useGlobalPolicy' in self._plan_properties['storage']['copy'][copy_index]:
-                    self._storage_pool = self._plan_properties['storage']['copy'][
-                        copy_index]['useGlobalPolicy']
+                if 'copy' in self._plan_properties['storage']:
+                    for copy in self._plan_properties['storage']['copy']:
+                        if 'useGlobalPolicy' in copy:
+                            self._storage_pool = copy['useGlobalPolicy']
+                            break
 
                 if self._subtype == 33554439:
                     if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
@@ -1137,6 +1133,15 @@ class Plan(object):
     def schedule_policies(self):
         """Treats the plan schedule policies as read-only attribute"""
         return self._child_policies['schedulePolicy']
+
+    @property
+    def addons(self):
+        """Treats the plan addons as read-only attribute"""
+        for addon in self._plan_properties.get('summary', {}).get('addons', []):
+            self._addons.append(
+                addon
+            )
+        return self._addons
 
     @property
     def subclient_policy(self):

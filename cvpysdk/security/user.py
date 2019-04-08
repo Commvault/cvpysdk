@@ -10,7 +10,7 @@
 
 Users and User are only the two classes defined in this commcell
 
-Users
+Users:
     __init__()                          --  initializes the users class object
 
     __str__()                           --  returns all the users associated with the
@@ -83,6 +83,12 @@ User
 
     user_security_associations()        --  returns sorted roles and custom roles present on the
                                             different entities.
+
+    status()                            --  returns the status of user
+
+    update_user_password()              --  Updates new passwords of user
+
+
 
 """
 
@@ -778,6 +784,27 @@ class User(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def update_user_password(self, new_password, logged_in_user_password):
+        """updates new passwords of user
+
+            Args:
+                new_password            (str)   --  new password for user
+
+                logged_in_user_password (str)   --  password of logged-in user(User who is changing
+                                                    the password) for validation.
+        """
+        password = b64encode(new_password.encode()).decode()
+        validation_password = b64encode(logged_in_user_password.encode()).decode()
+        props_dict = {
+            "password": password,
+            "validationParameters":{
+                "password": validation_password,
+                "passwordOperationType": 2
+            }
+        }
+        self._update_user_props(props_dict)
+
 
     def add_usergroups(self, usergroups_list):
         """UPDATE the specified usergroups to this commcell user

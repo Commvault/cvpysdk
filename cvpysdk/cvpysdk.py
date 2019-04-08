@@ -252,7 +252,7 @@ class CVPySDK(object):
 
         """
         if self._certificate_path and self._commcell_object._web_service.startswith('https'):
-            return requests.request(**kwargs, verify=self._certificate_path)
+            return requests.request(verify=self._certificate_path, **kwargs)
 
         return requests.request(**kwargs)
 

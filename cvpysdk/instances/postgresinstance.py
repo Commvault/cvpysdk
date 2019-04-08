@@ -210,16 +210,20 @@ class PostgreSQLInstance(Instance):
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
 
-        self._destination_restore_json = {
-            "destinationInstance": {
-                "clientName": value.get("dest_client_name", ""),
-                "instanceName": value.get("dest_instance_name", ""),
-                "appName": self._agent_object.agent_name
-            },
-            "destClient": {
-                "clientName": value.get("dest_client_name", "")
+        if value.get("restore_to_disk"):
+            return super(PostgreSQLInstance, self)._restore_destination_json(value)
+
+        else:
+            self._destination_restore_json = {
+                "destinationInstance": {
+                    "clientName": value.get("dest_client_name", ""),
+                    "instanceName": value.get("dest_instance_name", ""),
+                    "appName": self._agent_object.agent_name
+                },
+                "destClient": {
+                    "clientName": value.get("dest_client_name", "")
+                }
             }
-        }
 
     def _restore_postgres_option_json(self, value):
         """setter for the restore option in restore JSON
@@ -264,6 +268,9 @@ class PostgreSQLInstance(Instance):
             self.postgres_restore_json["redirectEnabled"] = True
             self.postgres_restore_json["redirectItems"] = [value.get("redirect_path")]
 
+        if value.get("restore_to_disk"):
+            self.postgres_restore_json["fsBackupSetRestore"] = False
+
     def restore_in_place(
             self,
             path,
@@ -283,7 +290,10 @@ class PostgreSQLInstance(Instance):
             no_of_streams=None,
             volume_level_restore=False,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            restore_to_disk=False,
+            restore_to_disk_job=None,
+            destination_path=None):
         """Restores the postgres data/log files specified in the input paths
         list to the same location.
 
@@ -369,6 +379,18 @@ class PostgreSQLInstance(Instance):
 
                     default: None
 
+                restore_to_disk         (bool)  --  restore to disk flag
+
+                    default: False
+
+                restore_to_disk_job     (int)   --  backup job id to restore to disk
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -393,6 +415,10 @@ class PostgreSQLInstance(Instance):
         if not no_of_streams:
             no_of_streams = 1
 
+        index_free_restore = False
+        if restore_to_disk:
+            index_free_restore = True
+
         request_json = self._restore_json(
             paths=path,
             dest_client_name=dest_client_name,
@@ -411,10 +437,23 @@ class PostgreSQLInstance(Instance):
             no_of_streams=no_of_streams,
             volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)
+            redirect_path=redirect_path,
+            restore_to_disk=restore_to_disk,
+            index_free_restore=index_free_restore,
+            destination_path=destination_path)
 
         if volume_level_restore:
             request_json['taskInfo']['subTasks'][0]['options'][
                 'restoreOptions']['destination']["noOfStreams"] = no_of_streams
+
+        if restore_to_disk:
+            #### add jobIds and change operationType in subtask
+            request_json['taskInfo']['subTasks'][0]['subTask']['operationType'] = 1005
+            if not isinstance(restore_to_disk_job, list):
+                raise SDKException('Instance', '101')
+            if restore_to_disk_job is None:
+                raise Exception("Job ID needs to be passed for restore to disk operation.")
+            request_json['taskInfo'][
+                'subTasks'][0]['options']['restoreOptions']['jobIds'] = restore_to_disk_job
 
         return self._process_restore_response(request_json)

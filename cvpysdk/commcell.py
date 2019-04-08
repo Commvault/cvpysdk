@@ -159,6 +159,9 @@ Commcell instance Attributes
     **roles**                   --  returns the instance of the `Roles` class,
     to interact with the roles added to the Commcell
 
+    **credentials**             --  returns the instance of the `Credentials` class,
+    to interact with the credentials records added to the Commcell
+
     **download_center**         --  returns the instance of the `DownloadCenter` class,
     to interact with the download center repositories deployed on the Commcell WebConsole
 
@@ -230,6 +233,7 @@ from .plan import Plans
 from .job import JobController
 from .security.user import Users
 from .security.role import Roles
+from .credential_manager import Credentials
 from .download_center import DownloadCenter
 from .organization import Organizations
 from .storage_pool import StoragePools
@@ -423,6 +427,7 @@ class Commcell(object):
         self._job_controller = None
         self._users = None
         self._roles = None
+        self._credentials = None
         self._download_center = None
         self._organizations = None
         self._storage_pools = None
@@ -496,6 +501,7 @@ class Commcell(object):
         del self._policies
         del self._domains
         del self._roles
+        del self._credentials
         del self._client_groups
         del self._global_filters
         del self._datacube
@@ -909,6 +915,17 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def credentials(self):
+        """Returns the instance of the Credentials class."""
+        try:
+            if self._credentials is None:
+                self._credentials = Credentials(self)
+
+            return self._credentials
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def download_center(self):
         """Returns the instance of the DownloadCenter class."""
         try:
@@ -1198,6 +1215,7 @@ class Commcell(object):
         self._job_controller = None
         self._users = None
         self._roles = None
+        self._credentials = None
         self._download_center = None
         self._organizations = None
         self._policies = None

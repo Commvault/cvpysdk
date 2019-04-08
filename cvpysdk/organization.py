@@ -55,6 +55,8 @@ Organizations
 
     delete()                    --  deletes an organization from the commcell
 
+    dissociate_plans()          -- disassociates plans from the organization
+
     refresh()                   --  refresh the list of organizations associated with the commcell
 
 Organizations Attributes
@@ -553,6 +555,8 @@ class Organization:
         self._plans = {}
         self._organization_info = None
         self._operator_role = None
+        self._plan_details = None
+        self._server_count = None
         self.refresh()
 
     def __repr__(self):
@@ -617,6 +621,12 @@ class Organization:
 
                 self._operator_role = organization_properties['operatorRole']['roleName']
 
+                if self._organization_info.get('planDetails', []):
+                    self._plan_details = self._organization_info['planDetails']
+
+                self._server_count = organization_properties['serverCount']
+
+
                 return self._organization_info
             else:
                 raise SDKException('Response', '102')
@@ -624,11 +634,11 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _update_properties(self):
+    def _update_properties(self, update_plan_details=False):
         """Executes the request on the server to update the properties of the organization.
 
             Args:
-                None
+                update_plan_details -- to update the plan details associated with company
 
             Returns:
                 None
@@ -648,7 +658,9 @@ class Organization:
             }
         }
 
-        if self._properties.get('planDetails'):
+        if update_plan_details:
+            request_json['organizationInfo']['planDetailsOperationType'] = self._properties.get(
+                'planDetailsOperationType')
             request_json['organizationInfo']['planDetails'] = self._properties.get('planDetails')
 
         __, response = self._cvpysdk_object.make_request(
@@ -766,6 +778,7 @@ class Organization:
                 'subtype': temp_plan.subtype
             }]
 
+
             self._update_properties_json({'defaultPlans': temp})
             self._update_properties()
 
@@ -774,9 +787,74 @@ class Organization:
         """Returns the Plans associated to this Organization."""
         return list(self._plans.keys())
 
+    @property
+    def plan_details(self):
+        """Returns the jobstarttime of a plan associated with a company"""
+        return self._plan_details
+
+    @property
+    def server_count(self):
+        """Returns the server count associated with a company"""
+        return self._server_count
+
     @plans.setter
     def plans(self, value):
-        """Update the list of plans associated with the Organization."""
+        """Update the list of plans associated with the Organization.
+
+            Args:
+                value            (list)   --  list of plans
+
+            Returns:
+                None
+
+        """
+        if not isinstance(value, list):
+            raise SDKException('Organization', '101')
+
+        plans_list = []
+        temp = {}
+
+        for plan in value:
+            plan_dict = {}
+            if isinstance(plan, dict):
+                plan_dict = plan
+                plan = plan['plan_name']
+            if not self._commcell_object.plans.has_plan(plan):
+                raise SDKException(
+                    'Organization', '102', 'Plan: "{0}" does not exist on Commcell'.format(plan)
+                )
+
+            temp_plan = self._commcell_object.plans.get(plan)
+            temp = {
+                'plan': {
+                    'planId': int(temp_plan.plan_id)
+                }
+            }
+
+            if plan_dict.get('job_start_time'):
+
+                temp['jobStartTime'] = plan_dict['job_start_time']
+                temp['isStartTimeOverridden'] = True
+
+            plans_list.append(temp)
+
+            del temp
+            del temp_plan
+
+        self._properties['planDetails'] = plans_list
+        self._properties['planDetailsOperationType'] = 1
+        self._update_properties(update_plan_details=True)
+
+    def dissociate_plans(self, value):
+        """disassociates plans from the organization
+
+            Args:
+                value            (list)   --  list of plans
+
+            Returns:
+                None
+        """
+
         if not isinstance(value, list):
             raise SDKException('Organization', '101')
 
@@ -800,7 +878,8 @@ class Organization:
                 del temp_plan
 
         self._properties['planDetails'] = plans_list
-        self._update_properties()
+        self._properties['planDetailsOperationType'] = 3
+        self._update_properties(update_plan_details=True)
 
     def refresh(self):
         """Refresh the properties of the Organization."""
@@ -867,6 +946,7 @@ class Organization:
                     if failed to disable auth code generation
 
                     if response is empty
+
 
                     if response is not success
 

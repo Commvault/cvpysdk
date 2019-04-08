@@ -163,6 +163,7 @@ class Backupsets(object):
         from .backupsets.postgresbackupset import PostgresBackupset
         from .backupsets.adbackupset import ADBackupset
         from .backupsets.db2backupset import DB2Backupset
+        from .backupsets.vsbackupset import VSBackupset
 
         self._backupsets_dict = {
             'file system': FSBackupset,
@@ -172,7 +173,8 @@ class Backupsets(object):
             'cloud apps': CloudAppsBackupset,
             'postgresql': PostgresBackupset,
             "active directory" : ADBackupset,
-            'db2': DB2Backupset
+            'db2': DB2Backupset,
+            'virtual server' : VSBackupset
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
@@ -365,6 +367,8 @@ class Backupsets(object):
                     storage_policy  (str)   --  name of the storage policy to associate to the
                     backupset
 
+                    plan_name       (str)   -- name of the plan to associate to the backupset
+
 
             Returns:
                 object - instance of the Backupset class, if created successfully
@@ -428,6 +432,12 @@ request_json['backupSetInfo'].update({
         }
 
         exec(agent_settings.get(self._agent_object.agent_name, ''))
+
+        if kwargs.get('plan_name'):
+            plan_entity_dict = {
+                "planName": kwargs.get('plan_name')
+            }
+            request_json['backupSetInfo']['planEntity'] = plan_entity_dict
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['ADD_BACKUPSET'], request_json

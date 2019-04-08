@@ -719,6 +719,7 @@ class Job(object):
             raise SDKException('Job', '103')
 
         self._JOB_DETAILS = self._services['JOB_DETAILS']
+        self.ADVANCED_JOB_DETAILS = AdvancedJobDetailType
         self._SUSPEND = self._services['SUSPEND_JOB'] % (self.job_id)
         self._RESUME = self._services['RESUME_JOB'] % (self.job_id)
         self._KILL = self._services['KILL_JOB'] % (self.job_id)

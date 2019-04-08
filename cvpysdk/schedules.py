@@ -36,6 +36,8 @@ SchedulePattern:
 
     _automatic(pattern_dict)                        -- sets the automatic schedule pattern
 
+    _after_job_completes(pattern_dict)              -- sets the after job completes schedule pattern
+
     create_schedule_pattern(pattern_dict)           -- creates a schedule pattern for the user
                     given pattern
 
@@ -144,7 +146,7 @@ class OperationType:
     DATA_AGING = 'DATA_AGING'
 
 
-class SchedulePattern(object):
+class SchedulePattern:
     """Class for getting the schedule pattern"""
 
     _days_to_run = {
@@ -204,9 +206,9 @@ class SchedulePattern(object):
                 date_time = datetime.strptime(_time, time_format)
                 return int(
                     (date_time - datetime.utcfromtimestamp(0)).total_seconds())
-            else:
-                utc_time = datetime.utcfromtimestamp(_time)
-                return utc_time.strftime(time_format)
+
+            utc_time = datetime.utcfromtimestamp(_time)
+            return utc_time.strftime(time_format)
 
         except ValueError:
             raise SDKException(
@@ -477,9 +479,9 @@ class SchedulePattern(object):
             pattern_dict['freq_type'] = 32
             self._pattern_json(pattern_dict)
 
-        except ValueError as ve:
+        except ValueError as v_error:
             raise SDKException('Schedules', '102',
-                               str(ve))
+                               str(v_error))
 
     def _yearly(self, pattern_dict):
         """
@@ -711,6 +713,26 @@ class SchedulePattern(object):
 
         self._pattern = automatic_pattern
 
+    def _after_job_completes(self, pattern_dict):
+        """
+        sets the pattern type as after job completes with the parameters provided,
+        send only required keys to change only those values
+
+        Args:
+            pattern_dict        (dict) -- Dictionary with the schedule pattern
+                {
+                        "active_start_date": date_in_%m/%d/%y (str),
+                        "active_start_time": time_in_%H/%S (str),
+                        "repeat_days": days_to_repeat (int)
+                }
+
+        """
+        pattern_dict['freq_type'] = 'After_Job_Completes'
+
+        pattern_dict['freq_recurrence_factor'] = pattern_dict.get('repeat_days', 4096)
+
+        self._pattern_json(pattern_dict)
+
     @staticmethod
     def exception_dates(day_list):
         """
@@ -757,7 +779,7 @@ class SchedulePattern(object):
             raise SDKException('Schedules', '102',
                                "freq_type specified is wrong")
 
-    def create_schedule(self, task_req, pattern_dict):
+    def create_schedule(self, task_req, pattern_dict, schedule_id=None):
         """
         returns a schedule task_req after including pattern
         Args:
@@ -843,6 +865,13 @@ class SchedulePattern(object):
                                          cpu_utilization_above : (int)%
                         }
 
+        for after_job_completes :   {
+                                        "freq_type": 'after_job_completes',
+                                        "active_start_date": date_in_%m/%d/%y (str),
+                                        "active_start_time": time_in_%H/%S (str),
+                                        "repeat_days": days_to_repeat (int)
+                                    }
+
         Sample Usage inside the individual operation function:
         Add a schedule_pattern parameter to the function and include the below line before making
         the sdk make_request call
@@ -864,10 +893,15 @@ class SchedulePattern(object):
             _pattern = self.create_schedule_pattern(pattern_dict)
 
         _task_info = task_req["taskInfo"]
-        _task_info["task"]["taskType"] = 2
+        if _task_info.get("task"):
+            _task_info["task"]["taskType"] = 2
         for subtask in _task_info['subTasks']:
-            subtask["subTask"]['subTaskName'] = pattern_dict.get(
-                'schedule_name', '')
+            if schedule_id:
+                if subtask["subTask"]['subTaskId'] != schedule_id:
+                    continue
+            else:
+                subtask["subTask"]['subTaskName'] = pattern_dict.get(
+                    'schedule_name', '')
             subtask["pattern"] = _pattern
             if pattern_dict["freq_type"] == 'automatic':
                 if 'options' in subtask:
@@ -915,7 +949,7 @@ class SchedulePattern(object):
         return task_req
 
 
-class Schedules(object):
+class Schedules:
     """Class for getting the schedules of a commcell entity."""
 
     def __init__(self, class_object, operation_type=None):
@@ -1148,20 +1182,19 @@ class Schedules(object):
         if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
 
-        else:
-            if schedule_name:
-                schedule_name = schedule_name.lower()
-                schedule_id = self.schedules[schedule_name]['task_id']
+        if schedule_name:
+            schedule_name = schedule_name.lower()
+            schedule_id = self.schedules[schedule_name]['task_id']
 
-            if self.has_schedule(schedule_id=schedule_id):
-                return Schedule(
-                    self.class_object, schedule_id=schedule_id
-                )
+        if self.has_schedule(schedule_id=schedule_id):
+            return Schedule(
+                self.class_object, schedule_id=schedule_id
+            )
 
-            raise SDKException(
-                'Schedules',
-                '102',
-                'No Schedule exists with name: {0}'.format(schedule_name))
+        raise SDKException(
+            'Schedules',
+            '102',
+            'No Schedule exists with name: {0}'.format(schedule_name))
 
     def delete(self, schedule_name=None, schedule_id=None):
         """deletes the specified schedule name.
@@ -1187,60 +1220,60 @@ class Schedules(object):
 
         if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
-        else:
-            if schedule_name:
-                schedule_name = schedule_name.lower()
-                schedule_id = self.schedules[schedule_name]['task_id']
 
-            if self.has_schedule(schedule_id=schedule_id):
-                request_json = {
-                    "TMMsg_TaskOperationReq":
-                        {
-                            "opType": 3,
-                            "taskEntities":
-                                [
-                                    {
-                                        "_type_": 69,
-                                        "taskId": schedule_id
-                                    }
-                                ]
-                        }
-                }
+        if schedule_name:
+            schedule_name = schedule_name.lower()
+            schedule_id = self.schedules[schedule_name]['task_id']
 
-                modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
+        if self.has_schedule(schedule_id=schedule_id):
+            request_json = {
+                "TMMsg_TaskOperationReq":
+                    {
+                        "opType": 3,
+                        "taskEntities":
+                            [
+                                {
+                                    "_type_": 69,
+                                    "taskId": schedule_id
+                                }
+                            ]
+                    }
+            }
 
-                flag, response = self._commcell_object._cvpysdk_object.make_request(
-                    'POST', modify_schedule, request_json)
+            modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
 
-                if flag:
-                    if response.json():
-                        if 'errorCode' in response.json():
-                            if response.json()['errorCode'] == 0:
-                                self.refresh()
-                            else:
-                                raise SDKException(
-                                    'Schedules', '102', response.json()['errorMessage'])
-                    else:
-                        raise SDKException('Response', '102')
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', modify_schedule, request_json)
+
+            if flag:
+                if response.json():
+                    if 'errorCode' in response.json():
+                        if response.json()['errorCode'] == 0:
+                            self.refresh()
+                        else:
+                            raise SDKException(
+                                'Schedules', '102', response.json()['errorMessage'])
                 else:
-                    response_string = self._commcell_object._update_response_(
-                        response.text)
-                    exception_message = 'Failed to delete schedule\nError: "{0}"'.format(
-                        response_string)
-
-                    raise SDKException('Schedules', '102', exception_message)
+                    raise SDKException('Response', '102')
             else:
-                raise SDKException(
-                    'Schedules', '102', 'No schedule exists for: {0}'.format(
-                        schedule_id)
-                )
+                response_string = self._commcell_object._update_response_(
+                    response.text)
+                exception_message = 'Failed to delete schedule\nError: "{0}"'.format(
+                    response_string)
+
+                raise SDKException('Schedules', '102', exception_message)
+        else:
+            raise SDKException(
+                'Schedules', '102', 'No schedule exists for: {0}'.format(
+                    schedule_id)
+            )
 
     def refresh(self):
         """Refresh the Schedules associated with the Client / Agent / Backupset / Subclient."""
         self.schedules = self._get_schedules()
 
 
-class Schedule(object):
+class Schedule:
     """Class for performing operations for a specific Schedule."""
 
     def __init__(self, class_object, schedule_name=None, schedule_id=None):
@@ -1444,8 +1477,8 @@ class Schedule(object):
                     self._pattern['active_start_time'],
                     '%H:%M', False)
             }
-        else:
-            return False
+
+        return False
 
     @one_time.setter
     def one_time(self, pattern_dict):
@@ -1482,8 +1515,7 @@ class Schedule(object):
                 self._pattern['active_start_time'], '%H:%M', False),
                 'repeat_days': self._pattern['freq_recurrence_factor']
             }
-        else:
-            return False
+        return False
 
     @daily.setter
     def daily(self, pattern_dict):
@@ -1527,8 +1559,7 @@ class Schedule(object):
                 'weekdays': [
                     SchedulePattern._days_to_run[x] for x in list(
                         SchedulePattern._days_to_run.keys()) if _freq & x > 0]}
-        else:
-            return False
+        return False
 
     @weekly.setter
     def weekly(self, pattern_dict):
@@ -1571,8 +1602,7 @@ class Schedule(object):
                     False),
                 'repeat_months': self._pattern['freq_recurrence_factor'],
                 'on_day': self._pattern['freq_interval']}
-        else:
-            return False
+        return False
 
     @monthly.setter
     def monthly(self, pattern_dict):
@@ -1618,8 +1648,7 @@ class Schedule(object):
                 'relative_weekday': SchedulePattern._relative_weekday[
                     self._pattern['freq_interval']],
                 'repeat_months': self._pattern['freq_recurrence_factor']}
-        else:
-            return False
+        return False
 
     @monthly_relative.setter
     def monthly_relative(self, pattern_dict):
@@ -1662,8 +1691,7 @@ class Schedule(object):
                     'on_month': calendar.month_name[self._pattern['freq_recurrence_factor']],
                     'on_day': self._pattern['freq_interval']
                     }
-        else:
-            return False
+        return False
 
     @yearly.setter
     def yearly(self, pattern_dict):
@@ -1708,8 +1736,7 @@ class Schedule(object):
                     [self._pattern['freq_interval']],
                     'on_month': calendar.month_name[self._pattern['freq_recurrence_factor']]
                     }
-        else:
-            return False
+        return False
 
     @yearly_relative.setter
     def yearly_relative(self, pattern_dict):
@@ -1747,8 +1774,7 @@ class Schedule(object):
             return {
                 'job_interval': self._pattern['freq_interval']
             }
-        else:
-            return False
+        return False
 
     @continuous.setter
     def continuous(self, pattern_dict):
@@ -1842,8 +1868,7 @@ class Schedule(object):
                     'daysBetweenSyntheticBackup']
 
             return pattern
-        else:
-            return False
+        return False
 
     @automatic.setter
     def automatic(self, pattern_dict):
@@ -2162,9 +2187,9 @@ class Schedule(object):
 
         if output[0]:
             return
-        else:
-            o_str = 'Failed to update properties of Schedule\nError: "{0}"'
-            raise SDKException('Schedules', '102', o_str.format(output[2]))
+
+        o_str = 'Failed to update properties of Schedule\nError: "{0}"'
+        raise SDKException('Schedules', '102', o_str.format(output[2]))
 
     def enable(self):
         """Enable a schedule.
@@ -2205,10 +2230,10 @@ class Schedule(object):
                             'Schedules', '102', "Failed to enable Schedule")
             else:
                 raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException('Response', '101', response_string)
 
     def disable(self):
         """Disable a Schedule.
@@ -2250,10 +2275,10 @@ class Schedule(object):
                             'Schedules', '102', "Failed to disable Schedule")
             else:
                 raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException('Response', '101', response_string)
 
     def _process_schedule_update_response(self, flag, response):
         """
@@ -2290,10 +2315,10 @@ class Schedule(object):
                     raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException('Response', '101', response_string)
 
     def refresh(self):
         """Refresh the properties of the Schedule."""

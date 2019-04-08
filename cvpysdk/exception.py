@@ -115,7 +115,8 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Class object should be an instance of Agent / Instance class',
         '104': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
-        '105': 'Invalid days/cycles value. Please provide an integer value >= 2.'
+        '105': 'Invalid days/cycles value. Please provide an integer value >= 2.',
+        '106': 'IndexServer value should be a client object'
     },
     'Instance': {
         '101': 'Data type of the input(s) is not valid',
@@ -147,7 +148,8 @@ EXCEPTION_DICT = {
         '117': 'Auto discovery is disabled at instance level',
         '118': 'Failed to run the backup copy job',
         '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
-        '120': 'Invalid days/cycles value. Please provide an integer value >= 2.'
+        '120': 'Invalid days/cycles value. Please provide an integer value >= 2.',
+        '121': 'IndexServer value should be a client object'
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -174,7 +176,9 @@ EXCEPTION_DICT = {
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',
         '102': 'Data type of the input(s) is not valid',
-        '103': 'Invalid operation type passed to Schedules class'
+        '103': 'Invalid operation type passed to Schedules class',
+        '104': 'Provided Option cannot be updated',
+        '105': 'Could not find the provided schedule name/id'
     },
     'ClientGroup': {
         '101': 'Data type of the input(s) is not valid',
@@ -238,6 +242,10 @@ EXCEPTION_DICT = {
         '102': ''
     },
     'Security': {
+        '101': 'Data type of input(s) is not valid',
+        '102': ''
+    },
+    'Credential': {
         '101': 'Data type of input(s) is not valid',
         '102': ''
     },
@@ -345,18 +353,21 @@ EXCEPTION_DICT = {
         '103': 'Failed to delete array'
     },
     'NameChange': {
-
-        '101' : 'Client hostname not provided',
-        '102' : 'Commcell hostname not provided',
-        '103' : 'Old domain name not provided',
-        '104' : 'New domain name not provided',
-        '105' : 'Client ID list not provided'
+        '101': 'Client hostname not provided',
+        '102': 'Commcell hostname not provided',
+        '103': 'Old domain name not provided',
+        '104': 'New domain name not provided',
+        '105': 'Client ID list not provided'
     },
     'CommcellRegistration': {
         '101': 'Failed to register commcell',
         '102': '',
         '103': 'Failed to unregister commcell',
         '104': 'Datatype of the input is not valid'
+    },
+    'LiveSync': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     }
 }
 

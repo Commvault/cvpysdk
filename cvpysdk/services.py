@@ -78,6 +78,8 @@ SERVICES_DICT_TEMPLATE = {
     'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
     'SCHEDULE_POLICY': '{0}SchedulePolicy',
+    'CREATE_UPDATE_SCHEDULE_POLICY': '{0}Task',
+    'GET_SCHEDULE_POLICY': '{0}SchedulePolicy/%s',
     'MEDIA_AGENT': '{0}MediaAgent/%s',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
 
@@ -107,7 +109,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
 
-    'USERGROUPS': '{0}UserGroup',
+    'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
 
@@ -190,6 +192,11 @@ SERVICES_DICT_TEMPLATE = {
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',
+
+    'ALL_CREDENTIALS': '{0}/CommCell/Credentials?propertyLevel=30',
+    'ONE_CREDENTIAL': '{0}/CommCell/Credentials/%s?propertyLevel=30',
+    'CREDENTIAL':   '{0}/Commcell/Credentials',
+    'DELETE_RECORD':'{0}/Commcell/Credentials/action/delete',
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
@@ -278,10 +285,14 @@ SERVICES_DICT_TEMPLATE = {
     'REGISTRATION': '{0}/RegFrgnCell',
     'UNREGISTRATION': '{0}/UnRegisterCommCell',
     'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/CommCell/registered?getOnlyServiceCommcells=true',
-    'GET_USERSPACE_SERVICE' : '{0}/ServiceCommcell/UserSpace',
-    'POLL_USER_SERVICE' : '{0}/ServiceCommcell/IsUserPresent?userName=%s',
-    'POLL_MAIL_SERVICE' : '{0}/ServiceCommcell/IsUserPresent?email=%s',
-    'POLL_REQUEST_ROUTER' : '{0}/CommcellRedirect/RedirectListforUser?user=%s'
+    'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',
+    'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',
+    'POLL_MAIL_SERVICE': '{0}/ServiceCommcell/IsUserPresent?email=%s',
+    'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s',
+
+    'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
+    'GET_LIVE_SYNC_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s'
+
 }
 
 

@@ -18,6 +18,8 @@ SQLDefines              --  Class which maintains the defines list for SQL Serve
 
 AdvancedJobDetailType   --  Enum to maintain advanced job details info type
 
+VSALiveSyncStatus       --  Enum to maintain status of the VSA Live sync
+
 """
 
 from enum import Enum
@@ -33,13 +35,14 @@ class HypervisorType(Enum):
     ORACLE_VM = "OracleVM"
     ALIBABA_CLOUD = "Alibaba Cloud"
     ORACLE_CLOUD = "Oracle Cloud"
-    OPENSTACK   =   "OpenStack"
+    OPENSTACK = "OpenStack"
     GOOGLE_CLOUD = "Google Cloud Platform"
     Azure_Stack = "Azure Stack"
     Rhev = "Red Hat Virtualization"
     AMAZON_AWS = "Amazon"
     VCLOUD = "vCloud Director"
     Nutanix = "Nutanix AHV"
+    ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
 
 
 class AppIDAType(Enum):
@@ -113,12 +116,14 @@ class SQLDefines:
     STATE_NORECOVER = 'STATE_NORECOVER'
     STATE_STANDBY = 'STATE_STANDBY'
 
+
 class SharepointDefines:
     """Class to maintiain Sharepoint Defines"""
 
     # sharepoint strings
     CONTENT_WEBAPP = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}'
     CONTENT_DB = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}\\{1}'
+
 
 class AdvancedJobDetailType(Enum):
     """Class to maintain advanced job details info type
@@ -129,3 +134,19 @@ class AdvancedJobDetailType(Enum):
     DASH_COPY_INFO = 4
     ADMIN_DATA_INFO = 8
     BKUP_INFO = 16
+
+
+class VSALiveSyncStatus(Enum):
+    """Class to maintain status of the VSA Live sync"""
+    NEVER_HAS_BEEN_SYNCED = 0
+    IN_SYNC = 1
+    NEEDS_SYNC = 2
+    SYNC_IN_PROGRESS = 3
+    SYNC_PAUSED = 4
+    SYNC_FAILED = 5
+    SYNC_DISABLED = 6
+    SYNC_ENABLED = 7
+    VALIDATION_FAILED = 8
+    SYNC_QUEUED = 9
+    REVERT_FAILED = 10
+    SYNC_STARTING = 11

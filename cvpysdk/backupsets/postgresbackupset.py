@@ -154,7 +154,10 @@ class PostgresBackupset(Backupset):
             no_of_streams=None,
             volume_level_restore=False,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            restore_to_disk=False,
+            restore_to_disk_job=None,
+            destination_path=None):
         """
         Method to restore the Postgres server
 
@@ -196,6 +199,7 @@ class PostgresBackupset(Backupset):
                                         "reservationPeriodS": 3600,
                                         "user": "postgres",
                                         "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
+
                                      }
 
                 media_agent             (str)   --  media agent name
@@ -227,6 +231,18 @@ class PostgresBackupset(Backupset):
 
                 redirect_path           (str)   --  Path specified in advanced restore options
                 in order to perform redirect restore
+
+                    default: None
+
+                restore_to_disk         (bool)  --  restore to disk flag
+
+                    default: False
+
+                restore_to_disk_job     (list)   --  list of backup job ids to restore to disk
+
+                    default: None
+
+                destination_path        (str)   --  destination path for restore
 
                     default: None
 
@@ -268,4 +284,7 @@ class PostgresBackupset(Backupset):
             no_of_streams=no_of_streams,
             volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)
+            redirect_path=redirect_path,
+            restore_to_disk=restore_to_disk,
+            restore_to_disk_job=restore_to_disk_job,
+            destination_path=destination_path)

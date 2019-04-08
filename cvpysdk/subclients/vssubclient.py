@@ -111,6 +111,7 @@ VirtualServerSubclient:
     backup()                               --  run a backup job for the subclient
 
     _advanced_backup_options()              --  sets the advanced backup options
+
 """
 
 import os
@@ -253,6 +254,7 @@ class VirtualServerSubclient(Subclient):
         self._vm_names_browse = []
         self._vm_ids_browse = {}
         self._advanced_restore_option_list = []
+        self._live_sync = None
 
     class disk_pattern(Enum):
         """
@@ -278,22 +280,37 @@ class VirtualServerSubclient(Subclient):
 
             for child in children:
                 path = child['path'] if 'path' in child else None
-                display_name = child['displayName']
-                content_type = VSAObjects(child['type'])
-                content_type = content_type.name
-                vm_id = child['name']
+                if 'children' in child:
+                    nested_children = child['children']
+                    for each_condition in nested_children:
+                        display_name = each_condition['displayName']
+                        content_type = VSAObjects(each_condition['type'])
+                        content_type = content_type.name
+                        vm_id = each_condition['name']
+                        temp_dict = {
+                            'equal_value': each_condition['equalsOrNotEquals'],
+                            'allOrAnyChildren': each_condition['allOrAnyChildren'],
+                            'id': vm_id,
+                            'path': path,
+                            'display_name': display_name,
+                            'type': content_type
+                        }
+                        content.append(temp_dict)
 
-                temp_dict = {
-                    'equal_value': child['equalsOrNotEquals'],
-                    'allOrAnyChildren': child['allOrAnyChildren'],
-                    'id': vm_id,
-                    'path': path,
-                    'display_name': display_name,
-                    'type': content_type
-                }
-
-                content.append(temp_dict)
-
+                else:
+                    display_name = child['displayName']
+                    content_type = VSAObjects(child['type'])
+                    content_type = content_type.name
+                    vm_id = child['name']
+                    temp_dict = {
+                        'equal_value': child['equalsOrNotEquals'],
+                        'allOrAnyChildren': child['allOrAnyChildren'],
+                        'id': vm_id,
+                        'path': path,
+                        'display_name': display_name,
+                        'type': content_type
+                    }
+                    content.append(temp_dict)
         return content
 
     @property
@@ -472,7 +489,7 @@ class VirtualServerSubclient(Subclient):
                 temp = {
                     'allOrAnyChildren': item.get('allOrAnyChildren', True),
                     'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
-                    'name': '',
+                    'name': item['name'],
                     'displayName': item['display_name'],
                     'path': '',
                     'type': item['type'].value
@@ -608,6 +625,14 @@ class VirtualServerSubclient(Subclient):
         except:
             raise SDKException('Subclient', '101')
 
+    @property
+    def live_sync(self):
+        """Returns the instance of the VSALiveSync class"""
+        if not self._live_sync:
+            from .virtualserver.livesync.vsa_live_sync import VsaLiveSync
+            self._live_sync = VsaLiveSync(self)
+
+        return self._live_sync
 
     def _get_disk_provisioning_value(self, provisioningType):
         """
@@ -756,6 +781,9 @@ class VirtualServerSubclient(Subclient):
             "isBlockLevelReplication": False
         }
 
+        if value.get('replication_guid'):
+            self._virtualserver_option_restore_json['replicationGuid'] = value['replication_guid']
+
     def _json_nics_advancedRestoreOptions(self, vm_to_restore, value):
         """
             Setter for nics list for advanced restore option json
@@ -821,8 +849,10 @@ class VirtualServerSubclient(Subclient):
             "registerWithFailoverCluster": value.get("add_to_failover", False),
             "userPassword": {"userName": "admin"}
         }
-        if value['in_place']:
+        if value.get('in_place'):
             self._json_disklevel_option_restore["dataStore"] = {}
+        if value.get('distribute_vm_workload'):
+            self._json_disklevel_option_restore["maxNumOfVMPerJob"] = value['distribute_vm_workload']
 
     def _json_restore_advancedRestoreOptions(self, value):
         """setter for the Virtual server restore  option in restore json"""

@@ -565,6 +565,82 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_assocaition_json_)
 
+    def set_pst_association(self, subclient_content):
+        """Create PST assocaition for UserMailboxSubclient.
+
+            Args:
+                subclient_content   (dict)  --  dict of the pst to add to the subclient
+
+                    subclient_content = {
+
+                        'pstTaskName' : "Task Name for PST",
+
+                        'folders' : ['list of folders'],
+
+                        'pstOwnerManagement' : {
+
+                            'defaultOwner': "default owner if no owner is determined",
+
+                            'pstDestFolder': "ingest psts under this folder",
+
+                            'usePSTNameToCreateChild': Boolean
+                        }
+                    }
+					
+        """
+        if not isinstance(subclient_content, dict):
+            raise SDKException('Subclient', '101')
+
+        try:
+            if 'ownerSelectionOrder' not in subclient_content['pstOwnerManagement']:
+                subclient_content['pstOwnerManagement']['ownerSelectionOrder'] = [4, 1, 3]
+            if 'createPstDestFolder' not in subclient_content['pstOwnerManagement']:
+                subclient_content['pstOwnerManagement']['createPstDestFolder'] = True
+            if 'pstDestFolder' not in subclient_content['pstOwnerManagement']:
+                subclient_content['pstOwnerManagement']['pstDestFolder'] = (f'Archived From '
+                                                                            f'Automation')
+
+            pst_dict = {
+                'pstTaskName': subclient_content['pstTaskName'],
+                'taskType': 1,
+                'folders':subclient_content['folders'],
+                'pstOwnerManagement': {
+                    'adProperty': "",
+                    'startingFolderPath': "",
+                    'pstStubsAction':1,
+                    'managePSTStubs': False,
+                    'mergeintoMailBox': True,
+                    'pstOwnerBasedOnACL': True,
+                    'pstOwnerBasedOnLaptop': False,
+                    'usePSTNameToCreateChildForNoOwner': True,
+                    'createPstDestFolder':
+                        subclient_content["pstOwnerManagement"]["createPstDestFolder"],
+                    'orphanFolder': subclient_content['pstOwnerManagement']['defaultOwner'],
+                    'pstDestFolder': subclient_content['pstOwnerManagement']['pstDestFolder'],
+                    'usePSTNameToCreateChild':
+                        subclient_content['pstOwnerManagement']['usePSTNameToCreateChild'],
+                    'ownerSelectionOrder':
+                        subclient_content["pstOwnerManagement"]["ownerSelectionOrder"]
+                }
+            }
+
+            subclient_entity = {"_type_": 7, "subclientId": int(self._subclient_id)}
+            discover_info = {
+                'discoverByType': 9,
+                'pstIngestion': pst_dict
+            }
+            _assocaition_json_ = {
+                "emailAssociation":
+                    {
+                        "emailDiscoverinfo": discover_info,
+                        "subclientEntity": subclient_entity
+                    }
+            }
+            self._set_association_request(_assocaition_json_)
+
+        except KeyError as err:
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+
     def set_database_assocaition(self, subclient_content):
         """Create Database assocaition for UserMailboxSubclient.
 

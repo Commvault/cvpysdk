@@ -165,6 +165,9 @@ Client
 
     create_pseudo_client()       --  Creates a pseudo client
 
+    set_job_start_time()         -- sets the job start time at client level
+
+
 Client Attributes
 -----------------
 
@@ -1321,6 +1324,7 @@ class Client(object):
         self._log_directory = None
         self._license_info = None
         self._cvd_port = None
+        self._job_start_time = None
 
         self.refresh()
 
@@ -1413,12 +1417,15 @@ class Client(object):
                 if 'clientSecurity' in client_props:
                     self._client_owners = client_props['clientSecurity'].get('clientOwners')
 
+                if 'jobStartTime' in client_props:
+                    self._job_start_time = client_props['jobStartTime']
+
             else:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _request_json(self, option, enable=True, enable_time=None):
+    def _request_json(self, option, enable=True, enable_time=None, job_start_time=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -1478,6 +1485,9 @@ class Client(object):
 
         if enable_time:
             return request_json2
+
+        if job_start_time is not None:
+            request_json1['clientProperties']['jobStartTime'] = job_start_time
 
         return request_json1
 
@@ -3421,3 +3431,43 @@ class Client(object):
         """Returns client Type"""
 
         return self._properties.get('pseudoClientInfo', {}).get('clientType', "")
+
+    def set_job_start_time(self, job_start_time_value):
+        """Sets the jobstarttime for this Client.
+
+            Raises:
+                SDKException:
+                    if failed to set the job start time
+
+                    if response is empty
+
+                    if response is not success
+        """
+        request_json = self._request_json(job_start_time=job_start_time_value)
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
+
+        self._get_client_properties()
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code == 0:
+                    return
+                elif 'errorMessage' in response.json()['response'][0]:
+                    error_message = response.json()['response'][0]['errorMessage']
+
+                    o_str = 'Failed to set the jobstarttime \nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def job_start_time(self):
+        """Returns the job start time"""
+
+        return self._job_start_time
+

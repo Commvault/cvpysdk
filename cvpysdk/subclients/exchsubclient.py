@@ -623,6 +623,44 @@ class ExchangeSubclient(Subclient):
         request_json = self._prepare_pst_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
+    def pst_ingestion(self):
+        """Runs a backup job for the subclient of the level specified.
+            Returns:
+                object - instance of the Job class for this backup job
+
+        """
+
+        payload_dict = {
+            "taskInfo":{
+                "associations":[self._subClientEntity],
+                "task": self.get_pst_task_json(),
+                "subTasks":[{
+                    "subTaskOperation":1,
+                    "subTask":{
+                        "subTaskType":2,
+                        "operationType":5024
+                    },
+                    "options":{
+                        "backupOpts":self.get_pst_backup_opt_json(),
+                        "adminOpts":{
+                            "contentIndexingOption":{
+                                "subClientBasedAnalytics":False
+                            }
+                        },
+                        "restoreOptions":{
+                            "virtualServerRstOption":{
+                                "isBlockLevelReplication":False
+                            }
+                        }
+                    }
+                }]
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', commcell_obj._services["RESTORE"], payload_dict)
+
+        return self._process_backup_response(flag, response)
+
     def subclient_content_indexing(self,
                                    pick_failed_items=False,
                                    pick_only_failed_items=False,
@@ -699,3 +737,66 @@ class ExchangeSubclient(Subclient):
         }
 
         return self._process_restore_response(request_json)
+
+    def get_pst_task_json(self):
+        """Get task json for pst ingestion job
+
+            Returns:
+                 Pst task json
+        """
+        task_json = {
+            "ownerId": commcell_obj.users.all_users[commcell_obj.commcell_username],
+            "taskType": 1,
+            "ownerName": self._commcell_object.commcell_username,
+            "sequenceNumber": 0,
+            "initiatedFrom": 1,
+            "policyType": 0,
+            "taskId": 0,
+            "taskFlags": {
+                "isEZOperation": False, "disabled": False
+            }
+        }
+        return task_json
+
+    def get_pst_backup_opt_json(self):
+        """Get backup options json for pst ingestion job
+
+            Returns:
+                 Pst backup options json
+        """
+        backup_opt_json = {
+            "truncateLogsOnSource": False,
+            "sybaseSkipFullafterLogBkp": False,
+            "notSynthesizeFullFromPrevBackup": False,
+            "backupLevel": 2,
+            "incLevel": 1,
+            "adHocBackup": False,
+            "runIncrementalBackup": False,
+            "isSpHasInLineCopy": False,
+            "runSILOBackup": False,
+            "doNotTruncateLog": False,
+            "exchOnePassOptions": {
+                "proxies": {}
+            },
+            "dataOpt": self.get_pst_data_opt_json(),
+            "mediaOpt": {}
+        }
+        return backup_opt_json
+
+    def get_pst_data_opt_json(self):
+        """Get data options json for pst ingestion job
+
+            Returns:
+                 Pst data options json
+        """
+        data_json = {
+            "skipCatalogPhaseForSnapBackup": True,
+            "useCatalogServer": False,
+            "followMountPoints": True,
+            "enforceTransactionLogUsage": False,
+            "skipConsistencyCheck": False,
+            "createNewIndex": False
+        }
+        return data_json
+
+

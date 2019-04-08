@@ -47,6 +47,7 @@ FSBackupset:
 from __future__ import unicode_literals
 
 from ..backupset import Backupset
+from ..client import Client
 from ..exception import SDKException
 
 
@@ -424,23 +425,37 @@ class FSBackupset(Backupset):
         Calling the create task API with the final restore JSON
 
         Args :
-                isopath (String)    : The location of ISO in the datastore
+                IsoPath                 (String)    : The location of ISO in the datastore
 
-                CS_IP   (String)    : The IP of the CS
+                CommServIP              (String)    : The IP of the CS
 
-                CS_Hostname   (String)    : The hostname of he CS
+                CommServHostname        (String)    : The hostname of he CS
 
-                CS_Username   (String)    : The username for the Comcell
+                CommServUsername        (String)    : The username for the Comcell
 
-                CS_Password   (String)     : The password for the comcell
+                CommServPassword        (String)    : The password for the comcell
 
-                Datastore   (String)        : The ESX store in which the VM is provisioned
+                Datastore               (String)    : The ESX store in which the VM is provisioned
 
-                vCenterServerName   (String)    : The ESX server used
+                VcenterServerName       (String)    : The Vcenter to be used
 
-                ClientHostName   (String)    : The hostname of the client being virtualized.
+                ClientHostName          (String)    : The hostname of the client being virtualized.
 
-                vmName   (String)    : The name with which the VM is provisioned.
+                VmName                  (String)    : The name with which the VM is provisioned.
+
+                VirtualizationClient    (String)    : The vmware virualization client
+
+                EsxServer               (String)    : The ESX server name
+
+               NetworkLabel             (String)    : The network label to be assigned to the VM.
+
+               HyperVInstance           (String)    : The Hyper-V Instance
+
+               HyperVHost               (String)    : The Hyper-V host
+
+               GuestUser                (String)    : The Username of the guest OS
+
+               GuestPassword            (String)    : The Password of the guest OS
 
         Returns :
                     returns the task object
@@ -465,22 +480,22 @@ class FSBackupset(Backupset):
         vm_option = response_json['taskInfo']['subTasks'][0]['options']['adminOpts'][
             'vmProvisioningOption']['virtualMachineOption'][0]
 
-        vm_option['isoPath'] = restore_options.get('isopath')
+        vm_option['isoPath'] = restore_options.get('IsoPath')
 
         vm_option['oneTouchResponse']['clients'][0]['backupSet'][
             'backupsetName'] = self.backupset_name
 
         vm_option['oneTouchResponse']['csinfo']['ip'][
-            'address'] = restore_options.get('CS_IP')
+            'address'] = restore_options.get('CommServIP')
 
         vm_option['oneTouchResponse']['csinfo']['commservInfo'][
-            'hostName'] = restore_options.get('CS_Hostname', None)
+            'hostName'] = restore_options.get('CommServHostname', None)
 
         vm_option['oneTouchResponse']['csinfo']['creds'][
-            'password'] = restore_options.get('CS_Password', None)
+            'password'] = restore_options.get('CommServPassword', None)
 
         vm_option['oneTouchResponse']['csinfo']['creds'][
-            'userName'] = restore_options.get('CS_Username', None)
+            'userName'] = restore_options.get('CommServUsername', None)
 
         if 'scsi_disks' in vm_option['oneTouchResponse']['hwconfig']:
             vm_option['oneTouchResponse']['hwconfig']['scsi_disks'][0][
@@ -490,20 +505,41 @@ class FSBackupset(Backupset):
             vm_option['oneTouchResponse']['hwconfig']['ide_disks'][0][
                 'dataStoreName'] = restore_options.get('Datastore', None)
 
-        vm_option['vmInfo']['proxyClient'][
-            'clientName'] = restore_options.get('vCenterServerName', None)
-
-        vm_option['vmInfo']['vmLocation']['pathName'] = restore_options.get('isopath', None)
+        vm_option['vmInfo']['vmLocation']['pathName'] = restore_options.get('IsoPath', None)
 
         vm_option['vmInfo']['vmLocation']['datastore'][
             'name'] = restore_options.get('Datastore', None)
 
-        response_json['taskInfo']['subTasks'][0]['options'][
-            'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
-                'esxServerName'] = restore_options.get('vCenterServerName', None)
+        if restore_options.get('VcenterServerName'):
 
-        response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
-            'destClient']['clientName'] = restore_options.get('vCenterServerName', None)
+            vm_option['vmInfo']['proxyClient'][
+            'clientName'] = restore_options.get('VirtualizationClient', None)
+
+            response_json['taskInfo']['subTasks'][0]['options'][
+            'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
+                'esxServerName'] = restore_options.get('VcenterServerName', None)
+
+            response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
+            'destClient']['clientName'] = restore_options.get('VirtualizationClient', None)
+
+            vm_option['vmInfo']['vmLocation']['hostName'] = restore_options.get(
+                'EsxServer')
+
+            vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('VcenterServerName')
+
+        if restore_options.get('HyperVInstance'):
+
+            response_json['taskInfo']['subTasks'][0]['options'][
+            'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
+                'esxServerName'] = restore_options.get('HyperVInstance', None)
+
+            response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
+            'destClient']['clientName'] = restore_options.get('HyperVInstance', None)
+
+            vm_option['vmInfo']['vmLocation']['hostName'] = restore_options.get(
+                'HyperVHost')
+
+            vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('HyperVInstance')
 
         vm_option['oneTouchResponse']['clients'][0]['client'][
             'hostName'] = restore_options.get('ClientHostname', None)
@@ -512,15 +548,11 @@ class FSBackupset(Backupset):
             'clientName'] = restore_options.get('ClientName', None)
 
         vm_option['oneTouchResponse']['clients'][0]['netconfig']['ipinfo']['interfaces'][0][
-            'networkLabel'] = "VM Network"
+            'networkLabel'] = restore_options.get('NetworkLabel', None)
 
-        vm_option['oneTouchResponse']['hwconfig']['vmName'] = restore_options.get('vmName', None)
+        vm_option['oneTouchResponse']['hwconfig']['vmName'] = restore_options.get('VmName', None)
 
         vm_option['oneTouchResponse']['hwconfig']['overwriteVm'] = True
-
-        vm_option['vmInfo']['vmLocation']['hostname'] = restore_options.get('vCenterServerName')
-
-        vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('vCenterServerName')
 
         response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
             'inPlace'] = False
@@ -770,6 +802,72 @@ class FSBackupset(Backupset):
         return self._process_restore_response(request_json)
 
     @property
+    def index_server(self):
+        """Returns the index server client set for the backupset"""
+
+        client_name = None
+
+        if 'indexSettings' in self._properties:
+            if 'currentIndexServer' in self._properties['indexSettings']:
+                client_name = self._properties['indexSettings']['currentIndexServer']['clientName']
+
+        if client_name is not None:
+            return Client(self._commcell_object, client_name=client_name)
+
+        return None
+
+    @index_server.setter
+    def index_server(self, value):
+        """Sets index server client for the backupset. Property value should be a client object
+
+            Args:
+                value   (object)    --  The cvpysdk client object of the index server client
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not isinstance(value, Client):
+            raise SDKException('Backupset', '106')
+
+        properties = self._properties
+        index_server_id = int(value.client_id)
+        index_server_name = value.client_name
+
+        if 'indexSettings' in properties:
+            qualified_index_servers = []
+            if 'qualifyingIndexServers' in properties['indexSettings']:
+                for index_server in properties['indexSettings']['qualifyingIndexServers']:
+                    qualified_index_servers.append(index_server['clientId'])
+
+            if index_server_id in qualified_index_servers:
+                properties['indexSettings']['currentIndexServer'] = {
+                    'clientId': index_server_id,
+                    'clientName': index_server_name
+                }
+            else:
+                raise SDKException(
+                    'Backupset', '102', '{0} is not a qualified IndexServer client'.format(
+                        index_server_name))
+        else:
+            properties['indexSettings'] = {
+                'currentIndexServer': {
+                    'clientId': index_server_id,
+                    'clientName': index_server_name
+                }
+            }
+
+        request_json = {
+            'backupsetProperties': properties
+        }
+
+        self._process_update_reponse(request_json)
+
+    @property
     def index_pruning_type(self):
         """Returns index pruning type for the backupset"""
         return self._properties["indexSettings"]["indexPruningType"]
@@ -866,4 +964,3 @@ class FSBackupset(Backupset):
             self._process_update_reponse(request_json)
         else:
             raise SDKException('Backupset', '105')
-

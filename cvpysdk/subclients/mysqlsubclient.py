@@ -16,28 +16,49 @@ MYSQLSubclient: Derived class from Subclient Base class, representing a MYSQL su
 MYSQLSubclient:
     __init__()                          --  constructor for the class
 
-    _get_subclient_properties()         --  initializes the subclient related properties of
-                                                 MYSQL subclient
+    is_failover_to_production()         --  Sets the isFailOverToProduction flag for the
+    subclient as the value provided as input
 
-    _get_subclient_properties_json()    --  gets all the subclient related properties of
-                                                 MYSQL subclient
+    _backup_request_json()              --  prepares the json for the backup request
 
-    content()                           --  gets the appropriate content from the Subclient
+    _get_subclient_properties()         --  Gets the subclient related properties of MYSQL subclient
 
-    restore_in_place()                  --  gets the restore json and pass the json for
-                                                restore process
+    _get_subclient_properties_json()    --  get the all subclient related properties of this
+    subclient
+
+    content()                           --  Creates the list of content JSON to pass to the API to
+    add/update content of a MYSQL Subclient
+
+    backup()                            --  Runs a backup job for the subclient of the level
+    specified
+
+    restore_in_place()                  --  Restores the mysql data/log files specified in
+    the input paths list to the same location
+
+
+MYSQLSubclient instance Attributes:
+===================================
+
+    **is_blocklevel_backup_enabled**    --  Returns True if block level backup is
+    enabled else returns false
+
+    **is_proxy_enabled**                --  Returns True if proxy is enabled in the subclient
+
+    **is_failover_to_production**       --  Returns the isFailOverToProduction flag of the subclient
+
+    **content**                         --  Returns the appropriate content from
+    the Subclient relevant to the user
+
 """
 
 from __future__ import unicode_literals
-
 from ..subclient import Subclient
-from .dbsubclient import DatabaseSubclient
+from ..exception import SDKException
 
 
 class MYSQLSubclient(Subclient):
     """Derived class from Subclient Base class, representing a MYSQL subclient,
-        and to perform operations on that subclient.
-    """
+        and to perform operations on that subclient."""
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialise the Subclient object.
@@ -52,6 +73,7 @@ class MYSQLSubclient(Subclient):
 
             Returns:
                 object - instance of the MYSQLSubclient class
+
         """
         self.mysql_subclient_prop = None
         self.dfs_subclient_prop = None
@@ -60,10 +82,137 @@ class MYSQLSubclient(Subclient):
         self.analytics_subclient_prop = None
         super(MYSQLSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
 
-    def _get_subclient_properties(self):
-        """Gets the subclient related properties of MYSQL subclient.
+    @property
+    def is_blocklevel_backup_enabled(self):
+        """returns True if block level backup is enabled else returns false
+
+        Returns:
+            (bool) - boolean value based on blocklevel enable status
+
+                    True if block level is enabled
+                    False if block level is not enabled
 
         """
+        return bool(self._subclient_properties.get(
+            'mySqlSubclientProp', {}).get('isUseBlockLevelBackup', False))
+
+    @property
+    def is_proxy_enabled(self):
+        """Returns True if proxy is enabled in the subclient
+
+        Returns:
+            (bool) - boolean value based on proxy enable status
+
+                    True if proxy is enabled
+                    False if proxy is not enabled
+
+        """
+        return self._subclient_properties.get(
+            'mySqlSubclientProp', {}).get('proxySettings', {}).get(
+                'isProxyEnabled', False)
+
+    @property
+    def is_failover_to_production(self):
+        """Returns the isFailOverToProduction flag of the subclient.
+
+        Returns:
+
+            (bool)  --  True if flag is set
+                        False if the flag is not set
+
+        """
+        return self._subclient_properties.get(
+            'mySqlSubclientProp', {}).get(
+                'proxySettings', {}).get('isFailOverToProduction', False)
+
+    @is_failover_to_production.setter
+    def is_failover_to_production(self, value):
+        """Sets the isFailOverToProduction flag for the subclient as the value provided as input.
+
+        Args:
+
+            value   (bool)  --  Boolean value to set as flag
+
+            Raises:
+                SDKException:
+                    if failed to set isFailOverToProduction flag
+
+                    if the type of value input is not bool
+        """
+        if isinstance(value, bool):
+            self._set_subclient_properties(
+                "_subclient_properties['mySqlSubclientProp']\
+                ['proxySettings']['isFailOverToProduction']",
+                value)
+        else:
+            raise SDKException(
+                'Subclient', '102', 'Expecting a boolean value here'
+            )
+
+    def _backup_request_json(
+            self,
+            backup_level,
+            inc_with_data=False,
+            truncate_logs_on_source=False,
+            do_not_truncate_logs=False):
+        """
+        prepares the json for the backup request
+
+            Args:
+                backup_level            (list)  --  level of backup the user wish to run
+
+                    Accepted Values:
+                        Full / Incremental / Differential
+
+                inc_with_data           (bool)  --  flag to determine if the incremental backup
+                includes data or not
+
+                truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+                truncated on master client
+
+                    default: False
+
+                do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+                needs to be truncated or not
+
+                    default: False
+
+            Returns:
+                dict - JSON request to pass to the API
+
+        """
+        request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
+
+        backup_options = {
+            "truncateLogsOnSource":truncate_logs_on_source,
+            "sybaseSkipFullafterLogBkp":False,
+            "notSynthesizeFullFromPrevBackup":False,
+            "incrementalDataWithLogs":inc_with_data,
+            "backupLevel":backup_level,
+            "incLevel":"NONE",
+            "adHocBackup":False,
+            "runIncrementalBackup":False,
+            "doNotTruncateLog":do_not_truncate_logs,
+            "dataOpt":{
+                "skipCatalogPhaseForSnapBackup":True,
+                "createBackupCopyImmediately":True,
+                "useCatalogServer":True,
+                "followMountPoints":False,
+                "enforceTransactionLogUsage":False,
+                "skipConsistencyCheck":False,
+                "createNewIndex":False
+            },
+            "mediaOpt":{
+
+            }
+        }
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "backupOpts"] = backup_options
+
+        return request_json
+
+    def _get_subclient_properties(self):
+        """Gets the subclient related properties of MYSQL subclient"""
         super(MYSQLSubclient, self)._get_subclient_properties()
         if 'mySqlSubclientProp' in self._subclient_properties:
             self.mysql_subclient_prop = self._subclient_properties['mySqlSubclientProp']
@@ -104,10 +253,11 @@ class MYSQLSubclient(Subclient):
 
     @property
     def content(self):
-        """Gets the appropriate content from the Subclient relevant to the user.
+        """Returns the appropriate content from the Subclient relevant to the user.
 
             Returns:
                 list - list of content associated with the subclient
+
         """
         cont = []
 
@@ -128,6 +278,7 @@ class MYSQLSubclient(Subclient):
 
             Returns:
                 list - list of the appropriate JSON for an agent to send to the POST Subclient API
+
         """
         cont = []
         for mysql_cont in subclient_content:
@@ -140,18 +291,81 @@ class MYSQLSubclient(Subclient):
 
         self._set_subclient_properties("_content", cont)
 
+
+    def backup(
+            self,
+            backup_level="Differential",
+            inc_with_data=False,
+            truncate_logs_on_source=False,
+            do_not_truncate_logs=False):
+        """Runs a backup job for the subclient of the level specified.
+
+            Args:
+                backup_level        (str)   --  level of backup the user wish to run
+                        Full / Incremental / Differential / Synthetic_full
+
+                    default: Differential
+
+                inc_with_data       (bool)  --  flag to determine if the incremental backup
+                includes data or not
+
+                truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+                truncated on master client
+
+                    default: False
+
+                do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+                needs to be truncated or not
+
+                    default: False
+
+            Returns:
+                object - instance of the Job class for this backup job
+
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        backup_level = backup_level.lower()
+
+        if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
+            raise SDKException('Subclient', '103')
+
+        if not (inc_with_data or truncate_logs_on_source or do_not_truncate_logs):
+            return super(MYSQLSubclient, self).backup(backup_level)
+        request_json = self._backup_request_json(
+            backup_level,
+            inc_with_data,
+            truncate_logs_on_source=truncate_logs_on_source,
+            do_not_truncate_logs=do_not_truncate_logs)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['CREATE_TASK'], request_json
+        )
+        return self._process_backup_response(flag, response)
+
     def restore_in_place(
             self,
-            paths,
-            staging,
-            dest_client_name,
-            dest_instance_name,
-            data_restore,
-            log_restore,
+            paths=None,
+            staging=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            data_restore=True,
+            log_restore=False,
             overwrite=True,
             copy_precedence=None,
             from_time=None,
-            to_time=None):
+            to_time=None,
+            media_agent=None,
+            table_level_restore=False,
+            clone_env=False,
+            clone_options=None,
+            redirect_enabled=False,
+            redirect_path=None):
         """Restores the mysql data/log files specified in the input paths list to the same location.
 
             Args:
@@ -185,6 +399,45 @@ class MYSQLSubclient(Subclient):
 
                     default: None
 
+                media_agent             (str)   --  media agent associated
+
+                    default: None
+
+                table_level_restore     (bool)  --  Table level restore flag
+
+                    default: False
+
+                clone_env               (bool)  --  boolean to specify whether the database
+                should be cloned or not
+
+                    default: False
+
+                clone_options           (dict)  --  clone restore options passed in a dict
+
+                    default: None
+
+                    Accepted format: {
+                                        "stagingLocaion": "/gk_snap",
+                                        "forceCleanup": True,
+                                        "port": "5595",
+                                        "libDirectory": "",
+                                        "isInstanceSelected": True,
+                                        "reservationPeriodS": 3600,
+                                        "user": "",
+                                        "binaryDirectory": "/usr/bin"
+
+                                     }
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -197,18 +450,38 @@ class MYSQLSubclient(Subclient):
                     if response is empty
 
                     if response is not success
-        """
-        self._backupset_object._instance_object._restore_association = self._subClientEntity
 
-        return self._backupset_object._instance_object.restore_in_place(
-            paths,
-            staging,
-            dest_client_name,
-            dest_instance_name,
-            data_restore,
-            log_restore,
-            overwrite,
-            copy_precedence,
-            from_time,
-            to_time
+        """
+        if not (isinstance(paths, list) and
+                isinstance(overwrite, bool)):
+            raise SDKException('Subclient', '101')
+
+        if paths == []:
+            raise SDKException('Subclient', '104')
+
+        instance_object = self._backupset_object._instance_object
+        if dest_client_name is None:
+            dest_client_name = instance_object._agent_object._client_object.client_name
+
+        if dest_instance_name is None:
+            dest_instance_name = instance_object.instance_name
+        instance_object._restore_association = self._subClientEntity
+
+        return instance_object.restore_in_place(
+            path=paths,
+            staging=staging,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            data_restore=data_restore,
+            log_restore=log_restore,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path
         )

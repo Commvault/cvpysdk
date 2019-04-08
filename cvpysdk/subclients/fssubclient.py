@@ -83,6 +83,8 @@ FileSystemSubclient:
 
     catalog_acl()                       --  To enable/disable ACL on the subclient
 
+    index_server()                      --  Sets/gets the index server client for the subclient
+
     index_pruning_type()                --  Sets the index pruning type
 
     index_pruning_days_retention()      --  Sets the number of days to be maintained in
@@ -94,7 +96,9 @@ FileSystemSubclient:
 FileSystemSubclient Instance Attributes:
 =======================================
 
-    **software_compression**            --  returns the software compression setting's value for the subclient.
+    **software_compression**            --  The software compression setting's value for the subclient.
+
+    **use_vss**                         --  The Use VSS setting's value for the subclient.
 
 """
 
@@ -102,6 +106,7 @@ from __future__ import unicode_literals
 
 from past.builtins import basestring
 
+from ..client import Client
 from ..subclient import Subclient
 from ..exception import SDKException
 from ..job import Job
@@ -1220,7 +1225,7 @@ class FileSystemSubclient(Subclient):
 
     @property
     def software_compression(self):
-        """Gets the software compression status for this subclient.
+        """Returns the software compression status for this subclient.
 
             Returns:    int
                     1   -   On Client
@@ -1253,6 +1258,72 @@ class FileSystemSubclient(Subclient):
             self._set_subclient_properties(attr_name, sw_compression_value)
         else:
             raise SDKException('Subclient', '102', 'Invalid value for software compression type.')
+
+    @property
+    def use_vss(self):
+        """Returns the value of the Use VSS options for Windows FS subclients.
+
+            Returns:    dict
+
+                Dictionary contains the keys 'useVSS', 'vssOptions' and 'useVssForAllFilesOptions'.
+
+                useVSS:
+                    True    -   ENABLED
+                    False   -   DISABLED
+
+                vssOptions:
+                    1   -   For all files
+                    2   -   For locked files only
+
+                useVssForAllFilesOptions:
+                    1   -   Fail the job
+                    2   -   Continue and reset access time
+                    3   -   Continue and do not reset access time
+
+        """
+        return {"useVSS": self._fsSubClientProp['useVSS'],
+                "vssOptions": self._fsSubClientProp['vssOptions'],
+                "useVssForAllFilesOptions": self._fsSubClientProp['useVssForAllFilesOptions']}
+
+    @use_vss.setter
+    def use_vss(self, value):
+        """Updates the value of the Use VSS options for Windows FS subclients.
+
+            Args:
+                value  (dict)   --  Specifies the value of the Use VSS options for Windows FS subclients.
+
+                    useVSS:
+                        True    -   ENABLED
+                        False   -   DISABLED
+
+                    vssOptions:
+                        1   -   For all files
+                        2   -   For locked files only
+
+                    useVssForAllFilesOptions:
+                        1   -   Fail the job
+                        2   -   Continue and reset access time
+                        3   -   Continue and do not reset access time
+
+        """
+        fs_subclient_prop = self._fs_subclient_prop
+
+        if isinstance(value['useVSS'], bool):
+            fs_subclient_prop['useVSS'] = value['useVSS']
+        else:
+            raise SDKException('Subclient', '101')
+
+        if isinstance(value['useVssForAllFilesOptions'], int) and value['useVssForAllFilesOptions'] in range(1, 4):
+            fs_subclient_prop['useVssForAllFilesOptions'] = value['useVssForAllFilesOptions']
+        else:
+            raise SDKException('Subclient', '101')
+
+        if isinstance(value['vssOptions'], int) and value['vssOptions'] in range(1, 3):
+            fs_subclient_prop['vssOptions'] = value['vssOptions']
+        else:
+            raise SDKException('Subclient', '101')
+
+        self._set_subclient_properties('_fs_subclient_prop', fs_subclient_prop)
 
     def find_all_versions(self, *args, **kwargs):
         """Searches the content of a Subclient.
@@ -1537,6 +1608,49 @@ class FileSystemSubclient(Subclient):
             self._set_subclient_properties("_fsSubClientProp['catalogACL']", value)
         else:
             raise SDKException('Subclient', '102', 'argument value should be boolean')
+
+    @property
+    def index_server(self):
+        """Returns the index server client set for the subclient. None if no Index Server is set"""
+
+        if 'indexSettings' not in self._commonProperties:
+            return None
+
+        index_settings = self._commonProperties['indexSettings']
+        index_server = None
+
+        if ('currentIndexServer' in index_settings and
+                'clientName' in index_settings['currentIndexServer']):
+            index_server = index_settings['currentIndexServer']['clientName']
+
+        if index_server is None:
+            return None
+
+        return Client(self._commcell_object, client_name=index_server)
+
+    @index_server.setter
+    def index_server(self, value):
+        """Sets the index server client for the backupset
+
+            Args:
+                value   (object)    --  The index server client object to set
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not isinstance(value, Client):
+            raise SDKException('Subclient', '121')
+
+        index_server_name = value.client_name
+
+        self._set_subclient_properties(
+            "_commonProperties['indexSettings']['currentIndexServer']['clientName']",
+            index_server_name)
 
     @property
     def index_pruning_type(self):

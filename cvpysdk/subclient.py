@@ -958,8 +958,8 @@ class Subclient(object):
             succeeds
 
             Args:
-                attr_name (str)  --  old value of the property. this should be instance variable.
-                value (str)  --  new value of the property. this should be instance variable.
+                attr_name (str) --  Name of the attribute. This should be an instance variable.
+                value (str)     --  Value of the attribute. This should be an instance variable.
 
             Raises:
                 SDKException:
