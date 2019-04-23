@@ -794,14 +794,15 @@ class VirtualServerSubclient(Subclient):
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
 
         for network_card_dict in vm_nics_list:
-            _destnetwork = value.get("destination_network", network_card_dict['name'])
-            if value.get('network'):
-                _destnetwork = value.get('network')
+            _destnetwork = value.get("destination_network",
+                                     value.get('network',
+                                               network_card_dict['name']))
+
             nics = {
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": "",
-                "networkName": "",
+                "networkName": _destnetwork,
                 "destinationNetwork": _destnetwork
             }
 
@@ -2021,9 +2022,9 @@ class VirtualServerSubclient(Subclient):
         self._set_restore_inputs(
             restore_option,
             disks=vm_disks,
-            esx_host=restore_option.get('esx_host',vs_metadata['esxHost']),
+            esx_host=restore_option.get('esx_host', vs_metadata['esxHost']),
             instanceSize=restore_option.get('instanceSize', instanceSize),
-            new_name="Delete" + vm_to_restore
+            new_name=restore_option.get('new_name', "Delete" + vm_to_restore)
         )
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
@@ -2268,7 +2269,7 @@ class VirtualServerSubclient(Subclient):
             if not restore_option["in_place"]:
                 if ("restore_new_name" in restore_option and
                         restore_option["restore_new_name"] is not None):
-                    restore_option["new_name"] = restore_option["restore_new_name"]
+                    restore_option["new_name"] = restore_option["restore_new_name"] + _each_vm_to_restore
                 else:
                     restore_option["new_name"] = "Delete" + _each_vm_to_restore
             else:

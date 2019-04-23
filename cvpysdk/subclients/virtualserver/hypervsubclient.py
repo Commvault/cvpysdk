@@ -192,6 +192,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                      power_on=False,
                                      copy_precedence=0,
                                      add_to_failover=False,
+                                     network=None,
                                      restored_vm_name=None,
                                      restore_option=None):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
@@ -210,6 +211,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
                 poweron
                         default:False   (bool)      --  power on the  restored VM
+
+                network                 (str)       --  Network interface card to be used
 
                 add_to_failover
                         default:False   (bool)      --  Add the Restored VM to Failover Cluster
@@ -313,7 +316,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             esx_host=proxy_client,
             add_to_failover=add_to_failover,
             datastore=destination_path,
-            in_place=False
+            in_place=False,
+            network=network
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

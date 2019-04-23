@@ -269,6 +269,12 @@ class Instances(object):
 
                     if response is not success
         """
+        if 'file system' in self._agent_object.agent_name:
+            return_dict = {
+                'defaultinstancename': 1
+            }
+            return return_dict
+
         flag, response = self._cvpysdk_object.make_request('GET', self._INSTANCES)
 
         if flag:
@@ -332,20 +338,18 @@ class Instances(object):
         """Returns a instance object of the specified instance name.
 
             Args:
-                instance_name (str)  --  name of the instance
+                instance_name (str/int)  --  name or ID of the instance
 
             Returns:
                 object - instance of the Instance class for the given instance name
 
             Raises:
                 SDKException:
-                    if type of the instance name argument is not string
+                    if type of the instance name argument is not string or Int
 
                     if no instance exists with the given name
         """
-        if not isinstance(instance_name, basestring):
-            raise SDKException('Instance', '101')
-        else:
+        if isinstance(instance_name, basestring):
             instance_name = instance_name.lower()
 
             agent_name = self._agent_object.agent_name
@@ -370,6 +374,15 @@ class Instances(object):
             raise SDKException(
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
             )
+        elif isinstance(instance_name, int):
+            instance_name = str(instance_name)
+            instance_name = [name for name, instance_id in self.all_instances.items() if instance_name == instance_id]
+
+            if instance_name:
+                return self.get(instance_name[0])
+            raise SDKException('Instance', '102', 'No Instance exists with the given ID: {0}'.format(instance_name))
+
+        raise SDKException('Instance', '101')
 
     def add_informix_instance(self, informix_options):
         """Adds new Informix Instance to given Client
@@ -1131,6 +1144,7 @@ class Instance(object):
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
+        self._instance_name = instance_name.lower()
 
         if instance_id:
             # Use the instance id provided in the arguments
@@ -1174,6 +1188,23 @@ class Instance(object):
 
                     if response is not success
         """
+        # skip GET instance properties api call if instance id is 1
+        if int(self.instance_id) == 1:
+            self._properties = {
+                'instance': {
+                    "clientId": int(self._agent_object._client_object.client_id),
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": self.instance_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceId": int(self.instance_id),
+                    "applicationId": int(self._agent_object.agent_id)
+                }
+            }
+
+            self._instance = self._properties["instance"]
+            # stop the execution here for instance id 1 (DefaultInstanceName)
+            return
+
         instance_service = (
             "{0}?association/entity/clientId={1}&association/entity/applicationId={2}".format(
                 self._INSTANCE, self._agent_object._client_object.client_id,

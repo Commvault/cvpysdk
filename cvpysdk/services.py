@@ -291,8 +291,8 @@ SERVICES_DICT_TEMPLATE = {
     'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s',
 
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
-    'GET_LIVE_SYNC_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s'
-
+    'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
+    'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s'
 }
 
 

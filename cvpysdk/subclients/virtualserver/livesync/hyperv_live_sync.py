@@ -31,8 +31,10 @@ class HyperVLiveSync(VsaLiveSync):
                             schedule_name=None,
                             destination_client=None,
                             proxy_client=None,
+                            copy_precedence=0,
                             vm_to_restore=None,
                             destination_path=None,
+                            destination_network=None,
                             power_on=True,
                             overwrite=False,
                             distribute_vm_workload=None,
@@ -50,9 +52,14 @@ class HyperVLiveSync(VsaLiveSync):
 
             proxy_client                (str)   -- Name of the proxy client to be used
 
+            copy_precedence             (int)   -- Copy id from which restore needs to be performed
+                                                    default: 0
+
             vm_to_restore               (list)  -- VM's to be restored
 
             destination_path            (str)   -- Full path of the restore location on client
+
+            destination_network         (str)   -- Network card name on the destination machine
 
             power_on                    (bool)  -- To validate destination VM power on and off
                                                     default: True
@@ -120,8 +127,11 @@ class HyperVLiveSync(VsaLiveSync):
             raise SDKException('Subclient', '101')
 
         if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = "Delete" + vm_to_restore
+            restored_vm_name = "LiveSync_"
         restore_option['restore_new_name'] = restored_vm_name
+
+        if copy_precedence:
+            restore_option["copy_precedence_applicable"] = True
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -140,13 +150,14 @@ class HyperVLiveSync(VsaLiveSync):
             unconditional_overwrite=overwrite,
             power_on=power_on,
             distribute_vm_workload=distribute_vm_workload,
-            copy_precedence=0,
+            copy_precedence=copy_precedence,
             volume_level_restore=1,
             vcenter_client=destination_client,
             client_name=proxy_client,
             esx_server=proxy_client,
             esx_host=proxy_client,
             datastore=destination_path,
+            destination_network=destination_network,
             in_place=False
         )
 

@@ -1135,25 +1135,23 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get(self, name):
-        """Returns a client object if client name or host name matches specified name
+        """Returns a client object if client name or host name or ID matches the client attribute
             We check if specified name matches any of the existing client names else
-            compare specified name with host names of existing clients
+            compare specified name with host names of existing clients else if name matches with the ID
 
             Args:
-                name (str)  --  name / hostname of the client
+                name (str/int)  --  name / hostname / ID of the client
 
             Returns:
                 object - instance of the Client class for the given client name
 
             Raises:
                 SDKException:
-                    if type of the client name argument is not string
+                    if type of the client name argument is not string or Int
 
                     if no client exists with the given name
         """
-        if not isinstance(name, basestring):
-            raise SDKException('Client', '101')
-        else:
+        if isinstance(name, basestring):
             name = name.lower()
             client_name = None
             client_id = None
@@ -1175,6 +1173,17 @@ class Clients(object):
                 client_id = self.hidden_clients[client_name]['id']
 
             return Client(self._commcell_object, client_name, client_id)
+
+        elif isinstance(name, int):
+            name = str(name)
+            client_name = [client_name for client_name in self.all_clients
+                           if name in self.all_clients[client_name].values()]
+
+            if client_name:
+                return self.get(client_name[0])
+            raise SDKException('Client', '102', 'No client exists with the given ID: {0}'.format(name))
+
+        raise SDKException('Client', '101')
 
     def delete(self, client_name):
         """Deletes the client from the commcell.
