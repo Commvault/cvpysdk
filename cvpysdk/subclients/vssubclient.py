@@ -277,40 +277,7 @@ class VirtualServerSubclient(Subclient):
 
         if 'children' in subclient_content:
             children = subclient_content['children']
-
-            for child in children:
-                path = child['path'] if 'path' in child else None
-                if 'children' in child:
-                    nested_children = child['children']
-                    for each_condition in nested_children:
-                        display_name = each_condition['displayName']
-                        content_type = VSAObjects(each_condition['type'])
-                        content_type = content_type.name
-                        vm_id = each_condition['name']
-                        temp_dict = {
-                            'equal_value': each_condition['equalsOrNotEquals'],
-                            'allOrAnyChildren': each_condition['allOrAnyChildren'],
-                            'id': vm_id,
-                            'path': path,
-                            'display_name': display_name,
-                            'type': content_type
-                        }
-                        content.append(temp_dict)
-
-                else:
-                    display_name = child['displayName']
-                    content_type = VSAObjects(child['type'])
-                    content_type = content_type.name
-                    vm_id = child['name']
-                    temp_dict = {
-                        'equal_value': child['equalsOrNotEquals'],
-                        'allOrAnyChildren': child['allOrAnyChildren'],
-                        'id': vm_id,
-                        'path': path,
-                        'display_name': display_name,
-                        'type': content_type
-                    }
-                    content.append(temp_dict)
+            content = self._get_content_list(children)
         return content
 
     @property
@@ -341,33 +308,11 @@ class VirtualServerSubclient(Subclient):
                 list - list of filter associated with the subclient
         """
         vm_filter = []
-
         if self._vmFilter:
             subclient_filter = self._vmFilter
-
             if 'children' in subclient_filter:
                 children = subclient_filter['children']
-
-                for child in children:
-                    path = child['path'] if 'path' in child else None
-                    display_name = child['displayName']
-                    content_type = VSAObjects(child['type'])
-                    content_type = content_type.name
-                    vm_id = child['name']
-
-                    temp_dict = {
-                        'id': vm_id,
-                        'path': path,
-                        'display_name': display_name,
-                        'type': content_type,
-                        'equal_value': child['allOrAnyChildren']
-                    }
-
-                    vm_filter.append(temp_dict)
-
-        else:
-            vm_filter = self._vmFilter
-
+                vm_filter = self._get_content_list(children)
         return vm_filter
 
     @property
@@ -664,6 +609,54 @@ class VirtualServerSubclient(Subclient):
         if collectdetails in self._vsaSubclientProp:
             self._set_subclient_properties("_vsaSubclientProp['collectFileDetails']", value)
 
+    def _get_content_list(self, children):
+        """
+        Gets the content in list format
+        Args:
+            children                            (list):     Content if the subclient
+
+        Returns:
+            content_list                        (list):     Content of the subclient
+        """
+
+        content_list = []
+        for child in children:
+            path = child['path'] if 'path' in child else None
+            allOrAnyChildren = child['allOrAnyChildren'] if 'allOrAnyChildren' in child else None
+            _temp_list = []
+            _temp_dict = {}
+            if 'children' in child:
+                nested_children = child['children']
+                for each_condition in nested_children:
+                    display_name = each_condition['displayName']
+                    content_type = VSAObjects(each_condition['type']).name
+                    vm_id = each_condition['name']
+                    temp_dict = {
+                        'equal_value': each_condition['equalsOrNotEquals'],
+                        'allOrAnyChildren': each_condition['allOrAnyChildren'],
+                        'id': vm_id,
+                        'path': path,
+                        'display_name': display_name,
+                        'type': content_type
+                    }
+                    _temp_list.append(temp_dict)
+                _temp_dict['allOrAnyChildren'] = allOrAnyChildren
+                _temp_dict['content'] = _temp_list
+                content_list.append(_temp_dict)
+            else:
+                display_name = child['displayName']
+                content_type = VSAObjects(child['type']).name
+                vm_id = child['name']
+                temp_dict = {
+                    'equal_value': child['equalsOrNotEquals'],
+                    'allOrAnyChildren': child['allOrAnyChildren'],
+                    'id': vm_id,
+                    'path': path,
+                    'display_name': display_name,
+                    'type': content_type
+                }
+                content_list.append(temp_dict)
+        return content_list
 
     def _get_subclient_properties(self):
         """Gets the subclient  related properties of File System subclient.
