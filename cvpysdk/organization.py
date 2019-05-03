@@ -1059,12 +1059,22 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def deactivate(self):
+    def deactivate(self,
+                   disable_backup=True,
+                   disable_restore=True,
+                   disable_login=True):
         """
         To deactivate the organization
 
         Args:
-            None
+            disable_backup  (bool)      -- To disable backup
+                                            default: True
+
+            disable_restore (bool)      -- To disable restore
+                                            default: True
+
+            disable_login   (bool)      -- To disable login
+                                            default: True
 
         Returns:
             None
@@ -1078,8 +1088,16 @@ class Organization:
                 if response is not success
 
         """
+        request_json = {
+                        "deactivateOptions": {
+                            "disableBackup": disable_backup,
+                            "disableRestore": disable_restore,
+                            "disableLogin": disable_login
+                        }
+        }
+
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['DEACTIVATE_ORGANIZATION'] % self.organization_id
+            'POST', self._services['DEACTIVATE_ORGANIZATION'] % self.organization_id, request_json
         )
 
         if flag:
