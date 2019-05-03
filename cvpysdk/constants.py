@@ -43,7 +43,7 @@ class HypervisorType(Enum):
     VCLOUD = "vCloud Director"
     Nutanix = "Nutanix AHV"
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
-
+    OPENSHIFT = "Red Hat OpenShift"
 
 class AppIDAType(Enum):
     """Class to maintain all the app ida constants"""

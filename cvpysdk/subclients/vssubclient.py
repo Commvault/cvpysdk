@@ -196,6 +196,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.nutanixsubclient import nutanixsubclient
             return object.__new__(nutanixsubclient)
 
+        elif instance_name == hv_type.OPENSHIFT.value.lower():
+            from .virtualserver.openshiftsubclient import OpenshiftSubclient
+            return object.__new__(OpenshiftSubclient)
+
         else:
             raise SDKException(
                 'Subclient',

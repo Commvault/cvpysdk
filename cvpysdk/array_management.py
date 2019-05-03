@@ -396,7 +396,12 @@ class ArrayManagement(object):
                 raise SDKException('StorageArray', '103', error_message)
             return error_message
 
-    def update_snap_config(self, control_host_id, master_config_id, value, config_update_level):
+    def update_snap_config(self,
+                           control_host_id,
+                           master_config_id,
+                           value,
+                           config_update_level,
+                           level_id=None):
         """Method to Update Snap Configuration for the Array
         Args:
             control_host_id        (int)        -- Control Host Id of the Array
@@ -407,8 +412,11 @@ class ArrayManagement(object):
 
             config_update_level    (str)        -- update level for the Snap config
             ex: "array", "subclient", "copy", "client"
+
+            level_id               (int)        -- level Id where the config needs to be added/updated
         """
 
+        copy_level_id = app_level_id = client_level_id = 0
         request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
         flag, request_json = self._commcell_object._cvpysdk_object.make_request(
             'GET', request_json_service
@@ -418,23 +426,31 @@ class ArrayManagement(object):
             config_update_level = 3
         elif config_update_level == "copy":
             config_update_level = 6
+            copy_level_id = level_id
         elif config_update_level == "subclient":
             config_update_level = 9
+            app_level_id = level_id
         elif config_update_level == "client":
             config_update_level = 8
+            client_level_id = level_id
 
         request_json = request_json.json()
 
         update_dict = {
             "add": False,
             "forceAdd": False,
-            "assocType": config_update_level
+            "assocType": config_update_level,
+            "copyId": copy_level_id,
+            "appId": app_level_id,
+            "clientId": client_level_id
             }
         request_json.update(update_dict)
 
         for config in request_json['configList']['configList']:
             if config['masterConfigId'] == int(master_config_id):
                 config['value'] = str(value)
+                if config_update_level != "array":
+                    config['isOverridden'] = True
 
         request_json['configs'] = request_json.pop('configList')
 

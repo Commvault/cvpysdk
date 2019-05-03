@@ -195,6 +195,9 @@ Commcell instance Attributes
     **identity_management**     --  returns the instance of the 'IdentityManagementApps
     class to perform identity management operations on the commcell class
 
+    **system**                  --  returns the instance of the 'System' class to perform
+    system related operations on the commcell
+
     **commcell_migration**      --  returns the instance of the 'CommCellMigration' class,
     to interact with the Commcell Export & Import on the Commcell
 
@@ -247,6 +250,7 @@ from .array_management import ArrayManagement
 from .disasterrecovery import DisasterRecovery
 from .operation_window import OperationWindow
 from .identity_management import IdentityManagementApps
+from .system import System
 from .commcell_migration import CommCellMigration
 from .deployment.download import Download
 from .deployment.install import Install
@@ -438,6 +442,7 @@ class Commcell(object):
         self._operation_window = None
         self._commserv_client = None
         self._identity_management = None
+        self._system = None
         self._commcell_migration = None
         self._registered_commcells = None
         self._redirect_rules_service = None
@@ -657,6 +662,11 @@ class Commcell(object):
 
             Args:
                 request_json (str)   --  request json that is to be passed
+
+                    Sample: {
+                                "name": "",
+                                "value": ""
+                            }
 
             Returns:
                 dict                --   json response received from the server
@@ -1031,6 +1041,17 @@ class Commcell(object):
                 self._identity_management = IdentityManagementApps(self)
 
             return self._identity_management
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def system(self):
+        """Returns the instance of the System class."""
+        try:
+            if self._system is None:
+                self._system = System(self)
+
+            return self._system
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 

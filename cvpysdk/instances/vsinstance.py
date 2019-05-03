@@ -101,6 +101,11 @@ class VirtualServerInstance(Instance):
             from .virtualserver.nutanixinstance import nutanixinstance
             return object.__new__(nutanixinstance)
 
+        elif instance_name == hv_type.OPENSHIFT.value.lower():
+            from .virtualserver.openshiftinstance import OpenShiftInstance
+            return object.__new__(OpenShiftInstance)
+
+
     def _get_instance_properties(self):
         """Gets the properties of this instance.
 

@@ -398,7 +398,7 @@ class FSBackupset(Backupset):
                 "entity": {
                     "_type_": "6",
                     "appName": "File System",
-                    "applicationId": "33",
+                    "applicationId": self._agent_object.agent_id,
                     "backupsetId": self.backupset_id,
                     "backupsetName": self.backupset_name,
                     "clientId": self._agent_object._client_object.client_id,
@@ -419,7 +419,6 @@ class FSBackupset(Backupset):
         hwconfig = response['responseFile']['hwconfig']
         ipconfig = response['responseFile']['clients'][0]['netconfig']['ipinfo']
         return hwconfig, ipconfig
-
     def run_bmr_restore(self, **restore_options):
         """
         Calling the create task API with the final restore JSON
@@ -463,6 +462,7 @@ class FSBackupset(Backupset):
         """
         client_name = self._agent_object._client_object.client_name
 
+
         self._instance_object._restore_association = self._backupset_association
 
         hwconfig, ipconfig = self._get_responsefile()
@@ -470,6 +470,7 @@ class FSBackupset(Backupset):
 
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
         restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
+
 
         response_json['taskInfo']['subTasks'][0]['options'][
             'adminOpts'] = restore_json_system_state
@@ -483,11 +484,11 @@ class FSBackupset(Backupset):
         vm_option['isoPath'] = restore_options.get('IsoPath')
 
         vm_option['oneTouchResponse']['clients'][0]['backupSet'][
-            'backupsetName'] = self.backupset_name
-
+            'backupsetName'] = restore_options.get('BackupsetName')
         vm_option['oneTouchResponse']['csinfo']['ip'][
             'address'] = restore_options.get('CommServIP')
-
+        vm_option['oneTouchResponse']['csinfo']['commservInfo'][
+            'clientName'] = restore_options.get('CommServName', None)
         vm_option['oneTouchResponse']['csinfo']['commservInfo'][
             'hostName'] = restore_options.get('CommServHostname', None)
 
@@ -553,6 +554,15 @@ class FSBackupset(Backupset):
         vm_option['oneTouchResponse']['hwconfig']['vmName'] = restore_options.get('VmName', None)
 
         vm_option['oneTouchResponse']['hwconfig']['overwriteVm'] = True
+
+        if restore_options.get('CloneClientName'):
+            vm_option['oneTouchResponse']['clients'][0]['clone'] = True
+            vm_option['oneTouchResponse']['clients'][0]['newclient'][
+                'clientName'] = restore_options.get('CloneClientName', None)
+
+        if restore_options.get('UseDhcp'):
+            vm_option['oneTouchResponse']['clients'][0]['netconfig']['ipinfo']['interfaces'][0][
+            'protocols'][0]['useDhcp'] = True
 
         response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
             'inPlace'] = False
