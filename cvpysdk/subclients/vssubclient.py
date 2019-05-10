@@ -196,6 +196,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.nutanixsubclient import nutanixsubclient
             return object.__new__(nutanixsubclient)
 
+        elif instance_name == hv_type.GOOGLE_CLOUD.value.lower():
+            from .virtualserver.googlecloudsubclient import GooglecloudVirtualServerSubclient
+            return object.__new__(GooglecloudVirtualServerSubclient)
+
         elif instance_name == hv_type.OPENSHIFT.value.lower():
             from .virtualserver.openshiftsubclient import OpenshiftSubclient
             return object.__new__(OpenshiftSubclient)
@@ -799,6 +803,7 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": "",
+                "name" : network_card_dict['label'],
                 "networkName": _destnetwork,
                 "destinationNetwork": _destnetwork
             }
@@ -2019,7 +2024,7 @@ class VirtualServerSubclient(Subclient):
         self._set_restore_inputs(
             restore_option,
             disks=vm_disks,
-            esx_host=restore_option.get('esx_host', vs_metadata['esxHost']),
+            esx_host= restore_option.get('esx_host') or vs_metadata['esxHost'],
             instanceSize=restore_option.get('instanceSize', instanceSize),
             new_name=restore_option.get('new_name', "Delete" + vm_to_restore)
         )

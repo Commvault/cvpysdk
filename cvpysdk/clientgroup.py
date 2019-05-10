@@ -106,6 +106,9 @@ ClientGroup:
 
     push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
 
+    update_properties()             -- to update the client group properties
+
+    add_additional_setting()        -- adds registry key to client group property
 
 """
 
@@ -473,13 +476,13 @@ class ClientGroups(object):
             }
 
         rule_mk = {
-                    "rule": {
-                        "filterID": filter_dict[filter_condition],
-                        "secValue": filter_value,
-                        "propID": prop_id_dict[filter_rule],
-                        "propType": ptype_dict[filter_rule],
-                        "value": value
-                    }
+            "rule": {
+                "filterID": filter_dict[filter_condition],
+                "secValue": filter_value,
+                "propID": prop_id_dict[filter_rule],
+                "propType": ptype_dict[filter_rule],
+                "value": value
+            }
             }
 
         return rule_mk
@@ -780,6 +783,10 @@ class ClientGroup(object):
 
         self._CLIENTGROUP = self._commcell_object._services['CLIENTGROUP'] % (self.clientgroup_id)
 
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
         self.refresh()
 
     def __repr__(self):
@@ -923,7 +930,7 @@ class ClientGroup(object):
             return request_json1
 
     def _process_request_(self, request_json):
-        """Runs the Clientgroup update API to enable/disable backup, restore or data aging flags
+        """Runs the Clientgroup update API
 
             Args:
                 request_json    (dict)  -- request json sent as payload
@@ -932,15 +939,16 @@ class ClientGroup(object):
                 (str, str):
                     str  -  error code received in the response
 
-                    str  -  error message received
+                    str  -  error message received in the response
 
             Raises:
                 SDKException:
                     if response is empty
 
                     if response is not success
+
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
+        flag, response = self._cvpysdk_object.make_request(
             'POST', self._CLIENTGROUP, request_json
         )
 
@@ -953,13 +961,11 @@ class ClientGroup(object):
                 else:
                     error_message = ""
 
-                return (error_code, error_message)
-
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+                self.refresh()
+                return error_code, error_message
+            raise SDKException('Response', '102')
+        response_string = self._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 
     def _update(
             self,
@@ -1100,6 +1106,11 @@ class ClientGroup(object):
             )
 
     @property
+    def properties(self):
+        """Returns the client group properties"""
+        return self._properties
+
+    @property
     def name(self):
         """Returns the client group display name"""
         return self._properties['clientGroup']['clientGroupName']
@@ -1147,7 +1158,6 @@ class ClientGroup(object):
 
         return self._networkprop
 
-
     @property
     def network_throttle(self):
         """Returns the object of NetworkThrottle class"""
@@ -1155,7 +1165,6 @@ class ClientGroup(object):
             self._network_throttle = NetworkThrottle(self)
 
         return self._network_throttle
-
 
     @property
     def client_group_filter(self):
@@ -1196,7 +1205,6 @@ class ClientGroup(object):
 
         self._process_request_(request_json)
         self.refresh()
-
 
     def enable_backup(self):
         """Enable Backup for this ClientGroup.
@@ -1624,13 +1632,103 @@ class ClientGroup(object):
         """
         install = Install(self._commcell_object)
         return install.push_servicepack_and_hotfix(
-                                    client_computer_groups=[self.clientgroup_name],
-                                    reboot_client=reboot_client,
-                                    run_db_maintenance=run_db_maintenance)
+            client_computer_groups=[self.clientgroup_name],
+            reboot_client=reboot_client,
+            run_db_maintenance=run_db_maintenance)
+
+    def update_properties(self, properties_dict):
+        """Updates the client group properties
+
+            Args:
+                properties_dict (dict)  --  client property dict which is to be updated
+                    e.g.: {
+                            "isSmartClientGroup": True
+                          }
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        """
+        request_json = {
+            "clientGroupOperationType": 2,
+            "clientGroupDetail": {
+                "clientGroup": {
+                    "clientGroupName": self.clientgroup_name
+                }
+            }
+        }
+
+        if "newName" in properties_dict:
+            request_json['clientGroupDetail']['clientGroup']['newName'] = properties_dict['newName']
+            del properties_dict['newName']
+
+        request_json['clientGroupDetail'].update(properties_dict)
+
+        error_code, error_message = self._process_request_(request_json)
+
+        if error_code != '0':
+            raise SDKException(
+                'ClientGroup', '102', 'Failed to update client group property\nError: "{0}"'.format(error_message)
+            )
+
+    def add_additional_setting(
+            self,
+            category=None,
+            key_name=None,
+            data_type=None,
+            value=None,
+            comment=None,
+            enabled=1):
+        """Adds registry key to the client group property
+
+            Args:
+                category        (str)           -- Category of registry key
+
+                key_name        (str)           -- Name of the registry key
+
+                data_type       (str)           -- Data type of registry key
+
+                    Accepted Values: BOOLEAN, INTEGER, STRING, MULTISTRING, ENCRYPTED
+
+                value           (str)           -- Value of registry key
+
+                comment         (str)           -- Comment to be added for the additional setting
+
+                enabled         (int)           -- To enable the additional setting
+                                                    default: 1
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected"""
+
+        properties_dict = {
+            "registryKeys": [{"deleted": 0,
+                              "hidden": False,
+                              "relativepath": category,
+                              "keyName": key_name,
+                              "isInheritedFromClientGroup": False,
+                              "comment": comment,
+                              "type": data_type,
+                              "value": value,
+                              "enabled": enabled}]
+        }
+
+        self.update_properties(properties_dict)
 
     def refresh(self):
         """Refresh the properties of the ClientGroup."""
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
         self._network_throttle = None
-

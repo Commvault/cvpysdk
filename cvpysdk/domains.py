@@ -290,6 +290,7 @@ class Domains(object):
             netbios_name,
             user_name,
             password,
+            company_id="",
             ad_proxy_list=None,
             enable_sso=True):
         """Adds a new domain to the commcell.
@@ -302,6 +303,8 @@ class Domains(object):
                 user_name       (str)   --  user name of the domain
 
                 password        (str)   --  password of the domain
+
+                company_id      (int)   --  company id for which the domain needs to be added for
 
                 adProxyList     (list)  --  list of client objects to be used as proxy.
 
@@ -353,6 +356,7 @@ class Domains(object):
                 "useSecureLdap": 0,
                 "connectName": domain_name,
                 "bLogin": user_name,
+                "ownerCompanyId": company_id,
                 "tppm": {
                     "enable": True if ad_proxy_list else False,
                     "tppmType": 4,
