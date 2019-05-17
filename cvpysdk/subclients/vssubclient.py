@@ -196,6 +196,10 @@ class VirtualServerSubclient(Subclient):
             from .virtualserver.nutanixsubclient import nutanixsubclient
             return object.__new__(nutanixsubclient)
 
+        elif instance_name == hv_type.ORACLE_CLOUD_INFRASTRUCTURE.value.lower():
+            from .virtualserver.ocisubclient import OCIVirtualServerSubclient
+            return object.__new__(OCIVirtualServerSubclient)
+
         elif instance_name == hv_type.GOOGLE_CLOUD.value.lower():
             from .virtualserver.googlecloudsubclient import GooglecloudVirtualServerSubclient
             return object.__new__(GooglecloudVirtualServerSubclient)

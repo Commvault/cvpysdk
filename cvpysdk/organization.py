@@ -598,7 +598,7 @@ class Organization:
                 organization_properties = self._organization_info['organizationProperties']
 
                 self._description = organization['description']
-                self._email_domain_names = organization['emailDomainNames']
+                self._email_domain_names = organization.get('emailDomainNames')
                 self._domain_name = organization['shortName']['domainName']
 
                 self._is_auth_code_enabled = organization_properties['enableAuthCodeGen']

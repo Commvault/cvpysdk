@@ -101,10 +101,13 @@ class VirtualServerInstance(Instance):
             from .virtualserver.nutanixinstance import nutanixinstance
             return object.__new__(nutanixinstance)
 
+        elif instance_name == hv_type.ORACLE_CLOUD_INFRASTRUCTURE.value.lower():
+            from .virtualserver.oralcecloudinfrastructureinstance import OracleCloudInfrastructureInstance
+            return object.__new__(OracleCloudInfrastructureInstance)
+
         elif instance_name == hv_type.OPENSHIFT.value.lower():
             from .virtualserver.openshiftinstance import OpenShiftInstance
             return object.__new__(OpenShiftInstance)
-
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.
