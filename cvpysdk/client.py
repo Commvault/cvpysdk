@@ -1986,6 +1986,11 @@ class Client(object):
 
         return self._network_throttle
 
+    @property
+    def is_cluster(self):
+        """Returns True if the client is of cluster type"""
+        return 'clusterGroupAssociation' in self._properties['clusterClientProperties']
+
     def enable_backup(self):
         """Enable Backup for this Client.
 

@@ -280,12 +280,18 @@ class CVPySDK(object):
         )
 
         if flag:
-            user_dict = xmltodict.parse(response.content)
-
-            if 'CvEntities_ProcessingInstructionInfo' in user_dict:
-                return user_dict['CvEntities_ProcessingInstructionInfo']['user']['@userName']
+            if 'application/json' in response.headers['Content-Type']:
+                if response.json().get('errorCode', 0) == 0:
+                    return response.json()['user']['userName']
+                else:
+                    raise SDKException('CVPySDK', '107')
             else:
-                raise SDKException('CVPySDK', '107')
+                user_dict = xmltodict.parse(response.content)
+
+                if 'CvEntities_ProcessingInstructionInfo' in user_dict:
+                    return user_dict['CvEntities_ProcessingInstructionInfo']['user']['@userName']
+                else:
+                    raise SDKException('CVPySDK', '107')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

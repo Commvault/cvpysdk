@@ -264,7 +264,7 @@ class JobController(object):
                 "showAgedJobs": options.get('show_aged_jobs', False),
                 "clientList": [
                     {
-                        "clientId": int(self._commcell_object.clients.all_clients[client]['id'])
+                        "clientId": int(self._commcell_object.clients.all_clients[client.lower()]['id'])
                     } for client in options.get('clients_list', [])
                 ],
                 "jobTypeList": [
