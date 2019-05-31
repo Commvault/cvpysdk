@@ -18,16 +18,35 @@ VSBackupset:
 
 from __future__ import unicode_literals
 
+import re
 import time
+from importlib import import_module
+from inspect import isabstract, isclass, getmembers
 
 from ..backupset import Backupset
 from ..exception import SDKException
+
 
 class VSBackupset(Backupset):
     """Derived class from Backupset Base class, representing a vs backupset,
             and to perform operations on that backupset."""
 
+    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+        """Decides which instance object needs to be created"""
+        instance_name = instance_object.instance_name
+        instance_name = instance_name.replace(" ", "_")
+        re.sub('[^A-Za-z0-9]+', '', instance_name)
 
+        try:
+            subclient_module = import_module("cvpysdk.backupsets._virtual_server.{}".format(instance_name))
+        except ImportError:
+            subclient_module = import_module(__name__)
+
+        classes = getmembers(subclient_module, lambda m: isclass(m) and not isabstract(m))
+
+        for name, _class in classes:
+            if issubclass(_class, Backupset):
+                return object.__new__(_class)
 
     def browse(self, *args, **kwargs):
         """Browses the content of the Backupset.
@@ -76,8 +95,7 @@ class VSBackupset(Backupset):
         options['retry_count'] = 0
         return self._do_browse(options)
 
-
-    def  _process_browse_response(self, flag, response, options):
+    def _process_browse_response(self, flag, response, options):
         """Retrieves the items from browse response.
 
                 Args:
@@ -184,7 +202,6 @@ class VSBackupset(Backupset):
                     paths.append(path)
 
                 return paths, paths_dict
-
 
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))

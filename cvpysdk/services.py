@@ -181,10 +181,10 @@ SERVICES_DICT_TEMPLATE = {
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
-    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
+    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
     'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
-
+    'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",
     'USERS': '{0}User',
     'USER': '{0}User/%s?Level=50',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
@@ -196,7 +196,7 @@ SERVICES_DICT_TEMPLATE = {
     'ALL_CREDENTIALS': '{0}/CommCell/Credentials?propertyLevel=30',
     'ONE_CREDENTIAL': '{0}/CommCell/Credentials/%s?propertyLevel=30',
     'CREDENTIAL':   '{0}/Commcell/Credentials',
-    'DELETE_RECORD':'{0}/Commcell/Credentials/action/delete',
+    'DELETE_RECORD': '{0}/Commcell/Credentials/action/delete',
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
@@ -238,6 +238,7 @@ SERVICES_DICT_TEMPLATE = {
     'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
     'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
+    'RPSTORE': '{0}Replications/RPStore',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',

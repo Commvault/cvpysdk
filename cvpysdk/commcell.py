@@ -5,7 +5,6 @@
 # See LICENSE.txt in the project root for
 # license information.
 # --------------------------------------------------------------------------
-
 """Main file for performing operations on Commcell via REST API.
 
 Commcell is the main class for the CVPySDK python package.

@@ -66,7 +66,7 @@ class ArrayManagement(object):
                         mountpath=None,
                         do_vssprotection=True,
                         control_host=None,
-                        flags=False,
+                        flags=None,
                         reconcile=False):
         """ Common Method for Snap Operations
 
@@ -85,7 +85,9 @@ class ArrayManagement(object):
                 control_host (int)        -- Control host for the Snap recon operation,
                 defaullt: None
 
-                flags        (bool)       -- True when snap needs to be force deleted
+                flags        (int)       -- value to define when snap operation to be forced
+                1 - to force unmount
+                2 - to force delete
 
                 reconcile    (bool)       -- Uses Reconcile json if true
 
@@ -99,9 +101,7 @@ class ArrayManagement(object):
         else:
             client_id = int(self._commcell_object.clients.get(client_name).client_id)
 
-        if flags:
-            flags = 2
-        else:
+        if flags is None:
             flags = 0
 
         if reconcile:
@@ -184,6 +184,15 @@ class ArrayManagement(object):
         """
         return self._snap_operation(1, volume_id)
 
+    def force_unmount(self, volume_id):
+        """ Force UnMounts Snap of the given volume id
+
+            Args:
+
+                volume_id    (int)        -- volume id of the snap backup job
+        """
+        return self._snap_operation(1, volume_id, flags=1)
+
     def delete(self, volume_id):
         """ Deletes Snap of the given volume id
 
@@ -200,7 +209,7 @@ class ArrayManagement(object):
 
                 volume_id    (int)        -- volume id of the snap backup job
         """
-        return self._snap_operation(2, volume_id, flags=True)
+        return self._snap_operation(2, volume_id, flags=2)
 
     def revert(self, volume_id):
         """ Reverts Snap of the given volume id

@@ -2037,6 +2037,7 @@ class Instance(object):
             "destPath": [value.get("destination_path", "")],
             "destClient": {
                 "clientName": value.get("client_name", ""),
+                "clientId": value.get("client_id", "")
             }
         }
 

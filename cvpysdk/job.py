@@ -311,38 +311,41 @@ class JobController(object):
                                 job_summary = job['jobSummary']
                                 job_id = job_summary['jobId']
 
-                                status = job_summary['status']
-                                operation = job_summary['localizedOperationName']
-                                percent_complete = job_summary['percentComplete']
+                                if options.get('job_summary', '').lower() == 'full':
+                                    jobs_dict[job_id] = job_summary
+                                else:
+                                    status = job_summary['status']
+                                    operation = job_summary['localizedOperationName']
+                                    percent_complete = job_summary['percentComplete']
 
-                                app_type = ''
-                                job_type = ''
-                                pending_reason = ''
-                                subclient_id = ''
+                                    app_type = ''
+                                    job_type = ''
+                                    pending_reason = ''
+                                    subclient_id = ''
 
-                                if 'appTypeName' in job_summary:
-                                    app_type = job_summary['appTypeName']
+                                    if 'appTypeName' in job_summary:
+                                        app_type = job_summary['appTypeName']
 
-                                if 'jobType' in job_summary:
-                                    job_type = job_summary['jobType']
+                                    if 'jobType' in job_summary:
+                                        job_type = job_summary['jobType']
 
-                                if 'pendingReason' in job_summary:
-                                    pending_reason = job_summary['pendingReason']
+                                    if 'pendingReason' in job_summary:
+                                        pending_reason = job_summary['pendingReason']
 
-                                if 'subclient' in job_summary:
-                                    job_subclient = job_summary['subclient']
-                                    if 'subclientId' in job_subclient:
-                                        subclient_id = job_subclient['subclientId']
+                                    if 'subclient' in job_summary:
+                                        job_subclient = job_summary['subclient']
+                                        if 'subclientId' in job_subclient:
+                                            subclient_id = job_subclient['subclientId']
 
-                                jobs_dict[job_id] = {
-                                    'operation': operation,
-                                    'status': status,
-                                    'app_type': app_type,
-                                    'job_type': job_type,
-                                    'percent_complete': percent_complete,
-                                    'pending_reason': pending_reason,
-                                    'subclient_id': subclient_id
-                                }
+                                    jobs_dict[job_id] = {
+                                        'operation': operation,
+                                        'status': status,
+                                        'app_type': app_type,
+                                        'job_type': job_type,
+                                        'percent_complete': percent_complete,
+                                        'pending_reason': pending_reason,
+                                        'subclient_id': subclient_id
+                                    }
 
                     return jobs_dict
 
@@ -473,6 +476,12 @@ class JobController(object):
 
                         default: []
 
+                    job_summary     (str)   --  To return the basic job summary or full job summary
+
+                        default: basic
+
+                        accepted values: ['basic', 'full']
+
             Returns:
                 dict    -   dictionary consisting of the job IDs matching the given criteria
                 as the key, and their details as its value
@@ -550,6 +559,11 @@ class JobController(object):
 
                         default: []
 
+                    job_summary     (str)   --  To return the basic job summary or full job summary
+
+                        default: basic
+
+                        accepted values: ['basic', 'full']
 
             Returns:
                 dict    -   dictionary consisting of the job IDs matching the given criteria
@@ -629,6 +643,11 @@ class JobController(object):
 
                         default: []
 
+                    job_summary     (str)   --  To return the basic job summary or full job summary
+
+                        default: basic
+
+                        accepted values: ['basic', 'full']
 
             Returns:
                 dict    -   dictionary consisting of the job IDs matching the given criteria
@@ -1212,14 +1231,14 @@ class Job(object):
 
         if flag:
             if response.json():
-               response = response.json()
+                response = response.json()
 
-               if response.get('errorCode', 0) != 0:
-                   error_message = response.json()['errorMessage']
-                   o_str = 'Failed to fetch details.\nError: "{0}"'.format(error_message)
-                   raise SDKException('Job', '102', o_str)
+                if response.get('errorCode', 0) != 0:
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Failed to fetch details.\nError: "{0}"'.format(error_message)
+                    raise SDKException('Job', '102', o_str)
 
-               return response
+                return response
             else:
                 raise SDKException('Response', '102')
         else:

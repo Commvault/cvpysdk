@@ -118,6 +118,8 @@ from __future__ import unicode_literals
 import uuid
 
 from base64 import b64encode
+from json import JSONDecodeError
+
 from past.builtins import basestring
 from future.standard_library import install_aliases
 from .exception import SDKException
@@ -1069,3 +1071,124 @@ class DiskLibrary(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+
+class RPStores(object):
+    def __init__(self, commcell):
+        """Initialize object of the MediaAgents class.
+
+            Args:
+                commcell(object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the MediaAgents class
+        """
+        self._commcell = commcell
+        self._rp_stores = None
+        self.refresh()
+
+    def _get_rp_stores(self):
+        xml = '<?xml version="1.0" encoding="UTF-8"?><EVGui_GetLibraryListWCReq libraryType="RPSTORE"/>'
+        response = self._commcell.execute_qcommand("qoperation execute", xml)
+
+        try:
+            return {library["library"]["libraryName"].lower(): library["MountPathList"][0]["rpStoreLibraryInfo"]["rpStoreId"]
+                    for library in response.json()["libraryList"]}
+        except (KeyError, JSONDecodeError) as error:
+            err_msg = response.json().get("errorMessage", "") if response.status_code == 200 else ""
+            raise SDKException('Storage', '102', '{0}'.format(err_msg)) from error
+
+    def add(self, name, path, storage, media_agent_name):
+        """
+
+        Args:
+            name    (str):     Name of the RPStore
+
+            path    (str):     Path of the RPStore
+
+            storage (int):     Storage Capacity of the RPStore in GB
+
+            media_agent_name(str)   :   Name of the media agent
+
+        Returns:
+            An instance of RPStore
+
+        """
+        try:
+            assert self.has_rp_store(name) is False
+        except AssertionError as error:
+            raise SDKException("Storage", 102, "An RPStore already exists with the same name") from error
+
+        media_agents = MediaAgents(self._commcell)
+        try:
+            ma_id = media_agents.all_media_agents[media_agent_name]["id"]
+        except KeyError as error:
+            raise SDKException('Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)) from error
+
+        payload = {
+            "rpLibrary": {"maxSpacePerRPStoreGB": storage},
+            "storageLibrary": {
+                "mediaAgentId": int(ma_id),
+                "libraryName": name,
+                "mountPath": path
+            },
+            "opType": 1
+        }
+        flag, response = self._commcell._cvpysdk_object.make_request("POST", self._commcell._services["RPSTORE"], payload)
+
+        try:
+            return RPStore(self._commcell, name, response.json()["storageLibrary"]["libraryId"])
+        except KeyError as error:
+            err_msg = response.json().get("errorMessage", "") if flag else ""
+            raise SDKException('Storage', '102', '{0}'.format(err_msg)) from error
+
+    def has_rp_store(self, rpstore_name):
+        """Validates if the given RPStore is present
+
+        Args:
+            rpstore_name       (str):   Name of the RPStore
+
+        Returns:
+            bool : True if present else False
+        """
+        if not isinstance(rpstore_name, basestring):
+            raise SDKException('Storage', '101')
+
+        return rpstore_name.lower() in self._rp_stores
+
+    def get(self, rpstore_name):
+        """Fetches the given RPStore
+
+        Args:
+            rpstore_name    (str):  Name of the RPStore
+
+        Returns:
+            An instance of the RPStore
+
+        """
+        if not isinstance(rpstore_name, basestring):
+            raise SDKException('Storage', '101')
+
+        try:
+            return RPStore(self._commcell, rpstore_name, self._rp_stores[rpstore_name.lower()])
+        except KeyError as error:
+            raise SDKException('Storage', '102', 'No RPStore exists with name: {0}'.format(rpstore_name)) from error
+
+    def refresh(self):
+        """Refresh the media agents associated with the Commcell."""
+        self._rp_stores = self._get_rp_stores()
+
+
+class RPStore(object):
+    def __init__(self, commcell, rpstore_name, rpstore_id):
+        self._commcell = commcell
+        self._rpstore_name = rpstore_name.lower()
+        self._rpstore_id = rpstore_id
+
+    @property
+    def rpstore_name(self):
+        return self._rpstore_name
+
+    @property
+    def rpstore_id(self):
+        return self._rpstore_id

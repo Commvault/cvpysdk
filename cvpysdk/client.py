@@ -340,7 +340,7 @@ class Clients(object):
                     no client exists with the given Name / Id
 
         """
-        value = str(value)
+        value = str(value).lower()
 
         if value in self.all_clients:
             return self.all_clients[value]
@@ -494,7 +494,7 @@ class Clients(object):
                 virtualization_clients = {}
 
                 for pseudo_client in pseudo_clients:
-                    virtualization_clients[pseudo_client['client']['clientName']] = {
+                    virtualization_clients[pseudo_client['client']['clientName'].lower()] = {
                         'clientId': pseudo_client['client']['clientId'],
                         'hostName': pseudo_client['client']['hostName']
                     }
@@ -3484,4 +3484,3 @@ class Client(object):
         """Returns the job start time"""
 
         return self._job_start_time
-

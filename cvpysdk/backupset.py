@@ -174,7 +174,7 @@ class Backupsets(object):
             'postgresql': PostgresBackupset,
             "active directory" : ADBackupset,
             'db2': DB2Backupset,
-            'virtual server' : VSBackupset
+            'virtual server': VSBackupset
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:

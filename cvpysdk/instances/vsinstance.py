@@ -27,15 +27,30 @@ VirtualServerInstance:
 
     co_ordinator                    --  getter
 
+To add a new Virtual Instance, create a class in a new module under  virtualserver sub package
+
+
+The new module which is created has to named in the following manner:
+1. Name the module with the name of the Virtual Server without special characters
+2.Spaces alone must be replaced with underscores('_')
+
+For eg:
+
+    The Virtual Server 'Red Hat Virtualization' is named as 'red_hat_virtualization.py'
+
+    The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 """
 
 from __future__ import unicode_literals
+
+import re
+from importlib import import_module
+from inspect import getmembers, isclass, isabstract
+
 from past.builtins import basestring
 
 from ..instance import Instance
-from ..client import Client
 from ..exception import SDKException
-from .. import constants
 
 
 class VirtualServerInstance(Instance):
@@ -44,70 +59,18 @@ class VirtualServerInstance(Instance):
     def __new__(cls, agent_object, instance_name, instance_id=None):
         """Decides which instance object needs to be created"""
 
-        hv_type = constants.HypervisorType
-        if instance_name == hv_type.VIRTUAL_CENTER.value.lower():
-            from .virtualserver.VMwareInstance import VMwareInstance
-            return object.__new__(VMwareInstance)
+        instance_name = instance_name.replace(" ", "_")
+        re.sub('[^A-Za-z0-9]+', '', instance_name)
+        try:
+            subclient_module = import_module("cvpysdk.instances.virtualserver.{}".format(instance_name))
+        except ImportError:
+            subclient_module = import_module("cvpysdk.instances.virtualserver.null")
 
-        elif instance_name == hv_type.MS_VIRTUAL_SERVER.value.lower():
-            from .virtualserver.hypervinstance import HyperVInstance
-            return object.__new__(HyperVInstance)
+        classes = getmembers(subclient_module, lambda m: isclass(m) and not isabstract(m))
 
-        elif instance_name == hv_type.AZURE_V2.value.lower():
-            from .virtualserver.azureRMinstance import AzureRMInstance
-            return object.__new__(AzureRMInstance)
-
-        elif instance_name == hv_type.FUSION_COMPUTE.value.lower():
-            from .virtualserver.fusioncomputeinstance import FusionComputeInstance
-            return object.__new__(FusionComputeInstance)
-
-        elif instance_name == hv_type.ORACLE_VM.value.lower():
-            from .virtualserver.oraclevminstance import OracleVMInstance
-            return object.__new__(OracleVMInstance)
-
-        elif instance_name == hv_type.ALIBABA_CLOUD.value.lower():
-            from .virtualserver.alibabacloudinstance import AlibabaCloudInstance
-            return object.__new__(AlibabaCloudInstance)
-
-        elif instance_name == hv_type.ORACLE_CLOUD.value.lower():
-            from .virtualserver.oraclecloudinstance import OracleCloudInstance
-            return object.__new__(OracleCloudInstance)
-
-        elif instance_name == hv_type.OPENSTACK.value.lower():
-            from .virtualserver.openstackinstance import OpenStackInstance
-            return object.__new__(OpenStackInstance)
-
-        elif instance_name == hv_type.GOOGLE_CLOUD.value.lower():
-            from .virtualserver.googlecloudinstance import GoogleCloudInstance
-            return object.__new__(GoogleCloudInstance)
-
-        elif instance_name == hv_type.Azure_Stack.value.lower():
-            from .virtualserver.azurestackinstance import AzureStackInstance
-            return object.__new__(AzureStackInstance)
-
-        elif instance_name == hv_type.Rhev.value.lower():
-            from .virtualserver.rhevinstance import RhevInstance
-            return object.__new__(RhevInstance)
-
-        elif instance_name == hv_type.AMAZON_AWS.value.lower():
-            from .virtualserver.amazoninstance import AmazonInstance
-            return object.__new__(AmazonInstance)
-
-        elif instance_name == hv_type.VCLOUD.value.lower():
-            from .virtualserver.VCloudInstance import VcloudInstance
-            return object.__new__(VcloudInstance)
-
-        elif instance_name == hv_type.Nutanix.value.lower():
-            from .virtualserver.nutanixinstance import nutanixinstance
-            return object.__new__(nutanixinstance)
-
-        elif instance_name == hv_type.ORACLE_CLOUD_INFRASTRUCTURE.value.lower():
-            from .virtualserver.oralcecloudinfrastructureinstance import OracleCloudInfrastructureInstance
-            return object.__new__(OracleCloudInfrastructureInstance)
-
-        elif instance_name == hv_type.OPENSHIFT.value.lower():
-            from .virtualserver.openshiftinstance import OpenShiftInstance
-            return object.__new__(OpenShiftInstance)
+        for name, _class in classes:
+            if issubclass(_class, VirtualServerInstance):
+                return object.__new__(_class)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.

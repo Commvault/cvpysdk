@@ -328,6 +328,16 @@ class VirtualMachinePolicies(object):
             err_msg = 'Virtualization client "{0}" does not exist'.format(vclient_name)
             raise SDKException('Virtual Machine', '102', err_msg)
 
+    def _get_proxy_client_json(self, options):
+        try:
+            id_ = self._commcell_object.clients[options.get("proxy_client")]["id"]
+        except KeyError:
+            return dict()
+        return{
+            "clientId": int(id_),
+            "clientName": options["proxy_client"]
+        }
+
     def _prepare_add_vmpolicy_json_default(self, vm_policy_options):
         """Sets values for creating the add policy json
 
@@ -340,8 +350,8 @@ class VirtualMachinePolicies(object):
         #  setting the json values using functions for elements having nested values
         _datacenter = self._get_data_center_json(vm_policy_options)
         _entity = VirtualMachinePolicies._entity_json(vm_policy_options)
-        _esxservers = self._get_esx_servers_json(vm_policy_options)
-        _datastores = self._get_data_stores_json(vm_policy_options)
+        _esxservers = [{"esxServerName": esx_server} for esx_server in vm_policy_options.get("esxServers", "")]
+        _datastores = [{"dataStoreName": datastore} for datastore in vm_policy_options.get("dataStores", "")]
         _security_associations = VirtualMachinePolicies._security_associations_json(
             vm_policy_options)
         _network_names = VirtualMachinePolicies._network_names_json(vm_policy_options)
@@ -349,7 +359,16 @@ class VirtualMachinePolicies(object):
         _vm_policy_json = {
             'action': 0,        # 0 for add
             'policy': {
-                'allDataStoresSelected': vm_policy_options.get('allDataStoresSelected', True),
+                "vmNameEditType": vm_policy_options.get("vm_name_edit", 1),
+                "vmNameEditString": vm_policy_options.get("vm_name_edit_string", "Replicated_"),
+                "createIsolatedNetwork": False,
+                "isResourceGroupPolicy": True,
+                "resourcePoolPath": "//",
+                "destinationHyperV": {
+                    "clientId": int(self._commcell_object.clients[vm_policy_options['clientName']]["id"]),
+                    "clientName": vm_policy_options['clientName']
+                },
+                'allDataStoresSelected': vm_policy_options.get('allDataStoresSelected', False),
                 'daysRetainUntil': vm_policy_options.get('daysRetainUntil', -1),
                 'migrateVMs': vm_policy_options.get('migrateVMs', False),
                 'senderEmailId': vm_policy_options.get('senderEmailId', ''),
@@ -362,9 +381,16 @@ class VirtualMachinePolicies(object):
                 'allowRenewals': vm_policy_options.get('allowRenewals', True),
                 'disableSuccessEmail': vm_policy_options.get('disableSuccessEmail', False),
                 'performAutoMigration': vm_policy_options.get('performAutoMigration', False),
-                'allESXServersSelected': vm_policy_options.get('allESXServersSelected', True),
+                'allESXServersSelected': vm_policy_options.get('allESXServersSelected', False),
                 'dataCenter': _datacenter,
                 'entity': _entity,
+                "proxyClientEntity": self._get_proxy_client_json(vm_policy_options),
+                "networkList": [
+                    {
+                        "destinationNetwork": vm_policy_options.get("destination_network"),
+                        "sourceNetwork": "Any Network"
+                    }
+                ]
             }
         }
 
@@ -410,14 +436,12 @@ class VirtualMachinePolicies(object):
         instance = agent.instances.get(instance_keys)
         vm_policy_options['instanceId'] = instance.instance_id
 
-        self._set_data_center(vm_policy_options)
+        # self._set_data_center(vm_policy_options)
         _datacenter = {
-            'dataCenterId': vm_policy_options['dataCenterId'],
-            'dataCenterName': vm_policy_options['dataCenterName'],
             'vCenterName': vm_policy_options['vCenterName'],
             'instanceEntity': {
                 'clientId': int(vm_policy_options['clientId']),
-                'clientName': vm_policy_options['clientName'],
+                'instanceName': vm_policy_options['clientName'],
                 'instanceId': int(vm_policy_options['instanceId'])
             },
         }
@@ -476,158 +500,6 @@ class VirtualMachinePolicies(object):
             # if no datacenter is found for the vclient, throw error
             err_msg = ('No datacenter found for virtual client: {0}'.format(
                 vm_policy_options['clientName']))
-            raise SDKException('Virtual Machine', '102', err_msg)
-
-    def _get_esx_servers_json(self, vm_policy_options):
-        """Returns list of esx servers json if esx servers are passed by user in the add policy
-            json
-
-            Args:
-                vm_policy_options (dict)  --  vm policy options provided by user
-
-            Returns:
-                _esxservers       (list)  --  list of dictionaries containing esx server
-                                                information
-
-            Raises:
-                SDKException:
-                    if specified esx server is not found in the datacenter
-        """
-        _esxservers = []
-        esx_server_list = self._get_esx_server_list(vm_policy_options)
-        if 'esxServers' in vm_policy_options:
-            vm_policy_options['allESXServersSelected'] = False
-            for esxserver in vm_policy_options['esxServers']:
-                # add each esxServe to _esxservers if it exists in esx server list
-                found = False
-                for each_esxserver_dict in esx_server_list:
-                    if each_esxserver_dict['esxServerName'] == esxserver:
-                        _esxservers.append(each_esxserver_dict)
-                        found = True
-                        break
-                if not found:
-                    err_msg = 'ESX Server "{0}" not found in datacenter "{1}"'.format(
-                        esxserver, vm_policy_options['dataCenterName']
-                    )
-                    raise SDKException('Virtual Machine', '102', err_msg)
-
-        vm_policy_options['esxServers'] = _esxservers
-        return _esxservers
-
-    def _get_esx_server_list(self, vm_policy_options):
-        """Returns list of esx servers in the datacenter
-
-            Args:
-                vm_policy_options    (dict)  --  main dict containing vm policy options
-
-            Returns:
-                dict    --  esx server list in the datacenter
-
-            Raises:
-                SDKException:
-                    if no esx server is found in the datacenter
-
-                    if no response is found
-
-                    if response is not a success
-
-        """
-
-        # make sure all dict key names are correct
-        get_esxservers_xml = (
-            '<?xml version="1.0" encoding="UTF-8" standalone="no" ?>'
-            '<Ida_GetESXServerListReq>'
-            '<dataCenter dataCenterId="' + str(vm_policy_options['dataCenterId']) +
-            '" dataCenterName="' + vm_policy_options['dataCenterName'] +
-            '" vCenterName="' + vm_policy_options['vCenterName'] + '">'
-            '<instanceEntity clientId="' + str(vm_policy_options['clientId'])
-            + '" clientName="' + vm_policy_options['clientName'] +
-            '" instanceId="' + str(vm_policy_options['instanceId']) + '"/>'
-            '</dataCenter></Ida_GetESXServerListReq>'
-        )
-        response_json = self._commcell_object._qoperation_execute(request_xml=get_esxservers_xml)
-
-        if 'ESXServerList' in response_json:
-            return response_json['ESXServerList']
-        else:
-            err_msg = 'No ESX Servers found in the datacenter "{0}"'.format(
-                vm_policy_options['dataCenterName'])
-            raise SDKException('Virtual Machine', '102', err_msg)
-
-    def _get_data_stores_json(self, vm_policy_options):
-        """Returns list of datastores to which live mount is to be migrated
-
-            Args:
-                vm_policy_options    (dict)  --  main dict containing vm policy options
-
-            Returns:
-                _datastores  (list)         --  list of dictionaries containing datastores
-                                                information
-
-            Raises:
-                SDKException:
-                    if specified datastore is not found for the given esxserver list
-        """
-        _datastores = []
-        if 'dataStores' in vm_policy_options:
-            vm_policy_options['migrateVMs'] = True
-            vm_policy_options['allDataStoresSelected'] = False
-            _datastores_list = self._get_datastores_list(vm_policy_options)
-            for datastore in vm_policy_options['dataStores']:
-                found = False
-                for each_datastore_dict in _datastores_list:
-                    if each_datastore_dict['dataStoreName'] == datastore:
-                        _datastores.append(each_datastore_dict)
-                        found = True
-                        break
-                if not found:
-                    err_msg = 'No datastore "{0}" found'.format(
-                        datastore
-                    )
-                    raise SDKException('Virtual Machine', '102', err_msg)
-        elif 'migrateVMs' in vm_policy_options:
-            if vm_policy_options['migrateVMs'] is True:
-                # if no datastores are provided and migrateVMs is True
-                # select all datastores
-                vm_policy_options['allDataStoresSelected'] = True
-
-        return _datastores
-
-    def _get_datastores_list(self, vm_policy_options):
-        """Returns list of datastores for all the esx servers that are specified
-
-            Args:
-                vm_policy_options    (dict)  --  main dict containing vm policy options
-
-            Returns:
-                response.json()['DataStoreList']    (dict)  --  datastore list for all the
-                                                                specified esx servers
-
-            Raises:
-                SDKException:
-                    if no datastore is found for any esx server in _esxservers
-
-                    if no response is found
-
-                    if response is not a success
-
-                """
-        get_datastores_xml = ('<?xml version="1.0" encoding="UTF-8" standalone="no" ?>'
-                              '<Ida_GetDataStoreListReq>')
-        for esxserver in vm_policy_options['esxServers']:
-            get_datastores_xml += (
-                '<ESXServerList _type_="' + str(esxserver['_type_']) + '" esxServerId="' +
-                str(esxserver['esxServerId']) + '" esxServerName="' +
-                str(esxserver['esxServerName']) + '"/>'
-            )
-        get_datastores_xml += '</Ida_GetDataStoreListReq>'
-
-        response_json = self._commcell_object._qoperation_execute(request_xml=get_datastores_xml)
-
-        if 'DataStoreList' in response_json:
-            return response_json['DataStoreList']
-        else:
-            err_msg = 'No datastores found!'
             raise SDKException('Virtual Machine', '102', err_msg)
 
     def _clone_vm_policy(self, vm_policy_json):
@@ -781,8 +653,6 @@ class VirtualMachinePolicies(object):
                 _entity            (dict)    --  json for the entity attribute in add policy json
         """
         _entity = {
-            'dataCenterId': vm_policy_options['dataCenterId'],
-            'dataCenterName': vm_policy_options['dataCenterName'],
             'vmAllocPolicyName': vm_policy_options['vmAllocPolicyName'],
             '_type_': 93,           # hardcoded
             'policyType': vm_policy_options["policyType"],
@@ -1052,7 +922,7 @@ class VirtualMachinePolicy(object):
             return object.__new__(LiveMountPolicy)
         # TODO: future support for 'Clone From Template'
         elif vm_policy_type_id == 0:
-            pass
+            return object.__new__(VirtualMachinePolicy)
         # TODO: future support for 'Restore From Backup'
         elif vm_policy_type_id == 13:
             pass
