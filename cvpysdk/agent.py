@@ -51,6 +51,10 @@ Agent:
 
     _get_agent_properties()     --   get the properties of this agent
 
+    _process_update_request()   --  to process the request using API call
+
+    update_properties()         --  to update the agent properties
+
     enable_backup()             --   enables the backup for the agent
 
     enable_backup_at_time()     --   enables the backup for the agent at the input time specified
@@ -76,6 +80,7 @@ from __future__ import unicode_literals
 
 import string
 import time
+import copy
 
 from past.builtins import basestring
 
@@ -420,10 +425,99 @@ class Agent(object):
         else:
             return request_json1
 
+    def _process_update_request(self, request_json):
+        """Runs the Agent update API
+
+            Args:
+                request_json    (dict)  -- request json sent as payload
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self.GET_AGENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    if response.json()['response'][0].get('errorCode', 0):
+                        error_message = response.json()['errorMessage']
+                        raise SDKException(
+                            'Agent', '102', 'Failed to update Agent properties\nError: "{0}"'.format(error_message))
+                    self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def update_properties(self, properties_dict):
+        """Updates the agent properties
+
+            Args:
+                properties_dict (dict)  --  agent property dict which is to be updated
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+        need to change and use the update_properties method to set the properties
+
+        """
+        request_json = {
+            "agentProperties":
+                {
+                    "AgentProperties": {},
+                    "idaEntity": {
+                        "appName": self.agent_name,
+                        "clientName": self._client_object.client_name,
+                        "commCellName": self._commcell_object.commserv_name
+                    },
+                }
+        }
+
+        request_json['agentProperties'].update(properties_dict)
+
+        self._process_update_request(request_json)
+
+    @property
+    def properties(self):
+        """Returns the agent properties"""
+        return copy.deepcopy(self._agent_properties)
+
     @property
     def name(self):
         """Returns the Agent display name """
         return self._agent_properties['idaEntity']['appName']
+
+    @property
+    def description(self):
+        """Returns the description of the Agent"""
+        return self._agent_properties.get('AgentProperties', {}).get('userDescription')
+
+    @description.setter
+    def description(self, description):
+        """Sets the description for the agent
+
+        Args:
+            description (str)   -- Description to be set for the agent
+
+        """
+        update_properties = self.properties
+        update_properties['AgentProperties']['userDescription'] = description
+        self.update_properties(update_properties)
 
     @property
     def agent_id(self):

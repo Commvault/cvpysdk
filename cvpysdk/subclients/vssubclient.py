@@ -135,10 +135,8 @@ import copy
 import xml.etree.ElementTree as ET
 from importlib import import_module
 from inspect import getmembers, isclass, isabstract
-from xml.dom.minidom import parseString
 
 import xmltodict
-from dicttoxml import dicttoxml
 from past.builtins import basestring
 
 from cvpysdk.plan import Plans
@@ -532,7 +530,7 @@ class VirtualServerSubclient(Subclient):
             cbt_attr = r'useChangedTrackingOnVM'
             self._set_subclient_properties("_vsaSubclientProp['useChangedTrackingOnVM']",
                                            cbt_status)
-        except:
+        except BaseException:
             raise SDKException('Subclient', '101')
 
     @property
@@ -761,7 +759,7 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": "",
-                "name" : network_card_dict['label'],
+                "name": network_card_dict['label'],
                 "networkName": _destnetwork,
                 "destinationNetwork": _destnetwork
             }
@@ -1236,7 +1234,6 @@ class VirtualServerSubclient(Subclient):
         vm_ids, vm_names = self._get_vm_ids_and_names_dict()
         vm_path = self._parse_vm_path(vm_names, vm_path)
 
-
         browse_content = super(VirtualServerSubclient, self).browse(
             show_deleted=show_deleted_files, restore_index=restore_index,
             vm_disk_browse=vm_disk_browse,
@@ -1534,7 +1531,6 @@ class VirtualServerSubclient(Subclient):
 
         if fbr_ma:
             _file_restore_option["proxy_client"] = fbr_ma
-
 
         _file_restore_option["client"] = destination_client
         _file_restore_option["destination_path"] = destination_path
@@ -2005,7 +2001,7 @@ class VirtualServerSubclient(Subclient):
         self._set_restore_inputs(
             restore_option,
             disks=vm_disks,
-            esx_host= restore_option.get('esx_host') or vs_metadata['esxHost'],
+            esx_host=restore_option.get('esx_host') or vs_metadata['esxHost'],
             instanceSize=restore_option.get('instanceSize', instanceSize),
             new_name=restore_option.get('new_name', "Delete" + vm_to_restore)
         )
@@ -2067,7 +2063,6 @@ class VirtualServerSubclient(Subclient):
         # vs metadata from browse result
         _metadata = browse_result[1][('\\' + vm_to_restore)]
         vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
-
 
         restore_option['resourcePoolPath'] = vs_metadata['resourcePoolPath']
         restore_option['datacenter'] = vs_metadata.get('dataCenter', '')
@@ -2254,7 +2249,8 @@ class VirtualServerSubclient(Subclient):
         self._virtualserver_option_restore_json["diskLevelVMRestoreOption"]["advancedRestoreOptions"] = self._advanced_restore_option_list
         self._advanced_restore_option_list = []
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["virtualServerRstOption"] = self._virtualserver_option_restore_json
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(restore_option)
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(
+            restore_option)
 
         return request_json
 
@@ -2378,7 +2374,8 @@ class VirtualServerSubclient(Subclient):
         request_json = self._restore_json(restore_option=restore_option)
         request_json["taskInfo"]["subTasks"][0]["options"]["vmBrowsePathNodes"] = _vm_browse_path_nodes_json
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["virtualServerRstOption"] = self._virtualserver_option_restore_json
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(restore_option)
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(
+            restore_option)
         request_json["taskInfo"]["subTasks"][0]["subTask"]["operationType"] = 1007
         request_json["taskInfo"]["associations"][0]["_type_"] = 6
 
@@ -2389,16 +2386,16 @@ class VirtualServerSubclient(Subclient):
 
     def _vm_browse_path_nodes(self):
         return {
-                "browsePath": self._advanced_restore_option_list[-1]["name"],
-                "vmGUID": self._advanced_restore_option_list[-1]["guid"],
-                "esxHost": self._advanced_restore_option_list[-1]["esxHost"],
-                "datastore": self._advanced_restore_option_list[-1]["Datastore"],
-                "resourcePoolPath": self._advanced_restore_option_list[-1]["resourcePoolPath"],
-                "vmDataStore": self._advanced_restore_option_list[-1]["Datastore"],
-                "vmEsxHost": self._advanced_restore_option_list[-1]["esxHost"],
-                "vmeResourcePoolPath": self._advanced_restore_option_list[-1]["resourcePoolPath"],
-                "isMetadataAvaiable": "0"
-                }
+            "browsePath": self._advanced_restore_option_list[-1]["name"],
+            "vmGUID": self._advanced_restore_option_list[-1]["guid"],
+            "esxHost": self._advanced_restore_option_list[-1]["esxHost"],
+            "datastore": self._advanced_restore_option_list[-1]["Datastore"],
+            "resourcePoolPath": self._advanced_restore_option_list[-1]["resourcePoolPath"],
+            "vmDataStore": self._advanced_restore_option_list[-1]["Datastore"],
+            "vmEsxHost": self._advanced_restore_option_list[-1]["esxHost"],
+            "vmeResourcePoolPath": self._advanced_restore_option_list[-1]["resourcePoolPath"],
+            "isMetadataAvaiable": "0"
+        }
 
     def _json_restore_default_restore_settings(self, restore_option):
         """setter for  the default restore settings in block level json"""
@@ -2415,17 +2412,17 @@ class VirtualServerSubclient(Subclient):
 
     def _allocation_policy_json(self, restore_option):
         self._virtualserver_option_restore_json["allocationPolicy"] = {
-                "flags": "",
-                "instanceEntity": {
-                    "flags": ""
-                },
-                "policyType": "0",
-                "region": {
-                    "flags": ""
-                },
-                "vmAllocPolicyId": restore_option["target_id"],
-                "vmAllocPolicyName": restore_option["target_name"]
-            }
+            "flags": "",
+            "instanceEntity": {
+                "flags": ""
+            },
+            "policyType": "0",
+            "region": {
+                "flags": ""
+            },
+            "vmAllocPolicyId": restore_option["target_id"],
+            "vmAllocPolicyName": restore_option["target_name"]
+        }
 
     def _prepare_blr_xml(self, restore_option):
         request_json = self._prepare_blr_json(restore_option)

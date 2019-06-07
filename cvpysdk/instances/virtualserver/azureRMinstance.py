@@ -53,9 +53,9 @@ class AzureRMInstance(VirtualServerInstance):
 
         """
 
-
-        super(VirtualServerInstance, self).__init__(agent, name, iid)
         self._vendor_id = 7
+        super(VirtualServerInstance, self).__init__(agent, name, iid)
+
 
 
 
@@ -94,7 +94,7 @@ class AzureRMInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
+                    "vsInstanceType": self._vendor_id,
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
                     }

@@ -47,10 +47,10 @@ class nutanixinstance(VirtualServerInstance):
                 iid                 (int)       --  the instance id
 
         """
+	self._vendor_id = 601
         self._nutanix_cluster = None
         self._username = None
         self._server_name = []
-        self._vendor_id = 601
         super(nutanixinstance, self).__init__(agent, name, iid)
 
     def _get_instance_properties(self):
@@ -93,7 +93,7 @@ class nutanixinstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
+                    "vsInstanceType": self._vendor_id,
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
                     }

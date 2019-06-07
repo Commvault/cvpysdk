@@ -41,9 +41,9 @@ class AzureInstance(VirtualServerInstance):
                                                                                 instance id
 
         """
-
-        super(AzureInstance, self).__init__(agent, name, iid)
         self._vendor_id = 5
+        super(AzureInstance, self).__init__(agent, name, iid)
+
 
     def  _get_instance_properties(self):
         """
@@ -81,7 +81,7 @@ class AzureInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
+                    "vsInstanceType": self._vendor_id,
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
                     }

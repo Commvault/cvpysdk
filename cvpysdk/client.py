@@ -107,6 +107,10 @@ Client
 
     _make_request()              --  makes the upload request to the server
 
+    _process_update_request()    --  to process the request using API call
+
+    update_properties()          --  to update the client properties
+
     enable_backup()              --  enables the backup for the client
 
     enable_backup_at_time()      --  enables the backup for the client at the input time specified
@@ -173,6 +177,12 @@ Client Attributes
 
     **available_security_roles**    --  returns the security roles available for the selected
     client
+
+    **properties**                  --  returns the properties of the client
+
+    **display_name**                --  returns the display name of the client
+
+    **description**                 --  returns the description of the client
 
     **client_id**                   --  returns the id of the client
 
@@ -248,6 +258,7 @@ from __future__ import unicode_literals
 import os
 import re
 import time
+import copy
 
 from base64 import b64encode
 from past.builtins import basestring
@@ -1802,6 +1813,76 @@ class Client(object):
         else:
             raise SDKException('Client', '109')
 
+    def _process_update_request(self, request_json):
+        """Runs the Client update API
+
+            Args:
+                request_json    (dict)  -- request json sent as payload
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._CLIENT, request_json
+        )
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    if response.json()['response'][0].get('errorCode', 0):
+                        error_message = response.json()['response'][0]['errorMessage']
+                        o_str = 'Failed to set property\nError: "{0}"'.format(
+                            error_message)
+                        raise SDKException('Client', '102', o_str)
+                    self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def update_properties(self, properties_dict):
+        """Updates the client properties
+
+            Args:
+                properties_dict (dict)  --  client property dict which is to be updated
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+        need to change and use the update_properties method to set the properties
+
+        """
+        request_json = {
+            "clientProperties": {},
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self.client_name
+                    }
+                ]
+            }
+        }
+
+        request_json['clientProperties'].update(properties_dict)
+        self._process_update_request(request_json)
+
+    @property
+    def properties(self):
+        """Returns the client properties"""
+        return copy.deepcopy(self._properties)
+
     @property
     def name(self):
         """Returns the Client name"""
@@ -1811,6 +1892,35 @@ class Client(object):
     def display_name(self):
         """Returns the Client display name"""
         return self._properties['client']['displayName']
+
+    @display_name.setter
+    def display_name(self, display_name):
+        """setter to set the display name of the client
+
+        Args:
+            display_name    (str)   -- Display name to be set for the client
+
+        """
+        update_properties = self.properties
+        update_properties['client']['displayName'] = display_name
+        self.update_properties(update_properties)
+
+    @property
+    def description(self):
+        """Returns the Client description"""
+        return self._properties.get('client', {}).get('clientDescription')
+
+    @description.setter
+    def description(self, description):
+        """setter to set the display name of the client
+
+        Args:
+            description    (str)   -- description to be set for the client
+
+        """
+        update_properties = self.properties
+        update_properties['client']['clientDescription'] = description
+        self.update_properties(update_properties)
 
     @property
     def commcell_name(self):

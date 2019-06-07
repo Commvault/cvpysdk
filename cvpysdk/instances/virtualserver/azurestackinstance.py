@@ -46,10 +46,10 @@ class AzureStackInstance(VirtualServerInstance):
                 iid                 (int)       --  the instance id
 
         """
+	self._vendor_id = 403
         self._subscriptionid = None
         self._applicationid = None
         self._server_name = []
-        self._vendor_id = 403
         super(AzureStackInstance, self).__init__(agent, name, iid)
 
 
@@ -95,7 +95,7 @@ class AzureStackInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
+                    "vsInstanceType":  self._vendor_id,
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
                     }

@@ -47,8 +47,8 @@ class FusionComputeInstance(VirtualServerInstance):
                                                                                 instance id
 
         """
-        super(FusionComputeInstance, self).__init__(agent, instance_name, instance_id)
-        self._vendor_id = 14
+	self._vendor_id = 14
+        super(FusionComputeInstance, self).__init__(agent, instance_name, instance_id)     
         self._server_name = None
 
 
@@ -81,7 +81,7 @@ class FusionComputeInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
+                    "vsInstanceType": self._vendor_id,
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
                     }

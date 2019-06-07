@@ -68,7 +68,7 @@ ClientGroup:
     _request_json_()               -- returns the appropriate JSON to pass for enabling/disabling
     an activity
 
-    _process_request_()            -- processes the response received for the CG properties request
+    _process_update_request()      -- processes the clientgroup update API call
 
     _update()                      -- updates the client group properties
 
@@ -116,6 +116,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import time
+import copy
 
 from past.builtins import basestring
 
@@ -787,6 +788,12 @@ class ClientGroup(object):
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
 
+        self._properties = None
+        self._description = None
+        self._is_backup_enabled = None
+        self._is_restore_enabled = None
+        self._is_data_aging_enabled = None
+
         self.refresh()
 
     def __repr__(self):
@@ -929,7 +936,7 @@ class ClientGroup(object):
         else:
             return request_json1
 
-    def _process_request_(self, request_json):
+    def _process_update_request(self, request_json):
         """Runs the Clientgroup update API
 
             Args:
@@ -1108,7 +1115,7 @@ class ClientGroup(object):
     @property
     def properties(self):
         """Returns the client group properties"""
-        return self._properties
+        return copy.deepcopy(self._properties)
 
     @property
     def name(self):
@@ -1203,7 +1210,7 @@ class ClientGroup(object):
             var['globalFilters']['opType'] = 1
         request_json['clientGroupOperationType'] = 2
 
-        self._process_request_(request_json)
+        self._process_update_request(request_json)
         self.refresh()
 
     def enable_backup(self):
@@ -1215,7 +1222,7 @@ class ClientGroup(object):
         """
         request_json = self._request_json_('Backup')
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             self._is_backup_enabled = True
@@ -1252,7 +1259,7 @@ class ClientGroup(object):
 
         request_json = self._request_json_('Backup', False, enable_time)
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             return
@@ -1273,7 +1280,7 @@ class ClientGroup(object):
         """
         request_json = self._request_json_('Backup', False)
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             self._is_backup_enabled = False
@@ -1295,7 +1302,7 @@ class ClientGroup(object):
         """
         request_json = self._request_json_('Restore')
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             self._is_restore_enabled = True
@@ -1332,7 +1339,7 @@ class ClientGroup(object):
 
         request_json = self._request_json_('Restore', False, enable_time)
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             return
@@ -1353,7 +1360,7 @@ class ClientGroup(object):
         """
         request_json = self._request_json_('Restore', False)
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             self._is_restore_enabled = False
@@ -1375,7 +1382,7 @@ class ClientGroup(object):
         """
         request_json = self._request_json_('Data Aging')
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             self._is_data_aging_enabled = True
@@ -1412,7 +1419,7 @@ class ClientGroup(object):
 
         request_json = self._request_json_('Data Aging', False, enable_time)
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             return
@@ -1433,7 +1440,7 @@ class ClientGroup(object):
         """
         request_json = self._request_json_('Data Aging', False)
 
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code == '0':
             self._is_data_aging_enabled = False
@@ -1640,10 +1647,7 @@ class ClientGroup(object):
         """Updates the client group properties
 
             Args:
-                properties_dict (dict)  --  client property dict which is to be updated
-                    e.g.: {
-                            "isSmartClientGroup": True
-                          }
+                properties_dict (dict)  --  client group property dict which is to be updated
 
             Returns:
                 None
@@ -1656,6 +1660,9 @@ class ClientGroup(object):
 
                     if response code is not as expected
 
+        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+        need to change and use the update_properties method to set the properties
+
         """
         request_json = {
             "clientGroupOperationType": 2,
@@ -1666,13 +1673,8 @@ class ClientGroup(object):
             }
         }
 
-        if "newName" in properties_dict:
-            request_json['clientGroupDetail']['clientGroup']['newName'] = properties_dict['newName']
-            del properties_dict['newName']
-
         request_json['clientGroupDetail'].update(properties_dict)
-
-        error_code, error_message = self._process_request_(request_json)
+        error_code, error_message = self._process_update_request(request_json)
 
         if error_code != '0':
             raise SDKException(

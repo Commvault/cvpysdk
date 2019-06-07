@@ -20,15 +20,21 @@ Db2Subclient:
     _get_subclient_properties()         --  gets the subclient related properties of
                                             db2 subclient
 
-    _default_db2_subclient_props()    --  returns subclient property json for db2
+    _get_subclient_properties_json()    -- gets subclient property json for db2
 
-    data()                              --  Getter and Setter for enabling data mode in db2
+    db2_use_dedupe_device()             -- getter and setter for enabling dedupe device option for db2
 
-    db2_use_dedupe_device               -- getter and setter for enabling dedupe device option for db2
+    db2_delete_log_files_after()        -- getter and setter for enabling delete log files after option in db2
 
-    db2_delete_log_files_after          -- getter and setter for enabling delete log files after option in db2
+    db2_backup_log_files()              -- getter and setter for enabling backup log files option for db2
 
-    db2_backup_log_files                -- getter and setter for enabling backup log files option for db2
+    db2_delete_log_files_after()        -- getter and setter for enabling delete log file after option for db2
+
+    is_backup_data_enabled()            -- getter and setter for enabling backup data option
+
+    enable_backupdata()                 -- Method to enable backup data option at subclient level
+
+    disable_backupdata()                -- Method to disable backup data option at subclient level
 
 """
 from __future__ import unicode_literals
@@ -41,6 +47,24 @@ class DB2Subclient(Subclient):
         DB2Subclient is a class to work on DB2 subclients
 
     """
+
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        """
+        Constructor for the class
+
+        Args:
+            backupset_object  (object)  -- instance of the Backupset class
+
+            subclient_name    (str)     -- name of the subclient
+
+            subclient_id      (str)     -- id of the subclient
+
+        """
+        super(DB2Subclient, self).__init__(
+            backupset_object, subclient_name, subclient_id)
+        self._db2_subclient_properties = {}
+        self._db2_backup_logfiles = {}
+        self._db2_delete_logfiles_after = {}
 
     @property
     def db2_use_dedupe_device(self):
@@ -60,18 +84,7 @@ class DB2Subclient(Subclient):
         Bool - True if delete log files option is enabled on the subclient. Else False
 
         """
-        return  self._properties.get('db2SubclientProp',{}).get('db2DeleteLogFilesAfter')
-
-    @property
-    def data(self):
-        """
-        Getter to fetch if data enabled in oracle subclient or not
-
-            Returns:
-                bool     --  True if data is enabled on the subclient. Else False
-
-        """
-        return self._db2_subclient_properties.get("data")
+        return self._subclient_properties.get('db2SubclientProp', {}).get('db2DeleteLogFilesAfter')
 
     @property
     def db2_backup_log_files(self):
@@ -81,7 +94,85 @@ class DB2Subclient(Subclient):
         Bool - True if delete log files option is enabled on the subclient. Else False
 
         """
-        return self._properties.get('db2SubclientProp', {}).get('db2BackupLogFiles')
+        return self._subclient_properties.get('db2SubclientProp', {}).get('db2BackupLogFiles')
+
+    @db2_backup_log_files.setter
+    def db2_backup_log_files(self, value):
+        """
+        To enable or disable log backup option
+        Args:
+
+            value   (bool)      --  to enable or disable log backup option for db2 subclient
+        """
+
+        self._set_subclient_properties(
+            "_db2_subclient_properties['db2BackupLogFiles']", value)
+
+
+    @db2_delete_log_files_after.setter
+    def db2_delete_log_files_after(self, value):
+        """
+        To enable or disable log backup option
+        Args:
+
+            value   (bool)      --  to enable or disable log backup option for db2 subclient
+        """
+
+        self._set_subclient_properties(
+            "_db2_subclient_properties['db2DeleteLogFilesAfter']", value)
+
+    @property
+    def is_backup_data_enabled(self):
+        """
+        Getter to fetch data backup status is enabled or disabled
+
+        Returns:
+
+            (bool)      -   boolean value is returned based on the status of data backup option
+
+        """
+
+        return self._subclient_properties.get("db2SubclientProp", {}).get('db2BackupData', True)
+
+    def enable_backupdata(self):
+        """
+        To enable or disable data backup
+
+        """
+
+        self._set_subclient_properties("_db2_subclient_properties['db2BackupData']", True)
+
+    def disable_backupdata(self):
+        """
+        To enable or disable data backup
+
+        """
+
+        self._set_subclient_properties("_db2_subclient_properties['db2BackupData']", False)
+
+    @property
+    def backup_mode_online(self):
+        """
+                Getter to fetch online backup mode is enabled or disabled
+
+                Returns:
+
+                    (bool)      -   boolean value is returned based on the status of data backup option
+                                    0 - online database , 1 - offline database
+                """
+
+        return self._subclient_properties.get("db2SubclientProp", {}).get('db2BackupMode', 0)
+
+    @backup_mode_online.setter
+    def backup_mode_online(self, value):
+        """
+        To enable or disable online backup mode
+
+        Args:
+            value (bool)    - to enable or disable online backup mode for db2 subclient
+
+        """
+        self._set_subclient_properties("_db2_subclient_properties['db2BackupMode']", value)
 
     def _get_subclient_properties(self):
         """Gets the subclient properties of this subclient.
@@ -94,30 +185,34 @@ class DB2Subclient(Subclient):
         """
 
         super(DB2Subclient, self)._get_subclient_properties()
+        if 'db2SubclientProp' not in self._subclient_properties:
+            self._subclient_properties['db2SubclientProp'] = {}
+        self._db2_subclient_properties = self._subclient_properties['db2SubclientProp']
+        self._db2_delete_logfiles_after = self._db2_subclient_properties.get(
+            'db2DeleteLogFilesAfter')
+        self._db2_backup_logfile = self._db2_subclient_properties.get('db2BackupLogFiles')
+        self._subclient_properties.get("db2SubclientProp", {}).get('db2BackupData')
 
-
-        self._db2_subclient_properties = self._subclient_properties.get('db2SubclientProp',
-                                                                            self._default_db2_subclient_props())
-
-    def _default_db2_subclient_props(self):
+    def _get_subclient_properties_json(self):
         """returns subclient property json for db2
                    Returns:
                         dict - all subclient properties put inside a dict
         """
-        db2_properties = {
-
-            "db2SubclientProperties": {
-                "db2BackupData": True,
-                "db2BackupType": None,
-                "db2BackupMode": 0,
-                "db2NumberofBuffer": 2,
-                "db2BufferSize": 1024,
-                "db2Parallelism": 0,
-                "db2UseCompression": False,
-                "db2BackupLogFiles": True,
-                "db2DeleteLogFilesAfter": False,
-                "db2DisableSwitchCurrentLog": None,
-                "numberOfBackupStreams": None
+        '''subclient_json = {
+            "subClientProperties":{
+                "db2SubclientProp":
+                    {
+                        "db2BackupData": None
+                    }
             }
-        }
-        return db2_properties
+        }'''
+
+        subclient_json = {"subClientProperties":
+                          {
+                              "commonProperties": self._commonProperties,
+                              "db2SubclientProp": self._db2_subclient_properties,
+                              "proxyClient": self._proxyClient,
+                              "subClientEntity": self._subClientEntity
+                          }
+                          }
+        return subclient_json

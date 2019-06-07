@@ -102,7 +102,12 @@ class VirtualServerInstance(Instance):
         self._associated_clients = []
         if "memberServers" in self._asscociatedclients:
             for client in self._asscociatedclients["memberServers"]:
-                self._associated_clients.append(client["client"]["clientName"])
+                if 'clientName' in client['client']:
+                    self._associated_clients.append(client["client"]["clientName"])
+                elif 'clientGroupName' in client['client']:
+                    self._associated_clients.append(client["client"]["clientGroupName"])
+                else:
+                    raise SDKException('Subclient', '102', "No Client Name or Client Group Name in JSON ")
             return self._associated_clients
 
     @associated_clients.setter
@@ -152,9 +157,10 @@ class VirtualServerInstance(Instance):
             final_json = {}
             if self._commcell_object.clients.has_client(client_name):
                 common_json['clientName'] = client_name
+                common_json['_type_'] = 3
                 final_json['client'] = common_json
             elif self._commcell_object.client_groups.has_clientgroup(client_name):
-                common_json['clientName'] = client_name
+                common_json['clientGroupName'] = client_name
                 final_json['client'] = common_json
             else:
                 raise SDKException('Instance', '105')
@@ -170,4 +176,9 @@ class VirtualServerInstance(Instance):
     def co_ordinator(self):
         """Returns the Co_ordinator of this instance it is read-only attribute"""
         _associated_clients = self.associated_clients
-        return _associated_clients[0]
+        associated_client = _associated_clients[0]
+        if self._commcell_object.clients.has_client(associated_client):
+            return associated_client
+        elif self._commcell_object.client_groups.has_clientgroup(associated_client):
+            associated_client_group = self._commcell_object.client_groups.get(associated_client)
+            return associated_client_group._associated_clients[0]

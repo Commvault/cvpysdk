@@ -103,6 +103,10 @@ Instance:
     _restore_sub_task()             --  the restore job specific sub task dict used to form
     restore json
 
+    _process_update_request()       --  to process the request using API call
+
+    update_properties()             --  to update the instance properties
+
     instance_id()                   --  id of this instance
 
     instance_name()                 --  name of this instance
@@ -117,6 +121,8 @@ Instance:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
+import copy
 
 from base64 import b64encode
 from past.builtins import basestring
@@ -710,14 +716,14 @@ class Instances(object):
 
         """
         if not all(
-            key in db2_options for key in(
-                "instance_name",
-                "data_storage_policy",
-                "log_storage_policy",
-                "command_storage_policy",
-                "home_directory",
-                "password",
-                "user_name")):
+                key in db2_options for key in(
+                    "instance_name",
+                    "data_storage_policy",
+                    "log_storage_policy",
+                    "command_storage_policy",
+                    "home_directory",
+                    "password",
+                    "user_name")):
             raise SDKException(
                 'Instance',
                 '102',
@@ -758,27 +764,20 @@ class Instances(object):
                     },
 
                     "DB2StorageDevice": {
-                        "networkAgents":
-                        db2_options.get("network_agents", 1),
-
-                            "softwareCompression":
-                                db2_options.get("software_compression", 0),
-
-                            # "throttleNetworkBandwidth":
-                            #    db2_options.get("throttle_network_bandwidth", 500),
-
-                            "dataBackupStoragePolicy": {
-                                "storagePolicyName": storage_policy,
+                        "networkAgents": db2_options.get("network_agents", 1),
+                        "softwareCompression": db2_options.get("software_compression", 0),
+                        # "throttleNetworkBandwidth": db2_options.get("throttle_network_bandwidth", 500),
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
                         },
                         "commandLineStoragePolicy": {
-                                "storagePolicyName": storage_policy,
+                            "storagePolicyName": storage_policy
                         },
                         "logBackupStoragePolicy": {
-                                "storagePolicyName": storage_policy,
+                            "storagePolicyName": storage_policy
                         },
                         "deDuplicationOptions": {
-                                "generateSignature":
-                                    db2_options.get("generate_signature", 1),
+                            "generateSignature": db2_options.get("generate_signature", 1)
                         }
                     },
                     "overrideDataPathsForCmdPolicy":
@@ -1746,6 +1745,65 @@ class Instance(object):
         )
 
         return self._process_restore_response(request_json)
+
+    def _process_update_request(self, request_json):
+        """Runs the Instance update API
+
+            Args:
+                request_json    (dict)  -- request json sent as payload
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._INSTANCE, request_json
+        )
+
+        status, _, error_string = self._process_update_response(flag, response)
+
+        if not status:
+            raise SDKException('Instance', '102', 'Failed to update the instance properties\nError: "{0}"'.format(
+                error_string))
+        self.refresh()
+
+    def update_properties(self, properties_dict):
+        """Updates the instance properties
+
+            Args:
+                properties_dict (dict)  --  instance properties dict which is to be updated
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+        need to change and use the update_properties method to set the properties
+
+        """
+        request_json = {
+            "instanceProperties": {
+
+            }
+        }
+
+        request_json['instanceProperties'].update(properties_dict)
+        self._process_update_request(request_json)
+
+    @property
+    def properties(self):
+        """Returns the instance properties"""
+        return copy.deepcopy(self._properties)
 
     @property
     def name(self):

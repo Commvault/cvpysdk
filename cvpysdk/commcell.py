@@ -522,7 +522,7 @@ class Commcell(object):
         del self._operation_window
         del self._commserv_client
         del self._identity_management
-
+        del self._system
         del self._web_service
         del self._cvpysdk_object
         del self._device_id

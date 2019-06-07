@@ -75,6 +75,8 @@ Subclient:
 
     _association_json()         --  setter for association property
 
+    update_properties()         --  To update the subclient properties
+
     description()               --  update the description of the subclient
 
     content()                   --  update the content of the subclient
@@ -116,6 +118,14 @@ Subclient:
 Subclient Instance Attributes:
 ==============================
 
+    **properties**                      --  returns the properties of the subclient
+
+    **name**                            --  returns the name of the subclient
+
+    **display_name**                    --  returns the display name of the subclient
+
+    **description**                     --  returns the description of the subclient
+
     **snapshot_engine_name**            --  returns snapshot engine name associated
     with the subclient
 
@@ -131,6 +141,7 @@ from __future__ import unicode_literals
 
 import math
 import time
+import copy
 
 from past.builtins import basestring
 from future.standard_library import install_aliases
@@ -654,10 +665,9 @@ class Subclients(object):
             }
         }
         if pre_scan_cmd is not None:
-            request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = \
-                {
+            request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = {
                 "runAs": 1,
-                "preScanCommand": pre_scan_cmd,
+                "preScanCommand": pre_scan_cmd
             }
 
         if self._agent_object.agent_name == 'sql server':
@@ -1193,10 +1203,65 @@ class Subclient(object):
         """
         return options
 
+    def update_properties(self, properties_dict):
+        """Updates the subclient properties
+
+            Args:
+                properties_dict (dict)  --  subclient property dict which is to be updated
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+        need to change and use the update_properties method to set the properties
+
+        """
+        request_json = {
+            "subClientProperties": {}
+        }
+
+        request_json['subClientProperties'].update(properties_dict)
+        flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
+        status, _, error_string = self._process_update_response(flag, response)
+        self.refresh()
+
+        if not status:
+            raise SDKException('Subclient', '102', 'Failed to update subclient properties\nError: "{}"'.format(
+                error_string))
+
+    @property
+    def properties(self):
+        """Returns the subclient properties"""
+        return copy.deepcopy(self._subclient_properties)
+
     @property
     def name(self):
         """Returns the Subclient display name"""
         return self._subclient_properties['subClientEntity']['subclientName']
+
+    @property
+    def display_name(self):
+        """Returns the Subclient display name"""
+        return self._subclient_properties.get('subClientEntity', {}).get('displayName')
+
+    @display_name.setter
+    def display_name(self, display_name):
+        """Sets the display name for the subclient
+        Args:
+            display_name    (str)   -- Display name for the subclient
+
+        """
+        update_properties = self.properties
+        update_properties['subClientEntity']['displayName'] = display_name
+        self.update_properties(update_properties)
 
     @property
     def _json_task(self):

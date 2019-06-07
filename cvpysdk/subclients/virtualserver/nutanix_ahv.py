@@ -39,7 +39,7 @@ class nutanixsubclient(VirtualServerSubclient):
                                          backupset class, subclient name, subclient id
 
         """
-        self.diskExtension = [".vhd", ".avhd"]
+        self.diskExtension = ["none"]
         super(nutanixsubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
 

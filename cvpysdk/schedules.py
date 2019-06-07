@@ -1063,15 +1063,15 @@ class Schedules:
             Returns:
                 dict - consists of all schedules for the commcell entity
                     {
-                         "schedule1_name": {
+                         "schedule_id": {
                                 'task_id': task_id,
-                                'schedule_id': schedule_id,
+                                'schedule_name': schedule_name,
                                 'description': description
                             }
 
-                         "schedule2_name": {
+                         "schedule_id": {
                                 'task_id': task_id,
-                                'schedule_id': schedule_id,
+                                'schedule_name': schedule_name,
                                 'description': description
                             }
                     }
@@ -1102,10 +1102,10 @@ class Schedules:
                                 subtask_name = description
                             else:
                                 subtask_name = str(schedule_id)
-
-                            subtask_dict[subtask_name] = {
+#change schedule_id as key
+                            subtask_dict[schedule_id] = {
                                 'task_id': task_id,
-                                'schedule_id': schedule_id,
+                                'schedule_name': subtask_name,
                                 'description': description
                             }
 
@@ -1144,11 +1144,11 @@ class Schedules:
         if schedule_id and not isinstance(schedule_id, int):
             raise SDKException('Schedules', '102')
 
-        if not schedule_id:
-            return self.schedules and schedule_name.lower() in self.schedules
+        if schedule_id:
+            return self.schedules and schedule_id in self.schedules
         else:
-            for subtask_name, subtask_dict in self.schedules.items():
-                if subtask_dict['task_id'] == schedule_id:
+            for subtask_id, subtask_dict in self.schedules.items():
+                if subtask_dict['schedule_name'] == schedule_name:
                     return True
             return False
 
@@ -1179,22 +1179,25 @@ class Schedules:
         if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
 
-        if schedule_name and not isinstance(schedule_name, basestring):
+        if schedule_id and not isinstance(schedule_name, int):
             raise SDKException('Schedules', '102')
 
-        if schedule_name:
-            schedule_name = schedule_name.lower()
-            schedule_id = self.schedules[schedule_name]['task_id']
+        else:
+            if schedule_name:
+                schedule_name = schedule_name.lower()
+                for subtask_id, subtask_dict in self.schedules.items():
+                    if subtask_dict['schedule_name'] == schedule_name:
+                        schedule_id = subtask_id
 
-        if self.has_schedule(schedule_id=schedule_id):
-            return Schedule(
-                self.class_object, schedule_id=schedule_id
-            )
+            if self.has_schedule(schedule_id=schedule_id):
+                return Schedule(
+                    self.class_object, schedule_id=schedule_id, task_id=self.schedules[schedule_id]['task_id']
+                )
 
-        raise SDKException(
-            'Schedules',
-            '102',
-            'No Schedule exists with name: {0}'.format(schedule_name))
+            raise SDKException(
+                'Schedules',
+                '102',
+                'No Schedule exists with name: {0}'.format(schedule_name))
 
     def delete(self, schedule_name=None, schedule_id=None):
         """deletes the specified schedule name.
@@ -1220,53 +1223,54 @@ class Schedules:
 
         if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
-
-        if schedule_name:
-            schedule_name = schedule_name.lower()
-            schedule_id = self.schedules[schedule_name]['task_id']
-
-        if self.has_schedule(schedule_id=schedule_id):
-            request_json = {
-                "TMMsg_TaskOperationReq":
-                    {
-                        "opType": 3,
-                        "taskEntities":
-                            [
-                                {
-                                    "_type_": 69,
-                                    "taskId": schedule_id
-                                }
-                            ]
-                    }
-            }
-
-            modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
-
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', modify_schedule, request_json)
-
-            if flag:
-                if response.json():
-                    if 'errorCode' in response.json():
-                        if response.json()['errorCode'] == 0:
-                            self.refresh()
-                        else:
-                            raise SDKException(
-                                'Schedules', '102', response.json()['errorMessage'])
-                else:
-                    raise SDKException('Response', '102')
-            else:
-                response_string = self._commcell_object._update_response_(
-                    response.text)
-                exception_message = 'Failed to delete schedule\nError: "{0}"'.format(
-                    response_string)
-
-                raise SDKException('Schedules', '102', exception_message)
         else:
-            raise SDKException(
-                'Schedules', '102', 'No schedule exists for: {0}'.format(
-                    schedule_id)
-            )
+            if schedule_name:
+                for subtask_id, subtask_dict in self.schedules.items():
+                    if subtask_dict['schedule_name'] == schedule_name:
+                        schedule_id = subtask_id
+
+            if self.has_schedule(schedule_id=schedule_id):
+                request_json = {
+                    "TMMsg_TaskOperationReq":
+                        {
+                            "opType": 3,
+                            "subtaskEntity":
+                                [
+                                    {
+                                        "_type_": 68,
+                                        "subtaskId": schedule_id
+                                    }
+                                ]
+                        }
+                }
+
+                modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    'POST', modify_schedule, request_json)
+
+                if flag:
+                    if response.json():
+                        if 'errorCode' in response.json():
+                            if response.json()['errorCode'] == 0:
+                                self.refresh()
+                            else:
+                                raise SDKException(
+                                    'Schedules', '102', response.json()['errorMessage'])
+                    else:
+                        raise SDKException('Response', '102')
+                else:
+                    response_string = self._commcell_object._update_response_(
+                        response.text)
+                    exception_message = 'Failed to delete schedule\nError: "{0}"'.format(
+                        response_string)
+
+                    raise SDKException('Schedules', '102', exception_message)
+            else:
+                raise SDKException(
+                    'Schedules', '102', 'No schedule exists for: {0}'.format(
+                        schedule_id)
+                )
 
     def refresh(self):
         """Refresh the Schedules associated with the Client / Agent / Backupset / Subclient."""
@@ -1276,7 +1280,7 @@ class Schedules:
 class Schedule:
     """Class for performing operations for a specific Schedule."""
 
-    def __init__(self, class_object, schedule_name=None, schedule_id=None):
+    def __init__(self, class_object, schedule_name=None, schedule_id=None, task_id=None):
 
         """Initialise the Schedule class instance.
 
@@ -1316,8 +1320,13 @@ class Schedule:
         else:
             self.schedule_id = self._get_schedule_id()
 
+        if task_id:
+            self.task_id = task_id
+        else:
+            self.task_id = self._get_task_id()
+
         self._SCHEDULE = self._commcell_object._services['SCHEDULE'] % (
-            self.schedule_id)
+            self.task_id)
         self._MODIFYSCHEDULE = self._commcell_object._services['EXECUTE_QCOMMAND']
 
         self._freq_type = {
@@ -1365,20 +1374,13 @@ class Schedule:
         self._automatic_pattern = {}
         self.refresh()
 
-    def _get_subtask_id(self):
-        """
-        Gets the subtask id for the schedule
-        Returns (int) -- Subtask id
-        """
-        return self._sub_task_option['subTaskId']
-
     @property
     def subtask_id(self):
         """
         Property which returns subtask id of the schedule
         Returns (int) -- Subtask id
         """
-        return self._get_subtask_id()
+        return self.schedule_id
 
     def _get_schedule_id(self):
         """
@@ -1387,6 +1389,14 @@ class Schedule:
         """
         schedules = Schedules(self.class_object)
         return schedules.get(self.schedule_name).schedule_id
+
+    def _get_task_id(self):
+        """
+        Gets a schedule ID dict for the schedule
+        Returns (int) -- schedule ID
+        """
+        schedules_obj = Schedules(self.class_object)
+        return schedules_obj.schedules.get(self.schedule_id).get('task_id')
 
     def _get_schedule_properties(self):
         """Gets the properties of this Schedule.
@@ -1415,29 +1425,30 @@ class Schedule:
 
                 for subtask in _task_info['subTasks']:
                     self._sub_task_option = subtask['subTask']
-                    self.schedule_name = self._sub_task_option['subTaskName']
-                    if 'operationType' in subtask['subTask']:
-                        self.operation_type = subtask['subTask']['operationType']
-                    else:
-                        continue
+                    if self._sub_task_option['subTaskId'] == self.schedule_id:
+                        self.schedule_name = self._sub_task_option['subTaskName']
+                        if 'operationType' in subtask['subTask']:
+                            self.operation_type = subtask['subTask']['operationType']
+                        else:
+                            continue
 
-                    if 'pattern' in subtask:
-                        self._pattern = subtask['pattern']
-                    else:
-                        continue
+                        if 'pattern' in subtask:
+                            self._pattern = subtask['pattern']
+                        else:
+                            continue
 
-                    if 'options' in subtask:
-                        self._task_options = subtask['options']
-                        if 'commonOpts' in self._task_options:
-                            if 'automaticSchedulePattern' in self._task_options["commonOpts"]:
-                                self._automatic_pattern = self._task_options[
-                                    "commonOpts"]['automaticSchedulePattern']
+                        if 'options' in subtask:
+                            self._task_options = subtask['options']
+                            if 'commonOpts' in self._task_options:
+                                if 'automaticSchedulePattern' in self._task_options["commonOpts"]:
+                                    self._automatic_pattern = self._task_options[
+                                        "commonOpts"]['automaticSchedulePattern']
 
-                        if 'backupOpts' in self._task_options:
-                            if 'dataOpt' in self._task_options['backupOpts']:
-                                if isinstance(self._automatic_pattern, dict):
-                                    _data_opt = self._task_options['backupOpts']['dataOpt']
-                                    self._automatic_pattern.update(_data_opt)
+                            if 'backupOpts' in self._task_options:
+                                if 'dataOpt' in self._task_options['backupOpts']:
+                                    if isinstance(self._automatic_pattern, dict):
+                                        _data_opt = self._task_options['backupOpts']['dataOpt']
+                                        self._automatic_pattern.update(_data_opt)
 
             else:
                 raise SDKException('Response', '102')
@@ -2126,7 +2137,7 @@ class Schedule:
                         [
                             {
                                 "_type_": 68,
-                                "subtaskId": self._get_subtask_id(),
+                                "subtaskId": self.subtask_id,
                                 "taskName": "",
                                 "subtaskName": self.schedule_name,
                                 "taskId": self.schedule_id

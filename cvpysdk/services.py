@@ -47,7 +47,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
-    'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s',
+    'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s&propertyLevel=30',
 
     'GET_ALL_BACKUPSETS': '{0}Backupset?clientId=%s&propertyLevel=10',
     'BACKUPSET': '{0}Backupset/%s',
@@ -67,6 +67,7 @@ SERVICES_DICT_TEMPLATE = {
     'SUSPEND_JOB': '{0}Job/%s/action/pause',
     'RESUME_JOB': '{0}Job/%s/action/resume',
     'KILL_JOB': '{0}Job/%s/action/kill',
+    'RESUBMIT_JOB': '{0}Job/%s/action/Resubmit',
     'ALL_JOBS': '{0}Jobs',
 
     'GET_MEDIA_AGENTS': '{0}V2/MediaAgents',
@@ -181,7 +182,8 @@ SERVICES_DICT_TEMPLATE = {
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
-    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
+    'ALL_VM_ALLOCATION_POLICY':
+        '{0}VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
     'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
     'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",

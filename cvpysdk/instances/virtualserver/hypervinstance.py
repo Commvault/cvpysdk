@@ -47,8 +47,9 @@ class HyperVInstance(VirtualServerInstance):
                                                                                 instance id
 
         """
-        super(HyperVInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 2
+        super(HyperVInstance, self).__init__(agent, instance_name, instance_id)
+
 
 
 
@@ -87,7 +88,7 @@ class HyperVInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
+                    "vsInstanceType": self._vendor_id,
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}                           
                     }

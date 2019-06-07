@@ -266,10 +266,18 @@ class SchedulePolicies:
             "subTask": sub_task,
             "options": schedule_options
         }
+
+        freq_type = schedule_dict.get('pattern', {}).get('freq_type', 'daily')
+
+        try:
+            schedule_dict["pattern"]["freq_type"] = freq_type
+        except KeyError:
+            schedule_dict["pattern"] = {"freq_type": freq_type}
+
         task_json = SchedulePattern().create_schedule({'taskInfo':
                                                            {'subTasks': [sub_task]
                                                             }
-                                                       }, schedule_dict.get('pattern', {'freq_type': 'daily'}))
+                                                       }, schedule_dict.get('pattern'))
         return task_json.get('taskInfo').get('subTasks')[0]
 
 

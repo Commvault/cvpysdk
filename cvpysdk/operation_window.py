@@ -22,14 +22,20 @@ OperationWindow:
 
 """
 
+from __future__ import absolute_import
 import time
 from .exception import SDKException
+from .client import Client
+from .agent import Agent
+from .instance import Instance
+from .backupset import Backupset
+from .subclient import Subclient
 
 
 class OperationWindow(object):
     """Class for representing all workflows of a commcell."""
 
-    def __init__(self, commcell_object):
+    def __init__(self, generic_entity_obj):
         """Initialize the OperationWindow class instance for
            performing OperationWindow related operations.
 
@@ -40,16 +46,72 @@ class OperationWindow(object):
                 object  -   instance of the OperationWindow class
 
         """
-        self._commcell_object = commcell_object
+        # imports inside the __init__ method definition to avoid cyclic imports
+        from .commcell import Commcell
+
+        if isinstance(generic_entity_obj, Commcell):
+            self._commcell_object = generic_entity_obj
+        else:
+            self._commcell_object = generic_entity_obj._commcell_object
+
         self._commcell_services = self._commcell_object._services
         self._operation_window = self._commcell_services['OPERATION_WINDOW']
         self._list_operation_window = self._commcell_services['LIST_OPERATION_WINDOW']
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._update_response = self._commcell_object._update_response_
 
+        self.client_id = 0
+        self.agent_id = 0
+        self.instance_id = 0
+        self.backupset_id = 0
+        self.subclient_id = 0
+        self.entity_type = ''
+        self.entity_id = ''
+
+        # we will derive all the entity id's based on the input entity type
+        if isinstance(generic_entity_obj, Commcell):
+            pass
+        elif isinstance(generic_entity_obj, Client):
+            self.client_id = generic_entity_obj.client_id
+            self.entity_type = "clientId"
+            self.entity_id = self.client_id
+        elif isinstance(generic_entity_obj, Agent):
+            self.client_id = generic_entity_obj._client_object.client_id
+            self.agent_id = generic_entity_obj.agent_id
+            self.entity_type = "applicationId"
+            self.entity_id = self.agent_id
+        elif isinstance(generic_entity_obj, Instance):
+            self.client_id = generic_entity_obj._agent_object._client_object.client_id
+            self.agent_id = generic_entity_obj._agent_object.agent_id
+            self.instance_id = generic_entity_obj.instance_id
+            self.entity_type = "instanceId"
+            self.entity_id = self.instance_id
+        elif isinstance(generic_entity_obj, Backupset):
+            self.client_id = generic_entity_obj._instance_object._agent_object._client_object.client_id
+            self.agent_id = generic_entity_obj._instance_object._agent_object.agent_id
+            self.instance_id = generic_entity_obj._instance_object.instance_id
+            self.backupset_id = generic_entity_obj.backupset_id
+            self.entity_type = "backupsetId"
+            self.entity_id = self.backupset_id
+        elif isinstance(generic_entity_obj, Subclient):
+            self.client_id =  \
+                generic_entity_obj._backupset_object._instance_object._agent_object._client_object.client_id
+            self.agent_id = generic_entity_obj._backupset_object._instance_object._agent_object.agent_id
+            self.instance_id = generic_entity_obj._backupset_object._instance_object.instance_id
+            self.backupset_id = generic_entity_obj._backupset_object.backupset_id
+            self.subclient_id = generic_entity_obj.subclient_id
+            self.entity_type = "subclientId"
+            self.entity_id = self.subclient_id
+        else:
+            raise SDKException('Response', '101', "Invalid instance passed")
+
+        # append the entity type and entity id to end of list operation window REST API.
+        # For commcell it will empty string
+        self.connect_string = self._list_operation_window.split('?')[0] + '?' + \
+                              self.entity_type + "=" + self.entity_id
+
     def create_operation_window(
             self,
-            client_name,
             name,
             start_date=None,
             end_date=None,
@@ -62,8 +124,6 @@ class OperationWindow(object):
            for a particular client given as input and returns its Rule id.
 
             Args:
-                client_name       (str)   --  Name of the client to create operation window
-
                 name              (str)   --  Name of the Operation Window
 
                 start_date/end_date (str) --  Timestamp value for the start and end date
@@ -164,7 +224,6 @@ class OperationWindow(object):
         if not client_group_name is None:
             client_group_id = client_groups.all_clientgroups[client_group_name]
 
-        client_id = self._commcell_object.clients.all_clients[client_name]['id']
         payload = {
             "operationWindow": {
                 "ruleEnabled": True,
@@ -180,7 +239,11 @@ class OperationWindow(object):
             },
             "entity": {
                 "clientGroupId": client_group_id,
-                "clientId": int(client_id)
+                "clientId": int(self.client_id),
+                "applicationId": int(self.agent_id),
+                "instanceId": int(self.instance_id),
+                "backupsetId": int(self.backupset_id),
+                "subclientId": int(self.subclient_id)
             }
         }
 
@@ -231,11 +294,11 @@ class OperationWindow(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    def list_operation_window(self, client_name=None):
+    def list_operation_window(self):
         """Lists the OperationWindows for the client Id given as input.
 
             Args:
-                client_name       (int)   --  Client Name
+               None
 
             Returns:
                 Returns the List of operation window created for a given client
@@ -249,12 +312,8 @@ class OperationWindow(object):
                     if response is not success
 
         """
-        client_id = 0
-        if not client_name is None:
-            client_id = self._commcell_object.clients.all_clients[client_name]['id']
-        connect_string = self._list_operation_window%(client_id)
         flag, response = self._cvpysdk_object.make_request(
-            'GET', connect_string)
+            'GET', self.connect_string)
         if flag:
             if response.json():
                 error_code = response.json()["error"]['errorCode']

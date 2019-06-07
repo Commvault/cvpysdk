@@ -79,6 +79,8 @@ Job
 
     resume()                    --  resumes the job
 
+    resubmit()                  --  to resubmit the job
+
     kill()                      --  kills the job
 
     refresh()                   --  refresh the properties of the Job
@@ -739,9 +741,10 @@ class Job(object):
 
         self._JOB_DETAILS = self._services['JOB_DETAILS']
         self.ADVANCED_JOB_DETAILS = AdvancedJobDetailType
-        self._SUSPEND = self._services['SUSPEND_JOB'] % (self.job_id)
-        self._RESUME = self._services['RESUME_JOB'] % (self.job_id)
-        self._KILL = self._services['KILL_JOB'] % (self.job_id)
+        self._SUSPEND = self._services['SUSPEND_JOB'] % self.job_id
+        self._RESUME = self._services['RESUME_JOB'] % self.job_id
+        self._KILL = self._services['KILL_JOB'] % self.job_id
+        self._RESUBMIT = self._services['RESUBMIT_JOB'] % self.job_id
 
         self._client_name = None
         self._agent_name = None
@@ -1165,6 +1168,39 @@ class Job(object):
 
         if wait_for_job_to_resume is True:
             self._wait_for_status("RUNNING")
+
+    def resubmit(self):
+        """Resubmits the job
+
+        Returns:
+            object  -   Job class object for the given job id
+
+        Raises:
+                SDKException:
+                    if job is already running
+
+                    if response is not success
+
+        """
+        if not self.is_finished:
+            raise SDKException('Job', '102', 'Cannot resubmit the Job, the Job is still running')
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._RESUBMIT)
+
+        if flag:
+            if response.json() and 'errors' in response.json():
+                error_list = response.json()['errors'][0]['errList'][0]
+                error_code = error_list['errorCode']
+                error_message = error_list['errLogMessage'].strip()
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Job', '102', 'Resubmitting job failed\nError: "{0}"'.format(error_message)
+                    )
+            return Job(self._commcell_object, response.json()['jobIds'][0])
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def kill(self, wait_for_job_to_kill=False):
         """Kills the job.
