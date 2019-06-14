@@ -131,7 +131,7 @@ from .job import Job
 from .subclient import Subclients
 from .constants import AppIDAType
 from .exception import SDKException
-from .schedules import SchedulePattern, Schedule
+from .schedules import SchedulePattern, Schedule, Schedules
 
 
 class Instances(object):
@@ -1346,7 +1346,7 @@ class Instance(object):
                     return Job(self._commcell_object, response.json()['jobIds'][0])
 
                 elif "taskId" in response.json():
-                    return Schedule(self._commcell_object, schedule_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
 
                 elif "errorCode" in response.json():
                     error_message = response.json()['errorMessage']

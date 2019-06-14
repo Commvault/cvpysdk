@@ -1473,7 +1473,8 @@ class FileSystemSubclient(Subclient):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None):
+            fs_options=None,
+            schedule_pattern=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1518,6 +1519,11 @@ class FileSystemSubclient(Subclient):
                         media_agent         : Media Agent need to be used for Browse and restore
                         is_vlr_restore      : sets if the restore job is to be triggered as vlr
                         validate_only       : To validate data backed up for restore
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
 
 
             Returns:
@@ -1581,7 +1587,8 @@ class FileSystemSubclient(Subclient):
                 copy_precedence=copy_precedence,
                 from_time=from_time,
                 to_time=to_time,
-                fs_options=fs_options)
+                fs_options=fs_options,
+                schedule_pattern=schedule_pattern)
 
     @property
     def catalog_acl(self):

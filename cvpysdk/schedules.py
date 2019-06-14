@@ -54,6 +54,10 @@ Schedules:
 
     __repr__()                      --  returns the string for the instance of the Schedules class
 
+    _get_sch_id_from_task_id()      --  gets the schedule id from the provided task id
+
+    _get_schedule_id()              --  gets the schedule if with the provided inputs
+
     _get_schedules()                --  gets all the schedules associated with the commcell entity
 
     has_schedule(schedule_name)     --  checks if schedule exists for the comcell entity or not
@@ -1117,60 +1121,30 @@ class Schedules:
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    def has_schedule(self, schedule_name=None, schedule_id=None):
-        """Checks if a schedule exists for the commcell entity with the input schedule name.
+    def _get_sch_id_from_task_id(self, task_id):
+        """
+        Gets the schedule id from the task id
+
+        Args:
+        task_id (int): task id of the schedule
+
+        Returns:
+            (int) schedule id of the schedule
+        """
+        return [k for k,v in self.schedules.items() if v['task_id']==task_id][0]
+
+    def _get_schedule_id(self, schedule_name=None, schedule_id=None, task_id=None):
+        """Gets the schedule id from the provided inputs.
 
             Args:
                 schedule_name (str)  --  name of the schedule
                 schedule_id (int) -- id of the schedule
+                task_id (int)   -- task id of the schedule
 
             Returns:
-                bool - boolean output whether the schedule exists for the commcell entity or not
-
-            Raises:
-                SDKException:
-                    if type of the schedule name argument is not string
+            (int) schedule id of the schedule
         """
-
-        if not schedule_name and not schedule_id:
-            raise SDKException(
-                'Schedules',
-                '102',
-                'Either Schedule Name or Schedule Id is needed')
-
-        if schedule_name and not isinstance(schedule_name, basestring):
-            raise SDKException('Schedules', '102')
-
-        if schedule_id and not isinstance(schedule_id, int):
-            raise SDKException('Schedules', '102')
-
-        if schedule_id:
-            return self.schedules and schedule_id in self.schedules
-        else:
-            for subtask_id, subtask_dict in self.schedules.items():
-                if subtask_dict['schedule_name'] == schedule_name:
-                    return True
-            return False
-
-
-    def get(self, schedule_name=None, schedule_id=None):
-        """Returns a schedule object of the specified schedule name.
-
-            Args:
-                schedule_name (str)  --  name of the Schedule
-                schedule_id (int) -- id of the schedule
-
-            Returns:
-                object - instance of the schedule class for the given schedule name
-
-            Raises:
-                SDKException:
-                    if type of the schedule name argument is not string
-
-                    if no schedule exists with the given name
-        """
-
-        if not schedule_name and not schedule_id:
+        if not task_id and not schedule_name and not schedule_id:
             raise SDKException(
                 'Schedules',
                 '102',
@@ -1182,29 +1156,70 @@ class Schedules:
         if schedule_id and not isinstance(schedule_name, int):
             raise SDKException('Schedules', '102')
 
-        else:
-            if schedule_name:
-                schedule_name = schedule_name.lower()
-                for subtask_id, subtask_dict in self.schedules.items():
-                    if subtask_dict['schedule_name'] == schedule_name:
-                        schedule_id = subtask_id
+        if task_id and not isinstance(task_id, int):
+            raise SDKException('Schedules', '102')
 
-            if self.has_schedule(schedule_id=schedule_id):
-                return Schedule(
-                    self.class_object, schedule_id=schedule_id, task_id=self.schedules[schedule_id]['task_id']
-                )
+        if schedule_name:
+            schedule_name = schedule_name.lower()
+            for subtask_id, subtask_dict in self.schedules.items():
+                if subtask_dict['schedule_name'] == schedule_name:
+                    schedule_id = subtask_id
 
-            raise SDKException(
-                'Schedules',
-                '102',
-                'No Schedule exists with name: {0}'.format(schedule_name))
+        elif task_id:
+            schedule_id = self._get_sch_id_from_task_id(task_id)
 
-    def delete(self, schedule_name=None, schedule_id=None):
+        return schedule_id
+
+    def has_schedule(self, schedule_name=None, schedule_id=None, task_id=None):
+        """Checks if a schedule exists for the commcell entity with the input schedule name.
+
+            Args:
+                schedule_name (str)  --  name of the schedule
+                schedule_id (int) -- id of the schedule
+                task_id (int)   -- task id of the schedule
+
+            Returns:
+                bool - boolean output whether the schedule exists for the commcell entity or not
+
+            Raises:
+                SDKException:
+                    if type of the schedule name argument is not string
+        """
+        if self._get_schedule_id(schedule_id, schedule_id, task_id):
+            return True
+        return False
+
+    def get(self, schedule_name=None, schedule_id=None, task_id=None):
+        """Returns a schedule object of the specified schedule name.
+
+            Args:
+                schedule_name (str)  --  name of the Schedule
+                schedule_id (int) -- id of the schedule
+                task_id (int)   -- task id of the schedule
+
+            Returns:
+                object - instance of the schedule class for the given schedule name
+
+            Raises:
+                SDKException:
+                    if type of the schedule name argument is not string
+
+                    if no schedule exists with the given name
+        """
+
+        schedule_id = self._get_schedule_id(schedule_name, schedule_id, task_id)
+        if schedule_id:
+            return Schedule(self.class_object, schedule_id=schedule_id, task_id=self.schedules[schedule_id]['task_id'])
+
+        raise SDKException('Schedules','105')
+
+    def delete(self, schedule_name=None, schedule_id=None, task_id=None):
         """deletes the specified schedule name.
 
                     Args:
                         schedule_name (str)  --  name of the Schedule
                         schedule_id (int) -- id of the schedule
+                        task_id (int)   -- task id of the schedule
 
                     Raises:
                         SDKException:
@@ -1212,65 +1227,46 @@ class Schedules:
                             if no schedule exists with the given name
         """
 
-        if not schedule_name and not schedule_id:
-            raise SDKException(
-                'Schedules',
-                '102',
-                'Either Schedule Name or Schedule Id is needed')
+        schedule_id = self._get_schedule_id(schedule_name, schedule_id, task_id)
+        if schedule_id:
+            request_json = {
+                "TMMsg_TaskOperationReq":
+                    {
+                        "opType": 3,
+                        "subtaskEntity":
+                            [
+                                {
+                                    "_type_": 68,
+                                    "subtaskId": schedule_id
+                                }
+                            ]
+                    }
+            }
 
-        if schedule_id and not isinstance(schedule_id, int):
-            raise SDKException('Schedules', '102')
+            modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
 
-        if schedule_name and not isinstance(schedule_name, basestring):
-            raise SDKException('Schedules', '102')
-        else:
-            if schedule_name:
-                for subtask_id, subtask_dict in self.schedules.items():
-                    if subtask_dict['schedule_name'] == schedule_name:
-                        schedule_id = subtask_id
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', modify_schedule, request_json)
 
-            if self.has_schedule(schedule_id=schedule_id):
-                request_json = {
-                    "TMMsg_TaskOperationReq":
-                        {
-                            "opType": 3,
-                            "subtaskEntity":
-                                [
-                                    {
-                                        "_type_": 68,
-                                        "subtaskId": schedule_id
-                                    }
-                                ]
-                        }
-                }
-
-                modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
-
-                flag, response = self._commcell_object._cvpysdk_object.make_request(
-                    'POST', modify_schedule, request_json)
-
-                if flag:
-                    if response.json():
-                        if 'errorCode' in response.json():
-                            if response.json()['errorCode'] == 0:
-                                self.refresh()
-                            else:
-                                raise SDKException(
-                                    'Schedules', '102', response.json()['errorMessage'])
-                    else:
-                        raise SDKException('Response', '102')
+            if flag:
+                if response.json():
+                    if 'errorCode' in response.json():
+                        if response.json()['errorCode'] == 0:
+                            self.refresh()
+                        else:
+                            raise SDKException(
+                                'Schedules', '102', response.json()['errorMessage'])
                 else:
-                    response_string = self._commcell_object._update_response_(
-                        response.text)
-                    exception_message = 'Failed to delete schedule\nError: "{0}"'.format(
-                        response_string)
-
-                    raise SDKException('Schedules', '102', exception_message)
+                    raise SDKException('Response', '102')
             else:
-                raise SDKException(
-                    'Schedules', '102', 'No schedule exists for: {0}'.format(
-                        schedule_id)
-                )
+                response_string = self._commcell_object._update_response_(
+                    response.text)
+                exception_message = 'Failed to delete schedule\nError: "{0}"'.format(
+                    response_string)
+
+                raise SDKException('Schedules', '102', exception_message)
+        else:
+            raise SDKException('Schedules','105')
 
     def refresh(self):
         """Refresh the Schedules associated with the Client / Agent / Backupset / Subclient."""
@@ -1387,8 +1383,8 @@ class Schedule:
         Gets a schedule ID dict for the schedule
         Returns (int) -- schedule ID
         """
-        schedules = Schedules(self.class_object)
-        return schedules.get(self.schedule_name).schedule_id
+        schedules_obj = Schedules(self.class_object)
+        return schedules_obj.get(self.schedule_name).schedule_id
 
     def _get_task_id(self):
         """

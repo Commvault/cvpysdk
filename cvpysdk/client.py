@@ -3567,7 +3567,7 @@ class Client(object):
 
                     if response is not success
         """
-        request_json = self._request_json(job_start_time=job_start_time_value)
+        request_json = self._request_json(option='Backup', job_start_time=job_start_time_value)
 
         flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 

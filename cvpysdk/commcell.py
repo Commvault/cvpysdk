@@ -242,7 +242,7 @@ from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
 from .policy import Policies
 from .schedules import SchedulePattern
-from .schedules import Schedule
+from .schedules import Schedule, Schedules
 from .activitycontrol import ActivityControl
 from .eventviewer import Events
 from .array_management import ArrayManagement
@@ -1340,7 +1340,7 @@ class Commcell(object):
                     raise SDKException('Commcell', '105', o_str)
 
                 elif "taskId" in response.json():
-                    return Schedule(self, schedule_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
 
                 else:
                     raise SDKException('Commcell', '105')

@@ -27,7 +27,7 @@ PostgresBackupset:
 from __future__ import unicode_literals
 from ..backupset import Backupset
 from ..exception import SDKException
-from ..schedules import Schedule
+from ..schedules import Schedule, Schedules
 
 
 class PostgresBackupset(Backupset):
@@ -73,7 +73,7 @@ class PostgresBackupset(Backupset):
         if flag:
             if response.json():
                 if "taskId" in response.json():
-                    return Schedule(self._commcell_object, schedule_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
 
                 elif "errorCode" in response.json():
                     error_message = response.json()['errorMessage']

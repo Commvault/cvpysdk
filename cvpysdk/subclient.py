@@ -1107,7 +1107,7 @@ class Subclient(object):
                     return Job(self._commcell_object,
                                response.json()['jobIds'][0])
                 elif "taskId" in response.json():
-                    return Schedule(self._commcell_object, schedule_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
                 elif "errorCode" in response.json():
                     o_str = 'Initializing backup failed\nError: "{0}"'.format(
                         response.json()['errorMessage']
