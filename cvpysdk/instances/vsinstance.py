@@ -27,7 +27,7 @@ VirtualServerInstance:
 
     co_ordinator                    --  getter
 
-To add a new Virtual Instance, create a class in a new module under  virtualserver sub package
+To add a new Virtual Instance, create a class in a new module under virtualserver sub package
 
 
 The new module which is created has to named in the following manner:
@@ -59,17 +59,16 @@ class VirtualServerInstance(Instance):
     def __new__(cls, agent_object, instance_name, instance_id=None):
         """Decides which instance object needs to be created"""
 
-        instance_name = instance_name.replace(" ", "_")
-        re.sub('[^A-Za-z0-9]+', '', instance_name)
+        instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
         try:
-            subclient_module = import_module("cvpysdk.instances.virtualserver.{}".format(instance_name))
+            instance_module = import_module("cvpysdk.instances.virtualserver.{}".format(instance_name))
         except ImportError:
-            subclient_module = import_module("cvpysdk.instances.virtualserver.null")
+            instance_module = import_module("cvpysdk.instances.virtualserver.null")
 
-        classes = getmembers(subclient_module, lambda m: isclass(m) and not isabstract(m))
+        classes = getmembers(instance_module, lambda m: isclass(m) and not isabstract(m))
 
         for name, _class in classes:
-            if issubclass(_class, VirtualServerInstance):
+            if issubclass(_class, VirtualServerInstance) and _class.__module__.rsplit(".", 1)[-1] == instance_name:
                 return object.__new__(_class)
 
     def _get_instance_properties(self):

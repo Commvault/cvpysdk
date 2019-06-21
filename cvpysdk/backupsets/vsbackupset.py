@@ -14,6 +14,19 @@ VSBackupset:
 
     browse()                        -- browse the content of the backupset
     _process_browse_response()      -- retrieves the items from browse response
+
+    To add a new Virtual Backupset, create a class in a new module under _virtual_server sub package
+
+
+The new module which is created has to named in the following manner:
+1. Name the module with the name of the Virtual Server without special characters
+2.Spaces alone must be replaced with underscores('_')
+
+For eg:
+
+    The Virtual Server 'Red Hat Virtualization' is named as 'red_hat_virtualization.py'
+
+    The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 """
 
 from __future__ import unicode_literals
@@ -34,18 +47,17 @@ class VSBackupset(Backupset):
     def __new__(cls, instance_object, backupset_name, backupset_id=None):
         """Decides which instance object needs to be created"""
         instance_name = instance_object.instance_name
-        instance_name = instance_name.replace(" ", "_")
-        re.sub('[^A-Za-z0-9]+', '', instance_name)
+        instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
 
         try:
-            subclient_module = import_module("cvpysdk.backupsets._virtual_server.{}".format(instance_name))
+            backupset_module = import_module("cvpysdk.backupsets._virtual_server.{}".format(instance_name))
         except ImportError:
-            subclient_module = import_module(__name__)
+            return object.__new__(cls)
 
-        classes = getmembers(subclient_module, lambda m: isclass(m) and not isabstract(m))
+        classes = getmembers(backupset_module, lambda m: isclass(m) and not isabstract(m))
 
         for name, _class in classes:
-            if issubclass(_class, Backupset):
+            if issubclass(_class, Backupset) and _class.__module__.rsplit(".", 1)[-1] == instance_name:
                 return object.__new__(_class)
 
     def browse(self, *args, **kwargs):

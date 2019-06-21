@@ -113,7 +113,7 @@ VirtualServerSubclient:
     _advanced_backup_options()              --  sets the advanced backup options
 
 
-To add a new Virtual Subclient,  create a class in a new module under  virtualserver sub package
+To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
 
 
 The new module which is created has to named in the following manner:
@@ -152,8 +152,7 @@ class VirtualServerSubclient(Subclient):
     def __new__(cls, backupset_object, subclient_name, subclient_id=None):
         """Decides which instance object needs to be created"""
         instance_name = backupset_object._instance_object.instance_name
-        instance_name = instance_name.replace(" ", "_")
-        re.sub('[^A-Za-z0-9]+', '', instance_name)
+        instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
 
         try:
             subclient_module = import_module("cvpysdk.subclients.virtualserver.{}".format(instance_name))
@@ -163,7 +162,7 @@ class VirtualServerSubclient(Subclient):
         classes = getmembers(subclient_module, lambda m: isclass(m) and not isabstract(m))
 
         for name, _class in classes:
-            if issubclass(_class, VirtualServerSubclient):
+            if issubclass(_class, VirtualServerSubclient) and _class.__module__.rsplit(".", 1)[-1] == instance_name:
                 return object.__new__(_class)
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
@@ -715,10 +714,14 @@ class VirtualServerSubclient(Subclient):
         self._virtualserver_option_restore_json["vCenterInstance"] = {
             "clientName": value.get("destination_client_name", ""),
             "instanceName": value.get("destination_instance", ""),
-            "instanceId": value.get("destination_instance_id", ""),
-            "clientId": value.get("destination_client_id", ""),
             "appName": value.get("appName", "Virtual Server")
         }
+
+        if value.get("destination_instance_id") and value.get("destination_client_id"):
+            self._virtualserver_option_restore_json["vCenterInstance"].update(
+                {"instanceId": value.get("destination_instance_id", ""),
+                 "clientId": value.get("destination_client_id", "")}
+            )
 
     def _json_restore_virtualServerRstOption(self, value):
         """
@@ -874,7 +877,7 @@ class VirtualServerSubclient(Subclient):
         else:
             self._advanced_option_restore_json["Datastore"] = value.get("datastore", "")
 
-        if value['block_level']:
+        if value.get('block_level'):
             self._advanced_option_restore_json["blrRecoveryOpts"] = \
                 self._json_restore_blrRecoveryOpts(value)
 
@@ -929,8 +932,9 @@ class VirtualServerSubclient(Subclient):
         vm_names = {}
 
         for content in self.content:
-            vm_ids[content['id']] = content['display_name']
-            vm_names[content['display_name']] = content['id']
+            if content['type'].lower() in ('vmname', 'vm', 'virtual machine'):
+                vm_ids[content['id']] = content['display_name']
+                vm_names[content['display_name']] = content['id']
 
         return vm_ids, vm_names
 
@@ -942,14 +946,16 @@ class VirtualServerSubclient(Subclient):
                 vm_ids      (dict)  -- returns id list of VMs backed up
         """
 
-        _vm_names, _vm_ids = self._get_vm_ids_and_names_dict()
+        _vm_ids, _vm_names = self._get_vm_ids_and_names_dict()
         if not self._vm_names_browse:
             paths, paths_dict = self.browse()
-
+            if not _vm_names:
+                for key, val in paths_dict.items():
+                    _vm_names[val['name']] = val['snap_display_name']
             for _each_path in paths_dict:
                 _vm_id = _each_path.split("\\")[1]
                 self._vm_names_browse.append(_vm_id)
-                self._vm_ids_browse[_vm_id] = _vm_ids[_vm_id]
+                self._vm_ids_browse[_vm_id] = _vm_names[_vm_id]
 
         return self._vm_names_browse, self._vm_ids_browse
 
@@ -1078,7 +1084,9 @@ class VirtualServerSubclient(Subclient):
         browse_content = super(VirtualServerSubclient, self).browse(
             vm_path, show_deleted_files, vm_disk_browse, True, vs_file_browse=vm_files_browse
         )
-
+        if not vm_ids:
+            for key, val in browse_content[1].items():
+                vm_ids[val['snap_display_name']] = val['name']
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
     def parse_nics_xml(self, input_xml):
@@ -1239,7 +1247,9 @@ class VirtualServerSubclient(Subclient):
             vm_disk_browse=vm_disk_browse,
             from_time=from_date, to_time=to_date, copy_precedence=copy_precedence,
             path=vm_path, vs_file_browse=vm_files_browse, media_agent=media_agent)
-
+        if not vm_ids:
+            for key, val in browse_content[1].items():
+                vm_ids[val['snap_display_name']] = val['name']
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
     def disk_level_browse(self, vm_path='\\',
@@ -1972,7 +1982,10 @@ class VirtualServerSubclient(Subclient):
             new_name_prefix = restore_option.get("disk_name_prefix")
             new_name = data["name"] if new_name_prefix is None \
                 else new_name_prefix + "_" + data["name"]
-            _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1], ds, new_name)
+            if restore_option['destination_instance'].lower() == 'vmware':
+                _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
+            else:
+                _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1], ds, new_name)
             if 'is_aws_proxy' in restore_option and not restore_option['is_aws_proxy']:
                 _disk_dict['Datastore'] = restore_option["datastore"]
             vm_disks.append(_disk_dict)

@@ -1153,7 +1153,7 @@ class Schedules:
         if schedule_name and not isinstance(schedule_name, basestring):
             raise SDKException('Schedules', '102')
 
-        if schedule_id and not isinstance(schedule_name, int):
+        if schedule_id and not isinstance(schedule_id, int):
             raise SDKException('Schedules', '102')
 
         if task_id and not isinstance(task_id, int):
@@ -1168,7 +1168,8 @@ class Schedules:
         elif task_id:
             schedule_id = self._get_sch_id_from_task_id(task_id)
 
-        return schedule_id
+        if self.schedules and schedule_id in self.schedules:
+            return schedule_id
 
     def has_schedule(self, schedule_name=None, schedule_id=None, task_id=None):
         """Checks if a schedule exists for the commcell entity with the input schedule name.
