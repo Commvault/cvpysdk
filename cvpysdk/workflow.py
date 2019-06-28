@@ -1097,7 +1097,7 @@ class WorkFlow(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def execute_workflow(self, workflow_inputs=None):
+    def execute_workflow(self, workflow_inputs=None, hidden=False):
         """Executes the workflow with the workflow name given as input, and returns its job id.
 
             Args:
@@ -1123,6 +1123,8 @@ class WorkFlow(object):
                             {
                                 "ClientGroupName": "client_group_value"
                             }
+
+                hidden (bool) -- Is the workflow hidden ? True/False
 
             Returns:
                 **tuple**   -   (`dict`, `str` **/** `dict` **/** `object`)
@@ -1160,53 +1162,52 @@ class WorkFlow(object):
         """
         workflow_name = self._workflow_name.lower()
 
-        if workflow_name in self._workflows:
-            workflow_vals = self._workflows[workflow_name]
-            execute_workflow_json = {}
-
-            if workflow_inputs is None:
-                if 'inputs' in workflow_vals:
-                    o_str = 'Workflow Name: \t\t"{0}"\n'.format(workflow_name)
-                    o_str += 'Workflow Description: \t"{0}"\n'.format(workflow_vals.get('description', ''))
-
-                    print(o_str)
-
-                    for a_input in workflow_vals['inputs']:
-                        execute_workflow_json[a_input['input_name']] = self._read_inputs(a_input)
-            else:
-                execute_workflow_json = workflow_inputs
-
-            import urllib.parse
-            flag, response = self._cvpysdk_object.make_request(
-                'POST', self._EXECUTE_WORKFLOW % urllib.parse.quote(workflow_name), execute_workflow_json
-            )
-
-            if flag:
-                if response.json():
-                    output = response.json().get("outputs", {})
-
-                    if "jobId" in response.json():
-                        if response.json()["jobId"] == 0:
-                            return output, 'Workflow Execution Finished Successfully'
-                        else:
-                            return output, Job(self._commcell_object, response.json()['jobId'])
-                    elif "errorCode" in response.json():
-                        if response.json()['errorCode'] == 0:
-                            return output, 'Workflow Execution Finished Successfully'
-                        else:
-                            error_message = response.json()['errorMessage']
-                            o_str = 'Executing Workflow failed\nError: "{0}"'.format(error_message)
-
-                            raise SDKException('Workflow', '102', o_str)
-                    else:
-                        return output, response.json()
-                else:
-                    raise SDKException('Response', '102')
-            else:
-                response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
-        else:
+        if not hidden and workflow_name not in self._workflows:
             raise SDKException('Workflow', '104')
+
+        execute_workflow_json = {}
+
+        if workflow_inputs is None:
+            workflow_vals = self._workflows[workflow_name]
+            if 'inputs' in workflow_vals:
+                o_str = 'Workflow Name: \t\t"{0}"\n'.format(workflow_name)
+                o_str += 'Workflow Description: \t"{0}"\n'.format(workflow_vals.get('description', ''))
+
+                print(o_str)
+
+                for a_input in workflow_vals['inputs']:
+                    execute_workflow_json[a_input['input_name']] = self._read_inputs(a_input)
+        else:
+            execute_workflow_json = workflow_inputs
+
+        import urllib.parse
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._EXECUTE_WORKFLOW % urllib.parse.quote(workflow_name), execute_workflow_json)
+
+        if flag:
+            if response.json():
+                output = response.json().get("outputs", {})
+
+                if "jobId" in response.json():
+                    if response.json()["jobId"] == 0:
+                        return output, 'Workflow Execution Finished Successfully'
+                    else:
+                        return output, Job(self._commcell_object, response.json()['jobId'])
+                elif "errorCode" in response.json():
+                    if response.json()['errorCode'] == 0:
+                        return output, 'Workflow Execution Finished Successfully'
+                    else:
+                        error_message = response.json()['errorMessage']
+                        o_str = 'Executing Workflow failed\nError: "{0}"'.format(error_message)
+
+                        raise SDKException('Workflow', '102', o_str)
+                else:
+                    return output, response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def export_workflow(self, export_location=None):
         """Exports the workflow to the directory location specified by the user.

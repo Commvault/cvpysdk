@@ -1346,6 +1346,8 @@ class Client(object):
         self._cvd_port = None
         self._job_start_time = None
 
+        self._readiness = None
+
         self.refresh()
 
     def __repr__(self):
@@ -1507,7 +1509,7 @@ class Client(object):
             return request_json2
 
         if job_start_time is not None:
-            request_json1['clientProperties']['jobStartTime'] = job_start_time
+            request_json1['clientProperties']['clientProps']['jobStartTime'] = job_start_time
 
         return request_json1
 
@@ -2749,17 +2751,7 @@ class Client(object):
 
                     if response is not success
         """
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['CHECK_READINESS'] % self.client_id
-        )
-
-        if flag:
-            if response.json():
-                return 'isClientReady' in response.json() and response.json()['isClientReady'] == 1
-            else:
-                raise SDKException('Response', '102')
-        else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+        return self.readiness_details.is_ready()
 
     def upload_file(self, source_file_path, destination_folder):
         """Upload the specified source file to destination path on the client machine
@@ -2953,18 +2945,18 @@ class Client(object):
 
         if wait_for_service_restart:
             start_time = time.time()
+            timeout = timeout * 60
 
-            while True:
+            while time.time() - start_time < timeout:
                 try:
                     if self.is_ready:
-                        break
-
-                    if time.time() - start_time > timeout * 60:
-                        raise SDKException('Client', '107')
-                except requests.ConnectionError:
+                        return
+                except Exception:
                     continue
 
                 time.sleep(5)
+
+            raise SDKException('Client', '107')
 
     def push_network_config(self):
         """Performs a push network configuration on the client
@@ -3594,3 +3586,97 @@ class Client(object):
         """Returns the job start time"""
 
         return self._job_start_time
+
+    @property
+    def readiness_details(self):
+        """ returns instance of readiness"""
+        if self._readiness is None:
+            self._readiness = _Readiness(self._commcell_object, self.client_id)
+        return self._readiness
+
+
+class _Readiness:
+    """ Class for checking the connection details of a client """
+    def __init__(self, commcell, client_id):
+        self.__commcell = commcell
+        self.__client_id = client_id
+        self._reason = None
+        self._detail = None
+        self._status = None
+        self._dict = None
+
+    def __fetch_readiness_details(self, network=True, resource=False, disabled_clients=False):
+        """
+        Performs readiness check on the client
+
+            Args:
+                network (bool): Performs Network Readiness Check. Defaults to True.
+                resource (bool): Performs Resource Readiness Check. Defaults to False.
+                disabled_clients (bool): Includes backup activity disabled clients. Defaults to False.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self.__commcell._cvpysdk_object.make_request(
+            'GET', self.__commcell._services['CHECK_READINESS'] % (self.__client_id, network, resource, disabled_clients)
+        )
+
+        if flag:
+            if response.json():
+                self._dict = response.json()
+                self.__check_reason()
+                self.__check_status()
+                self.__check_details()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
+
+    def is_ready(self, network=True, resource=False, disabled_clients=False):
+        """Performs readiness check on the client
+
+        Returns: connection status
+
+        """
+        self.__fetch_readiness_details(network, resource, disabled_clients)
+        return self._status == "Ready."
+
+    def __check_reason(self):
+        try:
+            self._reason = self._dict['summary'][0]['reason']
+        except KeyError:
+            pass
+
+    def __check_status(self):
+        try:
+            self._status = self._dict['summary'][0]['status']
+        except KeyError:
+            pass
+
+    def __check_details(self):
+        try:
+            self._detail = self._dict['detail']
+        except KeyError:
+            pass
+
+    def get_failure_reason(self):
+        """ Retrieve client readiness failure reason"""
+        if not self._dict:
+            self.__fetch_readiness_details()
+        return self._reason
+
+    @property
+    def status(self):
+        """ Retrieve client readiness status """
+        if not self._dict:
+            self.__fetch_readiness_details()
+        return self._status
+
+    def get_detail(self):
+        """ Retrieve client readiness details """
+        if not self._dict:
+            self.__fetch_readiness_details()
+        return self._detail

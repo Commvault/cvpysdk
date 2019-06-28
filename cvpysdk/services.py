@@ -43,7 +43,8 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENT': '{0}Client/%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
-    'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=true&resourceCapacity=false',
+    'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
+                       '&NeedXmlResp=true&includeDisabledClients=%s',
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',

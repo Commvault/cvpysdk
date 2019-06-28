@@ -35,6 +35,8 @@ from enum import Enum
 from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
+from .vmwaresubclient import VMWareVirtualServerSubclient
+
 
 
 class HyperVVirtualServerSubclient(VirtualServerSubclient):
@@ -82,7 +84,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                      proxy_client=None,
                      disk_name=None,
                      copy_precedence=0,
-                     convert_to=None):
+                     convert_to=None,
+                     media_agent=None,
+                     snap_proxy=None):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -100,7 +104,15 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                 disk_Name           (str)   -- name of the disk which has to be restored
 
                 convert_to          (str)   --  to convert the disk to the specified format
-                    default: None
+                    default: None.
+
+                media_agent         (str)   -- MA needs to use for disk browse
+                    default :Storage policy MA
+
+                snap_proxy          (str)   -- proxy need to be used for disk
+                                                    restores from snap
+                    default :proxy in instance or subclient
+
 
 
             Returns:
@@ -173,7 +185,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             in_place=False,
             copy_precedence=copy_precedence,
             destination_path=destination_path,
-            paths=_src_item_list
+            paths=_src_item_list,
+            media_agent=media_agent,
+            snap_proxy=snap_proxy
         )
 
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
@@ -325,7 +339,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                  overwrite=True,
                                  power_on=True,
                                  copy_precedence=0,
-                                 add_to_failover=False):
+                                 add_to_failover=False,
+                                 snap_proxy=None):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
@@ -340,6 +355,10 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
                 add_to_failover
                         default:False   (bool)      --  Add the Restored VM to Failover Cluster
+
+                snap_proxy          (str)   -- proxy need to be used for disk
+                                                    restores from snap
+                    default :proxy in instance or subclient
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -373,10 +392,14 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             add_to_failover=add_to_failover,
-            in_place=True
+            in_place=True,
+            snap_proxy=snap_proxy
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json["taskInfo"]["subTasks"][0][
+            "options"]["restoreOptions"]["virtualServerRstOption"]["diskLevelVMRestoreOption"][
+            "esxServerName"] = restore_option["esx_server"]
         return self._process_restore_response(request_json)
 
     def full_vm_conversion_vmware(
@@ -605,6 +628,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             destination_instance=instance.instance_name,
             backupset_client_name=instance._agent_object._client_object.client_name
         )
+
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)

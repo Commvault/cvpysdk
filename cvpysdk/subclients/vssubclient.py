@@ -762,6 +762,7 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": "",
+                "networkName":_destnetwork ,
                 "name": network_card_dict['label'],
                 "networkName": _destnetwork,
                 "destinationNetwork": _destnetwork
@@ -2002,7 +2003,7 @@ class VirtualServerSubclient(Subclient):
                     vm_ip = self._json_vmip_advanced_restore_options(restore_option)
                     restore_option["vm_ip_address_options"] = vm_ip
             if restore_option["in_place"]:
-                if "hyper" in restore_option["destination_instance"]:
+                if "hyper" in restore_option["destination_instance"].lower():
                     restore_option["client_name"] = vs_metadata['esxHost']
                     restore_option["esx_server"] = vs_metadata['esxHost']
                 elif 'Red' in restore_option["destination_instance"]:

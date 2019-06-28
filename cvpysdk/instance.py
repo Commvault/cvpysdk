@@ -1555,7 +1555,8 @@ class Instance(object):
             from_time=None,
             to_time=None,
             fs_options=None,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            proxy_client=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -1592,6 +1593,7 @@ class Instance(object):
                         versions            : list of version numbers to be backed up
                         validate_only       : To validate data backed up for restore
 
+                proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -1619,13 +1621,15 @@ class Instance(object):
 
         request_json = self._restore_json(
             paths=paths,
+            in_place=True,
             overwrite=overwrite,
             restore_data_and_acl=restore_data_and_acl,
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
             restore_option=fs_options,
-            schedule_pattern=schedule_pattern)
+            schedule_pattern=schedule_pattern,
+            proxy_client=proxy_client)
 
         return self._process_restore_response(request_json)
 
@@ -1640,7 +1644,8 @@ class Instance(object):
             from_time=None,
             to_time=None,
             fs_options=None,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            proxy_client=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1685,6 +1690,7 @@ class Instance(object):
                         media_agent         : Media Agent need to be used for Browse and restore
                         validate_only       : To validate data backed up for restore
 
+                proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -1741,7 +1747,8 @@ class Instance(object):
             from_time=from_time,
             to_time=to_time,
             restore_option=fs_options,
-            schedule_pattern=schedule_pattern
+            schedule_pattern=schedule_pattern,
+            proxy_client=proxy_client
         )
 
         return self._process_restore_response(request_json)
@@ -2010,10 +2017,10 @@ class Instance(object):
             "liveBrowse": value.get('live_browse', False),
             "mediaOption": {
                 "mediaAgent": {
-                    "mediaAgentName": value.get("media_agent", "")
+                    "mediaAgentName": value.get("media_agent", None) or ""
                 },
                 "proxyForSnapClients": {
-                    "clientName": value.get("proxy_client", '')
+                    "clientName": value.get("snap_proxy", None) or value.get("proxy_client", None)  or ""
                 },
                 "library": {},
                 "copyPrecedence": {
@@ -2088,16 +2095,27 @@ class Instance(object):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
+        if value.get("proxy_client") != None and \
+        (self._agent_object.agent_name).upper() == "FILE SYSTEM":
+            self._destination_restore_json = {
+                "inPlace": value.get("in_place", True),
+                "destClient": {
+                    "clientName": value.get("proxy_client", "")
+                }
+		     }
+            if self._destination_restore_json["inPlace"]:
+                self._destination_restore_json["destPath"] = [""]
+
+        else:
         # removed clientId from destClient as VSA Restores fail with it
-        self._destination_restore_json = {
-            "isLegalHold": False,
-            "inPlace": value.get("in_place", True),
-            "destPath": [value.get("destination_path", "")],
-            "destClient": {
-                "clientName": value.get("client_name", ""),
-                "clientId": value.get("client_id", "")
-            }
-        }
+            self._destination_restore_json = {
+                "isLegalHold": False,
+                "inPlace": value.get("in_place", True),
+                "destPath": [value.get("destination_path", "")],
+                "destClient": {
+                    "clientName": value.get("client_name", ""),
+                }
+		     }
 
     def _restore_fileoption_json(self, value):
         """setter for  the fileoption restore option in restore JSON"""

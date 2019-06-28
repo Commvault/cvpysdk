@@ -397,7 +397,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                      disk_name=None,
                      proxy_client=None,
                      copy_precedence=0,
-                     convert_to=None):
+                     convert_to=None,
+                     media_agent=None,
+                     snap_proxy=None):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -423,6 +425,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                                         selected for restore). Allowed values are
                                                         "VHDX" or "VHD"
                                                         default: None
+
+                media_agent         (str)   -- MA needs to use for disk browse
+                    default :Storage policy MA
+
+                snap_proxy          (str)   -- proxy need to be used for disk
+                                                    restores from snap
+                    default :proxy in instance or subclient
             Returns:
                 object - instance of the Job class for this restore job
 

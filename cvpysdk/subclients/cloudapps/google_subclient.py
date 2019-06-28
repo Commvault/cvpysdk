@@ -54,7 +54,7 @@ class GoogleSubclient(CloudAppsSubclient):
 
             if temp_account['contentType'] == 134:
                 content_dict = {
-                    'SMTPAddress': temp_account["contentName"],
+                    'SMTPAddress': temp_account["contentName"].split(";")[0],
                     'display_name': temp_account["contentValue"]
                 }
 

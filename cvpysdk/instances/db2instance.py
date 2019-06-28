@@ -11,26 +11,34 @@
 DB2Instance is the only class defined in this file.
 
 DB2Instance:    Derived class from Instance Base class, representing a
-                           DB2 instance, and to perform operations on that instance
+DB2 instance, and to perform operations on that instance
 
 DB2Instance:
+============
 
-    _get_instance_properties()      --      Instance class method overwritten to add cloud apps
-                                            instance properties as well
+    _restore_destination_json()     --      setter for the Db2 Destination options in restore JSON
 
-    version()                       --      getter method for db2 version
+    _db2_restore_options_json()     --      setter for  the db2 options of in restore JSON
 
-    home_directory()                --      Getter for db2 home directory
+    _restore_json()                 --      returns the JSON request to pass to the API as per
+    the options selected by the user
 
-    user_account()                  --      Getter for db2 user account name
+    restore_entire_database()       --      Restores the db2 database
 
-    data_backup_storage_policy()    --      Getter for sp name configured for data backup
 
-    command_line_storage_policy()   --      Getter for cli backup sp name
+DB2Instance instance Attributes:
+================================
+    **version**                         -- returns db2 version
 
-    log_backup_storgae_policy()     --      Getter for log backup sp name
+    **home_directory**                  -- returns db2 home directory
 
-    _restore_entire_database()      --      Performs restore for entire database level
+    **user_name**                       -- returns db2 user name
+
+    **data_backup_storage_policy**      -- returns data backup storage policy
+
+    **command_line_storage_policy**     -- returns commandline storage policy
+
+    **log_backup_storage_policy**       -- returns log backup storage policy
 
 """
 from __future__ import unicode_literals
@@ -39,78 +47,87 @@ from ..exception import SDKException
 
 
 class DB2Instance(Instance):
+    """ Derived class from Instance Base class, representing a DB2 instance,
+        and to perform operations on that Instance."""
 
     @property
     def version(self):
-        """Getter for db2 version
+        """returns db2 version
 
         Returns:
-            db2 version value in string
+            (str) -- db2 version value in string
 
         """
-        return self._properties.get('version')
+        return self._properties.get('version', "")
 
     @property
     def home_directory(self):
         """
-        getter for db2 home
+        returns db2 home directory
 
         Returns:
-            string - string of db2_home
+            (str) - string of db2_home
 
         """
-        return self._properties.get('db2Instance',{}).get('homeDirectory')
+        return self._properties.get('db2Instance', {}).get('homeDirectory', "")
 
     @property
-    def user_account(self):
+    def user_name(self):
         """
-                Getter for db2 user
+                returns db2 user name
 
                 Returns:
-                    string  - String containing db2 user
+                    (str)  - String containing db2 user
+
         """
-        return self._properties.get('DB2Instance',{}).get('userAccount')
+        return self._properties.get(
+            'db2Instance', {}).get('userAccount', {}).get('userName', "")
 
     @property
     def data_backup_storage_policy(self):
-        """ Getter for data storagepolicy from instance level
+        """ returns data backup storage policy
 
             Returns:
-                Storage policy name from db2 instance level
+                (str) -- Storage policy name from db2 instance level
 
         """
-        return self._properties['db2Instance']['db2StorageDevice'][
-            'dataBackupStoragePolicy'].get('storagePolicyName')
+        return self._properties.get('db2Instance', {}).get(
+            'DB2StorageDevice', {}).get('dataBackupStoragePolicy', {}).get('storagePolicyName', "")
 
     @property
     def command_line_storage_policy(self):
-        """Getter for commandline sp defined at db2 instance level
+        """returns commandline storage policy
+
             Returns:
-                Command line sp name from db2 instance level
+                (str)  --  Command line sp name from db2 instance level
+
         """
-        return self._properties['DB2Instance']['DB2StorageDevice'][
-            'commandLineStoragePolicy'].get('storagePolicyName')
+        return self._properties.get('db2Instance', {}).get(
+            'DB2StorageDevice', {}).get('commandLineStoragePolicy', {}).get('storagePolicyName', "")
 
     @property
-    def log_backup_storgae_policy(self):
+    def log_backup_storage_policy(self):
         """
-        Getter for log backup storage policy defined at instance level
+        returns log backup storage policy
+
             Returns:
-                 Log backup SP name from instance level
+                (str)  -- Log backup SP name from instance level
+
         """
-        return self._properties['DB2Instance']['DB2StorageDevice'][
-            'logBackupStoragePolicy'].get('storagePolicyName')
+        return self._properties.get('db2Instance', {}).get(
+            'DB2StorageDevice', {}).get('logBackupStoragePolicy', {}).get('storagePolicyName', "")
 
     def _restore_destination_json(self, value):
         """setter for the Db2 Destination options in restore JSON"""
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         self._destination_restore_json = {
             "destinationInstance": {
                 "clientName": value.get("dest_client_name", ""),
                 "instanceName": value.get("dest_instance_name", ""),
+                "backupsetName": value.get("dest_backupset_name", ""),
                 "appName": "DB2"
             },
             "destClient": {
@@ -125,15 +142,24 @@ class DB2Instance(Instance):
 
         """
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException('Instance', '101')
 
         self.db2_options_restore_json = {
-            "restoreType": value.get("restore_type", "ENTIREDB"),
+            "restoreType": value.get("restore_type", 0),
+            "restoreLevel": value.get("restore_level", 0),
             "redirect": value.get("redirect", False),
-            "restoreArchiveLogs": value.get("restore_archive_logs", False),
+            "rollForwardPending": value.get("rollforward_pending", False),
+            "restoreArchiveLogs": value.get("restore_archive_logs", True),
             "rollForward": value.get("roll_forward", True),
-            "restoreIncramental": value.get("restore_incremental", False),
-            "rollForwardToEnd": value.get("roll_forward_to_end", "TO_END"),
+            "restoreIncremental": value.get("restore_incremental", False),
+            "archiveLogLSN": value.get("archivelog_lsn", False),
+            "archiveLogTime": value.get("archive_log_time", False),
+            "startLSN": value.get("start_lsn", False),
+            "endLSN": value.get("end_lsn", False),
+            "logTimeStart": value.get("logtime_start", False),
+            "logTimeEnd": value.get("logtime_end", False),
+            "rollForwardToEnd": value.get("roll_forward_to_end", 1),
+            "useAlternateLogFile": value.get("use_alternate_logfile", False),
             "restoreData": value.get("restore_data", True),
             "restoreOnline": value.get("restore_online", False),
             "targetDb": value.get("target_db", " "),
@@ -142,15 +168,15 @@ class DB2Instance(Instance):
             "buffers": value.get("buffers", 2),
             "bufferSize": value.get("buffer_size", 1024),
             "rollForwardDir": value.get("roll_forward_dir", " "),
-            "historyFilePath": value.get("history_file_path", " "),
-            "recoverDb": value.get("recover_db", True),
+            "recoverDb": value.get("recover_db", False),
             "dbHistoryFilepath": value.get("db_history_filepath", False),
             "storagePath": value.get("storage_path", False),
             "parallelism": value.get("parallelism", 0),
             "useSnapRestore": value.get("use_snap_restore", False),
             "useLatestImage": value.get("use_latest_image", True),
             "tableViewRestore": value.get("table_view_restore", False),
-            "cloneRecovery": value.get("clone_recovery", False),
+            "useLogTarget": value.get("use_log_target", False),
+            "cloneRecovery": value.get("clone_recovery", False)
         }
 
         return self.db2_options_restore_json
@@ -163,6 +189,7 @@ class DB2Instance(Instance):
 
             Returns:
                 dict - JSON request to pass to the API
+
         """
         rest_json = super(DB2Instance, self)._restore_json(**kwargs)
         restore_option = {}
@@ -174,29 +201,42 @@ class DB2Instance(Instance):
         else:
             restore_option = kwargs
 
-        self._db2_restore_options_json(restore_option)
-        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"] = self._db2_restore_options_json(restore_option)
+        json = self._db2_restore_options_json(restore_option)
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"] = json
         return rest_json
 
     def restore_entire_database(
             self,
-            dest_client_name=None,
-            dest_instance_name=None,
-            dest_database_name=None,
-            db2_options=None
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            restore_type='ENTIREDB',
+            recover_db=True,
+            restore_incremental=True,
 
     ):
-        """Restores the db2 database specified in the input paths list.
+        """Restores the db2 database
 
             Args:
 
                 dest_client_name        (str)   --  destination client name
 
-                dest_instance_name      (str)   --  destination db2 instance name of destination on destination client
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination on destination client
 
-                dest_database_name      (str)    -- destination database name
+                dest_database_name      (str)   -- destination database name
 
-                db2_options             (dict)    -- db2 restore options like rollforward to end of logs
+                restore_type            (str)   -- db2 restore type
+
+                    default: "ENTIREDB"
+
+                recover_db              (bool)  -- recover database flag
+
+                    default: True
+
+                restore_incremental     (bool)  -- Restore incremental flag
+
+                    default: True
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -209,28 +249,22 @@ class DB2Instance(Instance):
                     if response is empty
 
                     if response is not success
+
         """
-        restore_option = {}
 
-        if db2_options is None:
-            db2_options = {}
+        if "entiredb" in restore_type.lower():
+            restore_type = 0
 
-        if dest_client_name is None:
-            dest_client_name = self._agent_object._client_object.client_name
-        if dest_instance_name is None:
-            dest_instance_name = self.instance_name.upper()
-
-
-        restore_option["dest_client_name"] = dest_client_name
-        restore_option["dest_instance_name"] = dest_instance_name
-        restore_option["dest_backupset_name"] = dest_database_name
-        restore_option["target_db"] = dest_database_name
-        restore_option["client_name"] = self._agent_object._client_object.client_name
-        restore_option["copy_precedence_applicable"] = True
-        restore_option["copy_precedence"] = db2_options.get("copy_precedence", 0)
-        restore_option["from_time"] = db2_options.get("from_time", 0)
-        restore_option["to_time"] = db2_options.get("to_time", 0)
-
-        request_json = self._restore_json(**restore_option)
+        request_json = self._restore_json(
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_backupset_name=dest_backupset_name,
+            target_db=dest_backupset_name,
+            restore_type=restore_type,
+            recover_db=recover_db,
+            restore_incremental=restore_incremental,
+        )
+        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
+            "browseOption"]["backupset"]["backupsetName"] = dest_backupset_name
 
         return self._process_restore_response(request_json)

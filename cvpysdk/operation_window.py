@@ -6,24 +6,37 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""File for performing Operation Window related operations on Commcell.
+"""File for performing Operation Window related operations on given Commcell entity.
 
-OperationWindow:   Class for creation,deletion and listing of operation windows
+OperationWindow: Class for performing Operation Window related operations on given Commcell entity.
 
 OperationWindow:
 
-    __init__(commcell_object)           --  initialize instance of the OperationWindow class
+    __init__()                          --  initialize instance of the OperationWindow class
 
-    create_operation_window()           --  Creates a Operation window
+    create_operation_window()           --  Creates a Operation rule on the given commcell instance
 
-    delete_operation_window()           --  deletes a Operation Window from the commcell
+    delete_operation_window()           --  deletes a Operation rule on the commcell instance
 
-    list_operation_window()             --  Lists all the operation window associted with a client
+    list_operation_window()             --  Lists all the operation rule associated with given commcell entity
+
+        Example with client instance:
+            from cvpysdk.commcell import Commcell
+            commcell = Commcell(<CS>, username, password)
+            client = commcell.clients.get(<client Name>)
+            from cvpysdk.operation_window import OperationWindow
+            client_operation_window = OperationWindow(client)
+            rule_id = client_operation_window.create_operation_window("operation window example on clientLevel")
+            client_operation_window.list_operation_window()
+            client_operation_window.delete_operation_window(rule_id)
 
 """
 
 from __future__ import absolute_import
+
 import time
+from datetime import timedelta
+
 from .exception import SDKException
 from .client import Client
 from .agent import Agent
@@ -33,14 +46,14 @@ from .subclient import Subclient
 
 
 class OperationWindow(object):
-    """Class for representing all workflows of a commcell."""
+    """Class for representing all operation window related operations"""
 
     def __init__(self, generic_entity_obj):
-        """Initialize the OperationWindow class instance for
-           performing OperationWindow related operations.
+        """Initialize the OperationWindow class instance for performing OperationWindow related operations.
 
             Args:
-                commcell_object     (object)    --  instance of the Commcell class
+                generic_entity_obj     (object)    --  Commcell entity object
+                    Expected value : commcell/Client/Agent/Instance/BackupSet/Subclient Instance
 
             Returns:
                 object  -   instance of the OperationWindow class
@@ -120,42 +133,45 @@ class OperationWindow(object):
             start_time=None,
             end_time=None,
             client_group_name=None):
-        """Creates the OperationWindow with the Operation Window name given as input,
-           for a particular client given as input and returns its Rule id.
+        """ Creates operation rule on the initialized commcell instance
 
             Args:
-                name              (str)   --  Name of the Operation Window
+                name          (str)   --  Name of the Operation rule
 
-                start_date/end_date (str) --  Timestamp value for the start and end date
-                                              of operation window. If default values are passed,
-                                              this will create a operation window for the
-                                              period of one year starting from the present date.
+                start_date    (int)   -- The start date for the operation rule.
+                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).
+                    default - current date
 
-                operations (list)         --   List of operations for which the operation
-                                               window is created
+                end_date      (int)   -- The end date for the operation rule.
+                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).
+                    default - 365 days
 
+                operations   (list)   -- The operations the operation rule applies to
                     Acceptable Values:
-
-                        FULL_DATA_PROTECTION/NON_FULL_DATA_PROTECTION/SYNTHETIC_FULL/
+                        FULL_DATA_MANAGEMENT/NON_FULL_DATA_MANAGEMENT/SYNTHETIC_FULL/
                         DATA_RECOVERY/AUX_COPY/ER_BACKUP/ARCHIVE_CHECK/TAPE_ERASE/
-                        SHELF_MANAGEMENT/ERASE_BACKUP_DATA/ERASE_MIGRATED_DATA/
+                        SHELF_MANAGEMENT/DELETE_DATA_BY_BROWSING/DELETE_ARCHIVED_DATA/
                         OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFOMGMT/
                         MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/STUBBING
 
-                day_of_week  (list)      --   List of days on which the operation window is active
-
+                day_of_week (list)    -- List of days of the week on which the operation rule applies to
                     Acceptable Values:
-
                         sunday/ monday/ tuesday/ wednesday/ thursday/ friday/ saturday
 
-                start_time/end_time (str)  -- Time period in which the operation window is active.
-                                               If the defauilt values are passed, it will create a
-                                               operation window from 12AM - 11:59PM
+                    default- Weekdays
+
+                start_time  (int)     -- The start time for the "do not run" interval.
+                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).
+                    default - 28800 (8 AM)
+
+                end_time    (int)     -- The end time for the "do not run" interval.
+                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).
+                    default - 86400 (6 PM)
 
                 client_group_name   (str)  -- Name of client group
 
             Returns:
-                Returns the rule Id of created Operation window
+                Returns the rule Id (system-generated ID assigned to the operation rule created)
 
             Raises:
                 SDKException:
@@ -166,17 +182,10 @@ class OperationWindow(object):
                     if response is not success
 
         """
-        day_of_week_mapping = {
-            "sunday": 0,
-            "monday": 1,
-            "tuesday": 2,
-            "wednesday": 3,
-            "thursday": 4,
-            "friday": 5,
-            "saturday": 6}
+        day_of_week_mapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
         operation_mapping = {
-            "FULL_DATA_PROTECTION": 1,
-            "NON_FULL_DATA_PROTECTION": 2,
+            "FULL_DATA_MANAGEMENT": 1,
+            "NON_FULL_DATA_MANAGEMENT": 2,
             "SYNTHETIC_FULL": 4,
             "DATA_RECOVERY": 8,
             "AUX_COPY": 16,
@@ -184,8 +193,8 @@ class OperationWindow(object):
             "ARCHIVE_CHECK": 64,
             "TAPE_ERASE": 128,
             "SHELF_MANAGEMENT": 256,
-            "ERASE_BACKUP_DATA": 512,
-            "ERASE_MIGRATED_DATA": 1024,
+            "DELETE_DATA_BY_BROWSING": 512,
+            "DELETE_ARCHIVED_DATA": 1024,
             "OFFLINE_CONTENT_INDEXING": 2048,
             "ONLINE_CONTENT_INDEXING": 4096,
             "SRM": 8192,
@@ -199,25 +208,31 @@ class OperationWindow(object):
         if start_date is None:
             start_date = int(time.time())
         if end_date is None:
-            end_date = int(time.time()) + 31556926
+            end_date = int(time.time()) + int(timedelta(days=365).total_seconds())
         if start_time is None:
-            start_time = 0
+            start_time = int(timedelta(hours=8).total_seconds())
         if end_time is None:
-            end_time = 86340
+            end_time = int(timedelta(hours=18).total_seconds())
 
         operations_list = []
         if operations is None:
-            operations_list = [1]
+            operations_list = [operation_mapping["FULL_DATA_MANAGEMENT"]]
         else:
-            for i in operations:
-                operations_list.append(operation_mapping[i.upper()])
+            for operation in operations:
+                if operation not in operation_mapping:
+                    response_string = "Invalid input %s for operation is passed" % operation
+                    raise SDKException('OperationWindow', '101', response_string)
+                operations_list.append(operation_mapping[operation.upper()])
 
         day_of_week_list = []
         if day_of_week is None:
-            day_of_week_list = [0, 1, 2, 3, 4, 5, 6]
+            day_of_week_list = [1, 2, 3, 4, 5]  # defaults to weekdays
         else:
-            for i in day_of_week:
-                day_of_week_list.append(day_of_week_mapping[i.lower()])
+            for day in day_of_week:
+                if day.lower() not in day_of_week_mapping:
+                    response_string = "Invalid input value %s for day_of_week" % day
+                    raise SDKException('OperationWindow', '101', response_string)
+                day_of_week_list.append(day_of_week_mapping.index(day.lower()))
 
         client_group_id = 0
         client_groups = self._commcell_object.client_groups
@@ -246,14 +261,13 @@ class OperationWindow(object):
                 "subclientId": int(self.subclient_id)
             }
         }
-
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._operation_window, payload=payload)
         if flag:
             if response.json():
                 error_code = response.json()["error"]['errorCode']
                 if int(error_code) == 0:
-                    return response.json()['operationWindow']['ruleId']
+                    return int(response.json()['operationWindow']['ruleId'])
                 else:
                     raise SDKException(
                         'OperationWindow', '101', response.json()["error"]['errorMessage'])
@@ -265,10 +279,10 @@ class OperationWindow(object):
             raise SDKException('Response', '101', response_string)
 
     def delete_operation_window(self, rule_id):
-        """Deletes the OperationWindow with the rule Id given as input.
+        """Deletes the operation rule associated with given rule Id.
 
             Args:
-                rule_id       (int)   --  Rule Id of the operation window
+                rule_id       (int)   --  Rule Id of the operation window returned in create request
 
             Raises:
                 SDKException:
@@ -284,7 +298,7 @@ class OperationWindow(object):
         if flag:
             if response.json():
                 error_code = response.json()["error"]['errorCode']
-                if int(error_code) != 0:
+                if int(error_code):
                     raise SDKException(
                         'OperationWindow', '103', response.json()["error"]['errorMessage'])
             else:
@@ -295,17 +309,14 @@ class OperationWindow(object):
             raise SDKException('Response', '101', response_string)
 
     def list_operation_window(self):
-        """Lists the OperationWindows for the client Id given as input.
-
-            Args:
-               None
+        """Lists the operation rules for the associated commcell entity.
 
             Returns:
-                Returns the List of operation window created for a given client
+                Returns the List of operation rules (dictionary) associated with given commcell entity
 
             Raises:
                 SDKException:
-                    if the Operation windows could not be Listed
+                    if the Operation rules could not be Listed
 
                     if response is empty
 
@@ -318,7 +329,7 @@ class OperationWindow(object):
             if response.json():
                 error_code = response.json()["error"]['errorCode']
                 if int(error_code) == 0:
-                    return response.json()
+                    return response.json()['operationWindow']
                 else:
                     raise SDKException(
                         'OperationWindow', '104', response.json()["error"]['errorMessage'])

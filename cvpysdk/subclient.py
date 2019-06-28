@@ -1862,7 +1862,8 @@ class Subclient(object):
             from_time=None,
             to_time=None,
             fs_options=None,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            proxy_client=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -1905,6 +1906,8 @@ class Subclient(object):
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
 
+                proxy_client    (str)          -- Proxy client used during FS under NAS operations
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -1929,7 +1932,8 @@ class Subclient(object):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            schedule_pattern=schedule_pattern
+            schedule_pattern=schedule_pattern,
+            proxy_client=proxy_client
         )
 
     def restore_out_of_place(
@@ -1943,7 +1947,8 @@ class Subclient(object):
             from_time=None,
             to_time=None,
             fs_options=None,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            proxy_client=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1999,6 +2004,8 @@ class Subclient(object):
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
 
+                proxy_client    (str)          -- Proxy client used during FS under NAS operations
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -2029,7 +2036,8 @@ class Subclient(object):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            schedule_pattern=schedule_pattern
+            schedule_pattern=schedule_pattern,
+            proxy_client=proxy_client
         )
 
     def set_backup_nodes(self, data_access_nodes):
