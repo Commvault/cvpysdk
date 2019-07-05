@@ -63,7 +63,8 @@ class FSBackupset(Backupset):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None):
+            fs_options=None,
+            restore_jobs=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -95,6 +96,7 @@ class FSBackupset(Backupset):
                         versions            : list of version numbers to be backed up
                         validate_only       : To validate data backed up for restore
 
+                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -118,7 +120,8 @@ class FSBackupset(Backupset):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options
+            fs_options=fs_options,
+            restore_jobs=restore_jobs
         )
 
     def restore_out_of_place(
@@ -131,7 +134,8 @@ class FSBackupset(Backupset):
             copy_precedence=None,
             from_time=None,
             to_time=None,
-            fs_options=None):
+            fs_options=None,
+            restore_jobs=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -175,6 +179,7 @@ class FSBackupset(Backupset):
                         versions            : list of version numbers to be backed up
                         validate_only       : To validate data backed up for restore
 
+                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -204,7 +209,8 @@ class FSBackupset(Backupset):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            fs_options=fs_options
+            fs_options=fs_options,
+            restore_jobs=restore_jobs
         )
 
     def find_all_versions(self, *args, **kwargs):

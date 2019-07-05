@@ -2216,6 +2216,31 @@ class Subclient(object):
             raise SDKException('Subclient', '101')
 
     @property
+    def network_agent(self):
+        """Returns the value of network agents setting on the Subclient."""
+        return self._commonProperties['storageDevice']['networkAgents']
+
+    @network_agent.setter
+    def network_agent(self, value):
+        """Sets the network agents of the subclient as the value provided as input.
+
+            Args:
+                value   (int)   --  network agents value
+
+            Raises:
+                SDKException:
+                    if failed to update network agents of subclient
+
+                    if the type of value input is not integer
+
+        """
+
+        if isinstance(value, int):
+            self._set_subclient_properties("_commonProperties['storageDevice']['networkAgents']", value)
+        else:
+            raise SDKException('Subclient', '101')
+
+    @property
     def encryption_flag(self):
         """Returns the value of encryption flag settings on the Subclient."""
         mapping = {

@@ -64,6 +64,8 @@ Commcell:
 
     execute_qcommand()              --  executes the ExecuteQCommand API on the commcell
 
+    add_associations_to_saml_app()  --  Adds the given user under associations of the SAML app
+
     _get_registered_service_commcells() -- gets the list of registered service commcells
 
     register_commcell()             -- registers a commcell
@@ -1816,6 +1818,38 @@ class Commcell(object):
             return response
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_associations_to_saml_app(self, saml_app_name, saml_app_key, props, user_to_be_added):
+        """adds the given  user under associations tab of the saml app
+            Args:
+                saml_app_name   (str)   : SAML app name to add associations for
+
+                saml_app_key    (str)   :app key of the SAML app
+
+                props   (str)   :properties to be included in the XML request
+
+                user_to_be_added    (str)   : user to be associated with
+
+            Raises:
+                SDKException:
+                    if input data is invalid
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        xml_execute_command = """
+            <App_SetClientThirdPartyAppPropReq opType="3">
+            <clientThirdPartyApps appDescription="" appKey="{0}" appName="{1}" appType="2" flags="2" isCloudApp="0" isEnabled="1">
+                {2}
+                <UserMappings/>
+                <assocTree _type_="13" userName="{3}"/>
+            </clientThirdPartyApps>
+        </App_SetClientThirdPartyAppPropReq> 
+        	"""\
+            .format(str(saml_app_key), saml_app_name, props, user_to_be_added)
+        self._qoperation_execute(xml_execute_command)
 
     def _get_registered_service_commcells(self):
         """Gets the registered routing commcells

@@ -1910,7 +1910,7 @@ class StoragePolicy(object):
                 """.format(store_id, sub_store_id, media_agent_name, dedupe_path)
         self._commcell_object._qoperation_execute(request_xml)
 
-    def run_recon(self, copy_name, sp_name, store_id):
+    def run_recon(self, copy_name, sp_name, store_id, full_reconstruction=0, use_scalable_resource='false'):
         """ Runs non-mem DB Reconstruction job
 
             Args:
@@ -1919,6 +1919,16 @@ class StoragePolicy(object):
                sp_name      (str)  --  name of the storage policy
 
                store_id     (str)  --  SIDB store id associated with the copy
+
+               full_reconstruction      (int)  --  flag to enable full reconstruction job
+                                                   Valid values:
+                                                   0: to start regular reconstruction job
+                                                   1: to start full reconstruction job
+
+               use_scalable_resource    (str)  --  to enable scalable resources
+                                                   Valid values:
+                                                   'true': to start old way reconstruction job
+                                                   'false': to start reconstruction job with scalable resources
         """
         request_xml = """
         <TMMsg_DedupSyncTaskReq flags="0">
@@ -1931,7 +1941,7 @@ class StoragePolicy(object):
                     <adminOpts>
                         <contentIndexingOption subClientBasedAnalytics="0"/>
                         <dedupDBSyncOption SIDBStoreId="{2}"/>
-                        <reconstructDedupDBOption allowMaximum="0" flags="0" noOfStreams="0">
+                        <reconstructDedupDBOption allowMaximum="0" flags="{4}" noOfStreams="0" useScallableResourceManagement="{3}">
                         <mediaAgent _type_="11" mediaAgentId="0" mediaAgentName="&lt;ANY MEDIAAGENT>"/>
                         </reconstructDedupDBOption>
                     </adminOpts>
@@ -1946,7 +1956,7 @@ class StoragePolicy(object):
             </task>
             </taskInfo>
         </TMMsg_DedupSyncTaskReq>
-        """.format(copy_name, sp_name, store_id)
+        """.format(copy_name, sp_name, store_id, use_scalable_resource, full_reconstruction)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
         )

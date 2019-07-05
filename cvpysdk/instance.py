@@ -1479,7 +1479,6 @@ class Instance(object):
                 "task": self._json_task,
                 "subTasks": [{
                     "subTaskOperation": 1,
-                    "subTask": self._json_restore_subtask,
                     "options": {
                         "restoreOptions": {
                             "impersonation": self._impersonation_json_,
@@ -1494,6 +1493,18 @@ class Instance(object):
                 }]
             }
         }
+
+        if restore_option.get('index_free_restore', False):
+            request_json["taskInfo"]["subTasks"][0]["subTask"] = self._json_restore_by_job_subtask
+            jobs_list = restore_option.get('restore_jobs')
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["jobIds"] = jobs_list
+            source_item = []
+            for i in jobs_list:
+                source_item.append("2:{0}".format(i))
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"]["sourceItem"] = source_item
+
+        else:
+            request_json["taskInfo"]["subTasks"][0]["subTask"] = self._json_restore_subtask
 
         if restore_option.get('schedule_pattern') is not None:
             request_json = SchedulePattern().create_schedule(request_json,
@@ -1556,7 +1567,8 @@ class Instance(object):
             to_time=None,
             fs_options=None,
             schedule_pattern=None,
-            proxy_client=None):
+            proxy_client=None,
+            restore_jobs=[]):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -1595,6 +1607,8 @@ class Instance(object):
 
                 proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
+                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -1616,8 +1630,9 @@ class Instance(object):
 
         paths = self._filter_paths(paths)
 
-        if paths == []:
-            raise SDKException('Subclient', '104')
+        if not fs_options.get('index_free_restore'):
+            if paths == []:
+                raise SDKException('Subclient', '104')
 
         request_json = self._restore_json(
             paths=paths,
@@ -1629,7 +1644,9 @@ class Instance(object):
             to_time=to_time,
             restore_option=fs_options,
             schedule_pattern=schedule_pattern,
-            proxy_client=proxy_client)
+            proxy_client=proxy_client,
+            restore_jobs=restore_jobs
+        )
 
         return self._process_restore_response(request_json)
 
@@ -1645,7 +1662,8 @@ class Instance(object):
             to_time=None,
             fs_options=None,
             schedule_pattern=None,
-            proxy_client=None):
+            proxy_client=None,
+            restore_jobs=[]):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1692,6 +1710,8 @@ class Instance(object):
 
                 proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
+                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -1733,8 +1753,9 @@ class Instance(object):
 
         destination_path = self._filter_paths([destination_path], True)
 
-        if paths == []:
-            raise SDKException('Subclient', '104')
+        if not fs_options.get('index_free_restore'):
+            if paths == []:
+                raise SDKException('Subclient', '104')
 
         request_json = self._restore_json(
             paths=paths,
@@ -1748,7 +1769,8 @@ class Instance(object):
             to_time=to_time,
             restore_option=fs_options,
             schedule_pattern=schedule_pattern,
-            proxy_client=proxy_client
+            proxy_client=proxy_client,
+            restore_jobs=restore_jobs
         )
 
         return self._process_restore_response(request_json)
