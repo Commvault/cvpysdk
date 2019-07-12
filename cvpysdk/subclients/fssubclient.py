@@ -23,56 +23,8 @@ FileSystemSubclient:
 
     _advanced_backup_options()          --  sets the advanced backup options
 
-    content()                           --  update the content of the subclient
-
-    filter_content()                    --  update the filter of the subclient
-
-    exception_content()                 --  update the exception of the subclient
-
-    scan_type()                         --  update the scan type of the subclient
-
-    trueup_option()                     --  enable/disable trueup option of the subclient
-
-    backup_retention()                  -- 	enable/disable backup retention for the subclient
-
-    backup_retention_days()             -- 	set number of days for backup retention
-
-    archiver_retention()                --  enable/disable archiver_retention of the subclient.
-
-    archiver_retention_days()           --  set number of days for archiver retention
-
-    file_version()                      --  set version mode and no of version or days
-
-    disk_cleanup()                      --  enable/disable disk cleanup tab
-
-    disk_cleanup_rules()                --  update rules for disk_cleanup
-
-    backup_only_archiving_candidate     --  enable or disable backup only candidate on the subclient
-
-    trueup_days()                       --  update trueup after **n** days value of the subclient
-
-    generate_signature_on_ibmi()        --  enable or disable signature generation on ibmi
-
-    object_level_backup()               --  enable or disable object level backup for ibmi subclient
-
-    global_filter_status()              --  returns the status whther to include global filters
-
-    save_while_active_option()          --  enable or disable SAVACT option for ibmi subclients.
-
     find_all_versions()                 --  returns the dict containing list of all the backed up
-    versions of specified file
-
-    block_level_backup_option()         -- 	Enable/Disable Blocklevel Option on subclient
-
-    create_file_level_index_option()    -- 	Enable/Disable Metadata collection Option on subclient
-
-    system_state_option()				--	Enable/Disable System state option for the subclient
-
-    onetouch_option()                   --  Enable/Disable One-Touch option for the subclient
-
-    onetouch_server()                   --  Provides the 1-touch server name
-
-    onetouch_server_directory()         --  Provides the 1-touch server directory
+                                            versions of specified file
 
     backup()                            --  run a backup job for the subclient
 
@@ -81,24 +33,78 @@ FileSystemSubclient:
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
 
-    catalog_acl()                       --  To enable/disable ACL on the subclient
-
-    index_server()                      --  Sets/gets the index server client for the subclient
-
-    index_pruning_type()                --  Sets the index pruning type
-
-    index_pruning_days_retention()      --  Sets the number of days to be maintained in
-                                            subclient index
-
-    index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in
-                                            subclient index
 
 FileSystemSubclient Instance Attributes:
 =======================================
 
-    **software_compression**            --  The software compression setting's value for the subclient.
+    **_fs_subclient_prop**                --  Returns the JSON for the fsSubclientProp tag in the Subclient 
+                                              Properties JSON
+                                             
+    **content**                           --  update the content of the subclient
 
-    **use_vss**                         --  The Use VSS setting's value for the subclient.
+    **filter_content**                    --  update the filter of the subclient
+
+    **exception_content**                 --  update the exception of the subclient
+
+    **scan_type**                         --  update the scan type of the subclient
+
+    **trueup_option**                     --  enable/disable trueup option of the subclient
+
+    **backup_retention**                  --  enable/disable backup retention for the subclient
+
+    **backup_retention_days**             --  set number of days for backup retention
+
+    **archiver_retention**                --  enable/disable archiver_retention of the subclient.
+
+    **archiver_retention_days**           --  set number of days for archiver retention
+
+    **file_version**                      --  set version mode and no of version or days
+
+    **disk_cleanup**                      --  enable/disable disk cleanup tab
+
+    **disk_cleanup_rules**                --  update rules for disk_cleanup
+
+    **backup_only_archiving_candidate**   --  enable or disable backup only candidate on the subclient
+
+    **trueup_days**                       --  update trueup after **n** days value of the subclient
+
+    **generate_signature_on_ibmi**        --  enable or disable signature generation on ibmi
+
+    **object_level_backup**               --  enable or disable object level backup for ibmi subclient
+
+    **global_filter_status**              --  returns the status whther to include global filters
+
+    **save_while_active_option**          --  enable or disable SAVACT option for ibmi subclients.
+    
+    **software_compression**              --  The software compression setting's value for the subclient.
+
+    **use_vss**                           --  The Use VSS setting's value for the subclient.
+  
+    **block_level_backup_option**         --  Enable/Disable Blocklevel Option on subclient
+
+    **create_file_level_index_option**    --  Enable/Disable Metadata collection Option on subclient
+
+    **system_state_option**               --  Enable/Disable System state option for the subclient
+
+    **onetouch_option**                   --  Enable/Disable One-Touch option for the subclient
+
+    **onetouch_server**                   --  Provides the 1-touch server name
+
+    **onetouch_server_directory**         --  Provides the 1-touch server directory
+    
+    **catalog_acl**                       --  To enable/disable ACL on the subclient
+
+    **index_server**                      --  Sets/gets the index server client for the subclient
+
+    **index_pruning_type**                --  Sets the index pruning type
+
+    **index_pruning_days_retention**      --  Sets the number of days to be maintained in
+                                              subclient index
+
+    **index_pruning_cycles_retention**    --  Sets the number of cycles to be maintained in
+                                              subclient index
+	
+    **ibmi_dr_config**                    --  Sets the subclient into one touch mode and adds ibmi DR parameters
 
 """
 
@@ -1726,3 +1732,51 @@ class FileSystemSubclient(Subclient):
                 "_commonProperties['indexSettings']['indexRetCycle']", value)
         else:
             raise SDKException('Subclient', '120')
+
+    @property
+    def ibmi_dr_config(self):
+        """
+        Return the ibmi dr configuration
+
+        Returns:
+            (dict)  --  Dictionary of DR parameters
+        """
+        return {
+            'backupMaxTime': self._fsSubClientProp.get('ibmiSubclientprop', {}).get('backupMaxTime', 0),
+            'printSysInfo': self._fsSubClientProp.get('ibmiSubclientprop', {}).get('printSysInfo', False),
+            'userProgram': self._fsSubClientProp.get('ibmiSubclientprop', {}).get('userProgram', ''),
+            'saveSecData': self._fsSubClientProp.get('ibmiSubclientprop', {}).get('saveSecData', False),
+            'saveConfObject': self._fsSubClientProp.get('ibmiSubclientprop', {}).get('saveConfObject', False)
+        }
+
+    @ibmi_dr_config.setter
+    def ibmi_dr_config(self, dr_config):
+        """
+            Sets the subclient into one touch mode and adds ibmi DR parameters
+
+            Args:
+                dr_config   (dict)  --  Dictionary of IBMi DR parameters
+                
+                Example:
+                    ibmi_dr_config = {
+                        'backupMaxTime' : 120,
+                        'printSysInfo' : True,
+                        'userProgram' : 'QSYS/CVPGM',
+                        'saveSecData' : True,
+                        'saveConfObject' : False,
+                        'library' : [{path:'/QSYS.LIB/TEST1.LIB'}]
+                    }
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if parameters are not valid
+        """
+        self.onetouch_option = True
+        if isinstance(dr_config, dict):
+            dr_config = {'ibmiSubclientprop':dr_config}
+            self._set_subclient_properties("_fs_subclient_prop", dr_config)
+        else:
+            raise SDKException('Subclient', '101', "The parameter should be dictionary")
+	

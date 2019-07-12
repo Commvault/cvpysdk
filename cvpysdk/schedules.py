@@ -1186,7 +1186,7 @@ class Schedules:
                 SDKException:
                     if type of the schedule name argument is not string
         """
-        if self._get_schedule_id(schedule_id, schedule_id, task_id):
+        if self._get_schedule_id(schedule_name, schedule_id, task_id):
             return True
         return False
 
@@ -2137,12 +2137,12 @@ class Schedule:
                                 "subtaskId": self.subtask_id,
                                 "taskName": "",
                                 "subtaskName": self.schedule_name,
-                                "taskId": self.schedule_id
+                                "taskId": self.task_id
                             }
                         ],
                     "taskIds":
                         [
-                            self.schedule_id
+                            self.task_id
                         ]
                 }
         }
@@ -2211,7 +2211,7 @@ class Schedule:
                             if response is not success
                 """
         enable_request = self._commcell_object._services['ENABLE_SCHEDULE']
-        request_text = "taskId={0}".format(self.schedule_id)
+        request_text = "taskId={0}".format(self.task_id)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', enable_request, request_text)
@@ -2256,7 +2256,7 @@ class Schedule:
         """
         disable_request = self._commcell_object._services['DISABLE_SCHEDULE']
 
-        request_text = "taskId={0}".format(self.schedule_id)
+        request_text = "taskId={0}".format(self.task_id)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', disable_request, request_text)

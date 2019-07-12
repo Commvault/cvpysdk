@@ -126,6 +126,10 @@ Job instance Attributes
 
 **job.summary**                     --  returns the dictionary consisting of the full summary of the job
 
+**job.username**                    --  returns the username with which the job started
+
+**job.userid**                      --  returns the userid with which the job started
+
 **job.details**                     --  returns the dictionary consisting of the full details of the job
 
 **job.num_of_files_transferred**    -- returns the current number of files transferred for the job.
@@ -1072,6 +1076,17 @@ class Job(object):
         """Treats the job full summary as a read-only attribute."""
         self.is_finished
         return self._summary
+    
+    @property
+    def username(self):
+        """Treats the username as a read-only attribute."""
+        return self._summary['userName']['userName']
+
+    @property
+    def userid(self):
+        """Treats the userid as a read-only attribute."""
+        return self._summary['userName']['userId']
+
 
     @property
     def details(self):

@@ -78,6 +78,10 @@ SchedulePolicy:
 
     refresh                         -- Refresh the properties of the Schedule Policy
 
+    enable                          -- Enables a schedule policy
+
+    disable                         -- Disables a schedule policy
+
 
 
 """
@@ -1005,6 +1009,83 @@ class SchedulePolicy:
 
         o_str = 'Failed to update properties of Schedule Policy\nError: "{0}"'
         raise SDKException('Schedules', '102', o_str.format(output[2]))
+
+    def enable(self):
+        """Enable a schedule policy.
+
+                    Raises:
+                        SDKException:
+                            if failed to enable schedule policy
+
+                            if response is empty
+
+                            if response is not success
+                """
+        enable_request = self._commcell_object._services['ENABLE_SCHEDULE']
+        request_text = "taskId={0}".format(self.schedule_policy_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', enable_request, request_text)
+
+        if flag:
+            if response.json():
+                error_code = str(response.json()['errorCode'])
+
+                if error_code == "0":
+                    return
+                else:
+                    error_message = 'Failed to enable Schedule Policy'
+
+                    if 'errorMessage' in response.json():
+                        error_message = "{0}\nError: {1}".format(error_message, response.json()['errorMessage'])
+
+                    raise SDKException('Schedules', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException('Response', '101', response_string)
+
+    def disable(self):
+        """Disable a Schedule Policy.
+
+            Raises:
+                SDKException:
+                    if failed to disable Schedule Policy
+
+                    if response is empty
+
+                    if response is not success
+        """
+        disable_request = self._commcell_object._services['DISABLE_SCHEDULE']
+
+        request_text = "taskId={0}".format(self.schedule_policy_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', disable_request, request_text)
+
+        if flag:
+            if response.json():
+                error_code = str(response.json()['errorCode'])
+
+                if error_code == "0":
+                    return
+                else:
+                    error_message = 'Failed to disable Schedule Policy'
+
+                    if 'errorMessage' in response.json():
+                        error_message = "{0}\nError: {1}".format(error_message, response.json()['errorMessage'])
+
+                    raise SDKException('Schedules', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException('Response', '101', response_string)
 
     def _process_schedule_policy_update_response(self, flag, response):
         """
