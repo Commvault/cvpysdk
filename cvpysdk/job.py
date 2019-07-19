@@ -11,6 +11,8 @@
 
 JobController:  Class for managing jobs on this commcell
 
+JobManagement:  Class for performing Job Management operations
+
 Job:            Class for keeping track of a job and perform various operations on it.
 
 
@@ -48,6 +50,119 @@ JobController
     resume_all_jobs()           -- Resumes all jobs on the commcell
 
     suspend_all_jobs()          -- Suspends all jobs on the commcell
+
+
+JobManagement
+==============
+
+    __init__(commcell_object)                                       --  initialise object of the JobManagement class
+
+    _set_jobmanagement_settings()                                   --  sets the jobmanagement settings
+
+    _refresh()                                                      --  refresh the job management settings
+
+     set_general_settings(settings)                                 --  sets the general settings of job management
+
+     set_priority_settings(settings)                                --  sets the priority settings of job management
+
+     set_restart_settings(settings)                                 --  sets the restart settings of job management
+
+     set_update_settings(settings)                                  --  sets the update settings of job management
+
+     job_priority_precedence                                        --  gets the job priority precedence
+
+     job_priority_precedence(priority_type)                         --  sets the job priority precedence property
+
+     start_phase_retry_interval                                     --  gets the start phase retry interval in
+                                                                        (minutes)
+
+     start_phase_retry_interval(minutes)                            --  sets the start phase retry interval property
+
+     state_update_interval_for_continuous_data_replicator           --  gets the start phase retry interval in
+                                                                        (minutes)
+
+     state_update_interval_for_continuous_data_replicator(minutes)  --  sets the state update interval for continuous
+                                                                        data replicator
+
+     allow_running_jobs_to_complete_past_operation_window           --  gets the allow running jobs to complete past
+                                                                        operation window(True/False)
+
+     allow_running_jobs_to_complete_past_operation_window(flag)     --  sets the allow running jobs to complete past
+                                                                        operation window
+
+     job_alive_check_interval_in_minutes                            --  gets the job alive check interval in (minutes)
+
+     job_alive_check_interval_in_minutes(minutes)                   --  sets the job alive check interval in minutes
+
+     queue_scheduled_jobs                                           --  gets the queue scheduled jobs(True/False)
+
+     queue_scheduled_jobs(flags)                                    --  sets the queue scheduled jobs
+
+     enable_job_throttle_at_client_level                            --  gets the enable job throttle at client level
+                                                                        (True/False)
+
+     enable_job_throttle_at_client_level(flag)                      --  sets the enable job throttle at client level
+
+     enable_multiplexing_for_db_agents                              --  gets the enable multiplexing for db agents
+                                                                        (True/False)
+
+     enable_multiplexing_for_db_agents(flag)                        --  sets the enable multiplexing for db agents
+
+     queue_jobs_if_conflicting_jobs_active                          --  gets the queue jobs if conflicting jobs active
+                                                                        (True/False)
+
+     queue_jobs_if_conflicting_jobs_active(flag)                    --  sets the queue jobs if conflicting jobs active
+
+     queue_jobs_if_activity_disabled                                --  gets the queue jobs if activity disabled
+                                                                        (True/False)
+
+     queue_jobs_if_activity_disabled(flag)                          --  sets the queue jobs if activity disabled
+
+     backups_preempts_auxilary_copy                                 --  gets the backups preempts auxilary copy
+                                                                        (True/False)
+
+     backups_preempts_auxilary_copy(flag)                           --  sets the backups preempts auxilary copy
+
+     restore_preempts_other_jobs                                    --  gets the restore preempts other jobs
+                                                                        (True/False)
+
+     restore_preempts_other_jobs(flag)                               --  sets the restore preempts other jobs
+
+     enable_multiplexing_for_oracle                                  --  gets the enable multiplexing for oracle
+                                                                        (True/False)
+
+     enable_multiplexing_for_oracle(flag)                            --  sets the enable multiplexing for oracle
+
+     job_stream_high_water_mark_level                                --  gets the job stream high water mark level
+
+     job_stream_high_water_mark_level(level)                         --  sets the job stream high water mark level
+
+     backups_preempts_other_backups                                  --  gets the backups preempts other backups
+                                                                        (True/False)
+
+     backups_preempts_other_backups(flag)                            --  sets the backups preempts other backups
+
+     do_not_start_backups_on_disabled_client                         --  gets the do not start backups on
+                                                                         disabled client(True/False)
+
+     do_not_start_backups_on_disabled_client(flag)                   --  sets the do not start backups
+                                                                         on disabled client
+
+     get_restart_setting(jobtype)                                    --  gets the restart settings of a specific
+                                                                         jobtype
+
+     get_priority_setting(jobtype)                                   --  gets the priority setting of a specific
+                                                                         jobtype
+
+     get_update_setting(jobtype)                                     --   gets the update settings of a specific
+                                                                          jobtype
+
+     get_restart_settings                                            --  gets the restart settings of job management
+
+     get_priority_settings                                           --  gets the priority settings of job management
+
+     get_update_settings                                             --  gets the update settings of job management
+
 
 Job
 ===
@@ -142,6 +257,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import time
+import copy
 
 from .exception import SDKException
 from .constants import AdvancedJobDetailType
@@ -702,6 +818,1015 @@ class JobController(object):
 
         """
         return Job(self._commcell_object, job_id)
+
+
+class JobManagement(object):
+    """Class for performing job management operations. """
+
+    def __init__(self, commcell_object):
+        """
+        Initialize instance of JobManagement class for performing operations on jon management settings.
+
+            Args:
+                commcell_object         (object)        --  instance of Commcell class.
+
+            Returns:
+                None
+
+        """
+        self._comcell = commcell_object
+        self._service = commcell_object._services.get('JOB_MANAGEMENT_SETTINGS')
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self.refresh()
+
+    def _set_jobmanagement_settings(self):
+        """
+        Executes a request on the server, to set the job management settings.
+
+         Returns:
+               None
+
+         Raises:
+              SDKException:
+                    if given inputs are invalid
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request(method='POST', url=self._service,
+                                                           payload=self._settings_dict)
+        if flag:
+            if response and response.json():
+                if response.json().get('errorCode', 0) != 0:
+                    raise SDKException('Job', '102', 'Failed to set job management properties. \nError: {0}'.format(
+                        response.json().get('errorMessage', '')))
+                self.refresh()
+        else:
+            raise SDKException('Response', '101', response.json()["errorMessage"])
+
+    def _get_jobmanagement_settings(self):
+        """
+         Executes a request on the server to get the settings of job management.
+
+            Returns:
+                None
+
+            Raises:
+                SDKException
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request(method='GET', url=self._service)
+        if flag:
+            if response and response.json():
+                self._settings_dict = response.json()
+                if self._settings_dict.get('errorCode', 0) != 0:
+                    raise SDKException('Job', '102', 'Failed to get job management properties. \nError: {0}'.format(
+                        self._settings_dict.get('errorMessage', '')))
+                if 'jobManagementSettings' in self._settings_dict:
+                    self._restart_settings = {'jobRestartSettings': self._settings_dict.get(
+                        'jobManagementSettings').get('jobRestartSettings', {})}
+                    self._priority_settings = {'jobPrioritySettings': self._settings_dict.get(
+                        'jobManagementSettings').get('jobPrioritySettings', {})}
+                    self._general_settings = {'generalSettings': self._settings_dict.get(
+                        'jobManagementSettings').get('generalSettings', {})}
+                    self._update_settings = {'jobUpdatesSettings': self._settings_dict.get(
+                        'jobManagementSettings').get('jobUpdatesSettings', {})}
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._comcell._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """
+        calls the private method _get_jobmanagement_settings()
+        """
+        self._restart_settings = None
+        self._general_settings = None
+        self._update_settings = None
+        self._priority_settings = None
+        self._get_jobmanagement_settings()
+
+    def set_general_settings(self, settings):
+        """
+        sets general settings of job management.
+
+        Note : dedicated setters and getters are provided for general settings.
+            Args:
+                settings (dict)  --       Following key/value pairs can be set.
+                                            {
+                                                "allowRunningJobsToCompletePastOperationWindow": False,
+                                                "jobAliveCheckIntervalInMinutes": 5,
+                                                "queueScheduledJobs": False,
+                                                "enableJobThrottleAtClientLevel": False,
+                                                "enableMultiplexingForDBAgents": False,
+                                                "queueJobsIfConflictingJobsActive": False,
+                                                "queueJobsIfActivityDisabled": False,
+                                                "backupsPreemptsAuxilaryCopy": False,
+                                                "restorePreemptsOtherJobs": False,
+                                                "enableMultiplexingForOracle": False,
+                                                "jobStreamHighWaterMarkLevel": 500,
+                                                "backupsPreemptsOtherBackups": False,
+                                                "doNotStartBackupsOnDisabledClient": False
+
+                                            }
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(settings, dict):
+            self._general_settings.get('generalSettings').update(settings)
+            self._set_jobmanagement_settings()
+        else:
+            raise SDKException('Job', '108')
+
+    def set_priority_settings(self, settings):
+        """
+        sets priority settings for jobs and agents type.
+
+            Args:
+                settings  (list)    --  list of dictionaries with following format.
+                                         [
+                                            {
+                                                "type_of_operation": 1,
+                                                "combinedPriority": 10,
+                                                "jobTypeName": "Information Management"
+                                            },
+                                            {
+                                                "type_of_operation": 2,
+                                                "combinedPriority": 10,
+                                                "appTypeName": "Windows File System"
+                                            },
+                                            {
+                                            "type_of_operation": 1,
+                                            "combinedPriority": 10,
+                                            "jobTypeName": "Auxiliary Copy"
+                                             }
+                                        ]
+
+            We have priority settings fro jobtype and agenttype
+
+            NOTE : for setting, priority for jobtype the 'type_of_operation' must be set to 1 and name of the job type
+                   must be specified as below format.
+
+                       ex :-  "jobTypeName": "Information Management"
+
+            NOTE : for setting, priority for agenttype the 'type_of_operation' must be set to 2 and name of the job
+             type must be specified as below format
+
+                        ex :- "appTypeName": "Windows File System"
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+
+        """
+        if isinstance(settings, list):
+            for job in settings:
+                if job["type_of_operation"] == 1:
+                    for job_type in self._priority_settings['jobPrioritySettings']['jobTypePriorityList']:
+                        if job_type['jobTypeName'] == job.get("jobTypeName"):
+                            job.pop("jobTypeName")
+                            job.pop("type_of_operation")
+                            job_type.update(job)
+                            break
+                elif job["type_of_operation"] == 2:
+                    for job_type in self._priority_settings['jobPrioritySettings']['agentTypePriorityList']:
+                        if job_type['agentTypeEntity']['appTypeName'] == job.get("appTypeName"):
+                            job.pop("appTypeName")
+                            job.pop("type_of_operation")
+                            job_type.update(job)
+                            break
+            self._set_jobmanagement_settings()
+        else:
+            raise SDKException('Job', '108')
+
+    def set_restart_settings(self, settings):
+        """
+        sets restart settings for jobs.
+
+            Args:
+                settings    (list)      --  list of dictionaries with following format
+                                            [
+                                                {
+                                                    "killRunningJobWhenTotalRunningTimeExpires": False,
+                                                    "maxRestarts": 10,
+                                                    "enableTotalRunningTime": False,
+                                                    "restartable": False,
+                                                    "jobTypeName": "File System and Indexing Based (Data Protection)",
+                                                    "restartIntervalInMinutes": 20,
+                                                    "preemptable": True,
+                                                    "totalRunningTime": 21600,
+                                                    "jobType": 6
+                                                },
+                                                {
+                                                    "killRunningJobWhenTotalRunningTimeExpires": False,
+                                                    "maxRestarts": 144,
+                                                    "enableTotalRunningTime": False,
+                                                    "restartable": False,
+                                                    "jobTypeName": "File System and Indexing Based (Data Recovery)",
+                                                    "restartIntervalInMinutes": 20,
+                                                    "preemptable": False,
+                                                    "totalRunningTime": 21600,
+                                                    "jobType": 7
+                                                }
+                                            ]
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+
+        """
+
+        if isinstance(settings, list):
+            for job in settings:
+                target = {'target': job_type for job_type in
+                          self._restart_settings['jobRestartSettings']['jobTypeRestartSettingList']
+                          if job_type['jobTypeName'] == job.get("jobTypeName")}
+                target.get('target').update(job)
+            self._set_jobmanagement_settings()
+        else:
+            raise SDKException('Job', '108')
+
+    def set_update_settings(self, settings):
+        """
+        sets update settings for jobs
+
+            Args:
+                settings    (list)      --      list of dictionaries with following format
+                                                [
+                                                    {
+                                                        "appTypeName": "Windows File System",
+                                                        "recoveryTimeInMinutes": 20,
+                                                        "protectionTimeInMinutes": 20
+                                                    },
+                                                    {
+                                                        "appTypeName": "Windows XP 64-bit File System",
+                                                        "recoveryTimeInMinutes": 20,
+                                                        "protectionTimeInMinutes": 20,
+                                                    }
+                                                ]
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+
+        """
+
+        if isinstance(settings, list):
+            for job in settings:
+                for job_type in self._update_settings['jobUpdatesSettings']['agentTypeJobUpdateIntervalList']:
+                    if job_type['agentTypeEntity']['appTypeName'] == job.get("appTypeName"):
+                        job.pop("appTypeName")
+                        job_type.update(job)
+                        break
+            self._set_jobmanagement_settings()
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def job_priority_precedence(self):
+        """
+        gets the job priority precedence
+            Returns:
+                 (str)  --   type of job priority precedence is set.
+        """
+
+        available_priorities = {
+            1: "client",
+            2: "agentType"
+        }
+        return available_priorities.get(self._priority_settings["jobPrioritySettings"]["priorityPrecedence"])
+
+    @job_priority_precedence.setter
+    def job_priority_precedence(self, priority_type):
+        """
+        sets job priority precedence
+
+                Args:
+                    priority_type   (str)   --      type of priority to be set
+
+                    Values:
+                        "client"
+                        "agentType"
+
+        """
+        if isinstance(priority_type, str):
+            available_priorities = {
+                "client": 1,
+                "agentType": 2
+            }
+            self._priority_settings["jobPrioritySettings"]["priorityPrecedence"] = available_priorities[priority_type]
+            self._set_jobmanagement_settings()
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def start_phase_retry_interval(self):
+        """
+        gets the start phase retry interval in (minutes)
+            Returns:
+                 (int)      --      interval in minutes.
+        """
+        return self._restart_settings["jobRestartSettings"]["startPhaseRetryIntervalInMinutes"]
+
+    @start_phase_retry_interval.setter
+    def start_phase_retry_interval(self, minutes):
+        """
+        sets start phase retry interval for jobs
+
+            Args:
+                minutes     (int)       --      minutes to be set.
+
+            Raises:
+                SDKException:
+                    if input is not valid type.
+        """
+
+        if isinstance(minutes, int):
+            self._restart_settings["jobRestartSettings"]["startPhaseRetryIntervalInMinutes"] = minutes
+            self._set_jobmanagement_settings()
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def state_update_interval_for_continuous_data_replicator(self):
+        """
+        gets the state update interval for continuous data replicator in (minutes)
+            Returns:
+                 (int)      --      interval in minutes
+        """
+        return self._update_settings["jobUpdatesSettings"]["stateUpdateIntervalForContinuousDataReplicator"]
+
+    @state_update_interval_for_continuous_data_replicator.setter
+    def state_update_interval_for_continuous_data_replicator(self, minutes):
+        """
+        sets state update interval for continuous data replicator
+
+            Args:
+                 minutes       (int)        --      minutes to be set.
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(minutes, int):
+            self._update_settings["jobUpdatesSettings"]["stateUpdateIntervalForContinuousDataReplicator"] = minutes
+            self._set_jobmanagement_settings()
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def allow_running_jobs_to_complete_past_operation_window(self):
+        """
+        Returns True if option is enabled
+        else returns false
+        """
+        return self._general_settings.get('generalSettings').get("allowRunningJobsToCompletePastOperationWindow")
+
+    @allow_running_jobs_to_complete_past_operation_window.setter
+    def allow_running_jobs_to_complete_past_operation_window(self, flag):
+        """
+        enable/disable, allow running jobs to complete past operation window.
+            Args:
+                flag    (bool)    --        (True/False) to be set.
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "allowRunningJobsToCompletePastOperationWindow": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def job_alive_check_interval_in_minutes(self):
+        """
+        gets the job alive check interval in (minutes)
+            Returns:
+                (int)       --      interval in minutes
+        """
+        return self._general_settings.get('generalSettings').get("jobAliveCheckIntervalInMinutes")
+
+    @job_alive_check_interval_in_minutes.setter
+    def job_alive_check_interval_in_minutes(self, minutes):
+        """
+        sets the job alive check interval in (minutes)
+            Args:
+                  minutes       --      minutes to be set.
+
+            Raises:
+                  SDKException:
+                        if input is not valid type
+        """
+        if isinstance(minutes, int):
+            settings = {
+                "jobAliveCheckIntervalInMinutes": minutes
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def queue_scheduled_jobs(self):
+        """
+        Returns True if option is enabled
+        else returns false
+        """
+        return self._general_settings.get('generalSettings').get("queueScheduledJobs")
+
+    @queue_scheduled_jobs.setter
+    def queue_scheduled_jobs(self, flag):
+        """
+        enable/disable, queue scheduled jobs
+
+            Args:
+                flag   (bool)      --       (True/False to be set)
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "queueScheduledJobs": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def enable_job_throttle_at_client_level(self):
+        """
+        Returns True if option is enabled
+        else returns false
+        """
+        return self._general_settings.get('generalSettings').get("enableJobThrottleAtClientLevel")
+
+    @enable_job_throttle_at_client_level.setter
+    def enable_job_throttle_at_client_level(self, flag):
+        """
+        enable/disable, job throttle at client level
+            Args:
+                flag    (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "enableJobThrottleAtClientLevel": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def enable_multiplexing_for_db_agents(self):
+        """
+        Returns True if option is enabled
+        else returns False
+        """
+        return self._general_settings.get('generalSettings').get("enableMultiplexingForDBAgents")
+
+    @enable_multiplexing_for_db_agents.setter
+    def enable_multiplexing_for_db_agents(self, flag):
+        """
+        enable/disable, multiplexing for db agents
+            Args:
+                flag    (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "enableMultiplexingForDBAgents": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def queue_jobs_if_conflicting_jobs_active(self):
+        """
+        Returns True if option is enabled
+        else returns false
+        """
+        return self._general_settings.get('generalSettings').get("queueJobsIfConflictingJobsActive")
+
+    @queue_jobs_if_conflicting_jobs_active.setter
+    def queue_jobs_if_conflicting_jobs_active(self, flag):
+        """
+        enable/disable, queue jobs if conflicting jobs active
+            Args;
+                flag    (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "queueJobsIfConflictingJobsActive": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def queue_jobs_if_activity_disabled(self):
+        """
+        Returns True if option is enabled
+        else returns False
+        """
+        return self._general_settings.get('generalSettings').get("queueJobsIfActivityDisabled")
+
+    @queue_jobs_if_activity_disabled.setter
+    def queue_jobs_if_activity_disabled(self, flag):
+        """
+        enable/disable, queue jobs if activity disabled
+            Args;
+                flag    (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "queueJobsIfActivityDisabled": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def backups_preempts_auxilary_copy(self):
+        """
+        Returns True if option is enabled
+        else returns False
+        """
+        return self._general_settings.get('generalSettings').get("backupsPreemptsAuxilaryCopy")
+
+    @backups_preempts_auxilary_copy.setter
+    def backups_preempts_auxilary_copy(self, flag):
+        """
+        enable/disable, backups preempts auxiliary copy
+            Args:
+                flag    (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "backupsPreemptsAuxilaryCopy": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def restore_preempts_other_jobs(self):
+        """
+        Returns True if option is enabled
+        else returns False
+        """
+        return self._general_settings.get('generalSettings').get("restorePreemptsOtherJobs")
+
+    @restore_preempts_other_jobs.setter
+    def restore_preempts_other_jobs(self, flag):
+        """
+        enable/disable, restore preempts other jobs
+            Args:
+                flag    (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "restorePreemptsOtherJobs": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def enable_multiplexing_for_oracle(self):
+        """
+        Returns True if option is enabled
+        else returns False
+        """
+        return self._general_settings.get('generalSettings').get("enableMultiplexingForOracle")
+
+    @enable_multiplexing_for_oracle.setter
+    def enable_multiplexing_for_oracle(self, flag):
+        """
+        enable/disable, enable multiplexing for oracle
+            Args:
+                 flag   (bool)  --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "enableMultiplexingForOracle": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def job_stream_high_water_mark_level(self):
+        """
+        gets the job stream high water mark level
+        """
+        return self._general_settings.get('generalSettings').get("jobStreamHighWaterMarkLevel")
+
+    @job_stream_high_water_mark_level.setter
+    def job_stream_high_water_mark_level(self, level):
+        """
+        sets, job stream high water mak level
+            Args:
+                level   (int)       --      number of jobs to be performed at a time
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+        """
+        if isinstance(level, int):
+            settings = {
+                "jobStreamHighWaterMarkLevel": level
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def backups_preempts_other_backups(self):
+        """
+        Returns True if option is enabled
+        else returns False
+        """
+        return self._general_settings.get('generalSettings').get("backupsPreemptsOtherBackups")
+
+    @backups_preempts_other_backups.setter
+    def backups_preempts_other_backups(self, flag):
+        """
+        enable/disable, backups preempts other backups
+            Args:
+                 flag   (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not a valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "backupsPreemptsOtherBackups": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def do_not_start_backups_on_disabled_client(self):
+        """
+        Returns True if option is enabled
+        else returns False
+        """
+        return self._general_settings.get('generalSettings').get("doNotStartBackupsOnDisabledClient")
+
+    @do_not_start_backups_on_disabled_client.setter
+    def do_not_start_backups_on_disabled_client(self, flag):
+        """
+         enable/disable, do not start backups on disabled client
+            Args:
+                 flag   (bool)      --      (True/False) to be set
+
+            Raises:
+                SDKException:
+                    if input is not a valid type
+        """
+        if isinstance(flag, bool):
+            settings = {
+                "doNotStartBackupsOnDisabledClient": flag
+            }
+            self.set_general_settings(settings)
+        else:
+            raise SDKException('Job', '108')
+
+    def get_restart_setting(self, jobtype):
+        """
+        restart settings associated to particular jobtype can be obtained
+            Args:
+                jobtype     (str)       --      settings of the jobtype to get
+
+                Available jobtypes:
+
+                        "Disaster Recovery backup"
+                        "Auxiliary Copy"
+                        "Data Aging"
+                        "Download/Copy Updates"
+                        "Offline Content Indexing"
+                        "Information Management"
+                        "File System and Indexing Based (Data Protection)"
+                        "File System and Indexing Based (Data Recovery)"
+                        "Exchange DB (Data Protection)"
+                        "Exchange DB (Data Recovery)"
+                        "Informix DB (Data Protection)"
+                        "Informix DB (Data Recovery)"
+                        "Lotus Notes DB (Data Protection)"
+                        "Lotus Notes DB (Data Recovery)"
+                        "Oracle DB (Data Protection)"
+                        "Oracle DB (Data Recovery)"
+                        "SQL DB (Data Protection)"
+                        "SQL DB (Data Recovery)"
+                        "MYSQL (Data Protection)"
+        `               "MYSQL (Data Recovery)"
+                        "Sybase DB (Data Protection)"
+                        "Sybase DB (Data Recovery)"
+                        "DB2 (Data Protection)"
+                        "DB2 (Data Recovery)"
+                        "CDR (Data Management)"
+                        "Media Refresh"
+                        "Documentum (Data Protection)"
+                        "Documentum (Data Recovery)"
+                        "SAP for Oracle (Data Protection)"
+                        "SAP for Oracle (Data Recovery)"
+                        "PostgreSQL (Data Protection)"
+                        "PostgreSQL (Data Recovery)"
+                        "Other (Data Protection)"
+                        "Other (Data Recovery)"
+                        "Workflow"
+                        "DeDup DB Reconstruction"
+                        "CommCell Migration Export"
+                        "CommCell Migration Import"
+                        "Install Software"
+                        "Uninstall Software"
+                        "Data Verification"
+                        "Big Data Apps (Data Protection)"
+                        "Big Data Apps (Data Recovery)"
+                        "Cloud Apps (Data Protection)"
+                        "Cloud Apps (Data Recovery)"
+                        "Virtual Server (Data Protection)"
+                        "Virtual Server (Data Recovery)"
+                        "SAP for Hana (Data Protection)"
+                        "SAP for Hana (Data Recovery)"
+
+
+
+            Returns:
+                dict          --        settings of the specific job type as follows
+                                        {
+                                            "jobTypeName": "File System and Indexing Based (Data Protection)",
+                                            "restartable": true,
+                                            "maxRestarts": 10,
+                                            "restartIntervalInMinutes": 20,
+                                            "enableTotalRunningTime": false,
+                                            "totalRunningTime": 25200,
+                                            "killRunningJobWhenTotalRunningTimeExpires": false,
+                                            "preemptable": true,
+
+                                        }
+
+            Raises:
+                SDKException:
+                    if input is not valid type
+
+        """
+        if isinstance(jobtype, str):
+            for job_type in self._restart_settings['jobRestartSettings']['jobTypeRestartSettingList']:
+                if job_type['jobTypeName'] == jobtype:
+                    settings = copy.deepcopy(job_type)
+                    return settings
+        else:
+            raise SDKException('Job', '108')
+
+    def get_priority_setting(self, jobtype):
+        """
+        priority settings associated to particular jobtype can be obtained
+            Args:
+                jobtype     (str)       --      settings of jobtype to get
+
+                Available values:
+
+                    jobtypename:
+                        "Information Management"
+                        "Auxiliary Copy"
+                        "Media Refresh"
+                        "Data Verification"
+                        "Persistent Recovery"
+                        "Synth Full"
+
+                    apptypename:
+                        "Windows File System"
+                        "Windows XP 64-bit File System"
+                        "Windows 2003 32-bit File System"
+                        "Windows 2003 64-bit File System"
+                        "Active Directory"
+                        "Windows File Archiver"
+                        "File Share Archiver"
+                        "Image Level"
+                        "Exchange Mailbox (Classic)"
+                        "Exchange Mailbox Archiver"
+                        "Exchange Compliance Archiver"
+                        "Exchange Public Folder"
+                        "Exchange Database"
+                        "SharePoint Database"
+                        "SharePoint Server Database"
+                        "SharePoint Document"
+                        "SharePoint Server"
+                        "Novell Directory Services"
+                        "GroupWise DB"
+                        "NDMP"
+                        "Notes Document"
+                        "Unix Notes Database"
+                        "MAC FileSystem"
+                        "Big Data Apps"
+                        "Solaris File System"
+                        "Solaris 64bit File System"
+                        "FreeBSD"
+                        "HP-UX File System"
+                        "HP-UX 64bit File System"
+                        "AIX File System"
+                        "Unix Tru64 64-bit File System"
+                        "Linux File System"
+                        "Sybase Database"
+                        "Oracle Database"
+                        "Oracle RAC"
+                        "Informix Database"
+                        "DB2"
+                        "DB2 on Unix"
+                        "SAP for Oracle"
+                        "SAP for MAX DB"
+                        "ProxyHost on Unix"
+                        "ProxyHost"
+                        "Image Level On Unix"
+                        "OSSV Plug-in on Windows"
+                        "OSSV Plug-in on Unix"
+                        "Unix File Archiver"
+                        "SQL Server"
+                        "Data Classification"
+                        "OES File System on Linux"
+                        "Centera"
+                        "Exchange PF Archiver"
+                        "Domino Mailbox Archiver"
+                        "MS SharePoint Archiver"
+                        "Content Indexing Agent"
+                        "SRM Agent For Windows File Systems"
+                        "SRM Agent For UNIX File Systems"
+                        "DB2 MultiNode"
+                        "MySQL"
+                        "Virtual Server"
+                        "SharePoint Search Connector"
+                        "Object Link"
+                        "PostgreSQL"
+                        "Sybase IQ"
+                        "External Data Connector"
+                        "Documentum"
+                        "Object Store"
+                        "SAP HANA"
+                        "Cloud Apps"
+                        "Exchange Mailbox"
+
+            Returns:
+                dict        --          settings of a specific jobtype
+                                        ex:
+                                        {
+                                            "jobTypeName": "Information Management",
+                                            "combinedPriority": 0,
+                                            "type_of_operation": 1
+                                        }
+
+                                        or
+
+                                        settings of a specific apptype
+                                        ex:
+                                        {
+                                            "appTypeName": "Windows File System",
+                                            "combinedPriority": 6,
+                                            "type_of_operation": 2
+                                        }
+            Raises:
+                SDKException:
+                    if input is not valid type
+
+        """
+        if isinstance(jobtype, str):
+            for job_type in self._priority_settings['jobPrioritySettings']['jobTypePriorityList']:
+                if job_type['jobTypeName'] == jobtype:
+                    settings = {
+                        'jobTypeName': job_type.get('jobTypeName'),
+                        'combinedPriority': job_type.get('combinedPriority'),
+                        'type_of_operation': 1
+                    }
+                    return settings
+            for job_type in self._priority_settings['jobPrioritySettings']['agentTypePriorityList']:
+                if job_type['agentTypeEntity']['appTypeName'] == jobtype:
+                    settings = {
+                        'appTypeName': job_type.get('agentTypeEntity').get('appTypeName'),
+                        'combinedPriority': job_type.get('combinedPriority'),
+                        'type_of_operation': 2
+                    }
+                    return settings
+        else:
+            raise SDKException('Job', '108')
+
+    def get_update_setting(self, jobtype):
+        """
+        update settings associated to particular jobtype can be obtained
+            Args:
+                jobtype     (str)       --      settings of jobtype to get
+
+                Available jobtype
+
+                    Check get_priority_setting(self, jobtype) method documentation.
+
+            Returns:
+                dict        -           settings of a jobtype
+                                        {
+                                            "appTypeName": "Windows File System",
+                                            "recoveryTimeInMinutes": 20,
+                                            "protectionTimeInMinutes": 20
+                                        }
+            Raises:
+                SDKException:
+                    if input is not valid type
+
+        """
+        if isinstance(jobtype, str):
+            for job_type in self._update_settings['jobUpdatesSettings']['agentTypeJobUpdateIntervalList']:
+                if job_type['agentTypeEntity']['appTypeName'] == jobtype:
+                    settings = {
+                        'appTypeName': job_type.get('agentTypeEntity').get('appTypeName'),
+                        'recoveryTimeInMinutes': job_type.get('recoveryTimeInMinutes'),
+                        'protectionTimeInMinutes': job_type.get('protectionTimeInMinutes')
+                    }
+                    return settings
+        else:
+            raise SDKException('Job', '108')
+
+    @property
+    def general_settings(self):
+        """
+        gets the general settings.
+             Returns:   (dict)      --  The general settings
+        """
+        return self._general_settings
+
+    @property
+    def restart_settings(self):
+        """
+        gets the restart settings.
+                Returns:    (dict)    --  The restart settings.
+        """
+
+        return self._restart_settings
+
+    @property
+    def priority_settings(self):
+        """
+        gets the priority settings.
+                Returns:    (dict)    --  The priority settings.
+        """
+
+        return self._priority_settings
+
+    @property
+    def update_settings(self):
+        """
+        gets the update settings.
+                Returns:    (dict)    --  The update settings.
+        """
+
+        return self._update_settings
 
 
 class Job(object):
