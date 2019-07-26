@@ -33,7 +33,8 @@ ArrayManagement:
 
     delete_array()              --  Method to delete array
 
-    update_snap_config()        --  Method to Update Snap Configuration for the Array
+    edit_array()                --  Method to Update Snap Configuration and Array Controller
+                                    for the given Array
 """
 
 from __future__ import unicode_literals
@@ -405,13 +406,15 @@ class ArrayManagement(object):
                 raise SDKException('StorageArray', '103', error_message)
             return error_message
 
-    def update_snap_config(self,
-                           control_host_id,
-                           master_config_id,
-                           value,
-                           config_update_level,
-                           level_id=None):
-        """Method to Update Snap Configuration for the Array
+    def edit_array(self,
+                   control_host_id,
+                   master_config_id,
+                   value,
+                   config_update_level,
+                   level_id,
+                   array_controller,
+                   mode):
+        """Method to Update Snap Configuration and Array controllers for the Array
         Args:
             control_host_id        (int)        -- Control Host Id of the Array
 
@@ -422,7 +425,16 @@ class ArrayManagement(object):
             config_update_level    (str)        -- update level for the Snap config
             ex: "array", "subclient", "copy", "client"
 
-            level_id               (int)        -- level Id where the config needs to be added/updated
+            level_id               (int)        -- level Id where the config needs to be
+                                                   added/updated
+
+            array_controller       (str)        -- Array Controller MA
+            default: None
+
+            mode                    (str)       -- Operation type for the Array Controller whether
+                                                   to add or remove
+            default: add
+            values: add, remove
         """
 
         copy_level_id = app_level_id = client_level_id = 0
@@ -442,6 +454,8 @@ class ArrayManagement(object):
         elif config_update_level == "client":
             config_update_level = 8
             client_level_id = level_id
+        else:
+            config_update_level = 3
 
         request_json = request_json.json()
 
@@ -455,11 +469,62 @@ class ArrayManagement(object):
             }
         request_json.update(update_dict)
 
-        for config in request_json['configList']['configList']:
-            if config['masterConfigId'] == int(master_config_id):
-                config['value'] = str(value)
-                if config_update_level != "array":
-                    config['isOverridden'] = True
+        if master_config_id is not None:
+            for config in request_json['configList']['configList']:
+                if config['masterConfigId'] == int(master_config_id):
+                    config['value'] = str(value)
+                    if config_update_level != "array":
+                        config['isOverridden'] = True
+
+        if array_controller is not None and mode == "add":
+            client_id = int(self._commcell_object.clients.get(array_controller).client_id)
+            if "selectedMAs" in request_json:
+                update_dict = {
+                    "arrayControllerId": 0,
+                    "mediaAgent": {
+                        "name": array_controller,
+                        "id": client_id
+                    },
+                    "arrCtrlOptions": [
+                        {
+                            "isEnabled": True,
+                            "arrCtrlOption": {
+                                "name": "Pruning",
+                                "id": 262144
+                            }
+                        }
+                    ]
+                }
+                request_json['selectedMAs'].append(update_dict)
+            else:
+                update_dict = {
+                    "selectedMAs": [
+                        {
+                            "arrayControllerId": 0,
+                            "mediaAgent": {
+                                "name": array_controller,
+                                "id": client_id
+                            },
+                            "arrCtrlOptions": [
+                                {
+                                    "isEnabled": True,
+                                    "arrCtrlOption": {
+                                        "name": "Pruning",
+                                        "id": 262144
+                                    }
+                                }
+                            ]
+                        }
+                    ]}
+                request_json.update(update_dict)
+
+        elif array_controller is not None and mode == "remove":
+            client_id = int(self._commcell_object.clients.get(array_controller).client_id)
+            if "selectedMAs" in request_json:
+                for controller in range(len(request_json['selectedMAs'])):
+                    if request_json['selectedMAs'][controller]['mediaAgent']['id'] == int(client_id):
+                        del request_json['selectedMAs'][controller]
+                        break
 
         request_json['configs'] = request_json.pop('configList')
 

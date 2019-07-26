@@ -202,6 +202,8 @@ Commcell instance Attributes
     **commcell_migration**      --  returns the instance of the 'CommCellMigration' class,
     to interact with the Commcell Export & Import on the Commcell
 
+    **backup_network_pairs**    --  returns the instance of 'BackupNetworkPairs' class to
+    perform backup network pairs operations on the commcell class
 """
 
 from __future__ import absolute_import
@@ -256,6 +258,7 @@ from .commcell_migration import CommCellMigration
 from .deployment.download import Download
 from .deployment.install import Install
 from .name_change import NameChange
+from .backup_network_pairs import BackupNetworkPairs
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -447,6 +450,7 @@ class Commcell(object):
         self._commcell_migration = None
         self._registered_commcells = None
         self._redirect_rules_service = None
+        self._backup_network_pairs = None
 
         self.refresh()
 
@@ -531,6 +535,7 @@ class Commcell(object):
         del self._services
         del self._disaster_recovery
         del self._commcell_migration
+        del self._backup_network_pairs
         del self
 
     def _get_commserv_details(self):
@@ -1104,6 +1109,18 @@ class Commcell(object):
         if self._redirect_rules_service is None:
             self._redirect_rules_service = self._get_redirect_rules_service_commcell()
         return self._redirect_rules_service
+
+    @property
+    def backup_network_pairs(self):
+        """Returns the instance of BackupNetworkPairs class"""
+        try:
+            if self._backup_network_pairs is None:
+                self._backup_network_pairs = BackupNetworkPairs(self)
+
+            return self._backup_network_pairs
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     def logout(self):
         """Logs out the user associated with the current instance."""

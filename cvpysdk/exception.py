@@ -369,6 +369,9 @@ EXCEPTION_DICT = {
     'LiveSync': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
+    },
+    'BackupNetworkPairs': {
+        '101': '',
     }
 }
 

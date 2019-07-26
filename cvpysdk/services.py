@@ -284,6 +284,7 @@ SERVICES_DICT_TEMPLATE = {
     'CERTIFICATES': '{0}CommServ/Certificates',
 
     'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo',  # only for Exchange DAG
+    'GET_RECOVERY_POINTS': '{0}Exchange/DAG/%s/RecoveryPoints?instanceId=%s&backupSetId=%s&subClientId=%s&appId=%s',
 
     'CASEDEFINITION': '{0}EDiscoveryClients/CaseDefinitions',
 
@@ -297,7 +298,10 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
-    'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s'
+    'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s',
+
+    'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
+    'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs'
 }
 
 

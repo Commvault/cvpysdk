@@ -1104,8 +1104,14 @@ class Subclient(object):
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object,
-                               response.json()['jobIds'][0])
+                    if len(response.json()['jobIds']) == 1:
+                        return Job(self._commcell_object,
+                                   response.json()['jobIds'][0])
+                    else:
+                        joblist = []
+                        for jobids in response.json()['jobIds']:
+                            joblist.append(Job(self._commcell_object, jobids))
+                        return joblist
                 elif "taskId" in response.json():
                     return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
                 elif "errorCode" in response.json():

@@ -1473,6 +1473,10 @@ class Instance(object):
         self._restore_volume_rst_option_json(restore_option)
         self._sync_restore_option_json(restore_option)
 
+        if not restore_option.get('index_free_restore', False):
+            if restore_option.get("paths") == []:
+                raise SDKException('Subclient', '104')
+
         request_json = {
             "taskInfo": {
                 "associations": [self._restore_association],
@@ -1630,10 +1634,6 @@ class Instance(object):
 
         paths = self._filter_paths(paths)
 
-        if not fs_options.get('index_free_restore'):
-            if paths == []:
-                raise SDKException('Subclient', '104')
-
         request_json = self._restore_json(
             paths=paths,
             in_place=True,
@@ -1752,10 +1752,6 @@ class Instance(object):
         paths = self._filter_paths(paths)
 
         destination_path = self._filter_paths([destination_path], True)
-
-        if not fs_options.get('index_free_restore'):
-            if paths == []:
-                raise SDKException('Subclient', '104')
 
         request_json = self._restore_json(
             paths=paths,
@@ -2202,6 +2198,17 @@ class Instance(object):
         }
 
         return _subtask_restore_json
+
+    @property
+    def _json_restore_by_job_subtask(self):
+        """getter for the subtast in restore by job JSON"""
+
+        _subtask_restore_by_job_json = {
+            "subTaskType": 3,
+            "operationType": 1005
+        }
+
+        return _subtask_restore_by_job_json
 
     @property
     def _json_backup_subtasks(self):

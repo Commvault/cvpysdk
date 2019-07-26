@@ -440,20 +440,11 @@ class PostgreSQLInstance(Instance):
             redirect_path=redirect_path,
             restore_to_disk=restore_to_disk,
             index_free_restore=index_free_restore,
-            destination_path=destination_path)
+            destination_path=destination_path,
+            restore_jobs=restore_to_disk_job)
 
         if volume_level_restore:
             request_json['taskInfo']['subTasks'][0]['options'][
                 'restoreOptions']['destination']["noOfStreams"] = no_of_streams
-
-        if restore_to_disk:
-            #### add jobIds and change operationType in subtask
-            request_json['taskInfo']['subTasks'][0]['subTask']['operationType'] = 1005
-            if not isinstance(restore_to_disk_job, list):
-                raise SDKException('Instance', '101')
-            if restore_to_disk_job is None:
-                raise Exception("Job ID needs to be passed for restore to disk operation.")
-            request_json['taskInfo'][
-                'subTasks'][0]['options']['restoreOptions']['jobIds'] = restore_to_disk_job
 
         return self._process_restore_response(request_json)

@@ -719,8 +719,8 @@ class VirtualServerSubclient(Subclient):
 
         if value.get("destination_instance_id") and value.get("destination_client_id"):
             self._virtualserver_option_restore_json["vCenterInstance"].update(
-                {"instanceId": value.get("destination_instance_id", ""),
-                 "clientId": value.get("destination_client_id", "")}
+                {"instanceId": value.get("destination_instance_id", 0),
+                 "clientId": value.get("destination_client_id", 0)}
             )
 
     def _json_restore_virtualServerRstOption(self, value):
@@ -1837,12 +1837,12 @@ class VirtualServerSubclient(Subclient):
         else:
             client = self._commcell_object.clients.get(restore_option["vcenter_client"])
             restore_option["destination_client_name"] = restore_option["vcenter_client"]
-            restore_option["destination_client_id"] = client.client_id
+            restore_option["destination_client_id"] = int(client.client_id)
             agent = client.agents.get('Virtual Server')
             instancekeys = next(iter(agent.instances._instances))
             instance = agent.instances.get(instancekeys)
             restore_option["destination_instance"] = instance.instance_name
-            restore_option["destination_instance_id"] = instance.instance_id
+            restore_option["destination_instance_id"] = int(instance.instance_id)
 
         if (("esx_server" not in restore_option) or
                 (restore_option["esx_server"] is None)):
