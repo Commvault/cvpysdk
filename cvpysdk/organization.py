@@ -970,7 +970,7 @@ class Organization:
             user_group		(Str) -- user group name
 
             request_type    (Str)  --  decides whether to UPDATE, DELETE or
-                                       OVERWRITE user security association
+                                       OVERWRITE user_group security association
 
         """
         update_opertaor_request_type = {
