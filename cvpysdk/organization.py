@@ -961,7 +961,7 @@ class Organization:
         return [role['user']['userName'] for role in tenant_operators]
 
     def add_user_group_as_operator(self, user_group_name, request_type):
-        """Update the local user as tenant operator of the company
+        """Update the local user_group as tenant operator of the company
 
         Args:
             user_group		(Str)  -- user group name
