@@ -967,7 +967,7 @@ class Organization:
         """Update the local user as tenant operator of the company
 
         Args:
-            user_group		(Str) -- user group name
+            user_group		(Str)  -- user group name
 
             request_type    (Str)  --  decides whether to UPDATE, DELETE or
                                        OVERWRITE user_group security association
