@@ -626,7 +626,6 @@ class Organization:
 
                 self._server_count = organization_properties['serverCount']
 
-
                 return self._organization_info
             else:
                 raise SDKException('Response', '102')
@@ -778,7 +777,6 @@ class Organization:
                 'subtype': temp_plan.subtype
             }]
 
-
             self._update_properties_json({'defaultPlans': temp})
             self._update_properties()
 
@@ -832,7 +830,6 @@ class Organization:
             }
 
             if plan_dict.get('job_start_time'):
-
                 temp['jobStartTime'] = plan_dict['job_start_time']
                 temp['isStartTimeOverridden'] = True
 
@@ -1116,11 +1113,11 @@ class Organization:
 
         """
         request_json = {
-                        "deactivateOptions": {
-                            "disableBackup": disable_backup,
-                            "disableRestore": disable_restore,
-                            "disableLogin": disable_login
-                        }
+            "deactivateOptions": {
+                "disableBackup": disable_backup,
+                "disableRestore": disable_restore,
+                "disableLogin": disable_login
+            }
         }
 
         flag, response = self._cvpysdk_object.make_request(
