@@ -973,7 +973,7 @@ class Organization:
                                        OVERWRITE user_group security association
 
         """
-        update_opertaor_request_type = {
+        update_operator_request_type = {
             "NONE": 0,
             "OVERWRITE": 1,
             "UPDATE": 2,
@@ -985,7 +985,7 @@ class Organization:
                     'userGroupName': user_group_name,
                 }
             }],
-            'operatorsOperationType': update_opertaor_request_type[request_type.upper()]
+            'operatorsOperationType': update_operator_request_type[request_type.upper()]
         }
         self._update_properties_json(request_operator)
         self._update_properties()
@@ -1000,7 +1000,7 @@ class Organization:
                                        OVERWRITE user security association
 
         """
-        update_opertaor_request_type = {
+        update_operator_request_type = {
             "NONE": 0,
             "OVERWRITE": 1,
             "UPDATE": 2,
@@ -1018,7 +1018,7 @@ class Organization:
                     'userName': user.user_name,
                 }
             } for user in user_list_object],
-            'operatorsOperationType': update_opertaor_request_type[request_type.upper()]
+            'operatorsOperationType': update_operator_request_type[request_type.upper()]
         }
 
         self._update_properties_json(request_operator)
