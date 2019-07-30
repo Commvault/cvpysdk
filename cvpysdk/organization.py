@@ -963,6 +963,33 @@ class Organization:
         tenant_operators = self._organization_info.get('organizationProperties', {}).get('operators', [])
         return [role['user']['userName'] for role in tenant_operators]
 
+    def add_user_group_as_operator(self, user_group_name, request_type):
+        """Update the local user as tenant operator of the company
+
+        Args:
+            user_group		(Str) -- user group name
+
+            request_type    (Str)  --  decides whether to UPDATE, DELETE or
+                                       OVERWRITE user_group security association
+
+        """
+        update_operator_request_type = {
+            "NONE": 0,
+            "OVERWRITE": 1,
+            "UPDATE": 2,
+            "DELETE": 3
+        }
+        request_operator = {
+            'operators': [{
+                'userGroup': {
+                    'userGroupName': user_group_name,
+                }
+            }],
+            'operatorsOperationType': update_operator_request_type[request_type.upper()]
+        }
+        self._update_properties_json(request_operator)
+        self._update_properties()
+
     def add_users_as_operator(self, user_list, request_type):
         """Update the local user as tenant operator of the company
 
@@ -973,7 +1000,7 @@ class Organization:
                                        OVERWRITE user security association
 
         """
-        update_opertaor_request_type = {
+        update_operator_request_type = {
             "NONE": 0,
             "OVERWRITE": 1,
             "UPDATE": 2,
@@ -991,7 +1018,7 @@ class Organization:
                     'userName': user.user_name,
                 }
             } for user in user_list_object],
-            'operatorsOperationType': update_opertaor_request_type[request_type.upper()]
+            'operatorsOperationType': update_operator_request_type[request_type.upper()]
         }
 
         self._update_properties_json(request_operator)
