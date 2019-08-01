@@ -144,6 +144,7 @@ from past.builtins import basestring
 from .exception import SDKException
 
 from .security.user import User
+from .security.usergroup import UserGroup
 
 
 class Organizations:
@@ -960,11 +961,11 @@ class Organization:
         tenant_operators = self._organization_info.get('organizationProperties', {}).get('operators', [])
         return [role['user']['userName'] for role in tenant_operators]
 
-    def add_user_group_as_operator(self, user_group_name, request_type):
+    def add_user_groups_as_operator(self, user_group_list, request_type):
         """Update the local user_group as tenant operator of the company
 
         Args:
-            user_group		(Str)  -- user group name
+            user_group_list		(Str)  -- user group list
 
             request_type    (Str)  --  decides whether to UPDATE, DELETE or
                                        OVERWRITE user_group security association
@@ -976,12 +977,17 @@ class Organization:
             "UPDATE": 2,
             "DELETE": 3
         }
+        user_group_list_object = []
+        for user_group in user_group_list:
+            if not isinstance(user_group, UserGroup):
+                user_group = self._commcell_object.user_groups.get(user_group)
+                user_group_list_object.append(user_group)
         request_operator = {
             'operators': [{
                 'userGroup': {
-                    'userGroupName': user_group_name,
+                    'userGroupName': user_group.name,
                 }
-            }],
+            }for user_group in user_group_list_object],
             'operatorsOperationType': update_operator_request_type[request_type.upper()]
         }
         self._update_properties_json(request_operator)
