@@ -987,7 +987,7 @@ class Organization:
                 'userGroup': {
                     'userGroupName': user_group.name,
                 }
-            }for user_group in user_group_list_object],
+            } for user_group in user_group_list_object],
             'operatorsOperationType': update_operator_request_type[request_type.upper()]
         }
         self._update_properties_json(request_operator)
