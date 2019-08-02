@@ -288,7 +288,8 @@ class Instances(object):
                 if 'instanceProperties' in response.json():
                     return_dict = {}
 
-                    for dictionary in response.json()['instanceProperties']:
+                    instance_properties = response.json()['instanceProperties']
+                    for dictionary in instance_properties:
 
                         agent = dictionary['instance']['appName'].lower()
 
@@ -296,6 +297,10 @@ class Instances(object):
                             temp_name = dictionary['instance']['instanceName'].lower()
                             temp_id = str(dictionary['instance']['instanceId']).lower()
                             return_dict[temp_name] = temp_id
+                    self._vs_instance_type_dict = {str(vs_instance['instance']['instanceId']):
+                                                   vs_instance["virtualServerInstance"]["vsInstanceType"]
+                                                   for vs_instance in filter(
+                            lambda instance: "virtualServerInstance" in instance, instance_properties)}
 
                     return return_dict
                 elif 'errors' in response.json():
@@ -2038,7 +2043,7 @@ class Instance(object):
                     "mediaAgentName": value.get("media_agent", None) or ""
                 },
                 "proxyForSnapClients": {
-                    "clientName": value.get("snap_proxy", None) or value.get("proxy_client", None)  or ""
+                    "clientName": value.get("snap_proxy", None) or value.get("proxy_client", None) or ""
                 },
                 "library": {},
                 "copyPrecedence": {
@@ -2067,7 +2072,6 @@ class Instance(object):
             self._browse_restore_json['mediaOption']['iSCSIServer'] = {
                 'clientName': value.get("iscsi_server")
             }
-
 
     def _restore_common_options_json(self, value):
         """setter for  the Common options of in restore JSON"""
@@ -2113,19 +2117,19 @@ class Instance(object):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
-        if value.get("proxy_client") != None and \
-        (self._agent_object.agent_name).upper() == "FILE SYSTEM":
+        if value.get("proxy_client") is not None and \
+                (self._agent_object.agent_name).upper() == "FILE SYSTEM":
             self._destination_restore_json = {
                 "inPlace": value.get("in_place", True),
                 "destClient": {
                     "clientName": value.get("proxy_client", "")
                 }
-		     }
+            }
             if self._destination_restore_json["inPlace"]:
                 self._destination_restore_json["destPath"] = [""]
 
         else:
-        # removed clientId from destClient as VSA Restores fail with it
+            # removed clientId from destClient as VSA Restores fail with it
             self._destination_restore_json = {
                 "isLegalHold": False,
                 "inPlace": value.get("in_place", True),
@@ -2133,7 +2137,7 @@ class Instance(object):
                 "destClient": {
                     "clientName": value.get("client_name", ""),
                 }
-		     }
+            }
 
     def _restore_fileoption_json(self, value):
         """setter for  the fileoption restore option in restore JSON"""

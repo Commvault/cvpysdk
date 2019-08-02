@@ -52,6 +52,25 @@ from past.builtins import basestring
 from ..instance import Instance
 from ..exception import SDKException
 
+VSINSTANCE_TYPE = {
+    101: "vmware",
+    102: "hyperv",
+    301: "amazon",
+    401: "azure",
+    402: "azure_resource_manager",
+    403: "azure_stack",
+    501: "red_hat_virtualization",
+    601: "nutanix_ahv",
+    701: "oraclavm",
+    801: "fusioncompute",
+    901: "openstack",
+    1101: "oracle_cloud",
+    1102: "oracle_cloud_infrastructure",
+    1301: "google_cloud_platform",
+    1401: "alibaba_cloud",
+    1503: "vcloud_director"
+}
+
 
 class VirtualServerInstance(Instance):
     """Class for representing an Instance of the Virtual Server agent."""
@@ -59,7 +78,11 @@ class VirtualServerInstance(Instance):
     def __new__(cls, agent_object, instance_name, instance_id=None):
         """Decides which instance object needs to be created"""
 
-        instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
+        try:
+            instance_name = VSINSTANCE_TYPE[agent_object.instances._vs_instance_type_dict[instance_id]]
+        except KeyError:
+            instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
+
         try:
             instance_module = import_module("cvpysdk.instances.virtualserver.{}".format(instance_name))
         except ImportError:
@@ -88,12 +111,10 @@ class VirtualServerInstance(Instance):
             self._vsinstancetype = self._virtualserverinstance['vsInstanceType']
             self._asscociatedclients = self._virtualserverinstance['associatedClients']
 
-
     @property
     def server_name(self):
         """returns the PseudoClient Name of the associated isntance"""
         return self._agent_object._client_object.client_name
-
 
     @property
     def associated_clients(self):
@@ -134,7 +155,7 @@ class VirtualServerInstance(Instance):
 
         client_json_list = []
 
-        associated_clients = {"memberServers":client_json_list}
+        associated_clients = {"memberServers": client_json_list}
 
         for client_name in clients_list:
             client_json = {
@@ -169,7 +190,6 @@ class VirtualServerInstance(Instance):
         associated_clients = {"memberServers": client_json_list}
         self._set_instance_properties("_virtualserverinstance['associatedClients']",
                                       associated_clients)
-
 
     @property
     def co_ordinator(self):
