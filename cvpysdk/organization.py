@@ -144,6 +144,7 @@ from past.builtins import basestring
 from .exception import SDKException
 
 from .security.user import User
+from .security.usergroup import UserGroup
 
 
 class Organizations:
@@ -626,7 +627,6 @@ class Organization:
 
                 self._server_count = organization_properties['serverCount']
 
-
                 return self._organization_info
             else:
                 raise SDKException('Response', '102')
@@ -778,7 +778,6 @@ class Organization:
                 'subtype': temp_plan.subtype
             }]
 
-
             self._update_properties_json({'defaultPlans': temp})
             self._update_properties()
 
@@ -832,7 +831,6 @@ class Organization:
             }
 
             if plan_dict.get('job_start_time'):
-
                 temp['jobStartTime'] = plan_dict['job_start_time']
                 temp['isStartTimeOverridden'] = True
 
@@ -963,6 +961,38 @@ class Organization:
         tenant_operators = self._organization_info.get('organizationProperties', {}).get('operators', [])
         return [role['user']['userName'] for role in tenant_operators]
 
+    def add_user_groups_as_operator(self, user_group_list, request_type):
+        """Update the local user_group as tenant operator of the company
+
+        Args:
+            user_group_list		(list)  -- user group list
+
+            request_type    (Str)  --  decides whether to UPDATE, DELETE or
+                                       OVERWRITE user_group security association
+
+        """
+        update_operator_request_type = {
+            "NONE": 0,
+            "OVERWRITE": 1,
+            "UPDATE": 2,
+            "DELETE": 3
+        }
+        user_group_list_object = []
+        for user_group in user_group_list:
+            if not isinstance(user_group, UserGroup):
+                user_group = self._commcell_object.user_groups.get(user_group)
+                user_group_list_object.append(user_group)
+        request_operator = {
+            'operators': [{
+                'userGroup': {
+                    'userGroupName': user_group.name,
+                }
+            } for user_group in user_group_list_object],
+            'operatorsOperationType': update_operator_request_type[request_type.upper()]
+        }
+        self._update_properties_json(request_operator)
+        self._update_properties()
+
     def add_users_as_operator(self, user_list, request_type):
         """Update the local user as tenant operator of the company
 
@@ -973,7 +1003,7 @@ class Organization:
                                        OVERWRITE user security association
 
         """
-        update_opertaor_request_type = {
+        update_operator_request_type = {
             "NONE": 0,
             "OVERWRITE": 1,
             "UPDATE": 2,
@@ -991,7 +1021,7 @@ class Organization:
                     'userName': user.user_name,
                 }
             } for user in user_list_object],
-            'operatorsOperationType': update_opertaor_request_type[request_type.upper()]
+            'operatorsOperationType': update_operator_request_type[request_type.upper()]
         }
 
         self._update_properties_json(request_operator)
@@ -1089,11 +1119,11 @@ class Organization:
 
         """
         request_json = {
-                        "deactivateOptions": {
-                            "disableBackup": disable_backup,
-                            "disableRestore": disable_restore,
-                            "disableLogin": disable_login
-                        }
+            "deactivateOptions": {
+                "disableBackup": disable_backup,
+                "disableRestore": disable_restore,
+                "disableLogin": disable_login
+            }
         }
 
         flag, response = self._cvpysdk_object.make_request(
