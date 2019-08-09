@@ -2,8 +2,18 @@
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
-# See LICENSE.txt in the project root for
-# license information.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 # --------------------------------------------------------------------------
 
 """File for performing Workflow related operations on Commcell.
@@ -76,6 +86,8 @@ Workflow:
 
     _get_workflow_properties()          --  Get workflow properties
 
+    _get_workflow_definition()          --  Get workflow definition properties
+
     @Class Modules
     set_workflow_configuration()        -- Set workflow configuration
 
@@ -88,6 +100,8 @@ Workflow:
     execute_workflow()                  --  Executes a workflow and returns the job instance
 
     export_workflow()                   --  Exports a workflow and returns the workflow xml path
+
+    clone_workflow()                    --  Clones the workflow
 
     refresh()                           --  Refreshes the workflow properties
 
@@ -830,12 +844,14 @@ class WorkFlow(object):
         self._DEPLOY_WORKFLOW = self._services['DEPLOY_WORKFLOW']
         self._EXECUTE_WORKFLOW = self._services['EXECUTE_WORKFLOW']
         self._GET_WORKFLOW = self._services['GET_WORKFLOW'] % (self._workflow_id)
+        self._GET_WORKFLOW_DEFINITION = self._services['GET_WORKFLOW_DEFINITION']
 
         self._workflows = self._commcell_object.workflows.all_workflows
         self._activities = self._commcell_object.workflows.all_activities
 
         self._properties = None
         self._description = None
+        self.refresh()
 
     def _get_workflow_id(self):
         """Gets the workflow id associated with this Workflow.
@@ -911,7 +927,7 @@ class WorkFlow(object):
             "Workflow_SetWorkflowProperties":
             {
                 attrname: attrval,
-                "workflow":{
+                "workflow": {
                     "workflowName": self._workflow_name,
                     "workflowId": self._workflow_id
                 }
@@ -954,6 +970,31 @@ class WorkFlow(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_workflow_definition(self):
+        """Get the workflow definition from the workflow properties
+
+        Returns:
+                definition  (str)   - workflow attribute of workflow property response
+
+            Raises:
+                SDKException:
+                    if response is not success
+        """
+        workflow = self._workflow_name
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET',
+            self._GET_WORKFLOW_DEFINITION % (
+                self._workflow_id
+            )
+        )
+        if flag:
+            if not response.json():
+                    raise SDKException('Response', '102', 'Failed to clone workflow')
+            return response.json()
+        else:
+            raise SDKException('Response', '101', response.text)
 
     def set_workflow_configuration(self, config_xml):
         """Set Workflow configuration
@@ -1063,7 +1104,13 @@ class WorkFlow(object):
             }
 
             if workflow_engine is not None:
-                workflow_xml['Workflow_DeployWorkflow']['client']['clientName'] = workflow_engine
+                workflow_xml = {
+                    "Workflow_DeployWorkflow": {
+                        "client": {
+                            "clientName": workflow_engine
+                        }
+                    }
+                }
         elif os.path.isfile(workflow_xml):
             with open(workflow_xml, 'r') as file_object:
                 workflow_xml = file_object.read()
@@ -1281,6 +1328,34 @@ class WorkFlow(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def clone_workflow(self, clone_workflow_name):
+        """Clones the workflow
+
+        Args:
+            clone_workflow_name (str)   : name for the new workflow(clone)
+
+        Raises:
+            SDKException:
+                if response is not status
+
+                If cloning workflow operation fails
+        """
+        workflow_definition = self._get_workflow_definition()
+        workflow_definition['name'] = clone_workflow_name
+        workflow_definition['uniqueGuid'] = ''
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT',
+            self._services['GET_WORKFLOWS'],
+            workflow_definition,
+        )
+
+        if flag and response.json():
+            if not response.json()['workflow']['workflowId']:
+                raise SDKException('Workflow', '102', 'Failed to clone the workflow')
+        else:
+            raise SDKException('Response', '101', response.text)
 
     def refresh(self):
         """Refreshes the properties of the workflow."""

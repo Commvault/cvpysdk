@@ -2,8 +2,18 @@
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
-# See LICENSE.txt in the project root for
-# license information.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 # --------------------------------------------------------------------------
 
 """File for operating on a Virtual Server Subclient.
@@ -1457,7 +1467,7 @@ class VirtualServerSubclient(Subclient):
                 break
 
         if source_item is None:
-            raise SDKException('Subclient', '113')
+            raise SDKException('Subclient', '102', 'Browse failure: Folder not found in browse')
 
         return source_item
 
@@ -2377,9 +2387,9 @@ class VirtualServerSubclient(Subclient):
         new_name = restore_option["new_name"]
         for _each_vm_to_restore in restore_option['vm_to_restore']:
             if restore_option["prefix"] == 1:
-                restore_option["new_name"] = f"{new_name}{_each_vm_to_restore}"
+                restore_option["new_name"] = "{}{}".format(new_name, _each_vm_to_restore)
             else:
-                restore_option["new_name"] = f"{_each_vm_to_restore}{new_name}"
+                restore_option["new_name"] = "{}{}".format(_each_vm_to_restore, new_name)
             self._set_advanced_vm_restore_options_blr(_each_vm_to_restore, restore_option)
             _vm_browse_path_nodes_json.append(self._vm_browse_path_nodes())
         self._virtualserver_option_restore_json["diskLevelVMRestoreOption"]["advancedRestoreOptions"] = self._advanced_restore_option_list[0]

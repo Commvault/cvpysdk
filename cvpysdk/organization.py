@@ -2,8 +2,18 @@
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
-# See LICENSE.txt in the project root for
-# license information.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 # --------------------------------------------------------------------------
 
 """File for doing operations on an organization.
@@ -88,7 +98,9 @@ Organization
 
     disable_auth_code()         --  disable Auth Code generation for the organization
 
-    add_users_as_operator()     -- assigns users as operators
+    add_users_as_operator()     --  assigns users as operator
+
+    add_user_groups_as_operator()   -- assigns user groups as operator
 
     activate()                  --  To activate the organization
 
@@ -967,8 +979,8 @@ class Organization:
         Args:
             user_group_list		(list)  -- user group list
 
-            request_type    (Str)  --  decides whether to UPDATE, DELETE or
-                                       OVERWRITE user_group security association
+            request_type        (str)   --  decides whether to UPDATE, DELETE or OVERWRITE user_group
+            security association
 
         """
         update_operator_request_type = {
@@ -981,7 +993,7 @@ class Organization:
         for user_group in user_group_list:
             if not isinstance(user_group, UserGroup):
                 user_group = self._commcell_object.user_groups.get(user_group)
-                user_group_list_object.append(user_group)
+            user_group_list_object.append(user_group)
         request_operator = {
             'operators': [{
                 'userGroup': {
@@ -1013,7 +1025,7 @@ class Organization:
         for user in user_list:
             if not isinstance(user, User):
                 user = self._commcell_object.users.get(user)
-                user_list_object.append(user)
+            user_list_object.append(user)
 
         request_operator = {
             'operators': [{

@@ -2,8 +2,18 @@
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
-# See LICENSE.txt in the project root for
-# license information.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 # --------------------------------------------------------------------------
 
 """Service URLs for REST API operations.
@@ -100,6 +110,7 @@ SERVICES_DICT_TEMPLATE = {
     'BACKUPSET_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s',
     'SUBCLIENT_SCHEDULES': ('{0}Schedules?clientId=%s&apptypeId=%s&'
                             'backupsetId=%s&subclientId=%s'),
+    'WORKFLOW_SCHEDULES': '{0}Schedules?workflowId=%s',
     'REPORT_SCHEDULES': '{0}/ScheduleReports',
     'OPTYPE_SCHEDULES': '{0}/Schedules?operationType=%s',
     'COMMCELL_SCHEDULES': '{0}/Schedules',
@@ -123,6 +134,7 @@ SERVICES_DICT_TEMPLATE = {
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
     'EXECUTE_WORKFLOW': '{0}wapi/%s',
     'GET_WORKFLOW': '{0}Workflow/%s',
+    'GET_WORKFLOW_DEFINITION': '{0}Workflow/%s/definition',
     'GET_INTERACTIONS': '{0}WorkflowInteractions',
     'GET_INTERACTION': '{0}Workflow/Interaction/%s',
 
@@ -184,8 +196,7 @@ SERVICES_DICT_TEMPLATE = {
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
-    'ALL_VM_ALLOCATION_POLICY':
-        '{0}VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
+    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
     'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
     'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",
