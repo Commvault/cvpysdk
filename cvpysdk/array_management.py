@@ -43,7 +43,7 @@ ArrayManagement:
 
     delete_array()              --  Method to delete array
 
-    edit_array()                --  Method to Update Snap Configuration and Array Controller
+    edit_array()                --  Method to Update Snap Configuration and Array Access Node MA
                                     for the given Array
 """
 
@@ -246,7 +246,7 @@ class ArrayManagement(object):
                   username,
                   password,
                   control_host=None,
-                  array_controller=None,
+                  array_access_node=None,
                   is_ocum=False):
         """This method will help in adding array entry in the array management
             Args :
@@ -260,7 +260,7 @@ class ArrayManagement(object):
 
                     control_host        (str)               -- control host of the array
 
-                    array_controller    (str)               -- Array Controller MediaAgent Name
+                    array_access_node    (str)              -- Array Access Node MediaAgent Name
 
                     is_ocum             (bool)              -- used for netapp to specify whether
                                                                to use Primary file server or OCUM
@@ -270,7 +270,7 @@ class ArrayManagement(object):
                 errorMessage   (string) :  Error message
         """
 
-        client_id = int(self._commcell_object.clients.get(array_controller).client_id)
+        client_id = int(self._commcell_object.clients.get(array_access_node).client_id)
         request_json = {
             "clientId": 0,
             "flags": 0,
@@ -281,7 +281,7 @@ class ArrayManagement(object):
                 {
                     "arrayControllerId":0,
                     "mediaAgent":{
-                        "name": array_controller,
+                        "name": array_access_node,
                         "id": client_id
                     },
                     "arrCtrlOptions":[
@@ -422,7 +422,7 @@ class ArrayManagement(object):
                    value,
                    config_update_level,
                    level_id,
-                   array_controller,
+                   array_access_node,
                    mode):
         """Method to Update Snap Configuration and Array controllers for the Array
         Args:
@@ -438,10 +438,10 @@ class ArrayManagement(object):
             level_id               (int)        -- level Id where the config needs to be
                                                    added/updated
 
-            array_controller       (str)        -- Array Controller MA
+            array_access_node       (str)        -- Array Access Node MA
             default: None
 
-            mode                    (str)       -- Operation type for the Array Controller whether
+            mode                    (str)       -- Operation type for the Array Access Node whether
                                                    to add or remove
             default: add
             values: add, remove
@@ -486,13 +486,13 @@ class ArrayManagement(object):
                     if config_update_level != "array":
                         config['isOverridden'] = True
 
-        if array_controller is not None and mode == "add":
-            client_id = int(self._commcell_object.clients.get(array_controller).client_id)
+        if array_access_node is not None and mode == "add":
+            client_id = int(self._commcell_object.clients.get(array_access_node).client_id)
             if "selectedMAs" in request_json:
                 update_dict = {
                     "arrayControllerId": 0,
                     "mediaAgent": {
-                        "name": array_controller,
+                        "name": array_access_node,
                         "id": client_id
                     },
                     "arrCtrlOptions": [
@@ -512,7 +512,7 @@ class ArrayManagement(object):
                         {
                             "arrayControllerId": 0,
                             "mediaAgent": {
-                                "name": array_controller,
+                                "name": array_access_node,
                                 "id": client_id
                             },
                             "arrCtrlOptions": [
@@ -528,8 +528,8 @@ class ArrayManagement(object):
                     ]}
                 request_json.update(update_dict)
 
-        elif array_controller is not None and mode == "remove":
-            client_id = int(self._commcell_object.clients.get(array_controller).client_id)
+        elif array_access_node is not None and mode == "remove":
+            client_id = int(self._commcell_object.clients.get(array_access_node).client_id)
             if "selectedMAs" in request_json:
                 for controller in range(len(request_json['selectedMAs'])):
                     if request_json['selectedMAs'][controller]['mediaAgent']['id'] == int(client_id):

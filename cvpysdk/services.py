@@ -104,6 +104,7 @@ SERVICES_DICT_TEMPLATE = {
     'DISABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Disable',
     'ENABLE_ALERT': '{0}AlertRule/%s/Action/Enable',
     'DISABLE_ALERT': '{0}AlertRule/%s/Action/Disable',
+    'EMAIL_SERVER': '{0}EmailServer',
 
     'CLIENT_SCHEDULES': '{0}Schedules?clientId=%s',
     'AGENT_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s',

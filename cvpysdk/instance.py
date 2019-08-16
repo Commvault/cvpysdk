@@ -141,7 +141,7 @@ from .job import Job
 from .subclient import Subclients
 from .constants import AppIDAType
 from .exception import SDKException
-from .schedules import SchedulePattern, Schedule, Schedules
+from .schedules import SchedulePattern, Schedules
 
 
 class Instances(object):

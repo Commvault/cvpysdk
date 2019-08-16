@@ -1048,7 +1048,7 @@ class VirtualServerSubclient(Subclient):
         return restore_content
 
     def browse(self, vm_path='\\',
-               show_deleted_files=True,
+               show_deleted_files=False,
                vm_disk_browse=False,
                vm_files_browse=False):
         """Gets the content of the backup for this subclient at the path
@@ -1061,7 +1061,7 @@ class VirtualServerSubclient(Subclient):
                                                 content
 
                 show_deleted_files  (bool)  --  include deleted files in the
-                                                content or not default: True
+                                                content or not default: False
 
                 vm_disk_browse      (bool)  --  browse virtual machine files
                                                 e.g.; .vmdk files, etc.
@@ -1181,7 +1181,7 @@ class VirtualServerSubclient(Subclient):
     def browse_in_time(
             self,
             vm_path='\\',
-            show_deleted_files=True,
+            show_deleted_files=False,
             restore_index=True,
             vm_disk_browse=False,
             from_date=0,
@@ -1201,7 +1201,7 @@ class VirtualServerSubclient(Subclient):
 
                     show_deleted_files  (bool)  --  include deleted files in
                                                     the content or not
-                                                    default: True
+                                                    default: False
 
                     restore_index       (bool)  --  restore index if it is not
                                                     cached  default: True
@@ -1264,7 +1264,7 @@ class VirtualServerSubclient(Subclient):
         return self._process_vsa_browse_response(vm_ids, browse_content)
 
     def disk_level_browse(self, vm_path='\\',
-                          show_deleted_files=True,
+                          show_deleted_files=False,
                           restore_index=True,
                           from_date=0,
                           to_date=0,
@@ -1276,7 +1276,7 @@ class VirtualServerSubclient(Subclient):
                     default: '\\'; returns the root of the Backup content
 
                 show_deleted_files  (bool)  --  include deleted files in the
-                                                content or not default: True
+                                                content or not default: False
 
                 restore_index  (bool)  --       Restore index or not.
                                                 default: True
@@ -1357,7 +1357,7 @@ class VirtualServerSubclient(Subclient):
                                                 content
 
                 show_deleted_files  (bool)  --  include deleted files in the
-                                                content or not default: True
+                                                content or not default: False
 
                 restore_index       (bool)  --  restore index if it is not cached
                                                 default: True
@@ -1483,7 +1483,7 @@ class VirtualServerSubclient(Subclient):
                            restore_ACL=True,
                            from_date=0,
                            to_date=0,
-                           show_deleted_files=True,
+                           show_deleted_files=False,
                            fbr_ma=None,
                            browse_ma=""):
         """perform Guest file restore of the provided path
@@ -1496,7 +1496,7 @@ class VirtualServerSubclient(Subclient):
 
             show_deleted_files  (bool)  --  include deleted files in the
                                             content or not
-                                            default: True
+                                            default: False
 
 
             destination_path    (basestring)   --  path to restore
@@ -1619,7 +1619,7 @@ class VirtualServerSubclient(Subclient):
 
         return self._process_restore_response(request_json)
 
-    def vm_files_browse(self, vm_path='\\', show_deleted_files=True):
+    def vm_files_browse(self, vm_path='\\', show_deleted_files=False):
         """Browses the Files and Folders of a Virtual Machine.
 
             Args:
@@ -1630,7 +1630,7 @@ class VirtualServerSubclient(Subclient):
 
                 show_deleted_files  (bool)  --  include deleted files in the
                                                 content or not
-                                                default: True
+                                                default: False
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1652,7 +1652,7 @@ class VirtualServerSubclient(Subclient):
     def vm_files_browse_in_time(
             self,
             vm_path='\\',
-            show_deleted_files=True,
+            show_deleted_files=False,
             restore_index=True,
             from_date=0,
             to_date=0):
@@ -1667,7 +1667,7 @@ class VirtualServerSubclient(Subclient):
 
                 show_deleted_files  (bool)  --  include deleted files in the
                                                 content or not
-                                                default: True
+                                                default: False
 
                 restore_index       (bool)  --  restore index if it is not
                                                 cached
