@@ -116,6 +116,8 @@ FileSystemSubclient Instance Attributes:
 	
     **ibmi_dr_config**                    --  Sets the subclient into one touch mode and adds ibmi DR parameters
 
+    **backup_savf_file_data**             --  Sets the savf file data property for ibmi backup.
+
 """
 
 from __future__ import unicode_literals
@@ -1789,4 +1791,28 @@ class FileSystemSubclient(Subclient):
             self._set_subclient_properties("_fs_subclient_prop", dr_config)
         else:
             raise SDKException('Subclient', '101', "The parameter should be dictionary")
-	
+
+    @property
+    def backup_savf_file_data(self):
+        """
+         Return the ibmi savf file data configuration
+
+        Returns:
+            (bool)  --  Is savf file data going to be backed up
+        """
+        return self._fsSubClientProp.get('backupSaveFileData', False)
+
+    @backup_savf_file_data.setter
+    def backup_savf_file_data(self, value):
+        """
+        Sets the backup save file data property on an ibmi subclient
+        Args:
+                value   (boolean)  --  Toggle the backup property
+
+            Returns:
+                None
+
+            Raises:
+                None
+        """
+        self._set_subclient_properties("_fsSubClientProp['backupSaveFileData']", value)
