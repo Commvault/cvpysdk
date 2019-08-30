@@ -384,6 +384,10 @@ EXCEPTION_DICT = {
     },
     'BackupNetworkPairs': {
         '101': '',
+    },
+    'Uninstall': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     }
 }
 

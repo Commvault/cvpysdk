@@ -310,7 +310,7 @@ class Instances(object):
                     self._vs_instance_type_dict = {str(vs_instance['instance']['instanceId']):
                                                    vs_instance["virtualServerInstance"]["vsInstanceType"]
                                                    for vs_instance in filter(
-                            lambda instance: "virtualServerInstance" in instance, instance_properties)}
+                            lambda instance: "vsInstanceType" in instance["virtualServerInstance"], instance_properties)}
 
                     return return_dict
                 elif 'errors' in response.json():

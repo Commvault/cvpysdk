@@ -181,6 +181,8 @@ Client
 
     set_job_start_time()         -- sets the job start time at client level
 
+    uninstall_software()		 --	Uninstalls all the packages of the client
+
 
 Client Attributes
 -----------------
@@ -279,6 +281,7 @@ from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
 from .deployment.install import Install
+from .deployment.uninstall import Uninstall
 
 from .network import Network
 from .network_throttle import NetworkThrottle
@@ -3590,6 +3593,28 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def uninstall_software(self, force_uninstall=True):
+        """
+        Performs readiness check on the client
+
+            Args:
+                force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
+
+
+            Returns:
+                The job object of the uninstall software job
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+
+        uninstall = Uninstall(self._commcell_object)
+
+        return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall)
 
     @property
     def job_start_time(self):

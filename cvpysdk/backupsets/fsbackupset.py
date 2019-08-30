@@ -472,6 +472,8 @@ class FSBackupset(Backupset):
 
                GuestPassword            (String)    : The Password of the guest OS
 
+               CloneClientName          (String)    : The clone client name
+
         Returns :
                     returns the task object
 
@@ -500,7 +502,7 @@ class FSBackupset(Backupset):
         vm_option['isoPath'] = restore_options.get('IsoPath')
 
         vm_option['oneTouchResponse']['clients'][0]['backupSet'][
-            'backupsetName'] = restore_options.get('BackupsetName')
+            'backupsetName'] = self.backupset_name
         vm_option['oneTouchResponse']['csinfo']['ip'][
             'address'] = restore_options.get('CommServIP')
         vm_option['oneTouchResponse']['csinfo']['commservInfo'][
@@ -575,6 +577,9 @@ class FSBackupset(Backupset):
             vm_option['oneTouchResponse']['clients'][0]['clone'] = True
             vm_option['oneTouchResponse']['clients'][0]['newclient'][
                 'clientName'] = restore_options.get('CloneClientName', None)
+            vm_option['oneTouchResponse']['clients'][0]['newclient'][
+                'hostName'] = restore_options.get('CloneClientName', None)
+
 
         if restore_options.get('UseDhcp'):
             vm_option['oneTouchResponse']['clients'][0]['netconfig']['ipinfo']['interfaces'][0][
