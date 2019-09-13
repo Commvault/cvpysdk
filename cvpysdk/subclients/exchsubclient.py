@@ -186,6 +186,42 @@ class ExchangeSubclient(Subclient):
             "pstFilePath": ""
         }
 
+    def _json_restore_exchange_common_option(self, value):
+        """
+            setter for  the Exchange Mailbox in place restore common options in restore json
+
+            Args:
+                value   (dict)  --  restore common options need to be included
+
+            Returns:
+                (dict)  -       generated exchange restore common options JSON
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._exchange_common_option_restore_json = {
+            "clusterDBBackedup": False,
+            "restoreToDisk": False,
+            "restoreDataInsteadOfStub": True,
+            "offlineMiningRestore": False,
+            "browse": True,
+            "skip": False,
+            "restoreOnlyStubExists": False,
+            "truncateBody": value.get("truncate_body", False),
+            "restoreAsStubs": value.get("restore_as_stubs", False),
+            "copyToObjectStore": False,
+            "onePassRestore": False,
+            "collectMsgsLargerThan": value.get("collect_msgs_larger_than", 1024),
+            "collectMsgsDaysAfter": value.get("collect_msgs_days_after", 30),
+            "unconditionalOverwrite": True,
+            "syncRestore": False,
+            "leaveMessageBody": value.get("leave_message_body", False),
+            "collectMsgWithAttach": value.get("collect_msg_with_attach", False),
+            "truncateBodyToBytes": value.get("truncate_body_to_bytes", 0),
+            "recoverToRecoveredItemsFolder": False,
+            "append": False
+        }
+
     def _json_out_of_place_destination_option(self, value):
         """setter for  the Exchange Mailbox out of place restore
         option in restore json
@@ -447,7 +483,8 @@ class ExchangeSubclient(Subclient):
             self,
             paths,
             overwrite=True,
-            journal_report=False):
+            journal_report=False,
+            restore_as_stub=None):
         """Restores the mailboxes/folders specified in the input paths list to the same location.
 
             Args:
@@ -458,6 +495,8 @@ class ExchangeSubclient(Subclient):
                 journal_report          (bool)  --  Journal report is true for journal and
                                                         contentStore Mailbox
                     default: False
+
+                restore_as_stub                   (dict)  --  setters for common options
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -489,6 +528,8 @@ class ExchangeSubclient(Subclient):
             'backupsetName'] = self._backupset_object.backupset_name
         request_json['taskInfo']['subTasks'][0][
             'options']['restoreOptions']['exchangeOption'] = self._exchange_option_restore_json
+        request_json['taskInfo']['subTasks'][0][
+            'options']['restoreOptions']['commonOptions'] = self._exchange_common_option_restore_json
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
