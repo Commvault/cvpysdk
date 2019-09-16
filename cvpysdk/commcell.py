@@ -214,6 +214,9 @@ Commcell instance Attributes
 
     **backup_network_pairs**    --  returns the instance of 'BackupNetworkPairs' class to
     perform backup network pairs operations on the commcell class
+
+    **recovery_targets**        -- Returns the instance of RecoverTargets class
+    
 """
 
 from __future__ import absolute_import
@@ -269,6 +272,7 @@ from .deployment.download import Download
 from .deployment.install import Install
 from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
+from .recovery_targets import RecoveryTargets
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -461,6 +465,7 @@ class Commcell(object):
         self._registered_commcells = None
         self._redirect_rules_service = None
         self._backup_network_pairs = None
+        self._recovery_targets = None
 
         self.refresh()
 
@@ -1119,6 +1124,18 @@ class Commcell(object):
         if self._redirect_rules_service is None:
             self._redirect_rules_service = self._get_redirect_rules_service_commcell()
         return self._redirect_rules_service
+
+    @property
+    def recovery_targets(self):
+        """Returns the instance of RecoverTargets class"""
+        try:
+            if self._recovery_targets is None:
+                self._recovery_targets = RecoveryTargets(self)
+
+            return self._recovery_targets
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def backup_network_pairs(self):

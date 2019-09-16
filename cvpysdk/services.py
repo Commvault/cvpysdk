@@ -313,7 +313,13 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s',
 
     'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
-    'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs'
+    'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs',
+
+    'GET_ALL_RECOVERY_TARGETS':
+        '{0}/VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
+    'GET_RECOVERY_TARGET': '{0}/VMAllocationPolicy/%s',
+    
+    'RETIRE': '{0}Client/%s/Retire'
 }
 
 
