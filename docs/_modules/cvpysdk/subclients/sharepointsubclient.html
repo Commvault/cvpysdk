@@ -1,0 +1,507 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.subclients.sharepointsubclient &mdash; Developer SDK - Python 11.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.subclients.sharepointsubclient</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.subclients.sharepointsubclient</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># ————————————————————————–</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># ————————————————————————–</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a Sharepoint Subclient</span>
+
+<span class="sd">SharepointSubclient is the only class defined in this file.</span>
+
+<span class="sd">SharepointSubclient: Derived class from Subclient Base class, representing a sharepoint subclient,</span>
+<span class="sd">and to perform operations on that subclient</span>
+
+<span class="sd">SharepointSubclient:</span>
+
+<span class="sd">    _get_subclient_properties()         --  gets the subclient related properties of the Sharepoint subclient.</span>
+
+<span class="sd">    _get_subclient_properties_json()    --  gets all the subclient related properties of the Sharepoint subclient.</span>
+
+<span class="sd">    _process_restore_response           --  processes response received for the restore request.</span>
+
+<span class="sd">    _restore_request_json               --  returns the JSON request to pass to the API as per the options.</span>
+
+<span class="sd">    sharepoint_subclient_prop()         --  initializes additional properties of this subclient.</span>
+
+<span class="sd">    content()                           --  sets the content of the subclient.</span>
+
+<span class="sd">    restore()                           --  restores the databases specified in the input paths list.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">..subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">SQLDefines</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">SharepointDefines</span>
+
+
+<div class="viewcode-block" id="SharepointSubclient"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sharepointsubclient.SharepointSubclient">[docs]</a><span class="k">class</span> <span class="nc">SharepointSubclient</span><span class="p">(</span><span class="n">Subclient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Subclient Base class, representing a Sharepoint subclient,</span>
+<span class="sd">        and to perform operations on that subclient.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the subclient related properties of the Sharepoint subclient.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SharepointSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sharepoint_subclient_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sharepointsubclientprop&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get the all subclient related properties of this subclient.</span>
+
+<span class="sd">           Returns:</span>
+<span class="sd">                dict - all subclient properties put inside a dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subclient_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;proxyClient&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxyClient</span><span class="p">,</span>
+                    <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
+                    <span class="s2">&quot;sharepointsubclientprop&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sharepoint_subclient_prop</span><span class="p">,</span>
+                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span><span class="p">,</span>
+                    <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
+                    <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">subclient_json</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sharepoint_subclient_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; getter for sql server subclient properties &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sharepoint_subclient_prop</span>
+
+    <span class="nd">@sharepoint_subclient_prop</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">sharepoint_subclient_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value (list)  --  list of the category and properties to update on the subclient</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list of the appropriate JSON for an agent to send to the POST Subclient API</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">category</span><span class="p">,</span> <span class="n">prop</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the appropriate content from the Subclient relevant to the user.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list - list of content associated with the subclient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">subclient_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span>
+
+        <span class="n">content_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;spContentPath&#39;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content</span><span class="p">[</span><span class="s2">&quot;spContentPath&quot;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">content_list</span>
+
+    <span class="nd">@content</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_content</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the list of content JSON to pass to the API to add a new Sharepoint server Subclient</span>
+<span class="sd">            with the content passed in subclient content.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_content (list)  --  list of the content to add to the subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">webapp</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">:</span>
+            <span class="n">sp_server_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;spContentPath&quot;</span><span class="p">:</span> <span class="n">webapp</span>
+            <span class="p">}</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp_server_dict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_content&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SharepointSubclient.restore"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">content_to_restore</span><span class="p">,</span>
+            <span class="n">database_client</span><span class="p">,</span>
+            <span class="n">spsetup_list</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the Sharepoint content specified in the input paths list.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content_to_restore (list):  Content to restore.</span>
+
+<span class="sd">                database_client (str): Name of Sharepoint SQL server back-end client.</span>
+
+<span class="sd">                spsetup_list (dict): Dictionary of the Sharepoint setup configuration.</span>
+
+<span class="sd">                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.</span>
+
+<span class="sd">                to_time (str):  Restore to time.  Defaults to None.</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if content_to_restore is not a list</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sharepoint_restore_options_json</span><span class="p">(</span>
+            <span class="n">content_to_restore</span><span class="p">,</span>
+            <span class="n">database_client</span><span class="p">,</span>
+            <span class="n">spsetup_list</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_sharepoint_restore_options_json</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">content</span><span class="p">,</span>
+            <span class="n">database_client</span><span class="p">,</span>
+            <span class="n">spsetup_list</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructs JSON for Sharepoint restore options based on restore request</span>
+<span class="sd">            and returns the constructed json.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                content (list):  List of Sharepoint content to restore.</span>
+
+<span class="sd">                database_client (str): Name of Sharepoint SQL server back-end client.</span>
+
+<span class="sd">                spsetup_list (dict): Dictionary of the Sharepoint setup configuration.</span>
+
+<span class="sd">                destination_client (str): Restore destination Sharepoint client.</span>
+
+<span class="sd">                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict: dictionary consisting of the Sharepoint Server options.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">client_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">_client_name</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span>
+            <span class="n">client</span><span class="o">=</span><span class="n">client_name</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">destination_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination_client</span> <span class="o">=</span> <span class="n">client_name</span>
+
+        <span class="n">common_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;allVersion&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;erExSpdbPathRestore&quot;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">}</span>
+        <span class="n">destination</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;inPlace&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="c1"># TODO check if in-place/oop.. will do this when we implement oop testcase</span>
+            <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destination_client</span><span class="p">,</span>
+                <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="s2">&quot;defaultInstance&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">sql_restore_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;sqlRecoverType&quot;</span><span class="p">:</span> <span class="n">SQLDefines</span><span class="o">.</span><span class="n">STATE_RECOVER</span><span class="p">,</span>
+            <span class="s2">&quot;dropConnectionsToDatabase&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;overWrite&quot;</span><span class="p">:</span> <span class="n">overwrite</span><span class="p">,</span>
+            <span class="s2">&quot;sqlRestoreType&quot;</span><span class="p">:</span> <span class="n">SQLDefines</span><span class="o">.</span><span class="n">DATABASE_RESTORE</span>
+        <span class="p">}</span>
+        <span class="n">sharepoint_restore_option</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;configContentDatabase&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;isSharePointRBS&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreSqlDBTO&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;is90OrUpgradedClient&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreSqlDBtoLocation&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;fetchSqlDatabases&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;spRestoreToDisk&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;restoreToDisk&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">sharepoint_db_restore_option</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;restoreType&quot;</span><span class="p">:</span> <span class="s2">&quot;SameConfiguration&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;restoreDatabaseOption&quot;</span><span class="p">:</span> <span class="s2">&quot;RESTORE_ALL&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;rbsOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;sqlSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">database_client</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;sqlDestination&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">database_client</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s1">&#39;browseOption&#39;</span><span class="p">][</span><span class="s1">&#39;backupset&#39;</span><span class="p">][</span><span class="s2">&quot;backupsetName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_backupset_name</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;sqlServerRstOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sql_restore_options</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;sharePointDBRestoreOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sharepoint_db_restore_option</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;commonOptions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">common_options</span><span class="p">)</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;destination&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">destination</span><span class="p">)</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;sharePointRstOption&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sharepoint_restore_option</span><span class="p">)</span>
+
+
+        <span class="n">content_json</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">source_items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">database_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">sp_dict</span> <span class="ow">in</span> <span class="n">spsetup_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sp_dict</span><span class="p">[</span><span class="s2">&quot;application_pool&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">item</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">database_name</span> <span class="o">=</span> <span class="n">sp_dict</span><span class="p">[</span><span class="s2">&quot;content_database&quot;</span><span class="p">]</span>
+                    <span class="n">database_server</span> <span class="o">=</span> <span class="n">sp_dict</span><span class="p">[</span><span class="s2">&quot;database_server&quot;</span><span class="p">]</span>
+                    <span class="n">web_application</span> <span class="o">=</span> <span class="n">sp_dict</span><span class="p">[</span><span class="s2">&quot;web_application&quot;</span><span class="p">]</span>
+                    <span class="n">username</span> <span class="o">=</span> <span class="n">sp_dict</span><span class="p">[</span><span class="s2">&quot;credentials&quot;</span><span class="p">][</span><span class="s2">&quot;username&quot;</span><span class="p">]</span>
+                    <span class="n">password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">sp_dict</span><span class="p">[</span><span class="s2">&quot;credentials&quot;</span><span class="p">][</span><span class="s2">&quot;password&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+                    <span class="n">source_items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">SharepointDefines</span><span class="o">.</span><span class="n">CONTENT_WEBAPP</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">source_items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">SharepointDefines</span><span class="o">.</span><span class="n">CONTENT_DB</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">database_name</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+                    <span class="n">database_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">database_name</span><span class="p">)</span>
+
+                    <span class="n">content_json</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;SharePointMetaData&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                            <span class="s2">&quot;newDirectoryName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;newDatabaseServerName&quot;</span><span class="p">:</span> <span class="n">database_server</span><span class="p">,</span>
+                            <span class="s2">&quot;sourceItem&quot;</span><span class="p">:</span>
+                                <span class="n">SharepointDefines</span><span class="o">.</span><span class="n">CONTENT_DB</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">database_name</span><span class="p">),</span>
+                            <span class="s2">&quot;newDatabaseName&quot;</span><span class="p">:</span> <span class="n">database_name</span><span class="p">,</span>
+                            <span class="s2">&quot;sharePointMetaDataType&quot;</span><span class="p">:</span> <span class="s2">&quot;SPContentDatabase&quot;</span>
+                        <span class="p">},</span> <span class="p">{</span>
+                            <span class="s2">&quot;sourceItem&quot;</span><span class="p">:</span>
+                                <span class="n">SharepointDefines</span><span class="o">.</span><span class="n">CONTENT_WEBAPP</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">),</span>
+                            <span class="s2">&quot;newWebApplicationURL&quot;</span><span class="p">:</span> <span class="n">web_application</span><span class="p">,</span>
+                            <span class="s2">&quot;newWebApplicationName&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">,</span>
+                            <span class="s2">&quot;sharePointMetaDataType&quot;</span><span class="p">:</span> <span class="s2">&quot;SPWebApplication&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;credentials&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span>
+                                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">password</span>
+                                <span class="p">}</span>
+                        <span class="p">}]</span>
+                    <span class="p">}</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;fileOption&quot;</span><span class="p">][</span><span class="s2">&quot;sourceItem&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_items</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;sqlServerRstOption&quot;</span><span class="p">][</span><span class="s2">&quot;database&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">database_list</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;sqlServerRstOption&quot;</span><span class="p">][</span><span class="s2">&quot;restoreSource&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">database_list</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
+            <span class="p">[</span><span class="s2">&quot;sharePointDBRestoreOption&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">content_json</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">request_json</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,36 +1,144 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>cvpysdk.clientgroup &#8212; Developer SDK - Python 11.14 documentation</title>
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.clientgroup &mdash; Developer SDK - Python 11.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
    
-  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
           
 
-          <div class="body" role="main">
+          
+            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.clientgroup</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <h1>Source code for cvpysdk.clientgroup</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
@@ -103,7 +211,7 @@
 <span class="sd">    _request_json_()               -- returns the appropriate JSON to pass for enabling/disabling</span>
 <span class="sd">    an activity</span>
 
-<span class="sd">    _process_request_()            -- processes the response received for the CG properties request</span>
+<span class="sd">    _process_update_request()      -- processes the clientgroup update API call</span>
 
 <span class="sd">    _update()                      -- updates the client group properties</span>
 
@@ -141,6 +249,9 @@
 
 <span class="sd">    push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes</span>
 
+<span class="sd">    update_properties()             -- to update the client group properties</span>
+
+<span class="sd">    add_additional_setting()        -- adds registry key to client group property</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -148,15 +259,17 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
 
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">.network</span> <span class="k">import</span> <span class="n">Network</span>
+<span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="k">import</span> <span class="n">NetworkThrottle</span>
 <span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
 
 
-<div class="viewcode-block" id="ClientGroups"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups">[docs]</a><span class="k">class</span> <span class="nc">ClientGroups</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups">[docs]</a><span class="k">class</span> <span class="nc">ClientGroups</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all the clientgroups associated with a Commcell.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
@@ -307,7 +420,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroups</span>
 
-<div class="viewcode-block" id="ClientGroups.has_clientgroup"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.has_clientgroup">[docs]</a>    <span class="k">def</span> <span class="nf">has_clientgroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups.has_clientgroup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.has_clientgroup">[docs]</a>    <span class="k">def</span> <span class="nf">has_clientgroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if a client group exists in the commcell with the input client group name.</span>
 
 <span class="sd">            Args:</span>
@@ -325,7 +438,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroups</span> <span class="ow">and</span> <span class="n">clientgroup_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroups</span></div>
 
-<div class="viewcode-block" id="ClientGroups.create_smart_rule"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.create_smart_rule">[docs]</a>    <span class="k">def</span> <span class="nf">create_smart_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="ClientGroups.create_smart_rule"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.create_smart_rule">[docs]</a>    <span class="k">def</span> <span class="nf">create_smart_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                           <span class="n">filter_rule</span><span class="o">=</span><span class="s1">&#39;OS Type&#39;</span><span class="p">,</span>
                           <span class="n">filter_condition</span><span class="o">=</span><span class="s1">&#39;equal to&#39;</span><span class="p">,</span>
                           <span class="n">filter_value</span><span class="o">=</span><span class="s1">&#39;Windows&#39;</span><span class="p">,</span>
@@ -507,18 +620,18 @@
             <span class="p">}</span>
 
         <span class="n">rule_mk</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;filterID&quot;</span><span class="p">:</span> <span class="n">filter_dict</span><span class="p">[</span><span class="n">filter_condition</span><span class="p">],</span>
-                        <span class="s2">&quot;secValue&quot;</span><span class="p">:</span> <span class="n">filter_value</span><span class="p">,</span>
-                        <span class="s2">&quot;propID&quot;</span><span class="p">:</span> <span class="n">prop_id_dict</span><span class="p">[</span><span class="n">filter_rule</span><span class="p">],</span>
-                        <span class="s2">&quot;propType&quot;</span><span class="p">:</span> <span class="n">ptype_dict</span><span class="p">[</span><span class="n">filter_rule</span><span class="p">],</span>
-                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span>
-                    <span class="p">}</span>
+            <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;filterID&quot;</span><span class="p">:</span> <span class="n">filter_dict</span><span class="p">[</span><span class="n">filter_condition</span><span class="p">],</span>
+                <span class="s2">&quot;secValue&quot;</span><span class="p">:</span> <span class="n">filter_value</span><span class="p">,</span>
+                <span class="s2">&quot;propID&quot;</span><span class="p">:</span> <span class="n">prop_id_dict</span><span class="p">[</span><span class="n">filter_rule</span><span class="p">],</span>
+                <span class="s2">&quot;propType&quot;</span><span class="p">:</span> <span class="n">ptype_dict</span><span class="p">[</span><span class="n">filter_rule</span><span class="p">],</span>
+                <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span>
+            <span class="p">}</span>
             <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">rule_mk</span></div>
 
-<div class="viewcode-block" id="ClientGroups.merge_smart_rules"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.merge_smart_rules">[docs]</a>    <span class="k">def</span> <span class="nf">merge_smart_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_list</span><span class="p">,</span> <span class="n">op_value</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">scg_op</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups.merge_smart_rules"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.merge_smart_rules">[docs]</a>    <span class="k">def</span> <span class="nf">merge_smart_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_list</span><span class="p">,</span> <span class="n">op_value</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">scg_op</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Merge multiple rules into (SCG) rule to create smart client group.</span>
 
 <span class="sd">            Args:</span>
@@ -558,7 +671,7 @@
         <span class="n">scg_rule</span><span class="p">[</span><span class="s2">&quot;rules&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rules_dict</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scg_rule</span></div>
 
-<div class="viewcode-block" id="ClientGroups.add"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">clients</span><span class="o">=</span><span class="p">[],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">clients</span><span class="o">=</span><span class="p">[],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new Client Group to the Commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -688,7 +801,7 @@
                 <span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Client Group &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">clientgroup_name</span><span class="p">)</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroups.get"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a client group object of the specified client group name.</span>
 
 <span class="sd">            Args:</span>
@@ -719,7 +832,7 @@
                 <span class="s1">&#39;No ClientGroup exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">clientgroup_name</span><span class="p">)</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroups.delete"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the clientgroup from the commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -779,12 +892,12 @@
                     <span class="s1">&#39;No ClientGroup exists with name: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">clientgroup_name</span><span class="p">)</span>
                 <span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroups.refresh"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroups.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroups.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the client groups associated with the Commcell.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_clientgroups</span><span class="p">()</span></div></div>
 
 
-<div class="viewcode-block" id="ClientGroup"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup">[docs]</a><span class="k">class</span> <span class="nc">ClientGroup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup">[docs]</a><span class="k">class</span> <span class="nc">ClientGroup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing operations for a specific ClientGroup.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">clientgroup_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -813,6 +926,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_clientgroup_id</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENTGROUP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLIENTGROUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_backup_enabled</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_restore_enabled</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_data_aging_enabled</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
@@ -866,10 +989,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="n">clientgroup_props</span>
 
         <span class="k">if</span> <span class="s1">&#39;clientGroupName&#39;</span> <span class="ow">in</span> <span class="n">clientgroup_props</span><span class="p">[</span><span class="s1">&#39;clientGroup&#39;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_name</span> <span class="o">=</span> <span class="n">clientgroup_props</span><span class="p">[</span><span class="s1">&#39;clientGroup&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroupName&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_name</span> <span class="o">=</span> <span class="n">clientgroup_props</span><span class="p">[</span><span class="s1">&#39;clientGroup&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroupName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Client Group name is not specified in the respone&#39;</span>
+                <span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Client Group name is not specified in the response&#39;</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="kc">None</span>
@@ -956,8 +1079,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">request_json1</span>
 
-    <span class="k">def</span> <span class="nf">_process_request_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Runs the Clientgroup update API to enable/disable backup, restore or data aging flags</span>
+    <span class="k">def</span> <span class="nf">_process_update_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the Clientgroup update API</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                request_json    (dict)  -- request json sent as payload</span>
@@ -966,15 +1089,16 @@
 <span class="sd">                (str, str):</span>
 <span class="sd">                    str  -  error code received in the response</span>
 
-<span class="sd">                    str  -  error message received</span>
+<span class="sd">                    str  -  error message received in the response</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if response is empty</span>
 
 <span class="sd">                    if response is not success</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENTGROUP</span><span class="p">,</span> <span class="n">request_json</span>
         <span class="p">)</span>
 
@@ -987,13 +1111,11 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
-                <span class="k">return</span> <span class="p">(</span><span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_update</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -1134,6 +1256,16 @@
             <span class="p">)</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the client group properties&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the client group display name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;clientGroup&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroupName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">clientgroup_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the clientgroup id as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_id</span>
@@ -1176,7 +1308,55 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_networkprop</span>
 
-<div class="viewcode-block" id="ClientGroup.enable_backup"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.enable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">network_throttle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the object of NetworkThrottle class&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_network_throttle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_network_throttle</span> <span class="o">=</span> <span class="n">NetworkThrottle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_network_throttle</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">client_group_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the client group filters&quot;&quot;&quot;</span>
+        <span class="n">client_group_filters</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">os_type_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;windows_filters&#39;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;unix_filters&#39;</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">filters_root</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;globalFiltersInfo&#39;</span><span class="p">][</span><span class="s1">&#39;globalFiltersInfoList&#39;</span><span class="p">]:</span>
+            <span class="n">client_group_filters</span><span class="p">[</span><span class="n">os_type_map</span><span class="p">[</span><span class="n">filters_root</span><span class="p">[</span><span class="s1">&#39;operatingSystemType&#39;</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">filters_root</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;globalFilters&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filters&#39;</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="k">return</span> <span class="n">client_group_filters</span>
+
+    <span class="nd">@client_group_filter</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">client_group_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;&quot;Sets the specified server group filters&quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;clientGroupDetail&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span>
+        <span class="n">filters_root</span> <span class="o">=</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;clientGroupDetail&#39;</span><span class="p">][</span><span class="s1">&#39;globalFiltersInfo&#39;</span><span class="p">][</span><span class="s1">&#39;globalFiltersInfoList&#39;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">filters_root</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="s1">&#39;operatingSystemType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">var</span><span class="p">[</span><span class="s1">&#39;globalFilters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;windows_filters&#39;</span><span class="p">,</span> <span class="n">var</span><span class="p">[</span><span class="s1">&#39;globalFilters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;filters&#39;</span><span class="p">,</span> <span class="p">[]))</span>
+                <span class="p">}</span>
+            <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="s1">&#39;operatingSystemType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">var</span><span class="p">[</span><span class="s1">&#39;globalFilters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;unix_filters&#39;</span><span class="p">,</span> <span class="n">var</span><span class="p">[</span><span class="s1">&#39;globalFilters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;filters&#39;</span><span class="p">,</span> <span class="p">[]))</span>
+                <span class="p">}</span>
+            <span class="n">var</span><span class="p">[</span><span class="s1">&#39;globalFilters&#39;</span><span class="p">][</span><span class="s1">&#39;opType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;clientGroupOperationType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ClientGroup.enable_backup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enable Backup for this ClientGroup.</span>
 
 <span class="sd">            Raises:</span>
@@ -1185,7 +1365,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_backup_enabled</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1198,7 +1378,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_backup_at_time"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_backup_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Backup if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
@@ -1222,7 +1402,7 @@
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="k">return</span>
@@ -1234,7 +1414,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.disable_backup"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.disable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">disable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.disable_backup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.disable_backup">[docs]</a>    <span class="k">def</span> <span class="nf">disable_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Backup for this ClientGroup.</span>
 
 <span class="sd">            Raises:</span>
@@ -1243,7 +1423,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_backup_enabled</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1256,7 +1436,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_restore"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.enable_restore">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_restore"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_restore">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enable Restore for this ClientGroup.</span>
 
 <span class="sd">            Raises:</span>
@@ -1265,7 +1445,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_restore_enabled</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1278,7 +1458,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_restore_at_time"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.enable_restore_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_restore_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_restore_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables restore if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
@@ -1302,7 +1482,7 @@
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="k">return</span>
@@ -1314,7 +1494,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.disable_restore"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.disable_restore">[docs]</a>    <span class="k">def</span> <span class="nf">disable_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.disable_restore"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.disable_restore">[docs]</a>    <span class="k">def</span> <span class="nf">disable_restore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Restore for this ClientGroup.</span>
 
 <span class="sd">            Raises:</span>
@@ -1323,7 +1503,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_restore_enabled</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1336,7 +1516,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_data_aging"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.enable_data_aging">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_data_aging"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_data_aging">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Enable Data Aging for this ClientGroup.</span>
 
 <span class="sd">            Raises:</span>
@@ -1345,7 +1525,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Data Aging&#39;</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_data_aging_enabled</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1358,7 +1538,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_data_aging_at_time"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.enable_data_aging_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_data_aging_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_data_aging_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Data Aging if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
@@ -1382,7 +1562,7 @@
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Data Aging&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="k">return</span>
@@ -1394,7 +1574,7 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.disable_data_aging"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.disable_data_aging">[docs]</a>    <span class="k">def</span> <span class="nf">disable_data_aging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.disable_data_aging"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.disable_data_aging">[docs]</a>    <span class="k">def</span> <span class="nf">disable_data_aging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Data Aging for this ClientGroup.</span>
 
 <span class="sd">            Raises:</span>
@@ -1403,7 +1583,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Data Aging&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request_</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_data_aging_enabled</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1456,7 +1636,7 @@
                 <span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Clientgroup description should be a string value&#39;</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="ClientGroup.add_clients"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.add_clients">[docs]</a>    <span class="k">def</span> <span class="nf">add_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clients</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.add_clients"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.add_clients">[docs]</a>    <span class="k">def</span> <span class="nf">add_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clients</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds clients to the ClientGroup.</span>
 
 <span class="sd">        Args:</span>
@@ -1481,7 +1661,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_or_remove_clients</span><span class="p">(</span><span class="n">clients</span><span class="p">,</span> <span class="s1">&#39;ADD&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.remove_clients"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.remove_clients">[docs]</a>    <span class="k">def</span> <span class="nf">remove_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clients</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.remove_clients"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.remove_clients">[docs]</a>    <span class="k">def</span> <span class="nf">remove_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clients</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes clients from the ClientGroup.</span>
 
 <span class="sd">            Args:</span>
@@ -1499,7 +1679,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_or_remove_clients</span><span class="p">(</span><span class="n">clients</span><span class="p">,</span> <span class="s1">&#39;DELETE&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.remove_all_clients"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.remove_all_clients">[docs]</a>    <span class="k">def</span> <span class="nf">remove_all_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.remove_all_clients"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.remove_all_clients">[docs]</a>    <span class="k">def</span> <span class="nf">remove_all_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Clears the associated clients from client group</span>
 
 <span class="sd">            Raises:</span>
@@ -1519,7 +1699,7 @@
             <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to remove clients from the ClientGroup</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
 
-<div class="viewcode-block" id="ClientGroup.push_network_config"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.push_network_config">[docs]</a>    <span class="k">def</span> <span class="nf">push_network_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.push_network_config"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.push_network_config">[docs]</a>    <span class="k">def</span> <span class="nf">push_network_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs a push network configuration on the client group</span>
 
 <span class="sd">                Raises:</span>
@@ -1567,7 +1747,7 @@
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.push_servicepack_and_hotfix"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.push_servicepack_and_hotfix">[docs]</a>    <span class="k">def</span> <span class="nf">push_servicepack_and_hotfix</span><span class="p">(</span>
+<div class="viewcode-block" id="ClientGroup.push_servicepack_and_hotfix"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.push_servicepack_and_hotfix">[docs]</a>    <span class="k">def</span> <span class="nf">push_servicepack_and_hotfix</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">reboot_client</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">run_db_maintenance</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -1602,57 +1782,140 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">install</span> <span class="o">=</span> <span class="n">Install</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">install</span><span class="o">.</span><span class="n">push_servicepack_and_hotfix</span><span class="p">(</span>
-                                    <span class="n">client_computer_groups</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_name</span><span class="p">],</span>
-                                    <span class="n">reboot_client</span><span class="o">=</span><span class="n">reboot_client</span><span class="p">,</span>
-                                    <span class="n">run_db_maintenance</span><span class="o">=</span><span class="n">run_db_maintenance</span><span class="p">)</span></div>
+            <span class="n">client_computer_groups</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_name</span><span class="p">],</span>
+            <span class="n">reboot_client</span><span class="o">=</span><span class="n">reboot_client</span><span class="p">,</span>
+            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="n">run_db_maintenance</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.refresh"><a class="viewcode-back" href="../../clientgroup.html#cvpysdk.clientgroup.ClientGroup.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.update_properties"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.update_properties">[docs]</a>    <span class="k">def</span> <span class="nf">update_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the client group properties</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                properties_dict (dict)  --  client group property dict which is to be updated</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to add</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response code is not as expected</span>
+
+<span class="sd">        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you</span>
+<span class="sd">        need to change and use the update_properties method to set the properties</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientGroupOperationType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;clientGroupDetail&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_name</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;clientGroupDetail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to update client group property</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientGroup.add_additional_setting"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.add_additional_setting">[docs]</a>    <span class="k">def</span> <span class="nf">add_additional_setting</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">category</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">key_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">data_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">comment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">enabled</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds registry key to the client group property</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                category        (str)           -- Category of registry key</span>
+
+<span class="sd">                key_name        (str)           -- Name of the registry key</span>
+
+<span class="sd">                data_type       (str)           -- Data type of registry key</span>
+
+<span class="sd">                    Accepted Values: BOOLEAN, INTEGER, STRING, MULTISTRING, ENCRYPTED</span>
+
+<span class="sd">                value           (str)           -- Value of registry key</span>
+
+<span class="sd">                comment         (str)           -- Comment to be added for the additional setting</span>
+
+<span class="sd">                enabled         (int)           -- To enable the additional setting</span>
+<span class="sd">                                                    default: 1</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to add</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response code is not as expected&quot;&quot;&quot;</span>
+
+        <span class="n">properties_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;registryKeys&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;deleted&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                              <span class="s2">&quot;hidden&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                              <span class="s2">&quot;relativepath&quot;</span><span class="p">:</span> <span class="n">category</span><span class="p">,</span>
+                              <span class="s2">&quot;keyName&quot;</span><span class="p">:</span> <span class="n">key_name</span><span class="p">,</span>
+                              <span class="s2">&quot;isInheritedFromClientGroup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                              <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="n">comment</span><span class="p">,</span>
+                              <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">data_type</span><span class="p">,</span>
+                              <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                              <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="n">enabled</span><span class="p">}]</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientGroup.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the ClientGroup.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_clientgroup_properties</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_networkprop</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_networkprop</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_network_throttle</span> <span class="o">=</span> <span class="kc">None</span></div></div>
 </pre></div>
 
+           </div>
+           
           </div>
-          
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2018, Commvault Systems® Inc. All Rights Reserved.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
-      
-    </div>
 
-    
+    </section>
 
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
     
-  </body>
+   
+
+</body>
 </html>

@@ -1,0 +1,591 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.subclients.virtualserver.azure_resource_manager &mdash; Developer SDK - Python 11.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.subclients.virtualserver.azure_resource_manager</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.subclients.virtualserver.azure_resource_manager</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright  Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a Virtual Server AzureRM Subclient.</span>
+
+<span class="sd">AzureRMSubclient is the only class defined in this file.</span>
+
+<span class="sd">AzureRMSubclient: Derived class from VirtualServerSubClient  Base class, representing a</span>
+<span class="sd">                           AzureRM Subclient, and to perform operations on that Subclient</span>
+
+<span class="sd">AzureRMSubclient:</span>
+
+<span class="sd">    full_vm_restore_out_of_place()                  --  restores the VM  specified in</span>
+<span class="sd">                                                     to the specified client, at the</span>
+<span class="sd">                                                        specified destination location</span>
+
+<span class="sd">    full_vm_restore_in_place()              --  restores the VM specified by the</span>
+<span class="sd">                                                    user to the same location</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">..vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+
+
+<div class="viewcode-block" id="AzureRMSubclient"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient">[docs]</a><span class="k">class</span> <span class="nc">AzureRMSubclient</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from VirtualServerSubclient  Base class, representing a</span>
+<span class="sd">    AzureRM  virtual server subclient,and to perform operations on that subclient.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given Virtual Server instance.</span>
+<span class="sd">        Args</span>
+<span class="sd">        class_object (backupset_object, subclient_name, subclient_id)  --  instance of the</span>
+<span class="sd">                                         backupset class, subclient name, subclient id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diskExtension</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;.vhd&quot;</span><span class="p">,</span> <span class="s2">&quot;.avhd&quot;</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AzureRMSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AzureRMSubclient.full_vm_restore_out_of_place"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient.full_vm_restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">full_vm_restore_out_of_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                     <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">resource_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">storage_account</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">restore_new_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                     <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                     <span class="n">instance_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">public_ip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">restore_as_managed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                     <span class="n">restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the FULL Virtual machine specified  in the input  list to the client,</span>
+<span class="sd">            at the specified destination location.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                vm_to_restore         (list)       --  provide the VM name to restore</span>
+
+<span class="sd">                resource_group        (str)        -- provide the resource group to restore</span>
+
+<span class="sd">                storage_account       (str)        -- provide the storage account to restore</span>
+
+<span class="sd">                proxy_client          (str)        -- provide the proxy client to restore</span>
+
+<span class="sd">                restore_new_name      (str)        -- provide the new restore name</span>
+
+<span class="sd">                instance_size         (str)        -- provide the instance size of the restore VM</span>
+
+<span class="sd">                createPublicIP</span>
+<span class="sd">                        default:True   (bool)      --  creates the Public IP of the new VM</span>
+
+<span class="sd">                restoreAsManagedVM</span>
+<span class="sd">                        default:False   (bool)      --  new VM will be restored as unmanaged VM</span>
+
+
+<span class="sd">                overwrite</span>
+<span class="sd">                        default:False   (bool)      --  overwrite the existing VM</span>
+
+<span class="sd">                poweron</span>
+<span class="sd">                        default:False   (bool)      --  power on the  restored VM</span>
+
+
+<span class="sd">                restore_option      (dict)     --  complete dictionary with all advanced optio</span>
+<span class="sd">                    default: {}</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if destination_path is not a string</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># restore options</span>
+        <span class="k">if</span> <span class="n">restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check input parameters are correct</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">restore_option</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">power_on</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span>
+            <span class="n">restore_option</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">),</span>
+            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">esx_host</span><span class="o">=</span><span class="n">resource_group</span><span class="p">,</span>
+            <span class="n">datastore</span><span class="o">=</span><span class="n">storage_account</span><span class="p">,</span>
+            <span class="n">client_name</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">createPublicIP</span><span class="o">=</span><span class="n">public_ip</span><span class="p">,</span>
+            <span class="n">restoreAsManagedVM</span><span class="o">=</span><span class="n">restore_as_managed</span><span class="p">,</span>
+            <span class="n">instanceSize</span><span class="o">=</span><span class="n">instance_size</span><span class="p">,</span>
+            <span class="n">restore_new_name</span><span class="o">=</span><span class="n">restore_new_name</span>
+        <span class="p">)</span>
+
+        <span class="c1"># set attr for all the option in restore xml from user inputs</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureRMSubclient.full_vm_restore_in_place"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient.full_vm_restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">full_vm_restore_in_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                 <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="n">public_ip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">restore_as_managed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the FULL Virtual machine specified  in the input  list to the client,</span>
+<span class="sd">            to the location same as source .</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                vm_to_restore         (list)       --  provide the VM name to restore</span>
+
+<span class="sd">                createPublicIP</span>
+<span class="sd">                        default:True   (bool)      --  creates the Public IP of the new VM</span>
+
+<span class="sd">                restoreAsManagedVM</span>
+<span class="sd">                        default:False   (bool)      --  new VM will be restored as unmanaged VM</span>
+
+<span class="sd">                overwrite</span>
+<span class="sd">                        default:true   (bool)      --  overwrite the existing VM</span>
+
+<span class="sd">                poweron</span>
+<span class="sd">                        default:true   (bool)      --  power on the  restored VM</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># check mandatory input parameters are correct</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">power_on</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="c1"># set attr for all the option in restore xml from user inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span>
+            <span class="n">restore_option</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">),</span>
+            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">createPublicIP</span><span class="o">=</span><span class="n">public_ip</span><span class="p">,</span>
+            <span class="n">restoreAsManagedVM</span><span class="o">=</span><span class="n">restore_as_managed</span><span class="p">,</span>
+            <span class="n">in_place</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureRMSubclient.full_vm_conversion_azurestack"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient.full_vm_conversion_azurestack">[docs]</a>    <span class="k">def</span> <span class="nf">full_vm_conversion_azurestack</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">azure_client</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">resource_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">storage_account</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">instance_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">public_ip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">restore_as_managed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                This converts the AzureRM to Azurestack</span>
+<span class="sd">                Args:</span>
+<span class="sd">                        vm_to_restore          (list):     provide the VM names to restore</span>
+
+<span class="sd">                        azure_client    (basestring):      name of the AzureRM client</span>
+<span class="sd">                                                           where the VM should be</span>
+<span class="sd">                                                           restored.</span>
+
+<span class="sd">                        resource_group   (basestring):      destination Resource group</span>
+<span class="sd">                                                            in the AzureRM</span>
+
+<span class="sd">                        storage_account  (basestring):    storage account where the</span>
+<span class="sd">                                                          restored VM should be located</span>
+<span class="sd">                                                          in AzureRM</span>
+
+<span class="sd">                        overwrite              (bool):    overwrite the existing VM</span>
+<span class="sd">                                                          default: True</span>
+
+<span class="sd">                        power_on               (bool):    power on the  restored VM</span>
+<span class="sd">                                                          default: True</span>
+
+<span class="sd">                        instance_size    (basestring):    Instance Size of restored VM</span>
+
+<span class="sd">                        public_ip              (bool):    If True, creates the Public IP of</span>
+<span class="sd">                                                          restored VM</span>
+
+<span class="sd">                        restore_as_managed     (bool):    If True, restore as Managed VM in Azure</span>
+
+<span class="sd">                        copy_precedence         (int):    copy precedence value</span>
+<span class="sd">                                                          default: 0</span>
+
+<span class="sd">                        proxy_client      (basestring):   destination proxy client</span>
+
+<span class="sd">                    Returns:</span>
+<span class="sd">                        object - instance of the Job class for this restore job</span>
+
+<span class="sd">                    Raises:</span>
+<span class="sd">                        SDKException:</span>
+<span class="sd">                            if inputs are not of correct type as per definition</span>
+
+<span class="sd">                            if failed to initialize job</span>
+
+<span class="sd">                            if response is empty</span>
+
+<span class="sd">                            if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check mandatory input parameters are correct</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">azure_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_conversion_defaults</span><span class="p">(</span><span class="n">azure_client</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span>
+        <span class="k">if</span> <span class="n">proxy_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">proxy_client</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">server_host_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span>
+            <span class="n">restore_option</span><span class="p">,</span>
+            <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">vcenter_client</span><span class="o">=</span><span class="n">azure_client</span><span class="p">,</span>
+            <span class="n">datastore</span><span class="o">=</span><span class="n">storage_account</span><span class="p">,</span>
+            <span class="n">esx_host</span><span class="o">=</span><span class="n">resource_group</span><span class="p">,</span>
+            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">client_name</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">),</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">createPublicIP</span><span class="o">=</span><span class="n">public_ip</span><span class="p">,</span>
+            <span class="n">restoreAsManagedVM</span><span class="o">=</span><span class="n">restore_as_managed</span><span class="p">,</span>
+            <span class="n">instanceSize</span><span class="o">=</span><span class="n">instance_size</span><span class="p">,</span>
+            <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+            <span class="n">backupset_client_name</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+        <span class="p">)</span>
+
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureRMSubclient.full_vm_conversion_amazon"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient.full_vm_conversion_amazon">[docs]</a>    <span class="k">def</span> <span class="nf">full_vm_conversion_amazon</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">amazon_client</span><span class="p">,</span>
+            <span class="n">guest_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">is_aws_proxy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">amazon_bucket</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                This converts the AzureRM to Amazon</span>
+<span class="sd">                Args:</span>
+<span class="sd">                        vm_to_restore          (list):     provide the VM names to restore</span>
+
+<span class="sd">                        amazon_client    (basestring):     name of the Amazon client</span>
+<span class="sd">                                                           where the VM should be</span>
+<span class="sd">                                                           restored.</span>
+
+<span class="sd">                        overwrite              (bool):     overwrite the existing VM</span>
+<span class="sd">                                                           default: True</span>
+
+<span class="sd">                        power_on               (bool):     power on the  restored VM</span>
+<span class="sd">                                                           default: True</span>
+
+<span class="sd">                        copy_precedence         (int):     copy precedence value</span>
+<span class="sd">                                                           default: 0</span>
+
+<span class="sd">                        proxy_client      (basestring):    destination proxy client</span>
+
+<span class="sd">                        is_aws_proxy      (basestring):     boolean value whether</span>
+<span class="sd">                                                            proxy resides in AWS</span>
+<span class="sd">                                                            or not</span>
+<span class="sd">                                                            default: True</span>
+
+<span class="sd">                        amazon_bucket    (basestring) :     Amazon bucket (required</span>
+<span class="sd">                                                            when non-AWS proxy</span>
+<span class="sd">                                                            is used)</span>
+
+<span class="sd">                    Returns:</span>
+<span class="sd">                        object - instance of the Job class for this restore job</span>
+
+<span class="sd">                    Raises:</span>
+<span class="sd">                        SDKException:</span>
+<span class="sd">                            if inputs are not of correct type as per definition</span>
+
+<span class="sd">                            if failed to initialize job</span>
+
+<span class="sd">                            if response is empty</span>
+
+<span class="sd">                            if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># check mandatory input parameters are correct</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">amazon_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_conversion_defaults</span><span class="p">(</span><span class="n">amazon_client</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
+        <span class="n">dest_vm</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;display_name&quot;</span><span class="p">]</span>
+        <span class="n">amazon_options</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">amazon_defaults</span><span class="p">(</span><span class="n">dest_vm</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
+
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span>
+        <span class="n">instance_dict</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">proxy_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">proxy_client</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">server_host_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">vm_to_restore</span><span class="p">:</span>
+            <span class="n">vm_to_restore</span> <span class="o">=</span> <span class="p">[</span><span class="n">vm_to_restore</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_aws_proxy</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">amazon_bucket</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="mi">104</span><span class="p">)</span>
+            <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;datastore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">amazon_bucket</span>
+        <span class="k">if</span> <span class="n">guest_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">guest_options</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span>
+            <span class="n">restore_option</span><span class="p">,</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">),</span>
+            <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">esx_server_name</span><span class="o">=</span><span class="n">instance_dict</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">],</span>
+            <span class="n">esx_server</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">client_name</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">is_aws_proxy</span><span class="o">=</span><span class="n">is_aws_proxy</span><span class="p">,</span>
+            <span class="n">destComputerName</span><span class="o">=</span><span class="n">guest_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">destComputerUserName</span><span class="o">=</span><span class="n">guest_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">instanceAdminPassword</span><span class="o">=</span><span class="n">guest_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">datacenter</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;datacenter&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">resourcePoolPath</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;resourcePoolPath&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">optimizationEnabled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">datastore</span><span class="o">=</span><span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;datastore&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">availability_zone</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;esx_host&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">esx_host</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;esx_host&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">ami</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ami&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">vmSize</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instance_type&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">iamRole</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;iam_role&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">securityGroups</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;security_groups&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">keyPairList</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;keypair_list&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">terminationProtected</span><span class="o">=</span><span class="n">amazon_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;termination_protected&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

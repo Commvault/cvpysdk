@@ -1,0 +1,285 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.reports.backup_job_summary &mdash; Developer SDK - Python 11.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.reports.backup_job_summary</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.reports.backup_job_summary</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module for performing operations on Job Summary for Reports&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">xml.etree</span> <span class="k">import</span> <span class="n">ElementTree</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+
+<div class="viewcode-block" id="FormatType"><a class="viewcode-back" href="../../../source/cvpysdk.reports.html#cvpysdk.reports.backup_job_summary.FormatType">[docs]</a><span class="k">class</span> <span class="nc">FormatType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Types of output format&quot;&quot;&quot;</span>
+    <span class="n">HTML</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">PDF</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">TEXT</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">XML</span> <span class="o">=</span> <span class="mi">12</span></div>
+
+
+<div class="viewcode-block" id="Report"><a class="viewcode-back" href="../../../source/cvpysdk.reports.html#cvpysdk.reports.backup_job_summary.Report">[docs]</a><span class="k">class</span> <span class="nc">Report</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Class for building a backup job summary report&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize the backup job summary report object &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot; ?&gt;&lt;TMMsg_CreateTaskReq&gt;&lt;taskInfo&gt;</span>
+<span class="s2">        &lt;task initiatedFrom=&quot;1&quot;ownerId=&quot;1&quot; ownerName=&quot;admin&quot; sequenceNumber=&quot;0&quot; taskType=&quot;1&quot;&gt;&lt;taskFlags disabled=&quot;0&quot;/&gt;</span>
+<span class="s2">        &lt;/task&gt;&lt;appGroup/&gt;&lt;subTasks subTaskOperation=&quot;1&quot;&gt;&lt;subTask operationType=&quot;4004&quot; subTaskType=&quot;1&quot;/&gt;&lt;options&gt;</span>
+<span class="s2">        &lt;adminOpts&gt;&lt;reportOption allowDynamicContent=&quot;0&quot; excludeHiddenSubclients=&quot;0&quot; </span>
+<span class="s2">        failedFilesThreshold=&quot;0&quot; includeClientGroup=&quot;0&quot; jobOption=&quot;0&quot;</span>
+<span class="s2">        showGlobalStoragePolicies=&quot;0&quot; showHiddenStoragePolicies=&quot;0&quot; showJobsWithFailedFailesOnly=&quot;0&quot;&gt;&lt;commonOpt</span>
+<span class="s2">        dateFormat=&quot;mm/dd/yyyy&quot; emailType=&quot;2&quot; onCS=&quot;1&quot; overrideDateTimeFormat=&quot;0&quot; reportCustomName=&quot;&quot; reportType=&quot;7715&quot; </span>
+<span class="s2">        summaryOnly=&quot;0&quot; timeFormat=&quot;hh:mm:ss am/pm&quot;&gt;&lt;outputFormat isNetworkDrive=&quot;0&quot; outputType=&quot;1&quot; textDelimiter=&quot;&amp;#x9; </span>
+<span class="s2">        &quot;/&gt;&lt;savedTo ftpUploadLocation=&quot;Commvault Reports&quot; isNetworkDrive=&quot;0&quot; locationURL=&quot;&quot; uploadAsCabinetFile=&quot;0&quot;&gt;</span>
+<span class="s2">        &lt;reportSavedToClient _type_=&quot;3&quot; clientName=&quot;&quot; hostName=&quot;&quot;/&gt;&lt;ftpDetails/&gt;&lt;/savedTo&gt;</span>
+<span class="s2">        &lt;locale LCID=&quot;3081&quot; _type_=&quot;66&quot; displayString=&quot;English-Australia&quot; locale=&quot;en-au&quot; localeId=&quot;0&quot; localeName=&quot;en&quot;/&gt;</span>
+<span class="s2">        &lt;/commonOpt&gt;&lt;computerSelectionList </span>
+<span class="s2">        includeAll=&quot;1&quot;/&gt;&lt;agentList _type_=&quot;4&quot;&gt;&lt;flags include=&quot;1&quot;/&gt;&lt;/agentList&gt;&lt;mediaAgentList _type_=&quot;11&quot;&gt;&lt;flags </span>
+<span class="s2">        include=&quot;1&quot;/&gt;&lt;/mediaAgentList&gt;&lt;storagePolicyCopyList _type_=&quot;17&quot; allCopies=&quot;1&quot;/&gt;&lt;timeRangeOption TimeZoneID=&quot;42&quot; </span>
+<span class="s2">        _type_=&quot;54&quot; toTime=&quot;86400&quot; type=&quot;13&quot;/&gt;&lt;jobSummaryReport filterOnSubClientDesc=&quot;0&quot; groupBy=&quot;2&quot; </span>
+<span class="s2">        subClientDescription=&quot;&quot; subclientFilter=&quot;0&quot;&gt;&lt;jobOptions isCommserveTimeZone=&quot;1&quot; isThroughputInMB=&quot;0&quot; </span>
+<span class="s2">        numberOfMostFreqErrors=&quot;0&quot; sizeUnit=&quot;0&quot;&gt;&lt;backupTypes all=&quot;1&quot; automatedSystemRecovery=&quot;0&quot; differential=&quot;1&quot; </span>
+<span class="s2">        full=&quot;1&quot; incremental=&quot;1&quot; syntheticFull=&quot;1&quot;/&gt;&lt;jobStatus all=&quot;1&quot;/&gt;&lt;increaseInDataSize selected=&quot;0&quot; value=&quot;10&quot;/&gt;</span>
+<span class="s2">        &lt;decreaseInDataSize selected=&quot;0&quot; value=&quot;10&quot;/&gt;&lt;retentionType basicRetention=&quot;0&quot; extendedRetention=&quot;0&quot; </span>
+<span class="s2">        manualRetention=&quot;0&quot; retentionAll=&quot;0&quot;/&gt;&lt;/jobOptions&gt;&lt;rptSelections IncBackupCopyJobs=&quot;0&quot; </span>
+<span class="s2">        IncBackupCopyJobsOnly=&quot;0&quot; IncludeMediaDeletedJobs=&quot;0&quot; agedData=&quot;0&quot; </span>
+<span class="s2">        associatedEvent=&quot;0&quot; associatedMedia=&quot;0&quot; contentIndexingFailures=&quot;0&quot; </span>
+<span class="s2">        description=&quot;1&quot; drive=&quot;0&quot; failedObjects=&quot;0&quot; failureReason=&quot;1&quot; includeArchivedPSTs=&quot;0&quot; includeBackupFilesOnly=&quot;0&quot; </span>
+<span class="s2">        includeClientDescription=&quot;0&quot; includeDeconfiguredClients=&quot;1&quot; includeDisabledActivityClients=&quot;1&quot; </span>
+<span class="s2">        includeFailedSkippedMailboxes=&quot;0&quot; includePerformanceJobsOnly=&quot;0&quot; includeProtectedDatabases=&quot;0&quot; </span>
+<span class="s2">        includeProtectedVMs=&quot;1&quot; includeReferenceCopyClientMap=&quot;0&quot; includeSnapProtectionJobsOnly=&quot;0&quot; initializingUser=&quot;0&quot; </span>
+<span class="s2">        jobAttempts=&quot;0&quot; mediaAgents=&quot;0&quot; numberOfHours=&quot;0&quot; numberOfObjects=&quot;100&quot; protectedObjects=&quot;0&quot; </span>
+<span class="s2">        sizeChangePercentage=&quot;0&quot; storagePolicy=&quot;0&quot; stubbedFiles=&quot;0&quot; subclientContent=&quot;0&quot; subclientFilters=&quot;0&quot; </span>
+<span class="s2">        subclientJobOpt=&quot;0&quot;/&gt;&lt;/jobSummaryReport&gt;&lt;/reportOption&gt;&lt;/adminOpts&gt;&lt;commonOpts/&gt;&lt;/options&gt;&lt;/subTasks&gt;&lt;/taskInfo&gt;</span>
+<span class="s2">        &lt;/TMMsg_CreateTaskReq&gt;&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__xml</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Report.set_format"><a class="viewcode-back" href="../../../source/cvpysdk.reports.html#cvpysdk.reports.backup_job_summary.Report.set_format">[docs]</a>    <span class="k">def</span> <span class="nf">set_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">format_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the output format of a report</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            format_type (FormatType): Report format type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">format_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FormatType</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Invalid format type,format should be one among the type in FormatType&quot;</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//outputFormat&quot;</span><span class="p">)</span>
+        <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;outputType&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">format_type</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__xml</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__root</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Report.set_local_path"><a class="viewcode-back" href="../../../source/cvpysdk.reports.html#cvpysdk.reports.backup_job_summary.Report.set_local_path">[docs]</a>    <span class="k">def</span> <span class="nf">set_local_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">report_save_path</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sets the Client and the path for the report to be saved on</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            report_save_path: Report copy location of the backup job summary</span>
+
+<span class="sd">            client_name: Name of the client to copy the report summary on</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//savedTo&quot;</span><span class="p">)</span>
+        <span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;locationURL&#39;</span><span class="p">,</span> <span class="n">report_save_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">client_name</span><span class="p">:</span>
+            <span class="n">client_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">client_name</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Client [</span><span class="si">{client_name}</span><span class="s2">] does not exist&quot;</span><span class="p">)</span>
+        <span class="n">cname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//reportSavedToClient&quot;</span><span class="p">)</span>
+        <span class="n">cname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;clientName&#39;</span><span class="p">,</span> <span class="n">client_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__xml</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__root</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Report.export_report"><a class="viewcode-back" href="../../../source/cvpysdk.reports.html#cvpysdk.reports.backup_job_summary.Report.export_report">[docs]</a>    <span class="k">def</span> <span class="nf">export_report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Executes the backup job summary report</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Job ID</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">execute_qcommand</span><span class="p">(</span><span class="s2">&quot;qoperation execute&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__xml</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;jobIds&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s2">&quot;Backupset&quot;</span><span class="p">,</span> <span class="mi">102</span><span class="p">,</span> <span class="s2">&quot; </span><span class="si">%s</span><span class="s2">&quot;</span>
+                               <span class="o">%</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errorMessage&quot;</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">error</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

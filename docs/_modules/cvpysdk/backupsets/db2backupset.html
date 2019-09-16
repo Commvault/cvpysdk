@@ -1,0 +1,289 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.backupsets.db2backupset &mdash; Developer SDK - Python 11.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.backupsets.db2backupset</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.backupsets.db2backupset</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1"># See LICENSE.txt in the project root for</span>
+<span class="c1"># license information.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for operating on a DB2 Backupset.</span>
+
+<span class="sd">DB2Backupset is the only class defined in this file.</span>
+
+<span class="sd">DB2Backupset:  Derived class from Backupset Base class, representing a db2 backupset,</span>
+<span class="sd">and to perform operations on that subclient</span>
+
+<span class="sd">DB2Backupset:</span>
+<span class="sd">=============</span>
+
+<span class="sd">    restore_entire_database()       --      runs the restore job for specified backupset</span>
+
+
+<span class="sd">DB2Backupset instance Attributes:</span>
+<span class="sd">=================================</span>
+
+<span class="sd">    **db2_db_status**       --      returns db2 database status</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">..backupset</span> <span class="k">import</span> <span class="n">Backupset</span>
+
+
+<div class="viewcode-block" id="DB2Backupset"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.db2backupset.DB2Backupset">[docs]</a><span class="k">class</span> <span class="nc">DB2Backupset</span><span class="p">(</span><span class="n">Backupset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Derived class from Backupset Base class, representing a db2 backupset,</span>
+<span class="sd">        and to perform operations on that backupset.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">db2_db_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns db2 database status</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (str) -- Status of db as connected or disconnected</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db2BackupSet&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dB2DBStatus&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DB2Backupset.restore_entire_database"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.db2backupset.DB2Backupset.restore_entire_database">[docs]</a>    <span class="k">def</span> <span class="nf">restore_entire_database</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">dest_client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">dest_instance_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">dest_database_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">recover_db</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">restore_incremental</span><span class="o">=</span><span class="kc">True</span>
+
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the db2 databases specified in the input paths list to the same location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                dest_client_name        (str)   --  destination client name where db need to be</span>
+<span class="sd">                restored</span>
+
+<span class="sd">                dest_instance_name      (str)   --  destination db2 instance name of destination</span>
+<span class="sd">                client</span>
+
+<span class="sd">                dest_database_name      (str)   --  destination database name</span>
+
+<span class="sd">                recover_db              (bool)  -- recover database flag</span>
+
+<span class="sd">                    default: True</span>
+
+<span class="sd">                restore_incremental     (bool)  -- Restore incremental flag</span>
+
+<span class="sd">                    default: True</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_association</span>
+
+        <span class="n">instance_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span>
+        <span class="k">if</span> <span class="n">dest_client_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dest_client_name</span> <span class="o">=</span> <span class="n">instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+
+        <span class="k">if</span> <span class="n">dest_instance_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dest_instance_name</span> <span class="o">=</span> <span class="n">instance_object</span><span class="o">.</span><span class="n">instance_name</span>
+
+        <span class="k">if</span> <span class="n">dest_database_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dest_database_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupset_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">restore_entire_database</span><span class="p">(</span>
+            <span class="n">dest_client_name</span><span class="p">,</span> <span class="n">dest_instance_name</span><span class="p">,</span> <span class="n">dest_database_name</span><span class="p">,</span>
+            <span class="n">recover_db</span><span class="o">=</span><span class="n">recover_db</span><span class="p">,</span> <span class="n">restore_incremental</span><span class="o">=</span><span class="n">restore_incremental</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
