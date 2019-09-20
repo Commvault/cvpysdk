@@ -170,6 +170,8 @@ Client
     delete_additional_setting()  --  deletes registry key from the client property
 
     release_license()            --  releases a license from a client
+    
+    retire()                     --  perform retire operation on the client
 
     reconfigure_client()         --  reapplies license to the client
 
@@ -277,6 +279,7 @@ from past.builtins import basestring
 
 import requests
 
+from .job import Job
 from .agent import Agents
 from .schedules import Schedules
 from .exception import SDKException
@@ -3361,6 +3364,48 @@ class Client(object):
                             error_message)
                         raise SDKException('Client', '102', o_str)
                     self._license_info = None
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        
+    def retire(self):
+        """Uninstalls the CommVault Software on the client, releases the license and deletes the client.
+        
+        Returns:
+            Job - job object of the uninstall job
+            
+        Raises:
+                                        
+            SDKException:
+            
+                if failed to retire client
+                            
+                if response is empty
+                        
+                if response code is not as expected
+        """
+        request_json = { 
+            "client": { 
+               "clientId": int(self.client_id),
+               "clientName": self.client_name
+            }
+         }
+        flag, response = self._cvpysdk_object.make_request(
+            'DELETE', self._services['RETIRE'] % self.client_id, request_json
+        )
+        
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+                error_string = response.json()['response'].get('errorString', '')
+
+                if error_code == 0:
+                    if 'jobId' in response.json():
+                        return Job(self._commcell_object, (response.json()['jobId']))
+                else:
+                    o_str = 'Failed to Retire Client. Error: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)  
             else:
                 raise SDKException('Response', '102')
         else:

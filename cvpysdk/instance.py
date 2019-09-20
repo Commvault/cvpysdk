@@ -172,6 +172,7 @@ class Instances(object):
         self._general_properties = None
         self._instance_properties = None
         self._instances = None
+        self._vs_instance_type_dict = {}
         self.refresh()
 
         from .instances.vsinstance import VirtualServerInstance
@@ -307,10 +308,10 @@ class Instances(object):
                             temp_name = dictionary['instance']['instanceName'].lower()
                             temp_id = str(dictionary['instance']['instanceId']).lower()
                             return_dict[temp_name] = temp_id
-                    self._vs_instance_type_dict = {str(vs_instance['instance']['instanceId']):
-                                                   vs_instance["virtualServerInstance"]["vsInstanceType"]
-                                                   for vs_instance in filter(
-                            lambda instance: "vsInstanceType" in instance["virtualServerInstance"], instance_properties)}
+
+                        if 'vsInstanceType' in dictionary.get('virtualServerInstance', ''):
+                            self._vs_instance_type_dict[str(dictionary['instance']['instanceId'])] = dictionary[
+                                "virtualServerInstance"]["vsInstanceType"]
 
                     return return_dict
                 elif 'errors' in response.json():

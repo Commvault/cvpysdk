@@ -1267,6 +1267,11 @@ class Subclient(object):
     def display_name(self):
         """Returns the Subclient display name"""
         return self._subclient_properties.get('subClientEntity', {}).get('displayName')
+        
+    @property
+    def subclient_guid(self):
+        """Returns the SubclientGUID"""
+        return self._subclient_properties.get('subClientEntity' , {}).get('subclientGUID')
 
     @display_name.setter
     def display_name(self, display_name):
