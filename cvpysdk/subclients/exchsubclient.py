@@ -528,8 +528,9 @@ class ExchangeSubclient(Subclient):
             'backupsetName'] = self._backupset_object.backupset_name
         request_json['taskInfo']['subTasks'][0][
             'options']['restoreOptions']['exchangeOption'] = self._exchange_option_restore_json
-        request_json['taskInfo']['subTasks'][0][
-            'options']['restoreOptions']['commonOptions'] = self._exchange_common_option_restore_json
+        if restore_as_stub:
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'commonOptions'] = self._exchange_common_option_restore_json
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
@@ -708,7 +709,7 @@ class ExchangeSubclient(Subclient):
             }
         }
         flag, response = self._cvpysdk_object.make_request(
-            'POST', commcell_obj._services["RESTORE"], payload_dict)
+            'POST', self._commcell_object._services["RESTORE"], payload_dict)
 
         return self._process_backup_response(flag, response)
 
@@ -796,7 +797,8 @@ class ExchangeSubclient(Subclient):
                  Pst task json
         """
         task_json = {
-            "ownerId": commcell_obj.users.all_users[commcell_obj.commcell_username],
+            "ownerId": self._commcell_object.users.all_users[
+                self._commcell_object.commcell_username],
             "taskType": 1,
             "ownerName": self._commcell_object.commcell_username,
             "sequenceNumber": 0,
@@ -849,5 +851,3 @@ class ExchangeSubclient(Subclient):
             "createNewIndex": False
         }
         return data_json
-
-

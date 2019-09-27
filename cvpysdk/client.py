@@ -204,6 +204,8 @@ Client Attributes
 
     **client_hostname**             --  returns the host name of the client
 
+    **timezone**                    --  returns the timezone of the client
+
     **os_info**                     --  returns string consisting of OS information of the client
 
     **is_data_recovery_enabled**    --  boolean specifying whether data recovery is enabled for the
@@ -1361,6 +1363,7 @@ class Client(object):
         self._license_info = None
         self._cvd_port = None
         self._job_start_time = None
+        self._timezone = None
 
         self._readiness = None
 
@@ -1430,6 +1433,8 @@ class Client(object):
 
                 self._client_hostname = self._properties['client']['clientEntity']['hostName']
 
+                self._timezone = self._properties['client']['TimeZone']['TimeZoneName']
+
                 self._is_intelli_snap_enabled = bool(client_props['EnableSnapBackups'])
 
                 if 'installDirectory' in self._properties['client']:
@@ -1463,12 +1468,18 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _request_json(self, option, enable=True, enable_time=None, job_start_time=None):
+    def _request_json(self, option, enable=True, enable_time=None, job_start_time=None, **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
                 option (str)  --  string option for which to run the API for
                     e.g.; Backup / Restore / Data Aging
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Returns:
                 dict - JSON request to pass to the API
@@ -1512,7 +1523,7 @@ class Client(object):
                             "enableAfterADelay": True,
                             "enableActivityType": False,
                             "dateTime": {
-                                "TimeZoneName": "(UTC) Coordinated Universal Time",
+                                "TimeZoneName": kwargs.get("timezone", "(UTC) Coordinated Universal Time"),
                                 "timeValue": enable_time
                             }
                         }]
@@ -1941,6 +1952,26 @@ class Client(object):
         self.update_properties(update_properties)
 
     @property
+    def timezone(self):
+        """Returns the timezone of the client"""
+        return self._timezone
+
+    @timezone.setter
+    def timezone(self, timezone=None):
+        """Setter to set the timezone of the client
+
+        Args:
+            timezone    (str)   -- timezone to be set for the client
+
+        **Note** make use of TIMEZONES dict in constants.py to set timezone
+
+        """
+        update_properties = self.properties
+        update_properties['client']['TimeZone']['TimeZoneName'] = timezone
+        update_properties['client']['timezoneSetByUser'] = True
+        self.update_properties(update_properties)
+
+    @property
     def commcell_name(self):
         """Returns the Client's commcell name"""
         return self._properties['client']['clientEntity']['commCellName']
@@ -2152,12 +2183,18 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_backup_at_time(self, enable_time):
+    def enable_backup_at_time(self, enable_time, **kwargs):
         """Disables Backup if not already disabled, and enables at the time specified.
 
             Args:
-                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
+                enable_time (str)  --  Time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Raises:
                 SDKException:
@@ -2178,7 +2215,7 @@ class Client(object):
         except ValueError:
             raise SDKException('Client', '104')
 
-        request_json = self._request_json('Backup', False, enable_time)
+        request_json = self._request_json('Backup', False, enable_time, **kwargs)
 
         flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
@@ -2266,12 +2303,18 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_restore_at_time(self, enable_time):
+    def enable_restore_at_time(self, enable_time, **kwargs):
         """Disables Restore if not already disabled, and enables at the time specified.
 
             Args:
-                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
+                enable_time (str)  --  Time to enable the restore at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Raises:
                 SDKException:
@@ -2292,7 +2335,7 @@ class Client(object):
         except ValueError:
             raise SDKException('Client', '104')
 
-        request_json = self._request_json('Restore', False, enable_time)
+        request_json = self._request_json('Restore', False, enable_time, **kwargs)
 
         flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
@@ -2380,12 +2423,18 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_data_aging_at_time(self, enable_time):
+    def enable_data_aging_at_time(self, enable_time, **kwargs):
         """Disables Data Aging if not already disabled, and enables at the time specified.
 
             Args:
-                enable_time (str)  --  UTC time to enable the data aging at, in 24 Hour format
+                enable_time (str)  --  Time to enable the data aging at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Raises:
                 SDKException:
@@ -2406,7 +2455,7 @@ class Client(object):
         except ValueError:
             raise SDKException('Client', '104')
 
-        request_json = self._request_json('Data Aging', False, enable_time)
+        request_json = self._request_json('Data Aging', False, enable_time, **kwargs)
 
         flag, response = self._cvpysdk_object.make_request('POST', self._CLIENT, request_json)
 
@@ -3387,10 +3436,10 @@ class Client(object):
         """
         request_json = { 
             "client": { 
-               "clientId": int(self.client_id),
-               "clientName": self.client_name
+                "clientId": int(self.client_id),
+                "clientName": self.client_name
             }
-         }
+        }
         flag, response = self._cvpysdk_object.make_request(
             'DELETE', self._services['RETIRE'] % self.client_id, request_json
         )

@@ -82,8 +82,10 @@ class NameChange(object):
 
         if isinstance(class_object, Commcell):
             self._commcell_object = class_object
-            self._display_name = self._commcell_object.commserv_client.display_name
-            self._commcell_name = self._commcell_object.commserv_client.commcell_name
+            self._display_name = self._commcell_object.clients.get(self._commcell_object.
+                                                                   commserv_hostname).display_name
+            self._commcell_name = self._commcell_object.clients.get(self._commcell_object.
+                                                                    commserv_hostname).commcell_name
             self._is_client = False
 
         elif isinstance(class_object, Client):

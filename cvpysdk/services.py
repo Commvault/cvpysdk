@@ -98,6 +98,10 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
+    'CREATE_BLR_PAIR': '{0}Replications/Groups',
+    'DELETE_BLR_PAIR': '{0}Replications/Monitors/continuous/%s',
+    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s&vmUuid=%s',
+
     'MODIFY_ALERT': '{0}AlertRule/%s/Action/Modify',
     'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
     'ENABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Enable',
@@ -172,6 +176,8 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_DATASOURCE': '{0}dcube/deleteDataSource/%s',
     'CREATE_DATASOURCE': '{0}dcube/createDataSource',
     'DATACUBE_IMPORT_DATA': '{0}dcube/post/%s/%s',
+    'START_JOB_DATASOURCE': '{0}dcube/startjob/%s',
+    'GET_STATUS_DATASOURCE': '{0}dcube/GetStatus/%s',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',

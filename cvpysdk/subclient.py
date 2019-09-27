@@ -79,6 +79,8 @@ Subclient:
 
     _process_browse_response()  --  processes response received for both Browse and Find request
 
+    _common_backup_options()    --  Generates the advanced job options dict
+
     _json_task()                --  setter for task property
 
     _json_restore_subtask()     --  setter for sub task property
@@ -1143,7 +1145,8 @@ class Subclient(object):
                      incremental_backup,
                      incremental_level,
                      advanced_options=None,
-                     schedule_pattern=None):
+                     schedule_pattern=None,
+                     common_backup_options=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -1163,6 +1166,11 @@ class Subclient(object):
 
                 advanced_options   (dict)  --  advanced backup options to be included while
                 making the request
+
+                    default: None
+
+                common_backup_options   (dict)  --  advanced job options to be included while
+                                                    making the request.
 
                     default: None
 
@@ -1202,10 +1210,32 @@ class Subclient(object):
                 advanced_options_dict
             )
 
+        advance_job_option_dict = {}
+
+        if common_backup_options:
+            advance_job_option_dict = self._common_backup_options(
+                common_backup_options)
+
+        if advance_job_option_dict:
+            request_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = advance_job_option_dict
+
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         return request_json
+
+    def _common_backup_options(self, options):
+        """
+         Generates the advanced job options dict
+
+            Args:
+                options     (dict)      --    advanced job options that are to be included
+                                                    in the request
+
+            Returns:
+                (dict)  -           generated advanced job options dict
+        """
+        return options
 
     def _advanced_backup_options(self, options):
         """Generates the advanced backup options dict
@@ -1267,7 +1297,7 @@ class Subclient(object):
     def display_name(self):
         """Returns the Subclient display name"""
         return self._subclient_properties.get('subClientEntity', {}).get('displayName')
-        
+
     @property
     def subclient_guid(self):
         """Returns the SubclientGUID"""

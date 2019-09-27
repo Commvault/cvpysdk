@@ -1948,21 +1948,26 @@ class Job(object):
                     if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._JOB)
+        attempts = 3
+        for _ in range(attempts):  # Retrying to ignore the transient case when no jobs are found
+            flag, response = self._cvpysdk_object.make_request('GET', self._JOB)
 
-        if flag:
-            if response.json():
-                if response.json().get('totalRecordsWithoutPaging', 0) == 0:
-                    raise SDKException('Job', '104')
+            if flag:
+                if response.json():
+                    if response.json().get('totalRecordsWithoutPaging', 0) == 0:
+                        time.sleep(3)
+                        continue
 
-                if 'jobs' in response.json():
-                    for job in response.json()['jobs']:
-                        return job['jobSummary']
+                    if 'jobs' in response.json():
+                        for job in response.json()['jobs']:
+                            return job['jobSummary']
+                else:
+                    raise SDKException('Response', '102')
             else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+                response_string = self._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        raise SDKException('Job', '104')
 
     def _get_job_details(self):
         """Gets the detailed properties of this job.

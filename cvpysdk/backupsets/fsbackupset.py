@@ -52,6 +52,15 @@ FSBackupset:
     index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in
                                             the index database
 
+
+    create_fsblr_replication_pair()     --  Create Live/Granular Replication Pair
+
+    create_replica_copy()               --  Triggers Replica Copy for live Replication.
+
+    delete_replication_pair()           --   Delete Replication Pair
+
+    create_granular_replica_copy()      --   Triggers  Granular replication permanent mount
+
 """
 
 from __future__ import unicode_literals
@@ -59,7 +68,8 @@ from __future__ import unicode_literals
 from ..backupset import Backupset
 from ..client import Client
 from ..exception import SDKException
-
+from ..job import Job
+from ..schedules import Schedules
 
 class FSBackupset(Backupset):
     """Derived class from Backupset Base class, representing a fs backupset,
@@ -995,3 +1005,318 @@ class FSBackupset(Backupset):
             self._process_update_reponse(request_json)
         else:
             raise SDKException('Backupset', '105')
+
+
+
+    def create_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, **replication_options):
+
+        """"setter for live  blklvl Replication replica copy...
+
+        Args:
+            srcclientid   (int)  --  Source client id.
+
+            destclientid    (dict)  -- Destintion client id .
+
+            scid           (int) --  Replication Subclient id
+
+            blrid           (int) -- Blr pair id
+
+            **replication_options (dict) -- object instance
+
+
+        """
+
+
+
+        srcvol = replication_options.get('srcvol')
+        restorepath = replication_options.get('RestorePath')
+        replicacopyjson = {
+            "taskInfo": {
+                "task": {
+                    "ownerId": 1,
+                    "taskType": 1,
+                    "ownerName": "",
+                    "initiatedFrom": 1,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4047
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "mediaOpt": {
+                                    "auxcopyJobOption": {
+                                        "maxNumberOfStreams": 0,
+                                        "allCopies": True,
+                                        "useMaximumStreams": True,
+                                        "useScallableResourceManagement": False
+                                    }
+                                }
+                            },
+                            "adminOpts": {
+                                "blockOperation": {
+                                    "operations": [
+                                        {
+                                            "appId": scid,
+                                            "opType": 8,
+                                            "dstProxyClientId": destclientid,
+                                            "fsMountInfo": {
+                                                "doLiveMount": True,
+                                                "lifeTimeInSec": 7200,
+                                                "blrPairId": blrid,
+                                                "mountPathPairs": [
+                                                    {
+                                                        "mountPath": restorepath,
+                                                        "srcPath": srcvol,
+                                                        "srcGuid": dstguid,
+                                                        "dstGuid": srcguid
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "commonOpts": {
+                                "subscriptionInfo": "<Api_Subscription subscriptionId =\"116\"/>"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['RESTORE'], replicacopyjson)
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                elif "taskId" in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Subclient', '102', o_str)
+                else:
+                    raise SDKException('Subclient', '102', 'Failed to run the restore job')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+    def delete_replication_pair(self, blrid):
+
+        """"Delete replication pair
+
+        Args:
+            blrid   (int)  --  blocklevel replication id.
+
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request('DELETE', self._services['DELETE_BLR_PAIR']%blrid)
+
+        if response.status_code != 200 and flag ==  False:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+
+    def create_fsblr_replication_pair(self, srcclientid, destclientid, rpstoreid=None, replicationtype=None,
+                                      **replication_options):
+        """"Create granular replication pair  json
+
+        Args:
+            srcclientid   (int)  --  Source client id.
+
+            destclientid    (dict)  -- Destintion client id .
+
+            **replication_options (dict) -- object instance
+
+
+        """
+        srcvol = replication_options.get('srcvol')
+        destvol = replication_options.get('destvol')
+        destclient = replication_options.get('destclient')
+        srcclient = replication_options.get('srcclient')
+        rpstore = replication_options.get('RPStore')
+
+        if replicationtype == 4:
+            blr_options = "<?xml version='1.0' encoding='UTF-8'?><BlockReplication_BLRRecoveryOptions recoveryType=\"4\"><granularV2 ccrpInterval=\"120\" acrpInterval=\"300\" maxRpInterval=\"21600\" rpMergeDelay=\"172800\" rpRetention=\"604800\" maxRpStoreOfflineTime=\"0\" useOffPeakSchedule=\"0\" rpStoreId=\"{0}\" rpStoreName=\"{1}\"/></BlockReplication_BLRRecoveryOptions>".format(
+                rpstoreid, rpstore)
+
+        else:
+            blr_options = "<?xml version='1.0' encoding='UTF-8'?><BlockReplication_BLRRecoveryOptions recoveryType=\"1\"><granularV2 ccrpInterval=\"300\" acrpInterval=\"0\" maxRpInterval=\"21600\" rpMergeDelay=\"172800\" rpRetention=\"604800\" maxRpStoreOfflineTime=\"0\" useOffPeakSchedule=\"0\"/></BlockReplication_BLRRecoveryOptions>"
+
+        granularjson = {
+            "destEndPointType": 2,
+            "blrRecoveryOpts": blr_options,
+            "srcEndPointType": 2,
+            "srcDestVolumeMap": [
+                {
+                    "sourceVolumeGUID": "55053f38-2de9-429c-945a-bb8827911c11",
+                    "destVolume": destvol,
+                    "destVolumeGUID": "3758a646-7b30-411b-88ea-12f6b957dfd1",
+                    "sourceVolume": srcvol
+                }
+            ],
+            "destEntity": {
+                "client": {
+                    "clientId": destclientid,
+                    "clientName": destclient
+                }
+            },
+            "sourceEntity": {
+                "client": {
+                    "clientId": srcclientid,
+                    "clientName": srcclient
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['CREATE_BLR_PAIR'], granularjson)
+        if response.status_code != 200 and flag == False:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+
+    def create_granular_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, restoreguid,
+                                     **replication_options):
+        """"setter for granular blklvl Replication replica copy...
+
+        Args:
+            srcclientid   (int)  --  Source client id.
+
+            destclientid    (dict)  -- Destintion client id .
+
+            scid           (int) --  Replication Subclient id
+
+            blrid           (int) -- Blr pair id
+
+            dstguid         (str) -- Destination relication guid
+
+            timestamp        (int) -- Replication point timestamp
+
+            **replication_options (dict) -- object instance
+
+
+        """
+
+        import re
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GRANULAR_BLR_POINTS']
+                                                           %(destclientid, scid, dstguid))
+        replicapoints = response.content
+        temp = replicapoints.split(b"},")
+        list_rp = temp[len(temp) - 1]
+        list_rp = str(list_rp, 'utf-8')
+        result = re.sub(r'[\W_]+', '', list_rp)
+        numbers = re.findall(r'\d+', result)
+        timestamp = int(numbers[0])
+        sequence_number = int(numbers[1])
+        data_changed_size = int(numbers[3])
+
+        srcvol = replication_options.get('srcvol')
+        restorepath = replication_options.get('RestorePath')
+        replicacopyjson = {
+            "taskInfo": {
+                "task": {
+                    "ownerId": 1,
+                    "taskType": 1,
+                    "ownerName": "",
+                    "initiatedFrom": 1,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4047
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "mediaOpt": {
+                                    "auxcopyJobOption": {
+                                        "maxNumberOfStreams": 0,
+                                        "allCopies": True,
+                                        "useMaximumStreams": True,
+                                        "useScallableResourceManagement": False
+                                    }
+                                }
+                            },
+                            "adminOpts": {
+                                "blockOperation": {
+                                    "operations": [
+                                        {
+                                            "appId": scid,
+                                            "opType": 8,
+                                            "dstProxyClientId": destclientid,
+                                            "fsMountInfo": {
+                                                "doLiveMount": False,
+                                                "lifeTimeInSec": 7200,
+                                                "blrPairId": blrid,
+                                                "mountPathPairs": [
+                                                    {
+                                                        "mountPath": restorepath,
+                                                        "srcPath": srcvol,
+                                                        "srcGuid": restoreguid,
+                                                        "dstGuid": srcguid
+                                                    }
+                                                ],
+                                                "rp": {
+                                                    "timeStamp": timestamp,
+                                                    "sequenceNumber": sequence_number,
+                                                    "rpType": 1,
+                                                    "appConsistent": False,
+                                                    "dataChangedSize": data_changed_size
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "commonOpts": {
+                                "subscriptionInfo": "<Api_Subscription subscriptionId =\"1451\"/>"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['RESTORE'], replicacopyjson)
+
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                elif "taskId" in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Subclient', '102', o_str)
+                else:
+                    raise SDKException('Subclient', '102', 'Failed to run the restore job')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+

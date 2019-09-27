@@ -889,12 +889,18 @@ class ClientGroup(object):
                     elif control_options['activityType'] == 16:
                         self._is_data_aging_enabled = control_options['enableActivityType']
 
-    def _request_json_(self, option, enable=True, enable_time=None):
+    def _request_json_(self, option, enable=True, enable_time=None, **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
                 option (str)  --  string option for which to run the API for
                     e.g.; Backup / Restore / Data Aging
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Returns:
                 dict - JSON request to pass to the API
@@ -930,7 +936,7 @@ class ClientGroup(object):
                         "enableAfterADelay": True,
                         "enableActivityType": False,
                         "dateTime": {
-                            "TimeZoneName": "(UTC) Coordinated Universal Time",
+                            "TimeZoneName": kwargs.get("timezone", "(UTC) Coordinated Universal Time"),
                             "timeValue": enable_time
                         }
                     }]
@@ -1245,12 +1251,18 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_backup_at_time(self, enable_time):
+    def enable_backup_at_time(self, enable_time, **kwargs):
         """Disables Backup if not already disabled, and enables at the time specified.
 
             Args:
                 enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Raises:
                 SDKException:
@@ -1267,7 +1279,7 @@ class ClientGroup(object):
         except ValueError:
             raise SDKException('ClientGroup', '104')
 
-        request_json = self._request_json_('Backup', False, enable_time)
+        request_json = self._request_json_('Backup', False, enable_time, **kwargs)
 
         error_code, error_message = self._process_update_request(request_json)
 
@@ -1325,12 +1337,18 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_restore_at_time(self, enable_time):
+    def enable_restore_at_time(self, enable_time, **kwargs):
         """Disables restore if not already disabled, and enables at the time specified.
 
             Args:
                 enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Raises:
                 SDKException:
@@ -1347,7 +1365,7 @@ class ClientGroup(object):
         except ValueError:
             raise SDKException('ClientGroup', '104')
 
-        request_json = self._request_json_('Restore', False, enable_time)
+        request_json = self._request_json_('Restore', False, enable_time, **kwargs)
 
         error_code, error_message = self._process_update_request(request_json)
 
@@ -1405,12 +1423,18 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_data_aging_at_time(self, enable_time):
+    def enable_data_aging_at_time(self, enable_time, **kwargs):
         """Disables Data Aging if not already disabled, and enables at the time specified.
 
             Args:
                 enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
+
+                **kwargs (dict)  -- dict of keyword arguments as follows
+
+                    timezone    (str)   -- timezone to be used of the operation
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Raises:
                 SDKException:
@@ -1427,7 +1451,7 @@ class ClientGroup(object):
         except ValueError:
             raise SDKException('ClientGroup', '104')
 
-        request_json = self._request_json_('Data Aging', False, enable_time)
+        request_json = self._request_json_('Data Aging', False, enable_time, **kwargs)
 
         error_code, error_message = self._process_update_request(request_json)
 

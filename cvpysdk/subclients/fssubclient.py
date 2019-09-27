@@ -31,6 +31,8 @@ FileSystemSubclient:
     _get_subclient_properties_json()    --  gets all the subclient related properties of the
     File System subclient
 
+    _common_backup_options()            --  Generates the advanced job options dict
+
     _advanced_backup_options()          --  sets the advanced backup options
 
     find_all_versions()                 --  returns the dict containing list of all the backed up
@@ -274,6 +276,40 @@ class FileSystemSubclient(Subclient):
             update_content.append(exception_dict)
 
         self._set_subclient_properties("_content", update_content)
+
+    def _common_backup_options(self, options):
+        """
+         Generates the advanced job options dict
+
+            Args:
+                options     (dict)  --  advanced job options that are to be included
+                                            in the request
+
+            Returns:
+                (dict)  -   generated advanced options dict
+        """
+        final_dict = super(FileSystemSubclient, self)._common_backup_options(options)
+
+        common_options = {
+                "jobDescription": options.get('job_description', ""),
+                "jobRetryOpts": {
+                    "killRunningJobWhenTotalRunningTimeExpires": options.get(
+                        'kill_running_job_when_total_running_time_expires', False),
+                    "numberOfRetries": options.get('number_of_retries', 0),
+                    "enableNumberOfRetries": options.get('enable_number_of_retries', False),
+                    "runningTime": {
+                        "enableTotalRunningTime": options.get('enable_total_running_time', False),
+                        "totalRunningTime": options.get('total_running_time', 3600)
+                    }
+                },
+                "startUpOpts": {
+                    "startInSuspendedState": options.get('start_in_suspended_state', False),
+                    "useDefaultPriority": options.get('use_default_priority', True),
+                    "priority": options.get('priority', 166)
+                }
+            }
+
+        return common_options
 
     def _advanced_backup_options(self, options):
         """Generates the advanced backup options dict
@@ -1388,7 +1424,8 @@ class FileSystemSubclient(Subclient):
                collect_metadata=False,
                on_demand_input=None,
                advanced_options=None,
-               schedule_pattern=None):
+               schedule_pattern=None,
+               common_backup_options=None):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -1423,6 +1460,41 @@ class FileSystemSubclient(Subclient):
                             inline_backup_copy      :   to run backup copy immediately(inline)
                             skip_catalog            :   skip catalog for intellisnap operation
 
+                common_backup_options      (dict)  --  advanced job options to be included while
+                                                        making request
+
+                        default: None
+
+                        options:
+                            job_description              :  job description to be set.
+
+                            enable_number_of_retries     :  enables/disables the property, number of retrys.
+                                values:
+                                    True/False
+
+                            number_of_retries            : total number of retries to be set.
+
+                            enable_total_running_time    :  enables/disables the property, toal running time.
+                                values:
+                                    True/False
+
+                            total_running_time           :  total run time to be set in (secs)
+
+                            kill_running_job_when_total_running_time_expires    :   enables/disables the property.
+                                values:
+                                    True/False
+
+                            start_in_suspended_state     :  enables/disables the property.
+                                values:
+                                    True/False
+
+                            use_default_priority         :  enables/disables the property.
+                                values:
+                                    True/False
+
+                            priority                     :  three digit number to be set.
+                                default: 166
+
                 schedule_pattern (dict) -- scheduling options to be included for the task
 
                         Please refer schedules.schedulePattern.createSchedule()
@@ -1456,13 +1528,14 @@ class FileSystemSubclient(Subclient):
 
             advanced_options['on_demand_input'] = on_demand_input
 
-        if advanced_options or schedule_pattern:
+        if advanced_options or schedule_pattern or common_backup_options:
             request_json = self._backup_json(
                 backup_level,
                 incremental_backup,
                 incremental_level,
                 advanced_options,
-                schedule_pattern
+                schedule_pattern,
+                common_backup_options
             )
 
             backup_service = self._services['CREATE_TASK']
