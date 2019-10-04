@@ -76,6 +76,8 @@ class CloudAppsInstance(Instance):
             7: GoogleInstance,
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
+            20: CloudStorageInstance,  # Google Cloud Instance
+            21: CloudStorageInstance,  # azure data lake gen2
         }
 
         commcell_object = agent_object._commcell_object

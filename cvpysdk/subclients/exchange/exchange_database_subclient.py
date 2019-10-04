@@ -255,7 +255,7 @@ class ExchangeDatabaseSubclient(Subclient):
         flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
 
         if flag:
-            if resposnse and resposne.json():
+            if response and response.json():
                 response = response.json()
                 response = response['browseResponses'][0]
                 job_id = response['browseResult']['advConfig']['applicationMining']['browseInitResp']['recoveryPointJobID']
@@ -317,7 +317,7 @@ class ExchangeDatabaseSubclient(Subclient):
             flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
 
             if flag:
-                if resposne and resposme.json() :
+                if response and response.json() :
                     response = response.json()
                     response = response['browseResponses'][0]
                     edb = response['browseResult']['advConfig']['applicationMining']['browseInitResp']['edbPath']
@@ -374,7 +374,7 @@ class ExchangeDatabaseSubclient(Subclient):
             }
             flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
             if flag:
-                if response and resposne.json():
+                if response and response.json():
                     response = response.json()
                     response = response['browseResponses'][0]
                     response = response['browseResult']['dataResultSet'][0]
@@ -439,7 +439,7 @@ class ExchangeDatabaseSubclient(Subclient):
         flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
 
         if flag:
-            if resposne and response.json():
+            if response and response.json():
                 response = response.json()
                 return response
             else:

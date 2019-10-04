@@ -934,17 +934,42 @@ class Instances(object):
             cloud_options    (dict)    --    Options needed for adding a new cloud storage instance.
 
         Example:
-            cloud_options = {
-                'instance_name': 'S3',
-                'description': 'instance for s3',
-                'storage_policy':'cs_sp',
-                'number_of_streams': 2,
-                'access_node': 'CS',
-                'accesskey':'AKIAJOMLRIFGP3FQUIKA',
-                'secretkey':'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',
-                'cloudapps_type': 's3'
+        Cloud : S3
+        cloud_options = {
+                            'instance_name': 'S3',
+                            'description': 'instance for s3',
+                            'storage_policy':'cs_sp',
+                            'number_of_streams': 2,
+                            'access_node': 'CS',
+                            'accesskey':'AKIAJOMLRIFGP3FQUIKA',
+                            'secretkey':'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',
+                            'cloudapps_type': 's3'
 
             }
+        Cloud : Google Cloud
+        cloud_options = {
+                            'instance_name': 'google_test',
+                            'description': 'instance for google',
+                            'storage_policy':'cs_sp',
+                            'number_of_streams': 2,
+                            'access_node': 'CS',
+                            'cloudapps_type': 'google_cloud'
+                            'host_url':'storage.googleapis.com',
+                            'access_key':'xxxxxx',
+                            'secret_key':'yyyyyy'
+                        }
+        Cloud : Azure Datalake Gen2
+        cloud_options = {
+
+                            'instance_name': 'TestAzureDL',
+                            'access_node': 'CS',
+                            'description': None,
+                            'storage_policy': 'cs_sp',
+                            'accountname': 'xxxxxx',
+                            'accesskey': 'xxxxxx',
+                            'number_of_streams': 1,
+                            'cloudapps_type': 'azureDL'
+                        }
         Returns:
             dict     --   JSON request to pass to the API
         Raises :
@@ -982,7 +1007,7 @@ class Instances(object):
         else:
             description = ''
 
-        self.instance_properties_json = cloud_options
+        self._instance_properties_json = cloud_options
         request_json = {
             "instanceProperties": {
                 "description": description,
@@ -991,7 +1016,7 @@ class Instances(object):
                     "instanceName": cloud_options.get("instance_name"),
                     "appName": self._agent_object.agent_name,
                 },
-                "cloudAppsInstance": self.instance_properties_json
+                "cloudAppsInstance": self._instance_properties_json
             }
         }
         add_instance = self._commcell_object._services['ADD_INSTANCE']
@@ -1126,6 +1151,34 @@ class Instances(object):
                     "credentials": {
                         "password": apikey,
                         "userName": value.get("username")
+                    }
+                },
+                "generalCloudProperties": self._general_properties_json
+            }
+
+        elif value.get("cloudapps_type") == 'google_cloud':
+            secret_key = b64encode(value.get("secret_key").encode()).decode()
+            self._instance_properties = {
+                "instanceType": 20,
+                "googleCloudInstance": {
+                    "serverName": value.get("host_url"),
+                    "credentials": {
+                        "password": secret_key,
+                        "userName": value.get("access_key")
+                    }
+                },
+                "generalCloudProperties": self._general_properties_json
+            }
+
+        elif value.get("cloudapps_type") == 'azureDL':
+            accesskey = b64encode(value.get("accesskey").encode()).decode()
+            self._instance_properties = {
+                "instanceType": 21,
+                "azureDataLakeInstance": {
+                    "serverName": "dfs.core.windows.net",
+                    "credentials": {
+                        "userName": value.get("accountname"),
+                        "password": accesskey
                     }
                 },
                 "generalCloudProperties": self._general_properties_json
@@ -2102,7 +2155,7 @@ class Instance(object):
             "preserveLevel": value.get("preserve_level", 1),
             "restoreToExchange": False,
             "stripLevel": 0,
-            "restoreACLs": value.get("restore_ACL", True),
+            "restoreACLs": value.get("restore_ACL", value.get("restore_data_and_acl", True)),
             "stripLevelType": value.get("striplevel_type", 0),
             "allVersion": value.get("all_versions", False),
             "unconditionalOverwrite": value.get("unconditional_overwrite", False),

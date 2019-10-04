@@ -54,6 +54,8 @@ class CloudAppsSubclient(Subclient):
             7: GoogleSubclient,  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too
             14: CloudStorageSubclient,  # OracleCloud Subclient
             15: CloudStorageSubclient,  # Openstack Subclient
+            20: CloudStorageSubclient,  # Google Cloud Instance
+            21: CloudStorageSubclient,  # azure data lake gen2
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

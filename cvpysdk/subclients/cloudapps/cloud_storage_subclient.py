@@ -1,4 +1,3 @@
-# FIXME : https://engweb.commvault.com/engtools/defect/215230
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
@@ -44,8 +43,10 @@ CloudStorageSubclient:
     restore_to_fs()                     --  Restores the files/folders specified in the
     input paths list to the input fs client, at the specified destination location.
 
+    restore_using_proxy()               --  To perform restore to different cloud using
+                                            proxy passing explicit credentials of destination cloud
+
 """
-from past.builtins import basestring
 from ..casubclient import CloudAppsSubclient
 from ...exception import SDKException
 
@@ -256,3 +257,91 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_client=destination_client,
             overwrite=overwrite,
             copy_precedence=copy_precedence)
+
+    def restore_using_proxy(self,
+                            paths,
+                            destination_client_proxy,
+                            destination_path,
+                            overwrite=True,
+                            copy_precedence=None,
+                            destination_cloud=None):
+        """
+        To perform restore to different cloud using
+        proxy passing explicit credentials of destination cloud
+
+        Args:
+            destination_client_proxy (str)          --  name of proxy machine having cloud connector package
+
+            paths                    (list)         --  list of full paths of files/folders to restore
+
+            destination_path         (str)          --  location where the files are to be restored
+                                                        in the destination instance.
+
+            overwrite                (bool)         --  unconditional overwrite files during restore
+                                                        default: True
+
+            copy_precedence          (int)          --  copy precedence value of storage policy copy
+                                                        default: None
+
+
+            destination_cloud        (dict(dict))  --     dict of dict representing cross cloud credentials
+
+            Sample dict(dict) :
+
+            destination_cloud = {
+                                    'google_cloud': {
+                                                        'google_host_url':'storage.googleapis.com',
+                                                        'google_access_key':'xxxxxx',
+                                                        'google_secret_key':'yyyyyy'
+                                                    }
+                                }
+
+            destination_cloud = {
+                                    'amazon_s3':    {
+                                                        's3_host_url':'s3.amazonaws.com',
+                                                        's3_access_key':'xxxxxx',
+                                                        's3_secret_key':'yyyyyy'
+                                                    }
+                                }
+            destination_cloud = {
+                                    'azure_blob':   {
+                                                        'azure_host_url':'blob.core.windows.net',
+                                                        'azure_account_name':'xxxxxx',
+                                                        'azure_access_key':'yyyyyy'
+                                                    }
+                                }
+
+        Returns:
+                object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+
+                    if destination cloud credentials empty
+
+                    if destination cloud has more than one vendor details
+
+                    if unsupported destination cloud for restore is chosen
+
+                    if client is not a string or Client object
+
+                    if destination_path is not a string
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        self._instance_object._restore_association = self._subClientEntity
+
+        return self._instance_object.restore_using_proxy(paths=paths,
+                                                         destination_client_proxy=destination_client_proxy,
+                                                         destination_path=destination_path,
+                                                         overwrite=overwrite,
+                                                         copy_precedence=copy_precedence,
+                                                         destination_cloud=destination_cloud
+                                                         )
