@@ -557,7 +557,8 @@ class FSBackupset(Backupset):
             vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('VcenterServerName')
 
         if restore_options.get('HyperVInstance'):
-
+            if restore_options.get('OsType')=='UNIX':
+                vm_option['vendor'] = 'MICROSOFT'
             response_json['taskInfo']['subTasks'][0]['options'][
             'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
                 'esxServerName'] = restore_options.get('HyperVInstance', None)
@@ -589,8 +590,15 @@ class FSBackupset(Backupset):
                 'clientName'] = restore_options.get('CloneClientName', None)
             vm_option['oneTouchResponse']['clients'][0]['newclient'][
                 'hostName'] = restore_options.get('CloneClientName', None)
-
-
+        if restore_options.get('OsType')=='UNIX':
+            vm_option['oneTouchResponse']['clients'][0]['newclient'][
+            'hostName'] = ''
+            vm_option['oneTouchResponse']['clients'][0]['backupSet'][
+            'backupsetName'] = self._properties['backupSetEntity']['backupsetName']
+            if (response_json['taskInfo']['subTasks'][0]['options']['adminOpts'][
+                'vmProvisioningOption']['virtualMachineOption'][0]['oneTouchResponse']
+                ['hwconfig']['mem_size']) < 4096:
+                vm_option['oneTouchResponse']['hwconfig']['mem_size'] = 4096
         if restore_options.get('UseDhcp'):
             vm_option['oneTouchResponse']['clients'][0]['netconfig']['ipinfo']['interfaces'][0][
             'protocols'][0]['useDhcp'] = True
