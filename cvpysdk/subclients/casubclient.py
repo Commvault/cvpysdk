@@ -44,6 +44,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.salesforce_subclient import SalesforceSubclient
         from .cloudapps.google_subclient import GoogleSubclient
         from .cloudapps.cloud_storage_subclient import CloudStorageSubclient
+        from .cloudapps.cloud_database_subclient import CloudDatabaseSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -56,6 +57,7 @@ class CloudAppsSubclient(Subclient):
             15: CloudStorageSubclient,  # Openstack Subclient
             20: CloudStorageSubclient,  # Google Cloud Instance
             21: CloudStorageSubclient,  # azure data lake gen2
+            26: CloudDatabaseSubclient, # Amazon Redshift subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

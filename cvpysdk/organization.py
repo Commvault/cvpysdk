@@ -751,6 +751,25 @@ class Organization:
         return self._is_auth_code_enabled
 
     @property
+    def shared_laptop(self):
+        """Returns boolean whether Shared Laptop Usage is enabled for this Organization or not."""
+        return not self._organization_info['organizationProperties'].get('preferenceMachineCentricClient', True)
+
+    @shared_laptop.setter
+    def shared_laptop(self, value):
+        """Sets Shared Laptop Usage for this Organization
+
+        Args:
+
+        value (bool): True/False
+            False: Enable Shared Laptop usage
+            True: Disable Shared Laptop usage
+
+        """
+        self._update_properties_json({'preferenceMachineCentricClient': not value})
+        self._update_properties()
+
+    @property
     def machine_count(self):
         """Returns the count of machines added to this Organization."""
         return self._machine_count

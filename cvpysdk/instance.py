@@ -941,8 +941,8 @@ class Instances(object):
                             'storage_policy':'cs_sp',
                             'number_of_streams': 2,
                             'access_node': 'CS',
-                            'accesskey':'AKIAJOMLRIFGP3FQUIKA',
-                            'secretkey':'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',
+                            'accesskey':'xxxxxxxx',
+                            'secretkey':'yyyyyyyy',
                             'cloudapps_type': 's3'
 
             }
@@ -969,6 +969,17 @@ class Instances(object):
                             'accesskey': 'xxxxxx',
                             'number_of_streams': 1,
                             'cloudapps_type': 'azureDL'
+                        }
+        Cloud : Amazon Redshift
+        cloud_options = {
+
+                            'instance_name': 'Redshift',
+                            'storage_plan': 'cs_sp',
+                            'storage_policy': 'cs_sp',
+                            'access_node': 'CS',
+                            'access_key': 'xxxxx',
+                            'secret_key': 'xxxxx',
+                            'cloudapps_type': 'amazon_redshift'
                         }
         Returns:
             dict     --   JSON request to pass to the API
@@ -1019,6 +1030,12 @@ class Instances(object):
                 "cloudAppsInstance": self._instance_properties_json
             }
         }
+
+        if cloud_options.get("storage_plan"):
+            request_json["instanceProperties"]["planEntity"] = {
+                "planName": cloud_options.get("storage_plan")
+            }
+
         add_instance = self._commcell_object._services['ADD_INSTANCE']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', add_instance, request_json
@@ -1068,24 +1085,43 @@ class Instances(object):
             value = {
                 "number_of_streams":1,
                 "access_node":"test",
-                "storage_policy":"policy1"
+                "storage_policy":"policy1",
+                "access_key": "xxxxxx",
+                "secret_key": "xxxxxx"
             }
 
         """
-
-        self._general_properties = {
-            "numberOfBackupStreams": value.get("number_of_streams"),
-            "proxyServers": [
-                {
-                    "clientName": value.get("access_node")
-                }
-            ],
-            "storageDevice": {
-                "dataBackupStoragePolicy": {
-                    "storagePolicyName": value.get("storage_policy")
+        if value.get("cloudapps_type") == "amazon_redshift":
+            self._general_properties = {
+                "accessNodes": {
+                    "memberServers": [
+                        {
+                            "client": {
+                                "clientName": value.get("access_node")
+                            }
+                        }
+                    ]
+                },
+                "amazonInstanceInfo": {
+                    "secretKey": value.get("secret_key"),
+                    "accessKey": value.get("access_key")
                 }
             }
-        }
+
+        else:
+            self._general_properties = {
+                "numberOfBackupStreams": value.get("number_of_streams"),
+                "proxyServers": [
+                    {
+                        "clientName": value.get("access_node")
+                    }
+                ],
+                "storageDevice": {
+                    "dataBackupStoragePolicy": {
+                        "storagePolicyName": value.get("storage_policy")
+                    }
+                }
+            }
 
     @property
     def _instance_properties_json(self):
@@ -1102,8 +1138,8 @@ class Instances(object):
 
         Example:
             value = {
-                "accesskey" : "AKIAJOMLRIFGP3FQUIKA"
-                "secretkey" : " WB3Fo31h28SXJEnHMqoSo/Mq3LJMx1/AxG8YZsLG"
+                "accesskey" : "xxxxxxxxx"
+                "secretkey" : "yyyyyyyy"
             }
 
         """
@@ -1183,6 +1219,18 @@ class Instances(object):
                 },
                 "generalCloudProperties": self._general_properties_json
             }
+        elif value.get("cloudapps_type") == 'amazon_redshift':
+            self._instance_properties = {
+                "instanceType": 26,
+                "rdsInstance": {
+                    "secretKey": value.get("secret_key"),
+                    "accessKey": value.get("access_key"),
+                    "regionEndPoints": "default"
+                },
+                "generalCloudProperties": self._general_properties_json
+            }
+
+
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""

@@ -449,6 +449,7 @@ class JobController(object):
                                     status = job_summary['status']
                                     operation = job_summary['localizedOperationName']
                                     percent_complete = job_summary['percentComplete']
+                                    backup_level = job_summary.get('backupLevelName')
 
                                     app_type = ''
                                     job_type = ''
@@ -476,7 +477,8 @@ class JobController(object):
                                         'job_type': job_type,
                                         'percent_complete': percent_complete,
                                         'pending_reason': pending_reason,
-                                        'subclient_id': subclient_id
+                                        'subclient_id': subclient_id,
+                                        'backup_level': backup_level
                                     }
 
                     return jobs_dict
@@ -2216,7 +2218,7 @@ class Job(object):
         """Treats the job full summary as a read-only attribute."""
         self.is_finished
         return self._summary
-    
+
     @property
     def username(self):
         """Treats the username as a read-only attribute."""

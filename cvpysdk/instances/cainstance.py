@@ -65,6 +65,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.google_instance import GoogleInstance
         from .cloudapps.salesforce_instance import SalesforceInstance
         from .cloudapps.cloud_storage_instance import CloudStorageInstance
+        from .cloudapps.amazon_instance import AmazonRedshiftInstance
 
         instance_type = {
             1: GoogleInstance,
@@ -78,6 +79,7 @@ class CloudAppsInstance(Instance):
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance
             21: CloudStorageInstance,  # azure data lake gen2
+            26: AmazonRedshiftInstance, # Amazon Redshift
         }
 
         commcell_object = agent_object._commcell_object
