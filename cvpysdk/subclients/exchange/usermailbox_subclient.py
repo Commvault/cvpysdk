@@ -37,6 +37,8 @@ UsermailboxSubclient:
 
     restore_in_place()                  --  runs in-place restore for the subclient
 
+    enable_auto_discover_association()  --  Enables auto discover association for the subclient
+
 """
 
 
@@ -350,6 +352,8 @@ class UsermailboxSubclient(ExchangeSubclient):
                     archive_policy = None
                     cleanup_policy = None
                     retention_policy = None
+                    plan_name = None
+                    plan_id = None
                     display_name = str(child['userMailBoxInfo']['displayName'])
                     alias_name = str(child['userMailBoxInfo']['aliasName'])
                     smtp_address = str(child['userMailBoxInfo']['smtpAdrress'])
@@ -357,14 +361,17 @@ class UsermailboxSubclient(ExchangeSubclient):
                     exchange_server = str(child['userMailBoxInfo']['exchangeServer'])
                     user_guid = str(child['userMailBoxInfo']['user']['userGUID'])
                     is_auto_discover_user = str(child['userMailBoxInfo']['isAutoDiscoveredUser'])
-
-                    for policy in child['policies']['emailPolicies']:
-                        if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 1:
-                            archive_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 2:
-                            cleanup_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
-                            retention_policy = str(policy['policyEntity']['policyName'])
+                    if 'emailPolicies' in child['policies']:
+                        for policy in child['policies']['emailPolicies']:
+                            if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 1:
+                                archive_policy = str(policy['policyEntity']['policyName'])
+                            elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 2:
+                                cleanup_policy = str(policy['policyEntity']['policyName'])
+                            elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
+                                retention_policy = str(policy['policyEntity']['policyName'])
+                    if 'plan' in child:
+                        plan_name = child.get('plan').get('planName')
+                        plan_id = child.get('plan').get('planId')
 
                     temp_dict = {
                         'display_name': display_name,
@@ -376,7 +383,9 @@ class UsermailboxSubclient(ExchangeSubclient):
                         'is_auto_discover_user': is_auto_discover_user,
                         'archive_policy': archive_policy,
                         'cleanup_policy': cleanup_policy,
-                        'retention_policy': retention_policy
+                        'retention_policy': retention_policy,
+                        'plan_name': plan_name,
+                        'plan_id': plan_id
                     }
 
                     users.append(temp_dict)
@@ -986,6 +995,50 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         _assocaition_json_["emailAssociation"]["emailStatus"] = 2
         self._set_association_request(_assocaition_json_)
+
+    def enable_auto_discover_association(self, association_name, plan_name):
+        """Enable all users assocaition for UserMailboxSubclient.
+
+                    Args:
+                        association_name  (str)  --  Type of auto discover association
+                            Valid Values:
+                                "All Users"
+                                "All O365 Mailboxes"
+                                "All Public Folders"
+
+                        plan_name  (str)  --  Name of the plan to associate with users/groups
+
+
+                """
+        plan = self._commcell_object.plans.get(plan_name)
+
+        association_dict = {"All Users": 8,
+                            "All Office365 Groups": 11,
+                            "All Public Folders": 12
+                            }
+
+        _association_json = {
+            "emailAssociation": {
+                "emailStatus": 0,
+                "advanceOptions": {
+                    "enableAutoDiscovery": True
+                },
+                "subclientEntity": self._subClientEntity,
+                "emailDiscoverinfo": {
+                    "discoverByType": association_dict[association_name],
+                    "genericAssociations": [
+                        {
+                            "associationName": association_name,
+                            "associationType": association_dict[association_name]
+                        }
+                    ]
+                },
+                "plan": {
+                    "planId": int(plan.plan_id)
+                }
+            }
+        }
+        self._set_association_request(_association_json)
 
     def refresh(self):
         """Refresh the User Mailbox Subclient."""

@@ -391,7 +391,7 @@ class Plans(object):
     def add(self,
             plan_name,
             plan_sub_type,
-            storage_pool_name,
+            storage_pool_name=None,
             sla_in_minutes=240,
             override_entities=None):
         """Adds a new Plan to the CommCell.
@@ -406,6 +406,8 @@ class Plans(object):
                 "FSServer"  -   File System Plans
 
                 "Laptop"    -   Laptop Plans
+
+                "ExchangeUser"  -   Exchange Mailbox Plan
 
 
             storage_pool_name   (str)   --  name of the storage pool to be used for the plan
@@ -447,27 +449,27 @@ class Plans(object):
 
         """
         if not (isinstance(plan_name, basestring) and
-                isinstance(plan_sub_type, basestring) and
-                isinstance(storage_pool_name, basestring)):
+                isinstance(plan_sub_type, basestring)):
             raise SDKException('Plan', '101')
         else:
             if self.has_plan(plan_name):
                 raise SDKException(
                     'Plan', '102', 'Plan "{0}" already exists'.format(plan_name)
                 )
-
-        storage_pool_id = int(self._commcell_object.storage_pools.get(
-            storage_pool_name).storage_pool_id)
+        if not plan_sub_type == 'ExchangeUser':
+            storage_pool_id = int(self._commcell_object.storage_pools.get(
+                storage_pool_name).storage_pool_id)
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
 
         request_json['plan']['summary']['slaInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
-        request_json['plan']['storage']['copy'][0]['dedupeFlags']['useGlobalDedupStore'] = 1
-        request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
-            "storagePolicyId": storage_pool_id
-        }
+        if not plan_sub_type == 'ExchangeUser':
+            request_json['plan']['storage']['copy'][0]['dedupeFlags']['useGlobalDedupStore'] = 1
+            request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+                "storagePolicyId": storage_pool_id
+            }
         if plan_sub_type is "Server" and 'database' in request_json['plan']:
             request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
                 'useGlobalDedupStore'] = 1
@@ -691,11 +693,15 @@ class Plan(object):
                 if 'subtype' in self._plan_properties['summary']:
                     self._subtype = self._plan_properties['summary']['subtype']
 
-                if 'copy' in self._plan_properties['storage']:
-                    for copy in self._plan_properties['storage']['copy']:
-                        if 'useGlobalPolicy' in copy:
-                            self._storage_pool = copy['useGlobalPolicy']
-                            break
+                if 'storage' in self._plan_properties:
+                    if 'copy' in self._plan_properties['storage']:
+                        for copy in self._plan_properties['storage']['copy']:
+                            if 'useGlobalPolicy' in copy:
+                                self._storage_pool = copy['useGlobalPolicy']
+                                break
+                    if 'storagePolicy' in self._plan_properties['storage']:
+                        self._child_policies['storagePolicy'] = self._plan_properties['storage'][
+                            'storagePolicy']['storagePolicyName']
 
                 if self._subtype == 33554439:
                     if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
@@ -709,13 +715,11 @@ class Plan(object):
                         self._user_group = self._plan_properties['autoCreatedEntities'][
                             'localUserGroup']['userGroupName']
 
-                if 'storagePolicy' in self._plan_properties['storage']:
-                    self._child_policies['storagePolicy'] = self._plan_properties['storage'][
-                        'storagePolicy']['storagePolicyName']
 
-                if 'task' in self._plan_properties['schedule']:
-                    self._child_policies['schedulePolicy'] = self._plan_properties['schedule'][
-                        'task']['taskName']
+                if 'schedule' in self._plan_properties:
+                    if 'task' in self._plan_properties['schedule']:
+                        self._child_policies['schedulePolicy'] = self._plan_properties['schedule'][
+                            'task']['taskName']
 
                 if 'laptop' in self._plan_properties:
                     if 'backupContent' in self._plan_properties['laptop']['content']:
