@@ -108,6 +108,8 @@ Commcell instance Attributes
     **commserv_version**        --  returns the ContentStore version installed on the `CommServ`,
     class instance is initalized for
 
+    **version**                 --  returns the complete version info of the commserv
+
     **commcell_id**             --  returns the `CommCell` ID
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
@@ -223,12 +225,12 @@ Commcell instance Attributes
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from past.builtins import basestring
 
 import getpass
 import socket
 
 from base64 import b64encode
+from past.builtins import basestring
 
 from requests.exceptions import SSLError
 from requests.exceptions import Timeout
@@ -261,7 +263,7 @@ from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
 from .policy import Policies
 from .schedules import SchedulePattern
-from .schedules import Schedule, Schedules
+from .schedules import Schedules
 from .activitycontrol import ActivityControl
 from .eventviewer import Events
 from .array_management import ArrayManagement
@@ -432,6 +434,7 @@ class Commcell(object):
         self._commserv_timezone_name = None
         self._commserv_guid = None
         self._commserv_version = None
+        self._version_info = None
 
         self._id = None
         self._clients = None
@@ -585,6 +588,7 @@ class Commcell(object):
                     self._commserv_name = response.json()['commcell']['commCellName']
                     self._commserv_timezone_name = response.json()['csTimeZone']['TimeZoneName']
                     self._commserv_version = response.json()['currentSPVersion']
+                    self._version_info = response.json().get('csVersionInfo')
                     self._id = response.json()['commcell']['commCellId']
 
                     self._commserv_timezone = re.search(
@@ -743,8 +747,21 @@ class Commcell(object):
 
     @property
     def commserv_version(self):
-        """Returns the version installed on the CommServ."""
+        """Returns the version installed on the CommServ.
+
+            Example: 19
+
+        """
         return self._commserv_version
+
+    @property
+    def version(self):
+        """Returns the complete version info of the commserv
+
+            Example: 11 SP19.1
+
+        """
+        return self._version_info
 
     @property
     def webconsole_hostname(self):
@@ -1400,7 +1417,7 @@ class Commcell(object):
                     raise SDKException('Commcell', '105', o_str)
 
                 elif "taskId" in response.json():
-                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self).get(task_id=response.json()['taskId'])
 
                 else:
                     raise SDKException('Commcell', '105')
@@ -2024,16 +2041,14 @@ class Commcell(object):
             registered_for_routing = 0
         xml_to_execute = """
         <EVGui_CN2CellRegReq>
-            <commcell isRegisteredForRouting="{0}" adminPwd="{1}" adminUsr="{2}" interfaceName="{3}" ccClientName="{4}">
-                <commCell commCellName="{5}" />
+            <commcell isRegisteredForRouting="{0}" adminPwd="{1}" adminUsr="{2}" interfaceName="{3}" ccClientName="{3}">
+                <commCell commCellName="{3}" />
             </commcell>
         </EVGui_CN2CellRegReq>
         """.format(
             registered_for_routing,
             admin_password,
             admin_username,
-            commcell_name,
-            commcell_name,
             commcell_name
         )
 

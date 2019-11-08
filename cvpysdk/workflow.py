@@ -447,7 +447,7 @@ class WorkFlows(object):
             raise SDKException('Workflow', '101')
 
         if os.path.isfile(workflow_xml):
-            with open(workflow_xml, 'r') as file_object:
+            with open(workflow_xml, 'r', encoding='utf-8') as file_object:
                 workflow_xml = file_object.read()
         else:
             try:
@@ -498,7 +498,7 @@ class WorkFlows(object):
             raise SDKException('Workflow', '101')
 
         if os.path.isfile(activity_xml):
-            with open(activity_xml, 'r') as file_object:
+            with open(activity_xml, 'r', encoding='utf-8') as file_object:
                 activity_xml = file_object.read()
         else:
             try:
@@ -1112,7 +1112,7 @@ class WorkFlow(object):
                     }
                 }
         elif os.path.isfile(workflow_xml):
-            with open(workflow_xml, 'r') as file_object:
+            with open(workflow_xml, 'r', encoding='utf-8') as file_object:
                 workflow_xml = file_object.read()
         else:
             try:

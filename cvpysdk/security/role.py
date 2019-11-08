@@ -180,7 +180,7 @@ class Roles(object):
                     if role already exists on the commcell
 
          """
-        if(permission_list == "" and categoryname_list == ""):
+        if permission_list == "" and categoryname_list == "":
             raise SDKException('Role', '102', "empty role can not be created!!  "
                                               "either permission_list or categoryname_list "
                                               "should have some value! ")
@@ -190,7 +190,10 @@ class Roles(object):
             raise SDKException('Role', '102',
                                "Role {0} already exists on this commcell.".format(rolename))
 
-        arr = [{"permissionName": permission} for permission in permission_list]
+        if permission_list:
+            arr = [{"permissionName": permission} for permission in permission_list]
+        else:
+            arr = []
         if categoryname_list:
             for catname in categoryname_list:
                 cat_blob = {"categoryName":catname}
@@ -737,6 +740,11 @@ class Role(object):
             }
         }
         self._update_role_props(props_dict)
+
+    @property
+    def permissions(self):
+        """Returns the permissions that are associated with role"""
+        return self._role_permissions
 
     def refresh(self):
         """Refresh the properties of the Roles."""
