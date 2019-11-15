@@ -754,6 +754,31 @@ class VirtualServerSubclient(Subclient):
         if value.get('replication_guid'):
             self._virtualserver_option_restore_json['replicationGuid'] = value['replication_guid']
 
+    def _json_restore_virtualServerRstOption_filelevelrestoreoption(self, value):
+        """
+            setter for  the File level restore option for agent less restore option in restore json
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._json_restore_virtualServerRstOption_filelevelrestoreoption = {
+            "serverName": value.get("server_name", ''),
+            "vmGuid": value.get("vm_guid", ''),
+            "vmName": value.get("vm_name", '')
+        }
+
+    def _json_restore_guest_password(self, value):
+        """
+            setter for vm credentials for agentless restore option in restore json
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._json_restore_guest_password = {
+            "userName": value.get("user_name", ''),
+            "password": value.get("password", '')
+        }
+
     def _json_nics_advancedRestoreOptions(self, vm_to_restore, value):
         """
             Setter for nics list for advanced restore option json
@@ -943,7 +968,7 @@ class VirtualServerSubclient(Subclient):
         vm_names = {}
 
         for content in self.content:
-            if content['type'].lower() in ('vmname', 'vm', 'virtual machine'):
+            if content['type'].lower() in ('vm', 'virtual machine'):
                 vm_ids[content['id']] = content['display_name']
                 vm_names[content['display_name']] = content['id']
 
@@ -1485,7 +1510,8 @@ class VirtualServerSubclient(Subclient):
                            to_date=0,
                            show_deleted_files=False,
                            fbr_ma=None,
-                           browse_ma=""):
+                           browse_ma="",
+                           agentless=""):
         """perform Guest file restore of the provided path
 
         Args:
@@ -1520,19 +1546,21 @@ class VirtualServerSubclient(Subclient):
 
             v2_indexing           (bool)         -- Restore is from child level or not
 
-         Raises:
-                SDKException:
-                    if from date value is incorrect
+            agentless              (dict)       --  Details required for agentless restores
 
-                    if to date value is incorrect
+        Raises:
+            SDKException:
+                if from date value is incorrect
 
-                    if to date is less than from date
+                if to date value is incorrect
 
-                    if failed to browse content
+                if to date is less than from date
 
-                    if response is empty
+                if failed to browse content
 
-                    if response is not success
+                if response is empty
+
+                if response is not success
         """
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
@@ -1590,6 +1618,15 @@ class VirtualServerSubclient(Subclient):
         _file_restore_option["copy_precedence_applicable"] = True
         _file_restore_option["copy_precedence"] = copy_precedence
         _file_restore_option["media_agent"] = browse_ma
+
+        # set agentless options
+        if agentless:
+            _file_restore_option["server_name"] = agentless['vserver']
+            _file_restore_option["vm_guid"] = agentless['vm_guid']
+            _file_restore_option["vm_name"] = agentless['vm_name']
+            _file_restore_option["user_name"] = agentless['vm_user']
+            _file_restore_option["password"] = agentless['vm_pass']
+            _file_restore_option["agentless"] = True
 
         # prepare and execute the Json
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
@@ -2119,6 +2156,16 @@ class VirtualServerSubclient(Subclient):
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["virtualServerRstOption"] = self._virtualserver_option_restore_json
+
+        if _file_restore_option.get('agentless'):
+            self._json_restore_virtualServerRstOption_filelevelrestoreoption(_file_restore_option)
+            self._json_restore_guest_password(_file_restore_option)
+            request_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]["virtualServerRstOption"][
+                "fileLevelVMRestoreOption"]= self._json_restore_virtualServerRstOption_filelevelrestoreoption
+            request_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]["virtualServerRstOption"]["fileLevelVMRestoreOption"][
+                "guestUserPassword"] = self._json_restore_guest_password
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(_file_restore_option)

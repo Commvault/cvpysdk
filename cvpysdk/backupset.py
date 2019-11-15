@@ -49,7 +49,11 @@ Backupsets:
 
     has_backupset(backupset_name)   -- checks if a backupset exists with the given name or not
 
+    _process_add_response()         -- to process the add backupset request using API call
+
     add(backupset_name)             -- adds a new backupset to the agent of the specified client
+
+    add_salesforce_backupset()      -- adds a new salesforce backupset
 
     get(backupset_name)             -- returns the Backupset class object
     of the input backup set name
@@ -129,6 +133,7 @@ import threading
 import time
 import copy
 
+from base64 import b64encode
 from past.builtins import basestring
 
 from .subclient import Subclients
@@ -371,6 +376,55 @@ class Backupsets(object):
 
         return self._backupsets and backupset_name.lower() in self._backupsets
 
+    def _process_add_response(self, backupset_name, request_json):
+        """Runs the Backupset Add API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                backupset_name   (str)  --   backupset name
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_BACKUPSET'], request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response'][0]['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response'][0]['errorString']
+                        o_str = 'Failed to create backupset\nError: "{0}"'.format(error_string)
+                        raise SDKException('Backupset', '102', o_str)
+                    else:
+                        # initialize the backupsets again
+                        # so the backupset object has all the backupsets
+                        self.refresh()
+                        return self.get(backupset_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create backuspet\nError: "{0}"'.format(error_string)
+                    raise SDKException('Backupset', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add(self, backupset_name, on_demand_backupset=False, **kwargs):
         """Adds a new backup set to the agent.
 
@@ -503,6 +557,113 @@ request_json['backupSetInfo'].update({
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_salesforce_backupset(
+            self,
+            salesforce_options,
+            db_options=None, **kwargs):
+        """Adds a new Salesforce Backupset to the Commcell.
+
+            Args:
+
+                salesforce_options         (dict)       --  salesforce options
+                                                            {
+                                                                "salesforce_user_name": 'salesforce login user',
+                                                                "salesforce_user_password": 'salesforce user password',
+                                                                "salesforce_user_token": 'salesforce user token'
+                                                            }
+
+                db_options                 (dict)       --  database options to configure sync db
+                                                            {
+                                                                "db_enabled": 'True or False',
+                                                                "db_type": 'SQLSERVER or POSTGRESQL',
+                                                                "db_host_name": 'database hostname',
+                                                                "db_instance": 'database instance name',
+                                                                "db_name": 'database name',
+                                                                "db_port": 'port of the database',
+                                                                "db_user_name": 'database user name',
+                                                                "db_user_password": 'database user password'
+                                                            }
+
+                **kwargs                   (dict)       --     dict of keyword arguments as follows
+
+                                                            download_cache_path     (str)   -- download cache path
+                                                            mutual_auth_path        (str)   -- mutual auth cert path
+                                                            storage_policy          (str)   -- storage policy
+                                                            streams                 (int)   -- number of streams
+
+            Returns:
+                object  -   instance of the Backupset class for this new backupset
+
+            Raises:
+                SDKException:
+                    if backupset with given name already exists
+
+                    if failed to add the backupset
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        if db_options is None:
+            db_options = {'db_enabled': False}
+        if self.has_backupset(salesforce_options.get('salesforce_user_name')):
+            raise SDKException('Backupset', '102',
+                               'Backupset "{0}" already exists.'.format(salesforce_options.get('salesforce_user_name')))
+
+        salesforce_password = b64encode(salesforce_options.get('salesforce_user_password').encode()).decode()
+        salesforce_token = b64encode(salesforce_options.get('salesforce_user_token', '').encode()).decode()
+        db_user_password = ""
+        if db_options.get('db_enabled', False):
+            db_user_password = b64encode(db_options.get('db_user_password').encode()).decode()
+
+        request_json = {
+            "backupSetInfo": {
+                "backupSetEntity": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": salesforce_options.get('salesforce_user_name'),
+                    "appName": self._agent_object.agent_name
+                },
+                "cloudAppsBackupset": {
+                    "instanceType": 3,
+                    "salesforceBackupSet": {
+                        "enableREST": True,
+                        "downloadCachePath": kwargs.get('download_cache_path', '/tmp'),
+                        "mutualAuthPath": kwargs.get('mutual_auth_path', ''),
+                        "token": salesforce_token,
+                        "userPassword": {
+                            "userName": salesforce_options.get('salesforce_user_name'),
+                            "password": salesforce_password,
+                        },
+                        "syncDatabase": {
+                            "dbEnabled": db_options.get('db_enabled', False),
+                            "dbPort": db_options.get('db_port', '1433'),
+                            "dbInstance": db_options.get('db_instance', ''),
+                            "dbName": db_options.get('db_name', self._instance_object.instance_name),
+                            "dbType": db_options.get('db_type', "SQLSERVER"),
+                            "dbHost": db_options.get('db_host_name', ''),
+                            "dbUserPassword": {
+                                "userName": db_options.get('db_user_name', ''),
+                                "password": db_user_password,
+
+                            },
+                        },
+                    },
+                    "generalCloudProperties": {
+                        "numberOfBackupStreams": kwargs.get('streams', 2),
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": kwargs.get('storage_policy','')
+                            },
+                        },
+                    },
+                },
+            },
+        }
+
+        self._process_add_response(salesforce_options.get('salesforce_user_name'), request_json)
 
     def get(self, backupset_name):
         """Returns a backupset object of the specified backupset name.
@@ -651,7 +812,26 @@ class Backupset(object):
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-        self._restore_methods = ['_process_restore_response', '_filter_paths', '_restore_json']
+        # self._restore_methods = ['_process_restore_response', '_filter_paths', '_restore_json']
+        self._restore_methods = [
+            '_process_restore_response',
+            '_filter_paths',
+            '_restore_json',
+            '_impersonation_json',
+            '_restore_browse_option_json',
+            '_restore_common_options_json',
+            '_restore_destination_json',
+            '_restore_fileoption_json',
+            '_json_restore_subtask'
+        ]
+
+        self._restore_options_json = [
+            '_impersonation_json_',
+            '_browse_restore_json',
+            '_destination_restore_json',
+            '_commonoption_restore_json',
+            '_fileoption_restore_json',
+        ]
 
         self._backupset_name = backupset_name.split('\\')[-1].lower()
         self._description = None
@@ -680,8 +860,8 @@ class Backupset(object):
         self._default_browse_options = {
             'operation': 'browse',
             'show_deleted': False,
-            'from_time': 0,         # value should either be the Epoch time or the Timestamp
-            'to_time': 0,           # value should either be the Epoch time or the Timestamp
+            'from_time': 0,  # value should either be the Epoch time or the Timestamp
+            'to_time': 0,  # value should either be the Epoch time or the Timestamp
             'path': '\\',
             'copy_precedence': 0,
             'media_agent': '',
@@ -705,6 +885,8 @@ class Backupset(object):
     def __getattr__(self, attribute):
         """Returns the persistent attributes"""
         if attribute in self._restore_methods:
+            return getattr(self._instance_object, attribute)
+        elif attribute in self._restore_options_json:
             return getattr(self._instance_object, attribute)
 
         return super(Backupset, self).__getattribute__(attribute)

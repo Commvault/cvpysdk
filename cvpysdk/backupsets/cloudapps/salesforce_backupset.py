@@ -35,6 +35,8 @@ SalesforceBackupset:
 
     download_cache_path()            --    Fetches download cache path from backupset
 
+    mutual_auth_path()               --    Fetches mutual auth path from backupset
+
     salesforce_user_name()           --    Fetches salesforce user name from backupset
 
     is_sync_db_enabled()             --    Determines sync database enabled or not on backupset
@@ -78,6 +80,7 @@ class SalesforceBackupset(CloudAppsBackupset):
 
         """
         self._download_cache_path = None
+        self._mutual_auth_path = None
         self._user_name = None
         self._api_token = None
         self._sync_db_enabled = None
@@ -115,10 +118,11 @@ class SalesforceBackupset(CloudAppsBackupset):
                 sfbackupset = cloud_apps_backupset['salesforceBackupSet']
                 if 'downloadCachePath' in sfbackupset:
                     self._download_cache_path = sfbackupset['downloadCachePath']
+                self._mutual_auth_path = sfbackupset.get('mutualAuthPath', '')
                 if 'userName' in sfbackupset['userPassword']:
                     self._user_name = sfbackupset['userPassword']['userName']
                 if 'syncDatabase' in sfbackupset:
-                    self._sync_db_enabled = sfbackupset['syncDatabase']['dbEnabled']
+                    self._sync_db_enabled = sfbackupset['syncDatabase'].get('dbEnabled', False)
                 if self._sync_db_enabled:
                     if 'dbType' in sfbackupset['syncDatabase']:
                         self._sync_db_type = sfbackupset['syncDatabase']['dbType']
@@ -133,7 +137,7 @@ class SalesforceBackupset(CloudAppsBackupset):
                     if 'userName' in sfbackupset['syncDatabase']['dbUserPassword']:
                         self._sync_db_user_name = sfbackupset[
                             'syncDatabase']['dbUserPassword']['userName']
-                    if 'dbUserPassword' in sfbackupset['syncDatabase']['dbUserPassword']:
+                    if 'password' in sfbackupset['syncDatabase']['dbUserPassword']:
                         self._sync_db_user_password = sfbackupset[
                             'syncDatabase']['dbUserPassword']['password']
 
@@ -158,6 +162,11 @@ class SalesforceBackupset(CloudAppsBackupset):
     def download_cache_path(self):
         """getter for download cache path"""
         return self._download_cache_path
+
+    @property
+    def mutual_auth_path(self):
+        """getter for download cache path"""
+        return self._mutual_auth_path
 
     @property
     def salesforce_user_name(self):
@@ -198,3 +207,16 @@ class SalesforceBackupset(CloudAppsBackupset):
     def sync_db_user_name(self):
         """getter for the sync database user name"""
         return self._sync_db_user_name
+
+    @mutual_auth_path.setter
+    def mutual_auth_path(self, value):
+        """Sets mutual auth path for the backupset.
+        Args:
+            value       (str)      --   mutual auth certificate path on access node
+        """
+        if self.mutual_auth_path != value:
+            if self.is_sync_db_enabled:
+                del self._properties['cloudAppsBackupset']['salesforceBackupSet']['syncDatabase']['dbUserPassword'][
+                    'password']
+            self._properties['cloudAppsBackupset']['salesforceBackupSet']['mutualAuthPath'] = value
+            self.update_properties(self._properties)

@@ -67,12 +67,16 @@ Clients
 
     has_hidden_client(client_name)        --  checks if a hidden client exists with the given name
 
+    _process_add_response()               -- to process the add client request using API call
+
     add_vmware_client()                   --  adds a new VMWare Virtualization Client to the
     Commcell
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
     add_case_client()                     --  adds a new Case Manger Client to the Commcell
+
+    add_salesforce_client()               --  adds a new salesforce client
 
     get(client_name)                      --  returns the Client class object of the input client
     name
@@ -789,6 +793,56 @@ class Clients(object):
         return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
                 self._get_hidden_client_from_hostname(client_name) is not None)
 
+    def _process_add_response(self, request_json):
+        """Runs the Client Add API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('POST', self._ADD_CLIENT, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        client_name = response.json(
+                        )['response']['entity']['clientName']
+                        self.refresh()
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_vmware_client(
             self,
             client_name,
@@ -1162,6 +1216,140 @@ class Clients(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_salesforce_client(
+            self, client_name, access_node,
+            salesforce_options,
+            db_options=None, **kwargs):
+        """Adds a new Salesforce Client to the Commcell.
+
+            Args:
+                client_name          (str)    --    salesforce pseudo client name
+                access_node          (str)    --    access node name
+
+                salesforce_options   (dict)   --    salesforce options
+                                                    {
+                                                        "login_url": 'salesforce login url',
+                                                        "consume_id": 'salesforce consumer key',
+                                                        "consumer_secret": 'salesforce consumer secret',
+                                                        "salesforce_user_name": 'salesforce login user',
+                                                        "salesforce_user_password": 'salesforce user password',
+                                                        "salesforce_user_token": 'salesforce user token'
+                                                    }
+
+                db_options           (dict)   --    database options to configure sync db
+                                                    {
+                                                        "db_enabled": 'True or False',
+                                                        "db_type": 'SQLSERVER or POSTGRESQL',
+                                                        "db_host_name": 'database hostname',
+                                                        "db_instance": 'database instance name',
+                                                        "db_name": 'database name',
+                                                        "db_port": 'port of the database',
+                                                        "db_user_name": 'database user name',
+                                                        "db_user_password": 'database user password'
+                                                    }
+
+                **kwargs             (dict)   --    dict of keyword arguments as follows
+
+                                                    instance_name           (str)   -- name of the salesforce instance
+                                                    download_cache_path     (str)   -- download cache path
+                                                    mutual_auth_path        (str)   -- mutual auth certificate path
+                                                    storage_policy          (str)   -- storage policy
+                                                    streams                 (int)   -- number of streams
+
+
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        if db_options is None:
+            db_options = {'db_enabled': False}
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        salesforce_password = b64encode(salesforce_options.get('salesforce_user_password').encode()).decode()
+        salesforce_consumer_secret = b64encode(
+            salesforce_options.get('consumer_secret', '3951207263309722430').encode()).decode()
+        salesforce_token = b64encode(salesforce_options.get('salesforce_user_token', '').encode()).decode()
+        db_user_password = ""
+        if db_options.get('db_enabled', False):
+            db_user_password = b64encode(db_options.get('db_user_password', '').encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 15,
+                "cloudClonnectorProperties": {
+                    "instanceType": 3,
+                    "instance": {
+                        "instance": {
+                            "clientName": client_name,
+                            "instanceName": kwargs.get('instance_name', 'ORG1'),
+                        },
+                        "cloudAppsInstance": {
+                            "instanceType": 3,
+                            "salesforceInstance": {
+                                "enableREST": True,
+                                "endpoint": salesforce_options.get('login_url', "https://login.salesforce.com"),
+                                "consumerId": salesforce_options.get('consumer_id',
+                                                                     '3MVG9Nc1qcZ7BbZ0Ep18pfQsltTkZtbcMG9GMQzsVHGS8268yaOqmZ1lEEakAs8Xley85RBH1xKR1.eoUu1Z4'),
+                                "consumerSecret": salesforce_consumer_secret,
+                                "defaultBackupsetProp": {
+                                    "downloadCachePath": kwargs.get('download_cache_path', '/tmp'),
+                                    "mutualAuthPath": kwargs.get('mutual_auth_path', ''),
+                                    "token": salesforce_token,
+                                    "userPassword": {
+                                        "userName": salesforce_options.get('salesforce_user_name'),
+                                        "password": salesforce_password,
+                                    },
+                                    "syncDatabase": {
+                                        "dbEnabled": db_options.get('db_enabled', False),
+                                        "dbPort": db_options.get('db_port', '1433'),
+                                        "dbInstance": db_options.get('db_instance', ''),
+                                        "dbName": db_options.get('db_name', kwargs.get('instance_name','ORG1')),
+                                        "dbType": db_options.get('db_type', "SQLSERVER"),
+                                        "dbHost": db_options.get('db_host_name', ''),
+                                        "dbUserPassword": {
+                                            "userName": db_options.get('db_user_name',''),
+                                            "password": db_user_password,
+
+                                        },
+                                    },
+                                },
+                            },
+                            "generalCloudProperties": {
+                                "numberOfBackupStreams": kwargs.get('streams', 2),
+                                "proxyServers": [
+                                    {
+                                        "clientName": access_node
+                                    }
+                                ],
+                                "storageDevice": {
+                                    "dataBackupStoragePolicy": {
+                                        "storagePolicyName": kwargs.get('storage_policy','')
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+
+            "entity": {
+                "clientName": client_name
+            }
+        }
+        self._process_add_response(request_json)
 
     def get(self, name):
         """Returns a client object if client name or host name or ID matches the client attribute
@@ -2189,12 +2377,6 @@ class Client(object):
             Args:
                 enable_time (str)  --  Time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
-
-                **kwargs (dict)  -- dict of keyword arguments as follows
-
-                    timezone    (str)   -- timezone to be used of the operation
-
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Raises:
                 SDKException:

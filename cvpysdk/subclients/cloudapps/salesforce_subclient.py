@@ -30,6 +30,17 @@ SalesforceSubclient:
 
     _get_subclient_properties_json()          --  gets all the subclient  related properties of
                                                       salesforce subclient.
+    enable_files                              --  Enables files option on subclient content
+
+    disable_files                             --  Disables files option on subclient content
+
+    enable_metadata                           --  Enables metadata option on subclient content
+
+    disable_metadata                          --  Disables metadata option on subclient content
+
+    enable_archived_deleted                   --  Enables backup archived and deleted option on subclient content
+
+    disable_archived_deleted                  --  Disables backup archived and deleted  option on subclient content
 
     browse()                                  --  Browses the salesforce content
 
@@ -74,6 +85,26 @@ class SalesforceSubclient(CloudAppsSubclient):
     """Derived class from CloudAppsSubclient Base class, representing a Salesforce subclient,
         and to perform operations on that subclient."""
 
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        """
+        Constructor for the class
+
+        Args:
+            backupset_object  (object)  -- instance of the Backupset class
+
+            subclient_name    (str)     -- name of the subclient
+
+            subclient_id      (str)     -- id of the subclient
+
+        """
+        self.cloud_apps_subclient_prop = {}
+        self._files = None
+        self._metadata = None
+        self._archived_deleted = None
+        self._objects = None
+        super(SalesforceSubclient, self).__init__(
+            backupset_object, subclient_name, subclient_id)
+
     def _get_subclient_properties(self):
         """Gets the properties of this subclient.
 
@@ -86,8 +117,14 @@ class SalesforceSubclient(CloudAppsSubclient):
         """
         super(SalesforceSubclient, self)._get_subclient_properties()
 
-        if 'CloudAppsSubclientProp' in self._subclient_properties:
-            self._cloud_apps_subclient_prop = self._subclient_properties['CloudAppsSubclientProp']
+        if 'cloudAppsSubClientProp' in self._subclient_properties:
+            self._cloud_apps_subclient_prop = self._subclient_properties['cloudAppsSubClientProp']
+            if 'salesforceSubclient' in self._cloud_apps_subclient_prop:
+                sfsubclient = self._cloud_apps_subclient_prop['salesforceSubclient']
+                self._objects = sfsubclient.get('backupSfObjects')
+                self._files = sfsubclient.get('backupFileObjects')
+                self._metadata = sfsubclient.get('backupSFMetadata')
+                self._archived_deleted = sfsubclient.get('backupArchivedandDeletedRecs')
 
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.
@@ -100,7 +137,7 @@ class SalesforceSubclient(CloudAppsSubclient):
             "subClientProperties": {
                 "proxyClient": self._proxyClient,
                 "subClientEntity": self._subClientEntity,
-                "CloudAppsSubclientProp": self._cloud_apps_subclient_prop,
+                "cloudAppsSubClientProp": self._cloud_apps_subclient_prop,
                 "commonProperties": self._commonProperties,
                 "contentOperationType": 1
             }
@@ -108,18 +145,85 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         return subclient_json
 
+    @property
+    def objects(self):
+        """getter for salesforce files option"""
+        return self._objects
+
+    @property
+    def files(self):
+        """getter for salesforce files option"""
+        return self._files
+
+    @property
+    def metadata(self):
+        """getter for salesforce metadata option """
+        return self._metadata
+
+    @property
+    def archived_deleted(self):
+        """getter for salesfoce backup archived and deleted data"""
+        return self._archived_data
+
+    def enable_files(self):
+        """
+        Enables files option on subclient content
+        """
+        if not self.files:
+            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
+                                           ['salesforceSubclient']['backupFileObjects']", True)
+
+    def enable_metadata(self):
+        """
+        Enables metadata option on subclient content
+        """
+        if not self.metadata:
+            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
+                                           ['salesforceSubclient']['backupSFMetadata']", True)
+
+    def enable_archived_deleted(self):
+        """
+        Enables backup archived deleted option on subclient content
+        """
+        if self.archived_deleted:
+            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
+                                           ['salesforceSubclient']['backupArchivedandDeletedRecs']", False)
+
+    def disable_files(self):
+        """
+        Disables files option on subclient content
+        """
+        if self.files:
+            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
+                                           ['salesforceSubclient']['backupFileObjects']", False)
+
+    def disable_metadata(self):
+        """
+        Enables metadata option on subclient content
+        """
+        if self.metadata:
+            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
+                                           ['salesforceSubclient']['backupSFMetadata']", False)
+
+    def disable_archived_deleted(self):
+        """
+        Disables backup archived and deleted option on subclient content
+        """
+        if not self.archived_deleted:
+            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
+                                           ['salesforceSubclient']['backupArchivedandDeletedRecs']", True)
+
     def check_object_in_browse(self, object_to_restore, browse_data):
         """Check if the particular object is present in browse of the subclient
 
             Args:
-                _object_to_restore     (str)   --  folder path whioch has to be restored
+                object_to_restore     (str)   --  folder path whioch has to be restored
 
-                _browse_data           (str)   --  list of objects from browse response
+                browse_data           (str)   --  list of objects from browse response
 
             Raises:
                 SDKException:
                     if object is not present in browse result
-
         """
         source_item = None
 
@@ -163,7 +267,7 @@ class SalesforceSubclient(CloudAppsSubclient):
                 "syncDatabase": {
                     "dbEnabled": value.get("db_enabled", False),
                     "dbType": value.get("db_type", 'SQLSERVER'),
-                    "dbHost": value.get("db_host", ''),
+                    "dbHost": value.get("db_host_name", ''),
                     "dbPort": value.get("db_port", '1433'),
                     "dbName": value.get("db_name", ''),
                     "dbInstance": value.get("db_instance", ''),
@@ -296,10 +400,9 @@ class SalesforceSubclient(CloudAppsSubclient):
             objects_to_restore_list = objects_to_restore
 
         else:
-            objects_to_restore_list = []
-            objects_to_restore_list.append(objects_to_restore)
+            objects_to_restore_list = [objects_to_restore]
 
-        file_restore_option["source_item"] = []
+        file_restore_option["paths"] = []
         browse_files, _ = self.browse(
             path='/Objects',
             from_time=sf_options.get("from_time", 0),
@@ -308,7 +411,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         for each_object in objects_to_restore_list:
             if each_object.find('/Files') < 0:
-                file_restore_option["source_item"].append(
+                file_restore_option["paths"].append(
                     self.check_object_in_browse("%s" % each_object, browse_files)
                 )
 
@@ -356,7 +459,7 @@ class SalesforceSubclient(CloudAppsSubclient):
                                                     for restore
                     default: SQLSERVER
 
-                db_host             (str)   :   database hostname (ex:dbhost.company.com)
+                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
                 db_instance         (str)   :   database instance name
                                                     (provide if applicable for that database type)
@@ -435,7 +538,7 @@ class SalesforceSubclient(CloudAppsSubclient):
         else:
             raise SDKException('Subclient', '105')
 
-        if not ('db_host' in sf_options and
+        if not ('db_host_name' in sf_options and
                 'db_instance' in sf_options and
                 'db_name' in sf_options and
                 'db_user_name' in sf_options and
@@ -455,10 +558,9 @@ class SalesforceSubclient(CloudAppsSubclient):
             objects_to_restore_list = objects_to_restore
 
         else:
-            objects_to_restore_list = []
-            objects_to_restore_list.append(objects_to_restore)
+            objects_to_restore_list = [objects_to_restore]
 
-        file_restore_option["source_item"] = []
+        file_restore_option["paths"] = []
         browse_files, _ = self.browse(
             path='/Objects',
             from_time=sf_options.get("from_time", 0),
@@ -467,7 +569,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         for each_object in objects_to_restore_list:
             if each_object.find('/Files') < 0:
-                file_restore_option["source_item"].append(
+                file_restore_option["paths"].append(
                     self.check_object_in_browse("%s" % each_object, browse_files)
                 )
 
@@ -480,7 +582,7 @@ class SalesforceSubclient(CloudAppsSubclient):
         file_restore_option["to_fs"] = False
         file_restore_option["db_enabled"] = True
         file_restore_option["db_type"] = sf_options.get("db_type", 'SQLSERVER')
-        file_restore_option["db_host"] = sf_options.get("db_host", "")
+        file_restore_option["db_host_name"] = sf_options.get("db_host_name", "")
         file_restore_option["db_instance"] = sf_options.get("db_instance", "")
         file_restore_option["db_name"] = sf_options.get("db_name", "autorestoredb")
         file_restore_option["db_port"] = sf_options.get("db_port", '1433')
@@ -532,7 +634,7 @@ class SalesforceSubclient(CloudAppsSubclient):
                                                     for restore
                     default: SQLSERVER
 
-                db_host             (str)   :   database hostname (ex:dbhost.company.com)
+                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
                 db_instance         (str)   :   database instance name
                                                     (provide if applicable for that database type)
@@ -615,7 +717,7 @@ class SalesforceSubclient(CloudAppsSubclient):
         else:
             raise SDKException('Subclient', '105')
 
-        dest_agent = Agent(dest_client, 'Cloud Apps')
+        dest_agent = Agent(dest_client, 'Cloud Apps', '134')
 
         # check if instance name is correct
         if destination_instance is None:
@@ -641,7 +743,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if not self._backupset_object.is_sync_db_enabled:
             if not (
-                    'db_host' in sf_options and 'db_instance' in sf_options and
+                    'db_host_name' in sf_options and 'db_instance' in sf_options and
                     'db_name' in sf_options and 'db_user_name' in sf_options and
                     'db_user_password' in sf_options):
                 raise SDKException('Salesforce', '101')
@@ -658,17 +760,16 @@ class SalesforceSubclient(CloudAppsSubclient):
             objects_to_restore_list = objects_to_restore
 
         else:
-            objects_to_restore_list = []
-            objects_to_restore_list.append(objects_to_restore)
+            objects_to_restore_list = [objects_to_restore]
 
-        file_restore_option["source_item"] = []
+        file_restore_option["paths"] = []
         browse_files, _ = self.browse(
             path='/Objects', from_time=sf_options.get("from_time", 0),
             to_time=sf_options.get("to_time", 0))
 
         for each_object in objects_to_restore_list:
             if each_object.find('/Files') < 0:
-                file_restore_option["source_item"].append(
+                file_restore_option["paths"].append(
                     self.check_object_in_browse(
                         "%s" %
                         each_object,
@@ -684,14 +785,14 @@ class SalesforceSubclient(CloudAppsSubclient):
         file_restore_option["to_cloud"] = True
         file_restore_option["from_database"] = True
         file_restore_option["db_enabled"] = True
-        if (self._backupset_object.is_sync_db_enabled) or ('db_host' in sf_options):
+        if self._backupset_object.is_sync_db_enabled or ('db_host_name' in sf_options):
             if self._backupset_object.sync_db_type is None:
                 dbtype = 'SQLSERVER'
             else:
-                dbtype = self._backupset_object.is_sync_db_enabled
+                dbtype = self._backupset_object.sync_db_type
             file_restore_option["db_type"] = sf_options.get("db_type", dbtype)
-            file_restore_option["db_host"] = sf_options.get(
-                "db_host", self._backupset_object.sync_db_host
+            file_restore_option["db_host_name"] = sf_options.get(
+                "db_host_name", self._backupset_object.sync_db_host
             )
             file_restore_option["db_instance"] = sf_options.get(
                 "db_instance", self._backupset_object.sync_db_instance
@@ -762,7 +863,7 @@ class SalesforceSubclient(CloudAppsSubclient):
                                                     for restore
                     default: SQLSERVER
 
-                db_host             (str)   :   database hostname (ex:dbhost.company.com)
+                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
                 db_instance         (str)   :   database instance name
                                                     (provide if applicable for that database type)
@@ -870,7 +971,7 @@ class SalesforceSubclient(CloudAppsSubclient):
         else:
             raise SDKException('Subclient', '114')
 
-        if not ('db_host' in sf_options and
+        if not ('db_host_name' in sf_options and
                 'db_instance' in sf_options and
                 'db_name' in sf_options and
                 'db_user_name' in sf_options and
@@ -881,17 +982,16 @@ class SalesforceSubclient(CloudAppsSubclient):
         file_restore_option["dest_instance_name"] = dest_instance.instance_name
         file_restore_option["dest_backupset_name"] = dest_backupset.backupset_name
 
-        self. _restore_salesforce_destination_json(file_restore_option)
+        self._restore_salesforce_destination_json(file_restore_option)
 
         # process the objects to restore
         if isinstance(objects_to_restore, list):
             objects_to_restore_list = objects_to_restore
 
         else:
-            objects_to_restore_list = []
-            objects_to_restore_list.append(objects_to_restore)
+            objects_to_restore_list = [objects_to_restore]
 
-        file_restore_option["source_item"] = []
+        file_restore_option["paths"] = []
         browse_files, _ = self.browse(
             path='/Objects',
             from_time=sf_options.get("from_time", 0),
@@ -900,7 +1000,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         for each_object in objects_to_restore_list:
             if each_object.find('/Files') < 0:
-                file_restore_option["source_item"].append(
+                file_restore_option["paths"].append(
                     self.check_object_in_browse("%s" % each_object, browse_files)
                 )
 
@@ -915,7 +1015,7 @@ class SalesforceSubclient(CloudAppsSubclient):
         file_restore_option["from_database"] = False
         file_restore_option["db_enabled"] = True
         file_restore_option["db_type"] = sf_options.get("db_type", 'SQLSERVER')
-        file_restore_option["db_host"] = sf_options.get("db_host", "")
+        file_restore_option["db_host_name"] = sf_options.get("db_host_name", "")
         file_restore_option["db_instance"] = sf_options.get("db_instance", "")
         file_restore_option["db_name"] = sf_options.get("db_name", 'autorestoredb')
         file_restore_option["db_port"] = sf_options.get("db_port", '1433')
@@ -942,7 +1042,7 @@ class SalesforceSubclient(CloudAppsSubclient):
         self._restore_salesforce_options_json(file_restore_option)
         self._restore_browse_option_json(file_restore_option)
         self._impersonation_json(file_restore_option)
-        self._restore_commonOptions_json(file_restore_option)
+        self._restore_common_options_json(file_restore_option)
 
         request_json = {
             "taskInfo": {

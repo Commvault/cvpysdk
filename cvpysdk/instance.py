@@ -48,6 +48,8 @@ Instances:
     get(instance_name)              --  returns the Instance class object
     of the input backup set name
 
+    _process_add_response()         --  to process the add instance request using API call
+
     add_informix_instance()         --  adds new Informix Instance to given Client
 
     delete()                        --  deletes the instance specified by the instance_name
@@ -58,6 +60,8 @@ Instances:
     add_big_data_apps_instance()    --  To add an instance with the big data apps agent specified
 
     add_cloud_storage_instance()    --  Method to add a new cloud storage instance
+
+    add_salesforce_instance()       --  Method to add a new salesforce instance
 
     _set_general_properties_json()  --  setter for general cloud properties while adding a new
     cloud storage instance
@@ -405,6 +409,55 @@ class Instances(object):
             raise SDKException('Instance', '102', 'No Instance exists with the given ID: {0}'.format(instance_name))
 
         raise SDKException('Instance', '101')
+
+    def _process_add_response(self, request_json):
+        """Runs the Intance Add API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_INSTANCE'], request_json)
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create instance\nError: "{0}"'.format(error_string)
+                        raise SDKException('Instance', '102', o_str)
+                    else:
+                        # initialize the instances again
+                        # so the instance object has all the instances
+                        instance_name = response.json(
+                        )['response']['entity']['instanceName']
+                        self.refresh()
+                        return self.get(instance_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create instance\nError: "{0}"'.format(error_string)
+                    raise SDKException('Instance', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_informix_instance(self, informix_options):
         """Adds new Informix Instance to given Client
@@ -1066,6 +1119,126 @@ class Instances(object):
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException('Response', '101', response_string)
+
+    def add_salesforce_instance(
+            self, instance_name, access_node,
+            salesforce_options,
+            db_options=None, **kwargs):
+        """Adds a new salesforce instance.
+
+            Args:
+                instance_name               (str)   -- instance_name
+                access_node                 (str)   -- access node name
+                salesforce_options          (dict)  -- salesforce options
+                                                        {
+                                                                "login_url": 'salesforce login url',
+                                                                "consume_id": 'salesforce consumer key',
+                                                                "consumer_secret": 'salesforce consumer secret',
+                                                                "salesforce_user_name": 'salesforce login user',
+                                                                "salesforce_user_password": 'salesforce user password',
+                                                                "salesforce_user_token": 'salesforce user token'
+                                                        }
+
+                db_options                  (dict)  -- database options to configure sync db
+                                                        {
+                                                            "db_enabled": 'True or False',
+                                                            "db_type": 'SQLSERVER or POSTGRESQL',
+                                                            "db_host_name": 'database hostname',
+                                                            "db_instance": 'database instance name',
+                                                            "db_name": 'database name',
+                                                            "db_port": 'port of the database',
+                                                            "db_user_name": 'database user name',
+                                                            "db_user_password": 'database user password'
+                                                        }
+
+                **kwargs                    (dict)   -- dict of keyword arguments as follows
+
+                                                         download_cache_path     (str)   -- download cache path
+                                                         mutual_auth_path        (str)   -- mutual auth cert path
+                                                         storage_policy          (str)   -- storage policy
+                                                         streams                 (int)   -- number of streams
+            Returns:
+                object  -   instance of the instance class for this new instance
+
+            Raises:
+                SDKException:
+                    if instance with given name already exists
+
+                    if failed to add the instance
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if db_options is None:
+            db_options = {'db_enabled': False}
+        if self.has_instance(instance_name):
+            raise SDKException('Instance', '102',
+                               'Instance "{0}" already exists.'.format(instance_name))
+
+        salesforce_password = b64encode(salesforce_options.get('salesforce_user_password').encode()).decode()
+        salesforce_consumer_secret = b64encode(
+            salesforce_options.get('consumer_secret', '3951207263309722430').encode()).decode()
+        salesforce_token = b64encode(salesforce_options.get('salesforce_user_token', '').encode()).decode()
+        db_user_password = ""
+        if db_options.get('db_enabled', False):
+            db_user_password = b64encode(db_options.get('db_user_password').encode()).decode()
+
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": self._agent_object.agent_name
+                },
+                "cloudAppsInstance": {
+                    "instanceType": 3,
+                    "salesforceInstance": {
+                        "enableREST": True,
+                        "endpoint": salesforce_options.get('login_url', "https://login.salesforce.com"),
+                        "consumerId": salesforce_options.get('consumer_id',
+                                                             '3MVG9Nc1qcZ7BbZ0Ep18pfQsltTkZtbcMG9GMQzsVHGS8268yaOqmZ1lEEakAs8Xley85RBH1xKR1.eoUu1Z4'),
+                        "consumerSecret": salesforce_consumer_secret,
+                        "defaultBackupsetProp": {
+                            "downloadCachePath": kwargs.get('download_cache_path', '/tmp'),
+                            "mutualAuthPath": kwargs.get('mutual_auth_path', ''),
+                            "token": salesforce_token,
+                            "userPassword": {
+                                "userName": salesforce_options.get('salesforce_user_name'),
+                                "password": salesforce_password,
+                            },
+                            "syncDatabase": {
+                                "dbEnabled": db_options.get('db_enabled', False),
+                                "dbPort": db_options.get('db_port', "1433"),
+                                "dbInstance": db_options.get('db_instance', ''),
+                                "dbName": db_options.get('db_name', instance_name),
+                                "dbType": db_options.get('db_type', 'SQLSERVER'),
+                                "dbHost": db_options.get('db_host_name', ''),
+                                "dbUserPassword": {
+                                    "userName": db_options.get('db_user_name',''),
+                                    "password": db_user_password,
+
+                                },
+                            },
+                        },
+                    },
+                    "generalCloudProperties": {
+                        "numberOfBackupStreams": kwargs.get('streams', 2),
+                        "proxyServers": [
+                            {
+                                "clientName": access_node
+                            }
+                        ],
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": kwargs.get('storage_policy','')
+                            },
+                        },
+                    },
+                },
+            },
+        }
+        self._process_add_response(request_json)
 
     @property
     def _general_properties_json(self):
