@@ -1496,72 +1496,32 @@ class VirtualServerSubclient(Subclient):
 
         return source_item
 
-    def guest_file_restore(self,
-                           vm_name=None,
-                           folder_to_restore=None,
-                           destination_client=None,
-                           destination_path=None,
-                           copy_precedence=0,
-                           preserve_level=1,
-                           unconditional_overwrite=False,
-                           v2_indexing=False,
-                           restore_ACL=True,
-                           from_date=0,
-                           to_date=0,
-                           show_deleted_files=False,
-                           fbr_ma=None,
-                           browse_ma="",
-                           agentless=""):
+    def guest_file_restore(self, *args, **kwargs):
         """perform Guest file restore of the provided path
 
         Args:
-            vm_name             (basestring)   --  VM from which files needs to be
-                                            restored
+            options     (dict)  --  dictionary of guest file restores options
 
-            folder_to_restore    (basestring)  -- folder path to restore
-
-            show_deleted_files  (bool)  --  include deleted files in the
-                                            content or not
-                                            default: False
-
-
-            destination_path    (basestring)   --  path to restore
-
-            copy_precedence     (int)   --  copy precedence to be used
-                                                    for browsing
-
-            from_date           (int)   --  date to get the contents after
-                                            format: dd/MM/YYYY
-                                            gets contents from 01/01/1970 if
-                                            not specified default: 0
-
-            to_date             (int)   --  date to get the contents before
-                                            format: dd/MM/YYYY
-                                            gets contents till current day
-                                            if not specified default: 0
-
-            fbr_ma              (basestring)    --  FRE MA used for browsing Unix VMs
-
-            browse_ma            (basestring)    --  MA for browsing
-
-            v2_indexing           (bool)         -- Restore is from child level or not
-
-            agentless              (dict)       --  Details required for agentless restores
-
-        Raises:
-            SDKException:
-                if from date value is incorrect
-
-                if to date value is incorrect
-
-                if to date is less than from date
-
-                if failed to browse content
-
-                if response is empty
-
-                if response is not success
         """
+        if args and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+        vm_name=options.get('vm_name', None)
+        folder_to_restore=options.get('folder_to_restore',None)
+        destination_client=options.get('destination_client',None)
+        destination_path=options.get('destination_path',None)
+        copy_precedence=options.get('copy_precedence',0)
+        preserve_level=options.get('preserve_level',1)
+        unconditional_overwrite=options.get('unconditional_overwrite',False)
+        v2_indexing=options.get('v2_indexing',False)
+        restore_ACL=options.get('restore_ACL',True)
+        from_date=options.get('from_date',0)
+        to_date=options.get('to_date',0)
+        show_deleted_files=options.get('show_deleted_files',False)
+        fbr_ma=options.get('fbr_ma',None)
+        browse_ma=options.get('browse_ma',"")
+        agentless=options.get('agentless',"")
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}

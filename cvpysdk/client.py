@@ -166,6 +166,8 @@ Client
     push_network_config()        --  performs a push network configuration on the client
 
     add_user_association()       --  adds the user associations on this client
+	
+	add_client_owner()			 --  adds users to owner list of this client
 
     refresh()                    --  refresh the properties of the client
 
@@ -3276,6 +3278,42 @@ class Client(object):
             raise SDKException('Client', '101')
 
         self._security_association._add_security_association(associations_list, user=True)
+
+    def add_client_owner(self, owner_list):
+        """Adds the users to the owners list of this client
+            Args:
+                owner_list   (list)  --  list of owners to be associated with this client
+
+             Raises:
+                SDKException:
+                    if input data is invalid
+        """
+        if not isinstance(owner_list, list):
+            raise SDKException('Client', '101')
+        properties_dict = self.properties
+        owners, current_owners = list(), list()
+        if 'owners' in properties_dict.get('clientProps', {}).get('securityAssociations',{}).get(
+                'ownerAssociations',{}):
+            owners = properties_dict['clientProps']['securityAssociations'][
+                'ownerAssociations']['owners']
+            current_owners = (o['userName'].lower() for o in owners)
+        for owner in owner_list:
+            if owner.lower() not in self.users.all_users:
+                raise Exception("User %s is not part of commcell" % str(owner))
+            if owner.lower() not in current_owners:
+                owners.append({"userId": self.users.all_users[owner.lower()],
+                               "userName": owner.lower()})
+        if 'securityAssociations' in properties_dict['clientProps']:
+            if 'ownerAssociations' in properties_dict['clientProps']['securityAssociations']:
+                properties_dict['clientProps']['securityAssociations']['ownerAssociations'] = {
+                    "ownersOperationType": 1, "owners": owners}
+            else:
+                properties_dict['clientProps']['securityAssociations'] = {'ownerAssociations': {
+                    "ownersOperationType": 1, "owners": owners}}
+        else:
+            properties_dict['clientProps'] = {'securityAssociations': {'ownerAssociations':{
+                "ownersOperationType": 1, "owners": owners}}}
+        self.update_properties(properties_dict)
 
     def refresh(self):
         """Refreshes the properties of the Client."""

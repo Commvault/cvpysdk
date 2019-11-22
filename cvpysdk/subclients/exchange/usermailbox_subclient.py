@@ -37,8 +37,10 @@ UsermailboxSubclient:
 
     restore_in_place()                  --  runs in-place restore for the subclient
 
-    enable_auto_discover_association()  --  Enables auto discover association for the subclient
+    set_pst_association()               --  Create PST assocaition for UserMailboxSubclient
 
+    set_fs_association_for_pst()        --  Helper method to create pst association for
+                                            PST Ingestion by FS association
 """
 
 
@@ -49,6 +51,10 @@ from past.builtins import basestring
 from ...exception import SDKException
 
 from ..exchsubclient import ExchangeSubclient
+
+from ...subclient import Subclients
+
+from ...backupset import Backupsets
 
 
 class UsermailboxSubclient(ExchangeSubclient):
@@ -594,7 +600,12 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         'pstTaskName' : "Task Name for PST",
 
-                        'folders' : ['list of folders'],
+                        'folders' : ['list of folders'] //If pst ingestion by folder location,
+                        'fsContent': Dictionary of client, backupset, subclient
+                        Ex: {'client1':{'backupset1':[subclient1], 'backupset2':None},
+                            'client2': None}
+                        This would add subclient1, all subclients under backupset2 and
+                        all backupsets under client2 to the association
 
                         'pstOwnerManagement' : {
 
@@ -605,7 +616,6 @@ class UsermailboxSubclient(ExchangeSubclient):
                             'usePSTNameToCreateChild': Boolean
                         }
                     }
-					
         """
         if not isinstance(subclient_content, dict):
             raise SDKException('Subclient', '101')
@@ -622,7 +632,6 @@ class UsermailboxSubclient(ExchangeSubclient):
             pst_dict = {
                 'pstTaskName': subclient_content['pstTaskName'],
                 'taskType': 1,
-                'folders':subclient_content['folders'],
                 'pstOwnerManagement': {
                     'adProperty': "",
                     'startingFolderPath': "",
@@ -642,7 +651,12 @@ class UsermailboxSubclient(ExchangeSubclient):
                         subclient_content["pstOwnerManagement"]["ownerSelectionOrder"]
                 }
             }
-
+            if 'folders' in subclient_content:
+                pst_dict['folders'] = subclient_content['folders']
+            elif 'fsContent' in subclient_content:
+                pst_dict['associations'] = self.set_fs_association_for_pst(
+                    subclient_content['fsContent'])
+                pst_dict['taskType'] = 0;
             subclient_entity = {"_type_": 7, "subclientId": int(self._subclient_id)}
             discover_info = {
                 'discoverByType': 9,
@@ -659,6 +673,62 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+
+    def set_fs_association_for_pst(self, association):
+        """Helper method to create pst association for PST Ingestion by FS
+            Args:
+                association(dict) -- Dictionary of client, backupset, subclient
+                                    Ex: {'client1':{'backupset1':[subclient1], 'backupset2':None},
+                                        'client2': None}
+                                    This would add subclient1, all subclients under backupset2 and
+                                    all backupsets under client2 to the association
+        """
+        assoc_list = []
+        client_dict, backupset_dict, sub_dict = dict(), dict(), dict()
+        _type_id = {"client": 3, "subclient": 7, "backupset": 6, "apptype": 4}
+        for client_name, backupsets in association.items():
+            client_name = client_name.lower()
+            client_obj = self._commcell_object.clients.get(client_name)
+
+            client_dict = {"commCellId": int(self._commcell_object._id),
+                           "commcellName": self._commcell_object.commserv_name,
+                           "clientName": client_name,
+                           "clientId": int(client_obj.client_id)
+                           }
+            agent = client_obj.agents.get("file system")
+
+            if backupsets:
+                for backupset_name, subclients in backupsets.items():
+                    backupset_name = backupset_name.lower()
+                    backupset_obj = agent.backupsets.get(backupset_name)
+                    if not backupset_obj:
+                        raise SDKException('Subclient','102',"Backupset {0} not present in file "
+                                                             "system agent".format(backupset_name))
+                    backupset_dict = {"backupsetName": backupset_obj.name,
+                                      "appName": "File System",
+                                      "applicationId": int(agent.agent_id),
+                                      "backupsetId": int(backupset_obj.backupset_id),
+                                      "_type_": _type_id["backupset"]
+                                      }
+                    backupset_dict.update(client_dict)
+                    for subclient_name in subclients:
+                        if subclient_name not in backupset_obj.subclients.all_subclients:
+                            raise SDKException('Subclient','102',
+                                               "Subclient %s not present in backupset %s" %
+                                               (str(subclient_name), str(backupset_name)))
+                        subclient_name = subclient_name.lower()
+                        sub_dict = {"subclientId": int(backupset_obj.subclients.all_subclients[
+                                                           subclient_name]['id']),
+                                    "subclientName": subclient_name}
+                        sub_dict.update(backupset_dict)
+                        sub_dict["_type_"] = _type_id["subclient"]
+                        assoc_list.append(sub_dict)
+                    if not subclients:
+                        assoc_list.append(backupset_dict)
+            else:
+                client_dict["_type_"] = _type_id["client"]
+                assoc_list.append(client_dict)
+        return assoc_list
 
     def set_database_assocaition(self, subclient_content):
         """Create Database assocaition for UserMailboxSubclient.
