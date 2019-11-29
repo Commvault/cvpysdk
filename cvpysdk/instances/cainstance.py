@@ -80,6 +80,8 @@ class CloudAppsInstance(Instance):
             20: CloudStorageInstance,  # Google Cloud Instance
             21: CloudStorageInstance,  # azure data lake gen2
             26: AmazonRedshiftInstance, # Amazon Redshift
+            25: CloudStorageInstance,   #AliBaba
+            24: CloudStorageInstance,   #IBM
         }
 
         commcell_object = agent_object._commcell_object

@@ -145,7 +145,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             self,
             paths,
             overwrite=True,
-            copy_precedence=None):
+            copy_precedence=None,
+            no_of_streams=2):
         """ Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -158,6 +159,9 @@ class CloudStorageSubclient(CloudAppsSubclient):
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
+                no_of_streams           (int)   --  number of streams for restore
+                                                    default : 2
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -168,7 +172,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
         return self._instance_object.restore_in_place(
             paths=paths,
             overwrite=overwrite,
-            copy_precedence=copy_precedence)
+            copy_precedence=copy_precedence,
+            no_of_streams=no_of_streams)
 
     def restore_out_of_place(
             self,
@@ -177,7 +182,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_instance_name,
             destination_path,
             overwrite=True,
-            copy_precedence=None):
+            copy_precedence=None,
+            no_of_streams=2):
         """ Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -201,6 +207,9 @@ class CloudStorageSubclient(CloudAppsSubclient):
                 copy_precedence          (int)   --  copy precedence value of storage policy copy
                     default: None
 
+                no_of_streams           (int)   --  number of streams for restore
+                                                    default : 2
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -214,7 +223,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_instance_name=destination_instance_name,
             destination_path=destination_path,
             overwrite=overwrite,
-            copy_precedence=copy_precedence)
+            copy_precedence=copy_precedence,
+            no_of_streams=no_of_streams)
 
     def restore_to_fs(
             self,
@@ -222,7 +232,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_path,
             destination_client=None,
             overwrite=True,
-            copy_precedence=None):
+            copy_precedence=None,
+            no_of_streams=2):
         """ Restores the files/folders specified in the input paths list to the fs client
 
             Args:
@@ -241,6 +252,9 @@ class CloudStorageSubclient(CloudAppsSubclient):
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
+                no_of_streams           (int)   --  number of streams for restore
+                                                    default : 2
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -256,7 +270,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_path=destination_path,
             destination_client=destination_client,
             overwrite=overwrite,
-            copy_precedence=copy_precedence)
+            copy_precedence=copy_precedence,
+            no_of_streams=no_of_streams)
 
     def restore_using_proxy(self,
                             paths,

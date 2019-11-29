@@ -146,6 +146,19 @@ class CloudStorageInstance(CloudAppsInstance):
                 self._google_access_key = cloud_apps_instance[
                     'googleCloudInstance']['credentials']['userName']
 
+
+            # Ali Cloud
+            if 'alibabaInstance' in cloud_apps_instance:
+                self._host_url = cloud_apps_instance['alibabaInstance']['hostURL']
+                self._access_key = cloud_apps_instance['alibabaInstance']['accessKey']
+
+
+            #IBM Cloud
+            if 'ibmCosInstance' in cloud_apps_instance:
+                self._host_url = cloud_apps_instance['ibmCosInstance']['hostURL']
+                self._access_key = cloud_apps_instance['ibmCosInstance']['credentials']['username']
+
+
             if 'generalCloudProperties' in cloud_apps_instance:
                 self._access_node = cloud_apps_instance[
                     'generalCloudProperties']['proxyServers'][0]['clientName']
@@ -264,6 +277,8 @@ class CloudStorageInstance(CloudAppsInstance):
             "cloudAppsRestoreOptions"] = self._set_cloud_restore_options_json
         cloud_restore_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["commonOptions"] = self._common_options_json
+        cloud_restore_json["taskInfo"]["associations"][0]["backupsetId"] =  int(self._agent_object.backupsets.get(
+            'defaultBackupSet').backupset_id)
 
         return cloud_restore_json
 
@@ -271,7 +286,8 @@ class CloudStorageInstance(CloudAppsInstance):
             self,
             paths,
             overwrite=True,
-            copy_precedence=None):
+            copy_precedence=None,
+            no_of_streams=2):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -282,6 +298,9 @@ class CloudStorageInstance(CloudAppsInstance):
 
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
+
+                no_of_streams           (int)   --  number of streams for restore
+                                                    default : 2
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -310,7 +329,8 @@ class CloudStorageInstance(CloudAppsInstance):
             overwrite=overwrite,
             in_place=True,
             copy_precedence=copy_precedence,
-            restore_To_FileSystem=False)
+            restore_To_FileSystem=False,
+            no_of_streams=no_of_streams)
 
         return self._process_restore_response(request_json)
 
@@ -321,7 +341,8 @@ class CloudStorageInstance(CloudAppsInstance):
             destination_instance_name,
             destination_path,
             overwrite=True,
-            copy_precedence=None):
+            copy_precedence=None,
+            no_of_streams=2):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destination location.
 
@@ -343,6 +364,8 @@ class CloudStorageInstance(CloudAppsInstance):
                 copy_precedence          (int)   --  copy precedence value of storage policy copy
                     default: None
 
+                no_of_streams           (int)   --  number of streams for restore
+                                                    default : 2
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -379,6 +402,7 @@ class CloudStorageInstance(CloudAppsInstance):
             overwrite=overwrite,
             in_place=False,
             copy_precedence=copy_precedence,
+            no_of_streams=no_of_streams,
             restore_To_FileSystem=False)
 
         return self._process_restore_response(request_json)
@@ -389,7 +413,8 @@ class CloudStorageInstance(CloudAppsInstance):
             destination_path,
             destination_client=None,
             overwrite=True,
-            copy_precedence=None):
+            copy_precedence=None,
+            no_of_streams=2):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destination location.
 
@@ -408,6 +433,9 @@ class CloudStorageInstance(CloudAppsInstance):
 
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
+
+                no_of_streams           (int)   --  number of streams for restore
+                                                    default : 2
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -436,6 +464,8 @@ class CloudStorageInstance(CloudAppsInstance):
 
             raise SDKException('Instance', '101')
 
+        destination_appTypeId = int(self._commcell_object.clients.get(destination_client).agents.get('file system').agent_id)
+
         request_json = self._generate_json(
             paths=paths,
             destination_path=destination_path,
@@ -443,7 +473,9 @@ class CloudStorageInstance(CloudAppsInstance):
             overwrite=overwrite,
             in_place=False,
             copy_precedence=copy_precedence,
-            restore_To_FileSystem=True)
+            restore_To_FileSystem=True,
+            no_of_streams=no_of_streams,
+            destination_appTypeId=destination_appTypeId)
 
         return self._process_restore_response(request_json)
 
@@ -469,6 +501,7 @@ class CloudStorageInstance(CloudAppsInstance):
 
             self._set_cloud_destination_options_json = {
                 "isLegalHold": False,
+                "noOfStreams": value.get('no_of_streams', 2),
                 "inPlace": value.get("in_place", ""),
                 "destPath": [value.get("destination_path", "")],
                 "destClient": {
@@ -492,6 +525,7 @@ class CloudStorageInstance(CloudAppsInstance):
 
             regular_instance_restore_json = {
                 "isLegalHold": False,
+                "noOfStreams": value.get('no_of_streams', 2),
                 "inPlace": value.get("in_place"),
                 "destPath": [value.get("destination_path")],
                 "destClient": {
