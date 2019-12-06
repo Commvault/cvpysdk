@@ -1034,6 +1034,16 @@ class Instances(object):
                             'secret_key': 'xxxxx',
                             'cloudapps_type': 'amazon_redshift'
                         }
+        Cloud : Amazon Document DB
+        cloud_options = {
+                            'instance_name': 'DocumentDB',
+                            'storage_plan': 'cs_sp',
+                            'storage_policy': 'cs_sp',
+                            'access_node': 'CS',
+                            'access_key': 'xxxxxx',
+                            'secret_key': 'xxxxxx',
+                            'cloudapps_type': 'amazon_docdb'
+                        }
         Returns:
             dict     --   JSON request to pass to the API
         Raises :
@@ -1264,7 +1274,8 @@ class Instances(object):
             }
 
         """
-        if value.get("cloudapps_type") == "amazon_redshift":
+        if value.get("cloudapps_type") == "amazon_redshift" or \
+                value.get("cloudapps_type") == "amazon_docdb":
             self._general_properties = {
                 "accessNodes": {
                     "memberServers": [
@@ -1395,6 +1406,16 @@ class Instances(object):
         elif value.get("cloudapps_type") == 'amazon_redshift':
             self._instance_properties = {
                 "instanceType": 26,
+                "rdsInstance": {
+                    "secretKey": value.get("secret_key"),
+                    "accessKey": value.get("access_key"),
+                    "regionEndPoints": "default"
+                },
+                "generalCloudProperties": self._general_properties_json
+            }
+        elif value.get("cloudapps_type") == 'amazon_docdb':
+            self._instance_properties = {
+                "instanceType": 27,
                 "rdsInstance": {
                     "secretKey": value.get("secret_key"),
                     "accessKey": value.get("access_key"),

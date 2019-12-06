@@ -34,6 +34,20 @@ OracleInstance:
     _get_instance_properties_json()     --  gets all the instance related properties
                                             of Oracle instance
 
+    _restore_common_options_json()      --  Setter for the Common options in restore JSON
+
+    _restore_destination_json()         --  Setter for the Oracle destination options in restore JSON
+
+
+    _get_live_sync_oracleopt_json()     --  Constructs JSON with oracle agent specific options
+                                            for configuring live sync
+
+    _live_sync_restore_json()           --  Constructs oracle live sync restore JSON
+                                            by combining common and agent specific options
+
+    create_live_sync_schedule()         --  Creates live sync schedule for the given
+                                            destination oracle instance
+
     configure_data_masking_policy()     --  Configures data masking
                                             policy with given parameters
 
@@ -105,6 +119,7 @@ class OracleInstance(DatabaseInstance):
         """
         super(OracleInstance, self).__init__(
             agent_object, instance_name, instance_id)
+        self._LIVE_SYNC = self._commcell_object._services['LIVE_SYNC']
 
     def restore_to_disk(self,
                         destination_client,
@@ -196,6 +211,205 @@ class OracleInstance(DatabaseInstance):
         """
         self._set_instance_properties(
             "_instanceprop['numberOfArchiveLogBackupStreams']", log_stream)
+
+    def _restore_common_options_json(self, value):
+        """
+        Setter for the Common options in restore JSON
+
+            Args:
+                value   (dict)  --  dict of common options
+                                    for restore json
+
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Instance', '101')
+        super()._restore_common_options_json(value)
+        if value.get("baseline_jobid"):
+            self._commonoption_restore_json = (
+                {
+                    "clusterDBBackedup": value.get("clusterDBBackedup", False),
+                    "restoreToDisk": value.get("restoreToDisk", False),
+                    "baselineBackup": 1,
+                    "baselineRefTime": value.get("baseline_ref_time", ""),
+                    "isDBArchiveRestore": value.get("isDBArchiveRestore", False),
+                    "baselineJobId": value.get("baseline_jobid", ""),
+                    "copyToObjectStore": value.get("copyToObjectStore", False),
+                    "onePassRestore": value.get("onePassRestore", False),
+                    "syncRestore": value.get("syncRestore", True)
+                })
+
+    def _restore_destination_json(self, value):
+        """
+        Setter for the Oracle destination options in restore JSON
+
+            Args:
+                    value   (dict)  --  dict of values for destination option
+
+        """
+
+        if not isinstance(value, dict):
+            raise SDKException('Instance', '101')
+
+        self._destination_restore_json = (
+            {
+                "noOfStreams": value.get("number_of_streams", 2),
+                "destClient": {
+                    "clientName": value.get("destination_client", "")
+                              },
+                "destinationInstance": {
+                    "clientName": value.get("destination_client", ""),
+                    "instanceName": value.get("destination_instance", ""),
+                    "appName": "Oracle"
+                                       }
+
+            })
+
+    def _get_live_sync_oracleopt_json(self):
+        """
+               Constructs JSON with oracle agent specific options
+               for configuring live sync
+
+        """
+
+        self._oracle_options = {"renamePathForAllTablespaces":"",
+                                "redirectAllItemsSelected": False,
+                                "validate": False,
+                                "ctrlRestoreFrom": True,
+                                "noCatalog": True,
+                                "cloneEnv":False,
+                                "ctrlFileBackupType": 0,
+                                "restoreControlFile": True,
+                                "duplicate": False,
+                                "tableViewRestore": False,
+                                "osID":2,
+                                "partialRestore": False,
+                                "restoreStream":2,
+                                "restoreSPFile": False,
+                                "recover": True,
+                                "oraExtendedRstOptions": 0,
+                                "recoverFrom": 3,
+                                "archiveLog": False,
+                                "restoreData": True,
+                                "restoreFrom": 3,
+                                "crossmachineRestoreOptions": {
+                                "onlineLogDest": ""
+                                    },
+                                "liveSyncOpt":{
+                                    "restoreInStandby":False
+                                }
+                                }
+
+
+    def _live_sync_restore_json(self, dest_client, dest_instance, baseline_jobid,
+                                baseline_ref_time, schedule_name, source_backupset_id):
+        """
+               Constructs oracle live sync restore JSON by combining common
+               and agent specific options
+
+                   Args:
+                       dest_client  (str)   --  The destination client name for live sync
+
+                       dest_instance    (str)   --  The destination instance name for live sync
+
+                       baseline_jobid   (int)   --  The jobid of the baseline backup job
+
+                       baseline_ref_time    (int)   --  The reference time/start time
+                                                        of the baseline backup
+
+                       schedule_name    (str)   --  The name of the live sync schedule to be created
+
+                       source_backupset_id  (int)   --  The ID of the source backupset
+                                                        of source oracle instance for which
+                                                        live sync needs to be configured
+
+                    Returns:
+                        (str)  --   The live sync restore JSON that is constructed
+                                    using oracle and common options
+
+        """
+
+        restore_json = super()._restore_json(destination_client=dest_client,
+                                             destination_instance=dest_instance,
+                                             baseline_jobid=baseline_jobid,
+                                             baseline_ref_time=baseline_ref_time,
+                                             syncRestore=True,
+                                             no_of_streams=2,
+                                            )
+        restore_option = {}
+        if restore_json.get("restore_option"):
+            restore_option = restore_json["restore_option"]
+            for key in restore_json:
+                if not key == "restore_option":
+                    restore_option[key] = restore_json[key]
+        else:
+            restore_option.update(restore_json)
+
+        self._get_live_sync_oracleopt_json()
+        restore_json['taskInfo']['associations'][0]['subclientId'] = -1
+        restore_json['taskInfo']['associations'][0]['backupsetId'] = source_backupset_id
+        restore_json['taskInfo']['associations'][0]['subclientName'] = ""
+        restore_json['taskInfo']['associations'][0]['backupsetName'] = ""
+        restore_json['taskInfo']['associations'][0]['_type_'] = 5
+        restore_json['taskInfo']['task']['taskType'] = 2
+        restore_json['taskInfo']['subTasks'][0]['subTask']['operationType'] = 1007
+        restore_json['taskInfo']['subTasks'][0]['subTask']['subTaskName'] = schedule_name
+        restore_json['taskInfo']['subTasks'][0]['pattern'] = {
+            "freq_type": 4096
+        }
+        destinationInstance = {
+            "clientName":dest_client,
+            "instanceName":dest_instance,
+            "appName":"Oracle"
+        }
+        restore_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["destination"].update({"destinationInstance":destinationInstance})
+        restore_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["oracleOpt"] = self._oracle_options
+        return restore_json
+
+
+    def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name):
+        """
+               Runs full backup on source oracle instance and
+               Creates live sync schdule for the given destination oracle instance
+
+                   Args:
+                       dest_client  (str)   --  The destination client name for live sync
+
+                       dest_instance    (str)   --  The destination instance name for live sync
+
+                       schedule_name    (str)   --  The name of the live sync schedule to be created
+
+                   Returns:
+                        (object)  --   The job object of the baseline backup that will be replicated
+
+        """
+        source_backupset_id = int(self.backupsets.get('default').backupset_id)
+        subclient_obj = self.subclients.get('default')
+        baseline_job_object = subclient_obj.backup(backup_level='full')
+        if not baseline_job_object.wait_for_completion():
+            raise SDKException('Instance', '102', baseline_job_object.delay_reason)
+        baseline_ref_time = baseline_job_object.summary['jobStartTime']
+        baseline_jobid = int(baseline_job_object.job_id)
+        request_json = self._live_sync_restore_json(dest_client, dest_instance, baseline_jobid,
+                                                    baseline_ref_time, schedule_name, source_backupset_id)
+        flag, response = self._cvpysdk_object.make_request('POST', self._LIVE_SYNC, request_json)
+        if flag:
+            if response.json():
+                if "taskId" in response.json():
+                    return baseline_job_object
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    error_message = 'Live Sync configuration failed\nError: "{0}"'.format(
+                        error_message)
+                    raise SDKException('Instance', '102', error_message)
+                else:
+                    raise SDKException('Instance', '102', 'Failed to create schedule')
+            else:
+                raise SDKException('Instance', '102')
+        else:
+            raise SDKException('Instance', '101', self._update_response_(response.text))
+
 
     def configure_data_masking_policy(self, policy_name, table_list_of_dict):
         """Configures data masking policy with given parameters

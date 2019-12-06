@@ -66,6 +66,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.salesforce_instance import SalesforceInstance
         from .cloudapps.cloud_storage_instance import CloudStorageInstance
         from .cloudapps.amazon_instance import AmazonRedshiftInstance
+        from .cloudapps.amazon_instance import AmazonDocumentDBInstance
 
         instance_type = {
             1: GoogleInstance,
@@ -80,6 +81,7 @@ class CloudAppsInstance(Instance):
             20: CloudStorageInstance,  # Google Cloud Instance
             21: CloudStorageInstance,  # azure data lake gen2
             26: AmazonRedshiftInstance, # Amazon Redshift
+            27: AmazonDocumentDBInstance, # Amazon Document DB
             25: CloudStorageInstance,   #AliBaba
             24: CloudStorageInstance,   #IBM
         }

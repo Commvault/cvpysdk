@@ -113,6 +113,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENT_SCHEDULES': '{0}Schedules?clientId=%s',
     'AGENT_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s',
     'BACKUPSET_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s',
+    'INSTANCE_SCHEDULES':  '{0}Schedules?clientId=%s&apptypeId=%s&instanceId=%s',
     'SUBCLIENT_SCHEDULES': ('{0}Schedules?clientId=%s&apptypeId=%s&'
                             'backupsetId=%s&subclientId=%s'),
     'WORKFLOW_SCHEDULES': '{0}Schedules?workflowId=%s',

@@ -6,7 +6,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+#class Schedules
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
@@ -987,6 +987,7 @@ class Schedules:
         from .agent import Agent
         from .backupset import Backupset
         from .subclient import Subclient
+        from .instance import Instance
 
         self.class_object = class_object
 
@@ -1020,6 +1021,16 @@ class Schedules:
             self._SCHEDULES = class_object._commcell_object._services['AGENT_SCHEDULES'] % (
                 class_object._client_object.client_id, class_object.agent_id)
             self._repr_str = "Agent: {0}".format(class_object.agent_name)
+            self._commcell_object = class_object._commcell_object
+
+        elif isinstance(class_object, Instance):
+            self._SCHEDULES = class_object._commcell_object._services['INSTANCE_SCHEDULES'] % (
+                class_object._agent_object._client_object.client_id,
+                class_object._agent_object.agent_id,
+                class_object.instance_id
+            )
+            self._repr_str = "Instance: {0}".format(
+                class_object.instance_name)
             self._commcell_object = class_object._commcell_object
 
         elif isinstance(class_object, Backupset):

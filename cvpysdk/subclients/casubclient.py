@@ -58,6 +58,7 @@ class CloudAppsSubclient(Subclient):
             20: CloudStorageSubclient,  # Google Cloud Instance
             21: CloudStorageSubclient,  # azure data lake gen2
             26: CloudDatabaseSubclient, # Amazon Redshift subclient
+            27: CloudDatabaseSubclient, # Amazon Document DB subclient
             25: CloudStorageSubclient,  # AliBaba
             24: CloudStorageSubclient,  #IBM
         }
