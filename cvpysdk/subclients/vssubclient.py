@@ -234,7 +234,7 @@ class VirtualServerSubclient(Subclient):
         """
         name = "name"
         datastore = "Datastore"
-        new_name = "new_name"
+        new_name = "newName"
 
     @property
     def content(self):
@@ -854,6 +854,22 @@ class VirtualServerSubclient(Subclient):
 
         self._virtualserver_option_restore_json["diskLevelVMRestoreOption"] = json_disklevel_option_restore
 
+    def _json_restore_attach_diskLevelVMRestoreOption(self, value):
+        """setter for the attach disk Level VM Restore Option in restore json"""
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        json_disklevel_option_restore = {
+            "esxServerName": value.get("esxHost", ""),
+            "diskOption": value.get("disk_option", 0),
+            "passUnconditionalOverride": value.get("unconditional_overwrite", False),
+            "powerOnVmAfterRestore": value.get("power_on", False),
+            "transportMode": value.get("transport_mode", 0),
+            "userPassword": {"userName": value.get("userName",""),"password": value.get("password","")}
+        }
+        self._virtualserver_option_restore_json["diskLevelVMRestoreOption"] = json_disklevel_option_restore
+
     def _json_restore_advancedRestoreOptions(self, value):
         """setter for the Virtual server restore  option in restore json"""
 
@@ -863,6 +879,7 @@ class VirtualServerSubclient(Subclient):
         self._advanced_option_restore_json = {
             "disks": value.get("disks", []),
             "guid": value.get("guid", ""),
+            "newGuid": value.get("new_guid", ""),
             "newName": value.get("new_name", ""),
             "esxHost": value.get("esx_host", ""),
             "cluster": value.get("cluster", ""),
@@ -2030,6 +2047,73 @@ class VirtualServerSubclient(Subclient):
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
         self._advanced_restore_option_list.append(temp_dict)
 
+    def set_advanced_attach_disk_restore_options(self, vm_to_restore, restore_option):
+        """
+        set the advanced restore options for all vm in restore
+        :param
+
+        vm_to_restore : Name of the VM where disks will be restored
+        restore_option: restore options that need to be set for advanced restore option
+
+            datastore                   - Datastore where the disks needs to be restored
+
+            disks   (list of dict)      - list with dict for each disk in VM
+                                            eg: [{
+                                                    name:"disk1.vmdk"
+                                                    datastore:"local"
+                                                }
+                                                {
+                                                    name:"disk2.vmdk"
+                                                    datastore:"local1"
+                                                }
+                                            ]
+            guid                        - GUID of the VM needs to be restored
+            new_name                    - New name for the VM to be restored
+            esx_host                    - esx_host or client name where it need to be restored
+            name                        - name of the VM to be restored
+        """
+
+        # Set the new name for the restored VM.
+        # If new_name is not given, it restores the VM with same name
+        # with suffix Delete.
+        vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
+        browse_result = self.vm_files_browse()
+        # populate restore source item
+        restore_option['name'] = vm_to_restore
+        restore_option['guid'] = vm_ids[vm_to_restore]
+        restore_option["FolderPath"] = ''
+        restore_option["ResourcePool"] = "/"
+
+        # populate restore disk and datastore
+        vm_disks = []
+        disk_list, disk_info_dict = self.disk_level_browse(
+            "\\\\" + vm_ids[vm_to_restore])
+
+        for disk, data in disk_info_dict.items():
+            ds = ""
+            if "datastore" in restore_option:
+                ds = restore_option["datastore"]
+            new_name_prefix = restore_option.get("disk_name_prefix")
+            new_name = "delete_" + data["name"] if new_name_prefix is None \
+                else new_name_prefix + "_" + data["name"]
+            _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
+            vm_disks.append(_disk_dict)
+        if not vm_disks:
+            raise SDKException('Subclient', '104')
+        restore_option["disks"] = vm_disks
+
+        # populate VM Specific values
+        self._set_restore_inputs(
+            restore_option,
+            disks=vm_disks,
+            esx_host=restore_option.get('esx'),
+            new_name=vm_to_restore,
+            new_guid = restore_option.get('guid'),
+            Datastore=restore_option.get('datastore'))
+
+        temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
+        self._advanced_restore_option_list.append(temp_dict)
+
     @staticmethod
     def _find_security_groups(xml_str):
         """
@@ -2175,6 +2259,55 @@ class VirtualServerSubclient(Subclient):
         request_json["taskInfo"]["subTasks"][0][
             "options"]["restoreOptions"]["virtualServerRstOption"] = self._virtualserver_option_restore_json
 
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(_disk_restore_option)
+
+        return request_json
+
+    def _prepare_attach_disk_restore_json(self, _disk_restore_option=None):
+        """
+        Prepare attach disk retsore Json with all getters
+
+        Args:
+            _disk_restore_option - dictionary with all attach disk restore options
+
+            value:
+                destination_path            - path where the disk needs to be restored
+
+                client_name                 - client where the disk needs to be restored
+
+                destination_vendor          - vendor id of the Hypervisor
+
+                paths                 - GUID of VM from which disk needs to be restored
+                                                eg:\\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
+
+                copy_precedence_applicable  - True if needs copy_precedence to be honored else
+                                                        False
+
+                copy_precedence            - the copy id from which browse and
+                                                                restore needs to be performed
+
+        returns:
+            request_json        -complete json for performing disk Restore options
+
+        """
+
+        if _disk_restore_option is None:
+            _disk_restore_option = {}
+
+        # set the setters
+        self._backupset_object._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_disk_restore_option)
+        self._set_restore_defaults(_disk_restore_option)
+        self._json_restore_virtualServerRstOption(_disk_restore_option)
+        self._json_vcenter_instance(_disk_restore_option)
+        self._json_restore_attach_diskLevelVMRestoreOption(_disk_restore_option)
+        self.set_advanced_attach_disk_restore_options(_disk_restore_option['vm_to_restore'],_disk_restore_option)
+        self._virtualserver_option_restore_json["diskLevelVMRestoreOption"][
+            "advancedRestoreOptions"] = self._advanced_restore_option_list
+        self._advanced_restore_option_list = []
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "virtualServerRstOption"] = self._virtualserver_option_restore_json
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(_disk_restore_option)
 

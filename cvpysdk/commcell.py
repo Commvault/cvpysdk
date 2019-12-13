@@ -220,6 +220,8 @@ Commcell instance Attributes
     **recovery_targets**        -- Returns the instance of RecoverTargets class
 
     **reports**                 --  Return the instance of Report class
+
+    **job_management**          --  Returns an instance of the JobManagement class.
     
 """
 
@@ -278,6 +280,7 @@ from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
+from .job import JobManagement
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -473,7 +476,7 @@ class Commcell(object):
         self._backup_network_pairs = None
         self._reports = None
         self._recovery_targets = None
-
+        self._job_management = None
         self.refresh()
 
         del self._password
@@ -558,6 +561,7 @@ class Commcell(object):
         del self._disaster_recovery
         del self._commcell_migration
         del self._backup_network_pairs
+        del self._job_management
         del self
 
     def _get_commserv_details(self):
@@ -631,6 +635,24 @@ class Commcell(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def qoperation_execute(self, request_xml):
+        """Wrapper for def _qoperation_execute(self, request_xml)
+
+            Args:
+                request_xml     (str)   --  request xml that is to be passed
+
+            Returns:
+                dict    -   JSON response received from the server.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+
+        return self._qoperation_execute(request_xml)
 
     @staticmethod
     def _convert_days_to_epoch(days):
@@ -1177,6 +1199,16 @@ class Commcell(object):
             if self._reports is None:
                 self._reports = report.Report(self)
             return self._reports
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def job_management(self):
+        """Returns the instance of the JobManagement class."""
+        try:
+            if not self._job_management:
+                self._job_management = JobManagement(self)
+            return self._job_management
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
