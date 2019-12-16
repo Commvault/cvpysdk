@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Main file for performing subclient operations.</span>
@@ -211,6 +221,8 @@
 <span class="sd">    Browse operation or Find operation</span>
 
 <span class="sd">    _process_browse_response()  --  processes response received for both Browse and Find request</span>
+
+<span class="sd">    _common_backup_options()    --  Generates the advanced job options dict</span>
 
 <span class="sd">    _json_task()                --  setter for task property</span>
 
@@ -1247,8 +1259,14 @@
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
-                               <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                                   <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">joblist</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">jobids</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">]:</span>
+                            <span class="n">joblist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">jobids</span><span class="p">))</span>
+                        <span class="k">return</span> <span class="n">joblist</span>
                 <span class="k">elif</span> <span class="s2">&quot;taskId&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="k">return</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">task_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskId&#39;</span><span class="p">])</span>
                 <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -1270,7 +1288,8 @@
                      <span class="n">incremental_backup</span><span class="p">,</span>
                      <span class="n">incremental_level</span><span class="p">,</span>
                      <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                     <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                     <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">common_backup_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
 
 <span class="sd">            Args:</span>
@@ -1290,6 +1309,11 @@
 
 <span class="sd">                advanced_options   (dict)  --  advanced backup options to be included while</span>
 <span class="sd">                making the request</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                common_backup_options   (dict)  --  advanced job options to be included while</span>
+<span class="sd">                                                    making the request.</span>
 
 <span class="sd">                    default: None</span>
 
@@ -1329,10 +1353,32 @@
                 <span class="n">advanced_options_dict</span>
             <span class="p">)</span>
 
+        <span class="n">advance_job_option_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">common_backup_options</span><span class="p">:</span>
+            <span class="n">advance_job_option_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_backup_options</span><span class="p">(</span>
+                <span class="n">common_backup_options</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">advance_job_option_dict</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;commonOpts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">advance_job_option_dict</span>
+
         <span class="k">if</span> <span class="n">schedule_pattern</span><span class="p">:</span>
             <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">()</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">request_json</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">request_json</span>
+
+    <span class="k">def</span> <span class="nf">_common_backup_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Generates the advanced job options dict</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                options     (dict)      --    advanced job options that are to be included</span>
+<span class="sd">                                                    in the request</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -           generated advanced job options dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">options</span>
 
     <span class="k">def</span> <span class="nf">_advanced_backup_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates the advanced backup options dict</span>
@@ -1394,6 +1440,11 @@
     <span class="k">def</span> <span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the Subclient display name&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;displayName&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">subclient_guid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the SubclientGUID&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subClientEntity&#39;</span> <span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subclientGUID&#39;</span><span class="p">)</span>
 
     <span class="nd">@display_name</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">display_name</span><span class="p">):</span>

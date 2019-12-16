@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.vssubclient &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.subclients.vssubclient &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for operating on a Virtual Server Subclient.</span>
@@ -1181,7 +1191,7 @@
         <span class="k">return</span> <span class="n">restore_content</span>
 
 <div class="viewcode-block" id="VirtualServerSubclient.browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span>
-               <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                <span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                <span class="n">vm_files_browse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the content of the backup for this subclient at the path</span>
@@ -1194,7 +1204,7 @@
 <span class="sd">                                                content</span>
 
 <span class="sd">                show_deleted_files  (bool)  --  include deleted files in the</span>
-<span class="sd">                                                content or not default: True</span>
+<span class="sd">                                                content or not default: False</span>
 
 <span class="sd">                vm_disk_browse      (bool)  --  browse virtual machine files</span>
 <span class="sd">                                                e.g.; .vmdk files, etc.</span>
@@ -1314,7 +1324,7 @@
 <div class="viewcode-block" id="VirtualServerSubclient.browse_in_time"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_in_time">[docs]</a>    <span class="k">def</span> <span class="nf">browse_in_time</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">restore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -1334,7 +1344,7 @@
 
 <span class="sd">                    show_deleted_files  (bool)  --  include deleted files in</span>
 <span class="sd">                                                    the content or not</span>
-<span class="sd">                                                    default: True</span>
+<span class="sd">                                                    default: False</span>
 
 <span class="sd">                    restore_index       (bool)  --  restore index if it is not</span>
 <span class="sd">                                                    cached  default: True</span>
@@ -1397,7 +1407,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_vsa_browse_response</span><span class="p">(</span><span class="n">vm_ids</span><span class="p">,</span> <span class="n">browse_content</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.disk_level_browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.disk_level_browse">[docs]</a>    <span class="k">def</span> <span class="nf">disk_level_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span>
-                          <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                           <span class="n">restore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                           <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                           <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -1409,7 +1419,7 @@
 <span class="sd">                    default: &#39;\\&#39;; returns the root of the Backup content</span>
 
 <span class="sd">                show_deleted_files  (bool)  --  include deleted files in the</span>
-<span class="sd">                                                content or not default: True</span>
+<span class="sd">                                                content or not default: False</span>
 
 <span class="sd">                restore_index  (bool)  --       Restore index or not.</span>
 <span class="sd">                                                default: True</span>
@@ -1490,7 +1500,7 @@
 <span class="sd">                                                content</span>
 
 <span class="sd">                show_deleted_files  (bool)  --  include deleted files in the</span>
-<span class="sd">                                                content or not default: True</span>
+<span class="sd">                                                content or not default: False</span>
 
 <span class="sd">                restore_index       (bool)  --  restore index if it is not cached</span>
 <span class="sd">                                                default: True</span>
@@ -1600,7 +1610,7 @@
                 <span class="k">break</span>
 
         <span class="k">if</span> <span class="n">source_item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Browse failure: Folder not found in browse&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">source_item</span>
 
@@ -1616,7 +1626,7 @@
                            <span class="n">restore_ACL</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                            <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                            <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                           <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                           <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                            <span class="n">fbr_ma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                            <span class="n">browse_ma</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;perform Guest file restore of the provided path</span>
@@ -1629,7 +1639,7 @@
 
 <span class="sd">            show_deleted_files  (bool)  --  include deleted files in the</span>
 <span class="sd">                                            content or not</span>
-<span class="sd">                                            default: True</span>
+<span class="sd">                                            default: False</span>
 
 
 <span class="sd">            destination_path    (basestring)   --  path to restore</span>
@@ -1752,7 +1762,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the Files and Folders of a Virtual Machine.</span>
 
 <span class="sd">            Args:</span>
@@ -1763,7 +1773,7 @@
 
 <span class="sd">                show_deleted_files  (bool)  --  include deleted files in the</span>
 <span class="sd">                                                content or not</span>
-<span class="sd">                                                default: True</span>
+<span class="sd">                                                default: False</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all folders or files with their full paths</span>
@@ -1785,7 +1795,7 @@
 <div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse_in_time"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse_in_time">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse_in_time</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">restore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">from_date</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">to_date</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
@@ -1800,7 +1810,7 @@
 
 <span class="sd">                show_deleted_files  (bool)  --  include deleted files in the</span>
 <span class="sd">                                                content or not</span>
-<span class="sd">                                                default: True</span>
+<span class="sd">                                                default: False</span>
 
 <span class="sd">                restore_index       (bool)  --  restore index if it is not</span>
 <span class="sd">                                                cached</span>

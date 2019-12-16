@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.cloudapps package &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.instances.cloudapps package &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -81,6 +81,7 @@
               <!-- Local TOC -->
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">cvpysdk.instances.cloudapps package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.instances.cloudapps.cloud_storage_instance">cvpysdk.instances.cloudapps.cloud_storage_instance module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.instances.cloudapps.google_instance">cvpysdk.instances.cloudapps.google_instance module</a></li>
@@ -154,6 +155,11 @@
             
   <div class="section" id="cvpysdk-instances-cloudapps-package">
 <h1>cvpysdk.instances.cloudapps package<a class="headerlink" href="#cvpysdk-instances-cloudapps-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+</div>
+</div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -168,19 +174,29 @@ perform operations on that instance</p>
 </dl>
 <p>CloudStorageInstance:</p>
 <blockquote>
-<div><p>_get_instance_properties()            –  Instance class method overwritten to add cloud apps
+<div><p>_get_instance_properties()              –  Instance class method overwritten to add cloud apps
 instance properties as well</p>
-<p>_generate_json()                      –  Returns the JSON request to pass to the API as per
+<p>_generate_json()                        –  Returns the JSON request to pass to the API as per
 the options selected by the user</p>
-<p>_restore_in_place()                   –  restores the files/folders specified in the
+<p>restore_in_place()                      –  restores the files/folders specified in the
 input paths list to the same location.</p>
-<p>_restore_out_of_place()               –  restores the files/folders specified in the input
-paths list to the input client, at the specified destination location.</p>
-<p>_restore_to_fs()                      –  restores the files/folders specified in the input
-paths list to the input fs client, at the specified destination location.</p>
-<p>_set_destination_options_json()       –  setter for cloud apps destination options in
+<dl class="simple">
+<dt>restore_out_of_place()                  –  restores the files/folders specified in the input</dt><dd><p>paths list to the input client,
+at the specified destination location.</p>
+</dd>
+<dt>restore_to_fs()                         –  restores the files/folders specified in the input</dt><dd><p>paths list to the input fs client,
+at the specified destination location.</p>
+</dd>
+</dl>
+<p>_set_destination_options_json()         –  setter for cloud apps destination options in
 restore JSON</p>
-<p>_set_restore_options_json()           –  setter for cloudapps restore options in restore JSON</p>
+<p>_set_restore_options_json()             –  setter for cloudapps restore options in restore JSON</p>
+<dl class="simple">
+<dt>_set_proxy_credential_json()            –  Method to construct the proxy credentials</dt><dd><p>json for out of place restore</p>
+</dd>
+<dt>restore_using_proxy()                   –  To perform restore to different cloud using</dt><dd><p>proxy passing explicit credentials of destination cloud</p>
+</dd>
+</dl>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance">
@@ -218,9 +234,41 @@ restore JSON</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.client_name">
+<code class="descname">client_name</code><a class="headerlink" href="#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.client_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns client name of this instance</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Returns:</dt><dd><p>(str) - client name as registered in the commcell</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.endpointurl">
 <code class="descname">endpointurl</code><a class="headerlink" href="#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.endpointurl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the endpoint URL property as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.google_access_key">
+<code class="descname">google_access_key</code><a class="headerlink" href="#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.google_access_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns google cloud account access key as read only attribute</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>(str)     -     string representing google cloud account access key</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.google_host_url">
+<code class="descname">google_host_url</code><a class="headerlink" href="#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.google_host_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns google cloud URL as read only attribute</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>(str)     -     string representing host URL of goole cloud</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -324,10 +372,82 @@ default: None for restores to backup or proxy client.</p>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.secret_accesskey">
-<code class="descname">secret_accesskey</code><a class="headerlink" href="#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.secret_accesskey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the secret access key as a read-only attribute.</p>
+<dl class="method">
+<dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.restore_using_proxy">
+<code class="descname">restore_using_proxy</code><span class="sig-paren">(</span><em>paths</em>, <em>destination_client_proxy</em>, <em>destination_path</em>, <em>overwrite=True</em>, <em>copy_precedence=None</em>, <em>destination_cloud=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/instances/cloudapps/cloud_storage_instance.html#CloudStorageInstance.restore_using_proxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.restore_using_proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>To perform restore to different cloud using
+proxy passing explicit credentials of destination cloud</p>
+<dl>
+<dt>Args:</dt><dd><p>destination_client_proxy (str)          –  name of proxy machine having cloud connector package</p>
+<p>paths                    (list)         –  list of full paths of files/folders to restore</p>
+<dl class="simple">
+<dt>destination_path         (str)          –  location where the files are to be restored</dt><dd><p>in the destination instance.</p>
+</dd>
+<dt>overwrite                (bool)         –  unconditional overwrite files during restore</dt><dd><p>default: True</p>
+</dd>
+<dt>copy_precedence          (int)          –  copy precedence value of storage policy copy</dt><dd><p>default: None</p>
+</dd>
+</dl>
+<p>destination_cloud        (dict(dict))  –     dict of dict representing cross cloud credentials</p>
+<p>Sample dict(dict) :</p>
+<dl>
+<dt>destination_cloud = {</dt><dd><blockquote>
+<div><dl>
+<dt>‘google_cloud’: {</dt><dd><blockquote>
+<div><p>‘google_host_url’:’storage.googleapis.com’,
+‘google_access_key’:’xxxxxx’,
+‘google_secret_key’:’yyyyyy’</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</dd>
+<dt>destination_cloud = {</dt><dd><blockquote>
+<div><dl>
+<dt>‘amazon_s3’:    {</dt><dd><blockquote>
+<div><p>‘s3_host_url’:’s3.amazonaws.com’,
+‘s3_access_key’:’xxxxxx’,
+‘s3_secret_key’:’yyyyyy’</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</dd>
+<dt>destination_cloud = {</dt><dd><blockquote>
+<div><dl>
+<dt>‘azure_blob’:   {</dt><dd><blockquote>
+<div><p>‘azure_host_url’:’blob.core.windows.net’,
+‘azure_account_name’:’xxxxxx’,
+‘azure_access_key’:’yyyyyy’</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
+</dd>
+<dt>Raises:</dt><dd><p>SDKException:</p>
+<blockquote>
+<div><p>if destination cloud credentials empty</p>
+<p>if destination cloud has more than one vendor details</p>
+<p>if unsupported destination cloud for restore is chosen</p>
+<p>if client is not a string or Client object</p>
+<p>if destination_path is not a string</p>
+<p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+</div></blockquote>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">

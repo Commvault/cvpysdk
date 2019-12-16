@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.cloudapps.cloud_storage_instance &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.instances.cloudapps.cloud_storage_instance &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot; File for operating on a cloud storage instance.</span>
@@ -159,25 +169,33 @@
 
 <span class="sd">CloudStorageInstance:</span>
 
-<span class="sd">    _get_instance_properties()            --  Instance class method overwritten to add cloud apps</span>
+<span class="sd">    _get_instance_properties()              --  Instance class method overwritten to add cloud apps</span>
 <span class="sd">    instance properties as well</span>
 
-<span class="sd">    _generate_json()                      --  Returns the JSON request to pass to the API as per</span>
+<span class="sd">    _generate_json()                        --  Returns the JSON request to pass to the API as per</span>
 <span class="sd">    the options selected by the user</span>
 
-<span class="sd">    _restore_in_place()                   --  restores the files/folders specified in the</span>
+<span class="sd">    restore_in_place()                      --  restores the files/folders specified in the</span>
 <span class="sd">    input paths list to the same location.</span>
 
-<span class="sd">    _restore_out_of_place()               --  restores the files/folders specified in the input</span>
-<span class="sd">    paths list to the input client, at the specified destination location.</span>
+<span class="sd">    restore_out_of_place()                  --  restores the files/folders specified in the input</span>
+<span class="sd">                                                paths list to the input client,</span>
+<span class="sd">                                                at the specified destination location.</span>
 
-<span class="sd">    _restore_to_fs()                      --  restores the files/folders specified in the input</span>
-<span class="sd">    paths list to the input fs client, at the specified destination location.</span>
+<span class="sd">    restore_to_fs()                         --  restores the files/folders specified in the input</span>
+<span class="sd">                                                paths list to the input fs client,</span>
+<span class="sd">                                                at the specified destination location.</span>
 
-<span class="sd">    _set_destination_options_json()       --  setter for cloud apps destination options in</span>
+<span class="sd">    _set_destination_options_json()         --  setter for cloud apps destination options in</span>
 <span class="sd">    restore JSON</span>
 
-<span class="sd">    _set_restore_options_json()           --  setter for cloudapps restore options in restore JSON</span>
+<span class="sd">    _set_restore_options_json()             --  setter for cloudapps restore options in restore JSON</span>
+
+<span class="sd">    _set_proxy_credential_json()            --  Method to construct the proxy credentials</span>
+<span class="sd">                                                json for out of place restore</span>
+
+<span class="sd">    restore_using_proxy()                   --  To perform restore to different cloud using</span>
+<span class="sd">                                                proxy passing explicit credentials of destination cloud</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
@@ -204,8 +222,15 @@
 <span class="sd">                object - instance of the Instance class</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        <span class="c1"># Common Properties</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ca_instance_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_access_node</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Google Cloud Properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_google_host_url</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_google_access_key</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_google_secret_key</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_host_url</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_access_keyid</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_secret_accesskey</span> <span class="o">=</span> <span class="kc">None</span>
@@ -214,11 +239,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_username</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_endpointurl</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_access_node</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_destination_options_json</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_restore_options_json</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">CloudStorageInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span>
+            <span class="n">CloudStorageInstance</span><span class="p">,</span>
+            <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">agent_object</span><span class="p">,</span>
+            <span class="n">instance_name</span><span class="p">,</span>
+            <span class="n">instance_id</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_instance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the properties of this instance&quot;&quot;&quot;</span>
@@ -233,7 +263,6 @@
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_host_url</span> <span class="o">=</span> <span class="n">s3instance</span><span class="p">[</span><span class="s1">&#39;hostURL&#39;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_access_keyid</span> <span class="o">=</span> <span class="n">s3instance</span><span class="p">[</span><span class="s1">&#39;accessKeyId&#39;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_secret_accesskey</span> <span class="o">=</span> <span class="n">s3instance</span><span class="p">[</span><span class="s1">&#39;secretAccessKey&#39;</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="s1">&#39;azureInstance&#39;</span> <span class="ow">in</span> <span class="n">cloud_apps_instance</span><span class="p">:</span>
                 <span class="n">azureinstance</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span><span class="s1">&#39;azureInstance&#39;</span><span class="p">]</span>
@@ -254,9 +283,35 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_endpointurl</span> <span class="o">=</span> <span class="n">oraclecloudinstance</span><span class="p">[</span><span class="s1">&#39;endpointURL&#39;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_username</span> <span class="o">=</span> <span class="n">oraclecloudinstance</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
 
+            <span class="c1"># Google Cloud Instance porperties</span>
+            <span class="k">if</span> <span class="s1">&#39;googleCloudInstance&#39;</span> <span class="ow">in</span> <span class="n">cloud_apps_instance</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_google_host_url</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span><span class="s1">&#39;googleCloudInstance&#39;</span><span class="p">][</span><span class="s1">&#39;serverName&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_google_access_key</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span>
+                    <span class="s1">&#39;googleCloudInstance&#39;</span><span class="p">][</span><span class="s1">&#39;credentials&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+
             <span class="k">if</span> <span class="s1">&#39;generalCloudProperties&#39;</span> <span class="ow">in</span> <span class="n">cloud_apps_instance</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_access_node</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span>
                     <span class="s1">&#39;generalCloudProperties&#39;</span><span class="p">][</span><span class="s1">&#39;proxyServers&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">google_host_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns google cloud URL as read only attribute</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (str)     -     string representing host URL of goole cloud</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_google_host_url</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">google_access_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns google cloud account access key as read only attribute</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (str)     -     string representing google cloud account access key</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_google_access_key</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">ca_instance_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -283,10 +338,6 @@
         <span class="sd">&quot;&quot;&quot;Returns the access key ID property as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access_keyid</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">secret_accesskey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the secret access key as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_secret_accesskey</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">server_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -304,6 +355,17 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_endpointurl</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">client_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns client name of this instance</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (str) - client name as registered in the commcell</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clientName&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">access_node</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the access node of this instance as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access_node</span>
@@ -318,7 +380,10 @@
 <span class="sd">                dict - JSON request to pass to the API</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">cloud_restore_json</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CloudStorageInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cloud_restore_json</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span>
+            <span class="n">CloudStorageInstance</span><span class="p">,</span>
+            <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">restore_options</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restore_options&quot;</span><span class="p">):</span>
 
@@ -331,17 +396,17 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">restore_options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_destination_options_json</span><span class="p">(</span><span class="n">restore_options</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_options_json</span><span class="p">(</span><span class="n">restore_options</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_common_options_json</span><span class="p">(</span><span class="n">restore_options</span><span class="p">)</span>
 
+        <span class="n">cloud_restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;destination&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_destination_options_json</span>
+        <span class="n">cloud_restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;cloudAppsRestoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_restore_options_json</span>
         <span class="n">cloud_restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;destination&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_destination_options_json</span>
-        <span class="n">cloud_restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;cloudAppsRestoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_restore_options_json</span>
-        <span class="n">cloud_restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;commonOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;stripLevelType&quot;</span><span class="p">:</span> <span class="mi">1</span>
-            <span class="p">}</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;commonOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_options_json</span>
 
         <span class="k">return</span> <span class="n">cloud_restore_json</span>
 
@@ -383,8 +448,8 @@
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_json</span><span class="p">(</span>
             <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
-            <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">destination_instance_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+            <span class="n">destination_instance_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">in_place</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
@@ -447,7 +512,6 @@
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
-
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_json</span><span class="p">(</span>
@@ -534,6 +598,7 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            value = {</span>
+<span class="sd">                &quot;destination_proxy&quot;:False,</span>
 <span class="sd">                &quot;restore_To_FileSystem&quot; : False</span>
 <span class="sd">                &quot;in_place&quot; : False</span>
 <span class="sd">                &quot;destination_path&quot; : &quot;/test/test1&quot;</span>
@@ -542,6 +607,7 @@
 <span class="sd">            }</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">proxy_option</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_proxy&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restore_To_FileSystem&quot;</span><span class="p">):</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_destination_options_json</span> <span class="o">=</span> <span class="p">{</span>
@@ -567,24 +633,25 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">dest_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span>
 
-            <span class="n">dclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dest_client</span><span class="p">)</span>
-            <span class="n">dagent</span> <span class="o">=</span> <span class="n">dclient</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Cloud Apps&#39;</span><span class="p">)</span>
-            <span class="n">dinstance</span> <span class="o">=</span> <span class="n">dagent</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dest_instance</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_destination_options_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">regular_instance_restore_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;isLegalHold&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                 <span class="s2">&quot;inPlace&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;in_place&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;destPath&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">)],</span>
                 <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_client&quot;</span><span class="p">),</span>
-                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">dclient</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
-                <span class="p">},</span>
-
-                <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_instance_name&quot;</span><span class="p">),</span>
-                    <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">dinstance</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_client&quot;</span><span class="p">)</span>
                 <span class="p">}</span>
             <span class="p">}</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">proxy_option</span><span class="p">:</span>
+                <span class="n">destination_client_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dest_client</span><span class="p">)</span>
+                <span class="n">destination_agent_object</span> <span class="o">=</span> <span class="n">destination_client_object</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cloud apps&#39;</span><span class="p">)</span>
+                <span class="n">destination_instance_object</span> <span class="o">=</span> <span class="n">destination_agent_object</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dest_instance</span><span class="p">)</span>
+                <span class="n">destination_instance_details</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;destinationInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_instance_name&quot;</span><span class="p">),</span>
+                        <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">destination_instance_object</span><span class="o">.</span><span class="n">instance_id</span><span class="p">)}}</span>
+                <span class="n">regular_instance_restore_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="n">destination_instance_details</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_destination_options_json</span> <span class="o">=</span> <span class="n">regular_instance_restore_json</span>
 
     <span class="k">def</span> <span class="nf">_set_restore_options_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for cloudapps restore options in restore JSON</span>
@@ -608,7 +675,223 @@
                     <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ca_instance_type</span><span class="p">)</span>
                 <span class="p">}</span>
             <span class="p">}</span>
-        <span class="p">}</span></div>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_set_common_options_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setter for the Common options in restore JSON</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  dict of common options</span>
+<span class="sd">                                    for restore json</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_common_options_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;overwriteFiles&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;unconditionalOverwrite&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;stripLevelType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_set_proxy_credential_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_cloud</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to construct the proxy credentials json for out of place restore</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            destination_cloud        (dict(dict))  --     dict of dict representing cross cloud credentials</span>
+
+<span class="sd">            Sample dict(dict) :</span>
+
+<span class="sd">            destination_cloud = {</span>
+<span class="sd">                                    &#39;google_cloud&#39;: {</span>
+<span class="sd">                                                        &#39;google_host_url&#39;:&#39;storage.googleapis.com&#39;,</span>
+<span class="sd">                                                        &#39;google_access_key&#39;:&#39;xxxxxx&#39;,</span>
+<span class="sd">                                                        &#39;google_secret_key&#39;:&#39;yyyyyy&#39;</span>
+<span class="sd">                                                    }</span>
+<span class="sd">                                }</span>
+
+<span class="sd">            destination_cloud = {</span>
+<span class="sd">                                    &#39;amazon_s3&#39;:    {</span>
+<span class="sd">                                                        &#39;s3_host_url&#39;:&#39;s3.amazonaws.com&#39;,</span>
+<span class="sd">                                                        &#39;s3_access_key&#39;:&#39;xxxxxx&#39;,</span>
+<span class="sd">                                                        &#39;s3_secret_key&#39;:&#39;yyyyyy&#39;</span>
+<span class="sd">                                                    }</span>
+<span class="sd">                                }</span>
+<span class="sd">            destination_cloud = {</span>
+<span class="sd">                                    &#39;azure_blob&#39;:   {</span>
+<span class="sd">                                                        &#39;azure_host_url&#39;:&#39;blob.core.windows.net&#39;,</span>
+<span class="sd">                                                        &#39;azure_account_name&#39;:&#39;xxxxxx&#39;,</span>
+<span class="sd">                                                        &#39;azure_access_key&#39;:&#39;yyyyyy&#39;</span>
+<span class="sd">                                                    }</span>
+<span class="sd">                                }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="s1">&#39;amazon_s3&#39;</span> <span class="ow">in</span> <span class="n">destination_cloud</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_proxy_credential_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                <span class="s2">&quot;s3Instance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;hostURL&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;amazon_s3&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s3_host_url&#39;</span><span class="p">,</span> <span class="s1">&#39;s3.amazonaws.com&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;accessKeyId&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;amazon_s3&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s3_access_key&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;secretAccessKey&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;amazon_s3&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s3_secret_key&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">elif</span> <span class="s1">&#39;google_cloud&#39;</span> <span class="ow">in</span> <span class="n">destination_cloud</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_proxy_credential_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+                <span class="s2">&quot;googleCloudInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;serverName&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;google_cloud&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;google_host_url&#39;</span><span class="p">,</span> <span class="s1">&#39;storage.googleapis.com&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;credentials&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;google_cloud&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;google_access_key&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;google_cloud&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;google_secret_key&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">elif</span> <span class="s1">&#39;azure_blob&#39;</span> <span class="ow">in</span> <span class="n">destination_cloud</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_proxy_credential_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                <span class="s2">&quot;azureInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;hostURL&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_blob&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_host_url&#39;</span><span class="p">,</span> <span class="s1">&#39;blob.core.windows.net&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;accountName&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_blob&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_account_name&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;accessKey&quot;</span><span class="p">:</span> <span class="n">destination_cloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_blob&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_access_key&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+<div class="viewcode-block" id="CloudStorageInstance.restore_using_proxy"><a class="viewcode-back" href="../../../../source/cvpysdk.instances.cloudapps.html#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.restore_using_proxy">[docs]</a>    <span class="k">def</span> <span class="nf">restore_using_proxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">paths</span><span class="p">,</span>
+                            <span class="n">destination_client_proxy</span><span class="p">,</span>
+                            <span class="n">destination_path</span><span class="p">,</span>
+                            <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">destination_cloud</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        To perform restore to different cloud using</span>
+<span class="sd">        proxy passing explicit credentials of destination cloud</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            destination_client_proxy (str)          --  name of proxy machine having cloud connector package</span>
+
+<span class="sd">            paths                    (list)         --  list of full paths of files/folders to restore</span>
+
+<span class="sd">            destination_path         (str)          --  location where the files are to be restored</span>
+<span class="sd">                                                        in the destination instance.</span>
+
+<span class="sd">            overwrite                (bool)         --  unconditional overwrite files during restore</span>
+<span class="sd">                                                        default: True</span>
+
+<span class="sd">            copy_precedence          (int)          --  copy precedence value of storage policy copy</span>
+<span class="sd">                                                        default: None</span>
+
+
+<span class="sd">            destination_cloud        (dict(dict))  --     dict of dict representing cross cloud credentials</span>
+
+<span class="sd">            Sample dict(dict) :</span>
+
+<span class="sd">            destination_cloud = {</span>
+<span class="sd">                                    &#39;google_cloud&#39;: {</span>
+<span class="sd">                                                        &#39;google_host_url&#39;:&#39;storage.googleapis.com&#39;,</span>
+<span class="sd">                                                        &#39;google_access_key&#39;:&#39;xxxxxx&#39;,</span>
+<span class="sd">                                                        &#39;google_secret_key&#39;:&#39;yyyyyy&#39;</span>
+<span class="sd">                                                    }</span>
+<span class="sd">                                }</span>
+
+<span class="sd">            destination_cloud = {</span>
+<span class="sd">                                    &#39;amazon_s3&#39;:    {</span>
+<span class="sd">                                                        &#39;s3_host_url&#39;:&#39;s3.amazonaws.com&#39;,</span>
+<span class="sd">                                                        &#39;s3_access_key&#39;:&#39;xxxxxx&#39;,</span>
+<span class="sd">                                                        &#39;s3_secret_key&#39;:&#39;yyyyyy&#39;</span>
+<span class="sd">                                                    }</span>
+<span class="sd">                                }</span>
+<span class="sd">            destination_cloud = {</span>
+<span class="sd">                                    &#39;azure_blob&#39;:   {</span>
+<span class="sd">                                                        &#39;azure_host_url&#39;:&#39;blob.core.windows.net&#39;,</span>
+<span class="sd">                                                        &#39;azure_account_name&#39;:&#39;xxxxxx&#39;,</span>
+<span class="sd">                                                        &#39;azure_access_key&#39;:&#39;yyyyyy&#39;</span>
+<span class="sd">                                                    }</span>
+<span class="sd">                                }</span>
+
+
+<span class="sd">        Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+
+<span class="sd">                    if destination cloud credentials empty</span>
+
+<span class="sd">                    if destination cloud has more than one vendor details</span>
+
+<span class="sd">                    if unsupported destination cloud for restore is chosen</span>
+
+<span class="sd">                    if client is not a string or Client object</span>
+
+<span class="sd">                    if destination_path is not a string</span>
+
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if destination cloud credentials are empty</span>
+        <span class="k">if</span> <span class="n">destination_cloud</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Destination Cloud Credentials empty&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination_cloud</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;only one cloud vendor details can&#39;</span>
+                <span class="s1">&#39;be passed.Multiple entries not allowed&#39;</span><span class="p">)</span>
+
+        <span class="n">cloud_vendors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;google_cloud&quot;</span><span class="p">,</span> <span class="s2">&quot;amazon_s3&quot;</span><span class="p">,</span> <span class="s2">&quot;azure_blob&quot;</span><span class="p">]</span>
+        <span class="c1"># Check if destination cloud falls within supported cloud vendors</span>
+        <span class="n">cloud_vendors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;google_cloud&quot;</span><span class="p">,</span> <span class="s2">&quot;amazon_s3&quot;</span><span class="p">,</span> <span class="s2">&quot;azure_blob&quot;</span><span class="p">]</span>
+        <span class="c1"># Check if destination cloud falls within supported cloud vendors</span>
+        <span class="n">dict_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">destination_cloud</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">dict_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cloud_vendors</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Unsupported destination cloud for restore&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client_proxy</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span>
+                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_client_proxy</span><span class="p">,</span> <span class="n">Client</span><span class="p">))</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_json</span><span class="p">(</span>
+            <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
+            <span class="n">destination_proxy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="n">destination_client_proxy</span><span class="p">,</span>
+            <span class="n">destination_instance_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">restore_To_FileSystem</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_proxy_credential_json</span><span class="p">(</span><span class="n">destination_cloud</span><span class="p">)</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;cloudAppsRestoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;cloudStorageRestoreOptions&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreDestination&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxy_credential_json</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;cloudAppsRestoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;cloudStorageRestoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;overrideCloudLogin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s2">&quot;backupset&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="s2">&quot;defaultBackupSet&quot;</span><span class="p">})</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;associations&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;backupsetName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;defaultBackupSet&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

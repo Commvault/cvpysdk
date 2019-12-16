@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.alert &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.alert &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Main file for performing alert operations.</span>
@@ -176,6 +186,8 @@
 <span class="sd">    _get_entities()             --  returns the list of associations for an alert</span>
 
 <span class="sd">    _get_alert_json()           --  returns the dict/json required to create an alert</span>
+
+<span class="sd">    get_alert_sender()          -- returns the mail sender name as set in the Email server</span>
 
 <span class="sd">    create_alert(alert_name)    --  returns the instance of Alert class for created alert</span>
 
@@ -519,6 +531,14 @@
             <span class="p">}</span>
         <span class="p">}</span>
 
+        <span class="c1"># Check if paramsList is present or not</span>
+        <span class="k">if</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;paramsList&quot;</span><span class="p">):</span>
+            <span class="n">alert_detail</span><span class="p">[</span><span class="s2">&quot;alertDetail&quot;</span><span class="p">][</span><span class="s2">&quot;criteria&quot;</span><span class="p">][</span><span class="s2">&quot;paramsList&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;paramsList&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if additonal mail recipents exist</span>
+        <span class="k">if</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nonGalaxyList&quot;</span><span class="p">):</span>
+            <span class="n">alert_detail</span><span class="p">[</span><span class="s2">&quot;alertDetail&quot;</span><span class="p">][</span><span class="s2">&quot;nonGalaxyList&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nonGalaxyList&quot;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_groups&quot;</span><span class="p">):</span>
             <span class="n">alert_detail</span><span class="p">[</span><span class="s2">&quot;alertDetail&quot;</span><span class="p">][</span><span class="s2">&quot;userGroupList&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;userGroupListOperationType&quot;</span><span class="p">:</span><span class="n">alert_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userGroupListOperationType&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
@@ -530,6 +550,21 @@
             <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">alert_detail</span>
+
+<div class="viewcode-block" id="Alerts.get_alert_sender"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.alert.Alerts.get_alert_sender">[docs]</a>    <span class="k">def</span> <span class="nf">get_alert_sender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Returns the Alert Sender name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">get_alert</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EMAIL_SERVER&#39;</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">get_alert</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;senderInfo&quot;</span><span class="p">][</span><span class="s1">&#39;senderName&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Failed to get sender address&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Alerts.create_alert"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.alert.Alerts.create_alert">[docs]</a>    <span class="k">def</span> <span class="nf">create_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alert_dict</span><span class="p">):</span>

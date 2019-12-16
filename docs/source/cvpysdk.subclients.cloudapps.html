@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.cloudapps package &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.subclients.cloudapps package &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -81,6 +81,7 @@
               <!-- Local TOC -->
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">cvpysdk.subclients.cloudapps package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.cloudapps.cloud_storage_subclient">cvpysdk.subclients.cloudapps.cloud_storage_subclient module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.cloudapps.google_subclient">cvpysdk.subclients.cloudapps.google_subclient module</a></li>
@@ -154,6 +155,11 @@
             
   <div class="section" id="cvpysdk-subclients-cloudapps-package">
 <h1>cvpysdk.subclients.cloudapps package<a class="headerlink" href="#cvpysdk-subclients-cloudapps-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+</div>
+</div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -178,6 +184,10 @@ input paths list to the same location</p>
 input paths list to the input client, at the specified destination location</p>
 <p>restore_to_fs()                     –  Restores the files/folders specified in the
 input paths list to the input fs client, at the specified destination location.</p>
+<dl class="simple">
+<dt>restore_using_proxy()               –  To perform restore to different cloud using</dt><dd><p>proxy passing explicit credentials of destination cloud</p>
+</dd>
+</dl>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient">
@@ -260,6 +270,84 @@ default: None for restores to backup or proxy client.</p>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient.restore_using_proxy">
+<code class="descname">restore_using_proxy</code><span class="sig-paren">(</span><em>paths</em>, <em>destination_client_proxy</em>, <em>destination_path</em>, <em>overwrite=True</em>, <em>copy_precedence=None</em>, <em>destination_cloud=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/cloudapps/cloud_storage_subclient.html#CloudStorageSubclient.restore_using_proxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient.restore_using_proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>To perform restore to different cloud using
+proxy passing explicit credentials of destination cloud</p>
+<dl>
+<dt>Args:</dt><dd><p>destination_client_proxy (str)          –  name of proxy machine having cloud connector package</p>
+<p>paths                    (list)         –  list of full paths of files/folders to restore</p>
+<dl class="simple">
+<dt>destination_path         (str)          –  location where the files are to be restored</dt><dd><p>in the destination instance.</p>
+</dd>
+<dt>overwrite                (bool)         –  unconditional overwrite files during restore</dt><dd><p>default: True</p>
+</dd>
+<dt>copy_precedence          (int)          –  copy precedence value of storage policy copy</dt><dd><p>default: None</p>
+</dd>
+</dl>
+<p>destination_cloud        (dict(dict))  –     dict of dict representing cross cloud credentials</p>
+<p>Sample dict(dict) :</p>
+<dl>
+<dt>destination_cloud = {</dt><dd><blockquote>
+<div><dl>
+<dt>‘google_cloud’: {</dt><dd><blockquote>
+<div><p>‘google_host_url’:’storage.googleapis.com’,
+‘google_access_key’:’xxxxxx’,
+‘google_secret_key’:’yyyyyy’</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</dd>
+<dt>destination_cloud = {</dt><dd><blockquote>
+<div><dl>
+<dt>‘amazon_s3’:    {</dt><dd><blockquote>
+<div><p>‘s3_host_url’:’s3.amazonaws.com’,
+‘s3_access_key’:’xxxxxx’,
+‘s3_secret_key’:’yyyyyy’</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</dd>
+<dt>destination_cloud = {</dt><dd><blockquote>
+<div><dl>
+<dt>‘azure_blob’:   {</dt><dd><blockquote>
+<div><p>‘azure_host_url’:’blob.core.windows.net’,
+‘azure_account_name’:’xxxxxx’,
+‘azure_access_key’:’yyyyyy’</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
+</dd>
+<dt>Raises:</dt><dd><p>SDKException:</p>
+<blockquote>
+<div><p>if destination cloud credentials empty</p>
+<p>if destination cloud has more than one vendor details</p>
+<p>if unsupported destination cloud for restore is chosen</p>
+<p>if client is not a string or Client object</p>
+<p>if destination_path is not a string</p>
+<p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd></dl>

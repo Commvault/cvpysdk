@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.services &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.services &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Service URLs for REST API operations.</span>
@@ -213,6 +223,7 @@
     <span class="s1">&#39;KILL_JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">/action/kill&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RESUBMIT_JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">/action/Resubmit&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ALL_JOBS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Jobs&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;JOB_MANAGEMENT_SETTINGS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/JobManagementSetting&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_MEDIA_AGENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">V2/MediaAgents&#39;</span><span class="p">,</span>
     <span class="s1">&#39;LIBRARY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Library&#39;</span><span class="p">,</span>
@@ -230,18 +241,24 @@
 
     <span class="s1">&#39;GET_ALL_ALERTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CREATE_BLR_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Groups&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DELETE_BLR_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/continuous/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GRANULAR_BLR_POINTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Replications/Monitors/continuous/VmScale?destProxyClientId=</span><span class="si">%s</span><span class="s1">&amp;subclientId=</span><span class="si">%s</span><span class="s1">&amp;vmUuid=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
     <span class="s1">&#39;MODIFY_ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/Action/Modify&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_CONSOLE_ALERTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Alert?pageNo=</span><span class="si">%s</span><span class="s1">&amp;pageCount=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ENABLE_ALERT_NOTIFICATION&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/notificationType/</span><span class="si">%s</span><span class="s1">/Action/Enable&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DISABLE_ALERT_NOTIFICATION&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/notificationType/</span><span class="si">%s</span><span class="s1">/Action/Disable&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ENABLE_ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/Action/Enable&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DISABLE_ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/Action/Disable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EMAIL_SERVER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">EmailServer&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;CLIENT_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;AGENT_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&amp;apptypeId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;BACKUPSET_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&amp;apptypeId=</span><span class="si">%s</span><span class="s1">&amp;backupsetId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;SUBCLIENT_SCHEDULES&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?clientId=</span><span class="si">%s</span><span class="s1">&amp;apptypeId=</span><span class="si">%s</span><span class="s1">&amp;&#39;</span>
                             <span class="s1">&#39;backupsetId=</span><span class="si">%s</span><span class="s1">&amp;subclientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;WORKFLOW_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Schedules?workflowId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;REPORT_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/ScheduleReports&#39;</span><span class="p">,</span>
     <span class="s1">&#39;OPTYPE_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Schedules?operationType=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;COMMCELL_SCHEDULES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Schedules&#39;</span><span class="p">,</span>
@@ -265,6 +282,7 @@
     <span class="s1">&#39;DEPLOY_WORKFLOW&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow/</span><span class="si">%s</span><span class="s1">/action/deploy&#39;</span><span class="p">,</span>
     <span class="s1">&#39;EXECUTE_WORKFLOW&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">wapi/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_WORKFLOW&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_WORKFLOW_DEFINITION&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow/</span><span class="si">%s</span><span class="s1">/definition&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_INTERACTIONS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">WorkflowInteractions&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_INTERACTION&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow/Interaction/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
@@ -301,6 +319,8 @@
     <span class="s1">&#39;DELETE_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/deleteDataSource/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;CREATE_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/createDataSource&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DATACUBE_IMPORT_DATA&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/post/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;START_JOB_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/startjob/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_STATUS_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/GetStatus/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GLOBAL_FILTER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">GlobalFilter&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RESTORE_OPTIONS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Restore/GetDestinationsToRestore?clientId=0&amp;appId=</span><span class="si">%s</span><span class="s1">&amp;flag=8&#39;</span><span class="p">,</span>
@@ -425,6 +445,7 @@
     <span class="s1">&#39;CERTIFICATES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/Certificates&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_DAG_MEMBER_SERVERS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Exchange/DAG/</span><span class="si">%s</span><span class="s1">/PseudoClientInfo&#39;</span><span class="p">,</span>  <span class="c1"># only for Exchange DAG</span>
+    <span class="s1">&#39;GET_RECOVERY_POINTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Exchange/DAG/</span><span class="si">%s</span><span class="s1">/RecoveryPoints?instanceId=</span><span class="si">%s</span><span class="s1">&amp;backupSetId=</span><span class="si">%s</span><span class="s1">&amp;subClientId=</span><span class="si">%s</span><span class="s1">&amp;appId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;CASEDEFINITION&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">EDiscoveryClients/CaseDefinitions&#39;</span><span class="p">,</span>
 
@@ -438,7 +459,16 @@
 
     <span class="s1">&#39;GET_ALL_LIVE_SYNC_PAIRS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming?subclientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_LIVE_SYNC_VM_PAIRS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming?subclientId=</span><span class="si">%s</span><span class="s1">&amp;taskId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;GET_LIVE_SYNC_VM_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming?subclientId=</span><span class="si">%s</span><span class="s1">&amp;replicationPairId=</span><span class="si">%s</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;GET_LIVE_SYNC_VM_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming?subclientId=</span><span class="si">%s</span><span class="s1">&amp;replicationPairId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;BACKUP_NETWORK_PAIRS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/DataInterfacePairs?ClientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BACKUP_NETWORK_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/DataInterfacePairs&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_ALL_RECOVERY_TARGETS&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/VMAllocationPolicy?showResourceGroupPolicy=true&amp;showNonResourceGroupPolicy=false&amp;deep=true&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_RECOVERY_TARGET&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/VMAllocationPolicy/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    
+    <span class="s1">&#39;RETIRE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">/Retire&#39;</span>
 <span class="p">}</span>
 
 

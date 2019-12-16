@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.job &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.job &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -146,13 +146,25 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Main file for performing operations on a job.</span>
 
 <span class="sd">JobController:  Class for managing jobs on this commcell</span>
+
+<span class="sd">JobManagement:  Class for performing Job Management operations</span>
 
 <span class="sd">Job:            Class for keeping track of a job and perform various operations on it.</span>
 
@@ -191,6 +203,119 @@
 <span class="sd">    resume_all_jobs()           -- Resumes all jobs on the commcell</span>
 
 <span class="sd">    suspend_all_jobs()          -- Suspends all jobs on the commcell</span>
+
+
+<span class="sd">JobManagement</span>
+<span class="sd">==============</span>
+
+<span class="sd">    __init__(commcell_object)                                       --  initialise object of the JobManagement class</span>
+
+<span class="sd">    _set_jobmanagement_settings()                                   --  sets the jobmanagement settings</span>
+
+<span class="sd">    _refresh()                                                      --  refresh the job management settings</span>
+
+<span class="sd">     set_general_settings(settings)                                 --  sets the general settings of job management</span>
+
+<span class="sd">     set_priority_settings(settings)                                --  sets the priority settings of job management</span>
+
+<span class="sd">     set_restart_settings(settings)                                 --  sets the restart settings of job management</span>
+
+<span class="sd">     set_update_settings(settings)                                  --  sets the update settings of job management</span>
+
+<span class="sd">     job_priority_precedence                                        --  gets the job priority precedence</span>
+
+<span class="sd">     job_priority_precedence(priority_type)                         --  sets the job priority precedence property</span>
+
+<span class="sd">     start_phase_retry_interval                                     --  gets the start phase retry interval in</span>
+<span class="sd">                                                                        (minutes)</span>
+
+<span class="sd">     start_phase_retry_interval(minutes)                            --  sets the start phase retry interval property</span>
+
+<span class="sd">     state_update_interval_for_continuous_data_replicator           --  gets the start phase retry interval in</span>
+<span class="sd">                                                                        (minutes)</span>
+
+<span class="sd">     state_update_interval_for_continuous_data_replicator(minutes)  --  sets the state update interval for continuous</span>
+<span class="sd">                                                                        data replicator</span>
+
+<span class="sd">     allow_running_jobs_to_complete_past_operation_window           --  gets the allow running jobs to complete past</span>
+<span class="sd">                                                                        operation window(True/False)</span>
+
+<span class="sd">     allow_running_jobs_to_complete_past_operation_window(flag)     --  sets the allow running jobs to complete past</span>
+<span class="sd">                                                                        operation window</span>
+
+<span class="sd">     job_alive_check_interval_in_minutes                            --  gets the job alive check interval in (minutes)</span>
+
+<span class="sd">     job_alive_check_interval_in_minutes(minutes)                   --  sets the job alive check interval in minutes</span>
+
+<span class="sd">     queue_scheduled_jobs                                           --  gets the queue scheduled jobs(True/False)</span>
+
+<span class="sd">     queue_scheduled_jobs(flags)                                    --  sets the queue scheduled jobs</span>
+
+<span class="sd">     enable_job_throttle_at_client_level                            --  gets the enable job throttle at client level</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     enable_job_throttle_at_client_level(flag)                      --  sets the enable job throttle at client level</span>
+
+<span class="sd">     enable_multiplexing_for_db_agents                              --  gets the enable multiplexing for db agents</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     enable_multiplexing_for_db_agents(flag)                        --  sets the enable multiplexing for db agents</span>
+
+<span class="sd">     queue_jobs_if_conflicting_jobs_active                          --  gets the queue jobs if conflicting jobs active</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     queue_jobs_if_conflicting_jobs_active(flag)                    --  sets the queue jobs if conflicting jobs active</span>
+
+<span class="sd">     queue_jobs_if_activity_disabled                                --  gets the queue jobs if activity disabled</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     queue_jobs_if_activity_disabled(flag)                          --  sets the queue jobs if activity disabled</span>
+
+<span class="sd">     backups_preempts_auxilary_copy                                 --  gets the backups preempts auxilary copy</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     backups_preempts_auxilary_copy(flag)                           --  sets the backups preempts auxilary copy</span>
+
+<span class="sd">     restore_preempts_other_jobs                                    --  gets the restore preempts other jobs</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     restore_preempts_other_jobs(flag)                               --  sets the restore preempts other jobs</span>
+
+<span class="sd">     enable_multiplexing_for_oracle                                  --  gets the enable multiplexing for oracle</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     enable_multiplexing_for_oracle(flag)                            --  sets the enable multiplexing for oracle</span>
+
+<span class="sd">     job_stream_high_water_mark_level                                --  gets the job stream high water mark level</span>
+
+<span class="sd">     job_stream_high_water_mark_level(level)                         --  sets the job stream high water mark level</span>
+
+<span class="sd">     backups_preempts_other_backups                                  --  gets the backups preempts other backups</span>
+<span class="sd">                                                                        (True/False)</span>
+
+<span class="sd">     backups_preempts_other_backups(flag)                            --  sets the backups preempts other backups</span>
+
+<span class="sd">     do_not_start_backups_on_disabled_client                         --  gets the do not start backups on</span>
+<span class="sd">                                                                         disabled client(True/False)</span>
+
+<span class="sd">     do_not_start_backups_on_disabled_client(flag)                   --  sets the do not start backups</span>
+<span class="sd">                                                                         on disabled client</span>
+
+<span class="sd">     get_restart_setting(jobtype)                                    --  gets the restart settings of a specific</span>
+<span class="sd">                                                                         jobtype</span>
+
+<span class="sd">     get_priority_setting(jobtype)                                   --  gets the priority setting of a specific</span>
+<span class="sd">                                                                         jobtype</span>
+
+<span class="sd">     get_update_setting(jobtype)                                     --   gets the update settings of a specific</span>
+<span class="sd">                                                                          jobtype</span>
+
+<span class="sd">     get_restart_settings                                            --  gets the restart settings of job management</span>
+
+<span class="sd">     get_priority_settings                                           --  gets the priority settings of job management</span>
+
+<span class="sd">     get_update_settings                                             --  gets the update settings of job management</span>
+
 
 <span class="sd">Job</span>
 <span class="sd">===</span>
@@ -269,6 +394,10 @@
 
 <span class="sd">**job.summary**                     --  returns the dictionary consisting of the full summary of the job</span>
 
+<span class="sd">**job.username**                    --  returns the username with which the job started</span>
+
+<span class="sd">**job.userid**                      --  returns the userid with which the job started</span>
+
 <span class="sd">**job.details**                     --  returns the dictionary consisting of the full details of the job</span>
 
 <span class="sd">**job.num_of_files_transferred**    -- returns the current number of files transferred for the job.</span>
@@ -281,6 +410,7 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">.constants</span> <span class="k">import</span> <span class="n">AdvancedJobDetailType</span>
@@ -843,6 +973,1015 @@
         <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span></div></div>
 
 
+<div class="viewcode-block" id="JobManagement"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement">[docs]</a><span class="k">class</span> <span class="nc">JobManagement</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing job management operations. &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize instance of JobManagement class for performing operations on jon management settings.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object         (object)        --  instance of Commcell class.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_comcell</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_service</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;JOB_MANAGEMENT_SETTINGS&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_jobmanagement_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes a request on the server, to set the job management settings.</span>
+
+<span class="sd">         Returns:</span>
+<span class="sd">               None</span>
+
+<span class="sd">         Raises:</span>
+<span class="sd">              SDKException:</span>
+<span class="sd">                    if given inputs are invalid</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_service</span><span class="p">,</span>
+                                                           <span class="n">payload</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to set job management properties. </span><span class="se">\n</span><span class="s1">Error: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;errorMessage&quot;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_get_jobmanagement_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Executes a request on the server to get the settings of job management.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_service</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to get job management properties. </span><span class="se">\n</span><span class="s1">Error: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="s1">&#39;jobManagementSettings&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_restart_settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;jobRestartSettings&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;jobManagementSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;jobRestartSettings&#39;</span><span class="p">,</span> <span class="p">{})}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;jobPrioritySettings&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;jobManagementSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;jobPrioritySettings&#39;</span><span class="p">,</span> <span class="p">{})}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;jobManagementSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">,</span> <span class="p">{})}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;jobUpdatesSettings&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;jobManagementSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;jobUpdatesSettings&#39;</span><span class="p">,</span> <span class="p">{})}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JobManagement.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        calls the private method _get_jobmanagement_settings()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restart_settings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_jobmanagement_settings</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="JobManagement.set_general_settings"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.set_general_settings">[docs]</a>    <span class="k">def</span> <span class="nf">set_general_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets general settings of job management.</span>
+
+<span class="sd">        Note : dedicated setters and getters are provided for general settings.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                settings (dict)  --       Following key/value pairs can be set.</span>
+<span class="sd">                                            {</span>
+<span class="sd">                                                &quot;allowRunningJobsToCompletePastOperationWindow&quot;: False,</span>
+<span class="sd">                                                &quot;jobAliveCheckIntervalInMinutes&quot;: 5,</span>
+<span class="sd">                                                &quot;queueScheduledJobs&quot;: False,</span>
+<span class="sd">                                                &quot;enableJobThrottleAtClientLevel&quot;: False,</span>
+<span class="sd">                                                &quot;enableMultiplexingForDBAgents&quot;: False,</span>
+<span class="sd">                                                &quot;queueJobsIfConflictingJobsActive&quot;: False,</span>
+<span class="sd">                                                &quot;queueJobsIfActivityDisabled&quot;: False,</span>
+<span class="sd">                                                &quot;backupsPreemptsAuxilaryCopy&quot;: False,</span>
+<span class="sd">                                                &quot;restorePreemptsOtherJobs&quot;: False,</span>
+<span class="sd">                                                &quot;enableMultiplexingForOracle&quot;: False,</span>
+<span class="sd">                                                &quot;jobStreamHighWaterMarkLevel&quot;: 500,</span>
+<span class="sd">                                                &quot;backupsPreemptsOtherBackups&quot;: False,</span>
+<span class="sd">                                                &quot;doNotStartBackupsOnDisabledClient&quot;: False</span>
+
+<span class="sd">                                            }</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_jobmanagement_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobManagement.set_priority_settings"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.set_priority_settings">[docs]</a>    <span class="k">def</span> <span class="nf">set_priority_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets priority settings for jobs and agents type.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                settings  (list)    --  list of dictionaries with following format.</span>
+<span class="sd">                                         [</span>
+<span class="sd">                                            {</span>
+<span class="sd">                                                &quot;type_of_operation&quot;: 1,</span>
+<span class="sd">                                                &quot;combinedPriority&quot;: 10,</span>
+<span class="sd">                                                &quot;jobTypeName&quot;: &quot;Information Management&quot;</span>
+<span class="sd">                                            },</span>
+<span class="sd">                                            {</span>
+<span class="sd">                                                &quot;type_of_operation&quot;: 2,</span>
+<span class="sd">                                                &quot;combinedPriority&quot;: 10,</span>
+<span class="sd">                                                &quot;appTypeName&quot;: &quot;Windows File System&quot;</span>
+<span class="sd">                                            },</span>
+<span class="sd">                                            {</span>
+<span class="sd">                                            &quot;type_of_operation&quot;: 1,</span>
+<span class="sd">                                            &quot;combinedPriority&quot;: 10,</span>
+<span class="sd">                                            &quot;jobTypeName&quot;: &quot;Auxiliary Copy&quot;</span>
+<span class="sd">                                             }</span>
+<span class="sd">                                        ]</span>
+
+<span class="sd">            We have priority settings fro jobtype and agenttype</span>
+
+<span class="sd">            NOTE : for setting, priority for jobtype the &#39;type_of_operation&#39; must be set to 1 and name of the job type</span>
+<span class="sd">                   must be specified as below format.</span>
+
+<span class="sd">                       ex :-  &quot;jobTypeName&quot;: &quot;Information Management&quot;</span>
+
+<span class="sd">            NOTE : for setting, priority for agenttype the &#39;type_of_operation&#39; must be set to 2 and name of the job</span>
+<span class="sd">             type must be specified as below format</span>
+
+<span class="sd">                        ex :- &quot;appTypeName&quot;: &quot;Windows File System&quot;</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">settings</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;type_of_operation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span><span class="p">[</span><span class="s1">&#39;jobPrioritySettings&#39;</span><span class="p">][</span><span class="s1">&#39;jobTypePriorityList&#39;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;jobTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;jobTypeName&quot;</span><span class="p">):</span>
+                            <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;jobTypeName&quot;</span><span class="p">)</span>
+                            <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;type_of_operation&quot;</span><span class="p">)</span>
+                            <span class="n">job_type</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                            <span class="k">break</span>
+                <span class="k">elif</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;type_of_operation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span><span class="p">[</span><span class="s1">&#39;jobPrioritySettings&#39;</span><span class="p">][</span><span class="s1">&#39;agentTypePriorityList&#39;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;agentTypeEntity&#39;</span><span class="p">][</span><span class="s1">&#39;appTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;appTypeName&quot;</span><span class="p">):</span>
+                            <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;appTypeName&quot;</span><span class="p">)</span>
+                            <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;type_of_operation&quot;</span><span class="p">)</span>
+                            <span class="n">job_type</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                            <span class="k">break</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_jobmanagement_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobManagement.set_restart_settings"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.set_restart_settings">[docs]</a>    <span class="k">def</span> <span class="nf">set_restart_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets restart settings for jobs.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                settings    (list)      --  list of dictionaries with following format</span>
+<span class="sd">                                            [</span>
+<span class="sd">                                                {</span>
+<span class="sd">                                                    &quot;killRunningJobWhenTotalRunningTimeExpires&quot;: False,</span>
+<span class="sd">                                                    &quot;maxRestarts&quot;: 10,</span>
+<span class="sd">                                                    &quot;enableTotalRunningTime&quot;: False,</span>
+<span class="sd">                                                    &quot;restartable&quot;: False,</span>
+<span class="sd">                                                    &quot;jobTypeName&quot;: &quot;File System and Indexing Based (Data Protection)&quot;,</span>
+<span class="sd">                                                    &quot;restartIntervalInMinutes&quot;: 20,</span>
+<span class="sd">                                                    &quot;preemptable&quot;: True,</span>
+<span class="sd">                                                    &quot;totalRunningTime&quot;: 21600,</span>
+<span class="sd">                                                    &quot;jobType&quot;: 6</span>
+<span class="sd">                                                },</span>
+<span class="sd">                                                {</span>
+<span class="sd">                                                    &quot;killRunningJobWhenTotalRunningTimeExpires&quot;: False,</span>
+<span class="sd">                                                    &quot;maxRestarts&quot;: 144,</span>
+<span class="sd">                                                    &quot;enableTotalRunningTime&quot;: False,</span>
+<span class="sd">                                                    &quot;restartable&quot;: False,</span>
+<span class="sd">                                                    &quot;jobTypeName&quot;: &quot;File System and Indexing Based (Data Recovery)&quot;,</span>
+<span class="sd">                                                    &quot;restartIntervalInMinutes&quot;: 20,</span>
+<span class="sd">                                                    &quot;preemptable&quot;: False,</span>
+<span class="sd">                                                    &quot;totalRunningTime&quot;: 21600,</span>
+<span class="sd">                                                    &quot;jobType&quot;: 7</span>
+<span class="sd">                                                }</span>
+<span class="sd">                                            ]</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">settings</span><span class="p">:</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="n">job_type</span> <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">_restart_settings</span><span class="p">[</span><span class="s1">&#39;jobRestartSettings&#39;</span><span class="p">][</span><span class="s1">&#39;jobTypeRestartSettingList&#39;</span><span class="p">]</span>
+                          <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;jobTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;jobTypeName&quot;</span><span class="p">)}</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;target&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_jobmanagement_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobManagement.set_update_settings"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.set_update_settings">[docs]</a>    <span class="k">def</span> <span class="nf">set_update_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets update settings for jobs</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                settings    (list)      --      list of dictionaries with following format</span>
+<span class="sd">                                                [</span>
+<span class="sd">                                                    {</span>
+<span class="sd">                                                        &quot;appTypeName&quot;: &quot;Windows File System&quot;,</span>
+<span class="sd">                                                        &quot;recoveryTimeInMinutes&quot;: 20,</span>
+<span class="sd">                                                        &quot;protectionTimeInMinutes&quot;: 20</span>
+<span class="sd">                                                    },</span>
+<span class="sd">                                                    {</span>
+<span class="sd">                                                        &quot;appTypeName&quot;: &quot;Windows XP 64-bit File System&quot;,</span>
+<span class="sd">                                                        &quot;recoveryTimeInMinutes&quot;: 20,</span>
+<span class="sd">                                                        &quot;protectionTimeInMinutes&quot;: 20,</span>
+<span class="sd">                                                    }</span>
+<span class="sd">                                                ]</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">settings</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span><span class="p">[</span><span class="s1">&#39;jobUpdatesSettings&#39;</span><span class="p">][</span><span class="s1">&#39;agentTypeJobUpdateIntervalList&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;agentTypeEntity&#39;</span><span class="p">][</span><span class="s1">&#39;appTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;appTypeName&quot;</span><span class="p">):</span>
+                        <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;appTypeName&quot;</span><span class="p">)</span>
+                        <span class="n">job_type</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                        <span class="k">break</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_jobmanagement_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">job_priority_precedence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the job priority precedence</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                 (str)  --   type of job priority precedence is set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">available_priorities</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;client&quot;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;agentType&quot;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">available_priorities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span><span class="p">[</span><span class="s2">&quot;jobPrioritySettings&quot;</span><span class="p">][</span><span class="s2">&quot;priorityPrecedence&quot;</span><span class="p">])</span>
+
+    <span class="nd">@job_priority_precedence</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">job_priority_precedence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">priority_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets job priority precedence</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    priority_type   (str)   --      type of priority to be set</span>
+
+<span class="sd">                    Values:</span>
+<span class="sd">                        &quot;client&quot;</span>
+<span class="sd">                        &quot;agentType&quot;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priority_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">available_priorities</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;agentType&quot;</span><span class="p">:</span> <span class="mi">2</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span><span class="p">[</span><span class="s2">&quot;jobPrioritySettings&quot;</span><span class="p">][</span><span class="s2">&quot;priorityPrecedence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">available_priorities</span><span class="p">[</span><span class="n">priority_type</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_jobmanagement_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_phase_retry_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the start phase retry interval in (minutes)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                 (int)      --      interval in minutes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restart_settings</span><span class="p">[</span><span class="s2">&quot;jobRestartSettings&quot;</span><span class="p">][</span><span class="s2">&quot;startPhaseRetryIntervalInMinutes&quot;</span><span class="p">]</span>
+
+    <span class="nd">@start_phase_retry_interval</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">start_phase_retry_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minutes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets start phase retry interval for jobs</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                minutes     (int)       --      minutes to be set.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minutes</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_restart_settings</span><span class="p">[</span><span class="s2">&quot;jobRestartSettings&quot;</span><span class="p">][</span><span class="s2">&quot;startPhaseRetryIntervalInMinutes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">minutes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_jobmanagement_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">state_update_interval_for_continuous_data_replicator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the state update interval for continuous data replicator in (minutes)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                 (int)      --      interval in minutes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span><span class="p">[</span><span class="s2">&quot;jobUpdatesSettings&quot;</span><span class="p">][</span><span class="s2">&quot;stateUpdateIntervalForContinuousDataReplicator&quot;</span><span class="p">]</span>
+
+    <span class="nd">@state_update_interval_for_continuous_data_replicator</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">state_update_interval_for_continuous_data_replicator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minutes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets state update interval for continuous data replicator</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 minutes       (int)        --      minutes to be set.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minutes</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span><span class="p">[</span><span class="s2">&quot;jobUpdatesSettings&quot;</span><span class="p">][</span><span class="s2">&quot;stateUpdateIntervalForContinuousDataReplicator&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">minutes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_jobmanagement_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">allow_running_jobs_to_complete_past_operation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns false</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allowRunningJobsToCompletePastOperationWindow&quot;</span><span class="p">)</span>
+
+    <span class="nd">@allow_running_jobs_to_complete_past_operation_window</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">allow_running_jobs_to_complete_past_operation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, allow running jobs to complete past operation window.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                flag    (bool)    --        (True/False) to be set.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;allowRunningJobsToCompletePastOperationWindow&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">job_alive_check_interval_in_minutes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the job alive check interval in (minutes)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                (int)       --      interval in minutes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;jobAliveCheckIntervalInMinutes&quot;</span><span class="p">)</span>
+
+    <span class="nd">@job_alive_check_interval_in_minutes</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">job_alive_check_interval_in_minutes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minutes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the job alive check interval in (minutes)</span>
+<span class="sd">            Args:</span>
+<span class="sd">                  minutes       --      minutes to be set.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                  SDKException:</span>
+<span class="sd">                        if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minutes</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;jobAliveCheckIntervalInMinutes&quot;</span><span class="p">:</span> <span class="n">minutes</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">queue_scheduled_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns false</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;queueScheduledJobs&quot;</span><span class="p">)</span>
+
+    <span class="nd">@queue_scheduled_jobs</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">queue_scheduled_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, queue scheduled jobs</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                flag   (bool)      --       (True/False to be set)</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;queueScheduledJobs&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">enable_job_throttle_at_client_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns false</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enableJobThrottleAtClientLevel&quot;</span><span class="p">)</span>
+
+    <span class="nd">@enable_job_throttle_at_client_level</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">enable_job_throttle_at_client_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, job throttle at client level</span>
+<span class="sd">            Args:</span>
+<span class="sd">                flag    (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;enableJobThrottleAtClientLevel&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">enable_multiplexing_for_db_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enableMultiplexingForDBAgents&quot;</span><span class="p">)</span>
+
+    <span class="nd">@enable_multiplexing_for_db_agents</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">enable_multiplexing_for_db_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, multiplexing for db agents</span>
+<span class="sd">            Args:</span>
+<span class="sd">                flag    (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;enableMultiplexingForDBAgents&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">queue_jobs_if_conflicting_jobs_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns false</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;queueJobsIfConflictingJobsActive&quot;</span><span class="p">)</span>
+
+    <span class="nd">@queue_jobs_if_conflicting_jobs_active</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">queue_jobs_if_conflicting_jobs_active</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, queue jobs if conflicting jobs active</span>
+<span class="sd">            Args;</span>
+<span class="sd">                flag    (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;queueJobsIfConflictingJobsActive&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">queue_jobs_if_activity_disabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;queueJobsIfActivityDisabled&quot;</span><span class="p">)</span>
+
+    <span class="nd">@queue_jobs_if_activity_disabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">queue_jobs_if_activity_disabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, queue jobs if activity disabled</span>
+<span class="sd">            Args;</span>
+<span class="sd">                flag    (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;queueJobsIfActivityDisabled&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backups_preempts_auxilary_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;backupsPreemptsAuxilaryCopy&quot;</span><span class="p">)</span>
+
+    <span class="nd">@backups_preempts_auxilary_copy</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backups_preempts_auxilary_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, backups preempts auxiliary copy</span>
+<span class="sd">            Args:</span>
+<span class="sd">                flag    (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;backupsPreemptsAuxilaryCopy&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restore_preempts_other_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restorePreemptsOtherJobs&quot;</span><span class="p">)</span>
+
+    <span class="nd">@restore_preempts_other_jobs</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">restore_preempts_other_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, restore preempts other jobs</span>
+<span class="sd">            Args:</span>
+<span class="sd">                flag    (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;restorePreemptsOtherJobs&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">enable_multiplexing_for_oracle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enableMultiplexingForOracle&quot;</span><span class="p">)</span>
+
+    <span class="nd">@enable_multiplexing_for_oracle</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">enable_multiplexing_for_oracle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, enable multiplexing for oracle</span>
+<span class="sd">            Args:</span>
+<span class="sd">                 flag   (bool)  --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;enableMultiplexingForOracle&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">job_stream_high_water_mark_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the job stream high water mark level</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;jobStreamHighWaterMarkLevel&quot;</span><span class="p">)</span>
+
+    <span class="nd">@job_stream_high_water_mark_level</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">job_stream_high_water_mark_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets, job stream high water mak level</span>
+<span class="sd">            Args:</span>
+<span class="sd">                level   (int)       --      number of jobs to be performed at a time</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;jobStreamHighWaterMarkLevel&quot;</span><span class="p">:</span> <span class="n">level</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backups_preempts_other_backups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;backupsPreemptsOtherBackups&quot;</span><span class="p">)</span>
+
+    <span class="nd">@backups_preempts_other_backups</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backups_preempts_other_backups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enable/disable, backups preempts other backups</span>
+<span class="sd">            Args:</span>
+<span class="sd">                 flag   (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not a valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;backupsPreemptsOtherBackups&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">do_not_start_backups_on_disabled_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if option is enabled</span>
+<span class="sd">        else returns False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generalSettings&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doNotStartBackupsOnDisabledClient&quot;</span><span class="p">)</span>
+
+    <span class="nd">@do_not_start_backups_on_disabled_client</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">do_not_start_backups_on_disabled_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         enable/disable, do not start backups on disabled client</span>
+<span class="sd">            Args:</span>
+<span class="sd">                 flag   (bool)      --      (True/False) to be set</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not a valid type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;doNotStartBackupsOnDisabledClient&quot;</span><span class="p">:</span> <span class="n">flag</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_general_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JobManagement.get_restart_setting"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.get_restart_setting">[docs]</a>    <span class="k">def</span> <span class="nf">get_restart_setting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobtype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        restart settings associated to particular jobtype can be obtained</span>
+<span class="sd">            Args:</span>
+<span class="sd">                jobtype     (str)       --      settings of the jobtype to get</span>
+
+<span class="sd">                Available jobtypes:</span>
+
+<span class="sd">                        &quot;Disaster Recovery backup&quot;</span>
+<span class="sd">                        &quot;Auxiliary Copy&quot;</span>
+<span class="sd">                        &quot;Data Aging&quot;</span>
+<span class="sd">                        &quot;Download/Copy Updates&quot;</span>
+<span class="sd">                        &quot;Offline Content Indexing&quot;</span>
+<span class="sd">                        &quot;Information Management&quot;</span>
+<span class="sd">                        &quot;File System and Indexing Based (Data Protection)&quot;</span>
+<span class="sd">                        &quot;File System and Indexing Based (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Exchange DB (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Exchange DB (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Informix DB (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Informix DB (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Lotus Notes DB (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Lotus Notes DB (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Oracle DB (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Oracle DB (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;SQL DB (Data Protection)&quot;</span>
+<span class="sd">                        &quot;SQL DB (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;MYSQL (Data Protection)&quot;</span>
+<span class="sd">        `               &quot;MYSQL (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Sybase DB (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Sybase DB (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;DB2 (Data Protection)&quot;</span>
+<span class="sd">                        &quot;DB2 (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;CDR (Data Management)&quot;</span>
+<span class="sd">                        &quot;Media Refresh&quot;</span>
+<span class="sd">                        &quot;Documentum (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Documentum (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;SAP for Oracle (Data Protection)&quot;</span>
+<span class="sd">                        &quot;SAP for Oracle (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;PostgreSQL (Data Protection)&quot;</span>
+<span class="sd">                        &quot;PostgreSQL (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Other (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Other (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Workflow&quot;</span>
+<span class="sd">                        &quot;DeDup DB Reconstruction&quot;</span>
+<span class="sd">                        &quot;CommCell Migration Export&quot;</span>
+<span class="sd">                        &quot;CommCell Migration Import&quot;</span>
+<span class="sd">                        &quot;Install Software&quot;</span>
+<span class="sd">                        &quot;Uninstall Software&quot;</span>
+<span class="sd">                        &quot;Data Verification&quot;</span>
+<span class="sd">                        &quot;Big Data Apps (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Big Data Apps (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Cloud Apps (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Cloud Apps (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;Virtual Server (Data Protection)&quot;</span>
+<span class="sd">                        &quot;Virtual Server (Data Recovery)&quot;</span>
+<span class="sd">                        &quot;SAP for Hana (Data Protection)&quot;</span>
+<span class="sd">                        &quot;SAP for Hana (Data Recovery)&quot;</span>
+
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict          --        settings of the specific job type as follows</span>
+<span class="sd">                                        {</span>
+<span class="sd">                                            &quot;jobTypeName&quot;: &quot;File System and Indexing Based (Data Protection)&quot;,</span>
+<span class="sd">                                            &quot;restartable&quot;: true,</span>
+<span class="sd">                                            &quot;maxRestarts&quot;: 10,</span>
+<span class="sd">                                            &quot;restartIntervalInMinutes&quot;: 20,</span>
+<span class="sd">                                            &quot;enableTotalRunningTime&quot;: false,</span>
+<span class="sd">                                            &quot;totalRunningTime&quot;: 25200,</span>
+<span class="sd">                                            &quot;killRunningJobWhenTotalRunningTimeExpires&quot;: false,</span>
+<span class="sd">                                            &quot;preemptable&quot;: true,</span>
+
+<span class="sd">                                        }</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jobtype</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restart_settings</span><span class="p">[</span><span class="s1">&#39;jobRestartSettings&#39;</span><span class="p">][</span><span class="s1">&#39;jobTypeRestartSettingList&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;jobTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">jobtype</span><span class="p">:</span>
+                    <span class="n">settings</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">job_type</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">settings</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobManagement.get_priority_setting"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.get_priority_setting">[docs]</a>    <span class="k">def</span> <span class="nf">get_priority_setting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobtype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        priority settings associated to particular jobtype can be obtained</span>
+<span class="sd">            Args:</span>
+<span class="sd">                jobtype     (str)       --      settings of jobtype to get</span>
+
+<span class="sd">                Available values:</span>
+
+<span class="sd">                    jobtypename:</span>
+<span class="sd">                        &quot;Information Management&quot;</span>
+<span class="sd">                        &quot;Auxiliary Copy&quot;</span>
+<span class="sd">                        &quot;Media Refresh&quot;</span>
+<span class="sd">                        &quot;Data Verification&quot;</span>
+<span class="sd">                        &quot;Persistent Recovery&quot;</span>
+<span class="sd">                        &quot;Synth Full&quot;</span>
+
+<span class="sd">                    apptypename:</span>
+<span class="sd">                        &quot;Windows File System&quot;</span>
+<span class="sd">                        &quot;Windows XP 64-bit File System&quot;</span>
+<span class="sd">                        &quot;Windows 2003 32-bit File System&quot;</span>
+<span class="sd">                        &quot;Windows 2003 64-bit File System&quot;</span>
+<span class="sd">                        &quot;Active Directory&quot;</span>
+<span class="sd">                        &quot;Windows File Archiver&quot;</span>
+<span class="sd">                        &quot;File Share Archiver&quot;</span>
+<span class="sd">                        &quot;Image Level&quot;</span>
+<span class="sd">                        &quot;Exchange Mailbox (Classic)&quot;</span>
+<span class="sd">                        &quot;Exchange Mailbox Archiver&quot;</span>
+<span class="sd">                        &quot;Exchange Compliance Archiver&quot;</span>
+<span class="sd">                        &quot;Exchange Public Folder&quot;</span>
+<span class="sd">                        &quot;Exchange Database&quot;</span>
+<span class="sd">                        &quot;SharePoint Database&quot;</span>
+<span class="sd">                        &quot;SharePoint Server Database&quot;</span>
+<span class="sd">                        &quot;SharePoint Document&quot;</span>
+<span class="sd">                        &quot;SharePoint Server&quot;</span>
+<span class="sd">                        &quot;Novell Directory Services&quot;</span>
+<span class="sd">                        &quot;GroupWise DB&quot;</span>
+<span class="sd">                        &quot;NDMP&quot;</span>
+<span class="sd">                        &quot;Notes Document&quot;</span>
+<span class="sd">                        &quot;Unix Notes Database&quot;</span>
+<span class="sd">                        &quot;MAC FileSystem&quot;</span>
+<span class="sd">                        &quot;Big Data Apps&quot;</span>
+<span class="sd">                        &quot;Solaris File System&quot;</span>
+<span class="sd">                        &quot;Solaris 64bit File System&quot;</span>
+<span class="sd">                        &quot;FreeBSD&quot;</span>
+<span class="sd">                        &quot;HP-UX File System&quot;</span>
+<span class="sd">                        &quot;HP-UX 64bit File System&quot;</span>
+<span class="sd">                        &quot;AIX File System&quot;</span>
+<span class="sd">                        &quot;Unix Tru64 64-bit File System&quot;</span>
+<span class="sd">                        &quot;Linux File System&quot;</span>
+<span class="sd">                        &quot;Sybase Database&quot;</span>
+<span class="sd">                        &quot;Oracle Database&quot;</span>
+<span class="sd">                        &quot;Oracle RAC&quot;</span>
+<span class="sd">                        &quot;Informix Database&quot;</span>
+<span class="sd">                        &quot;DB2&quot;</span>
+<span class="sd">                        &quot;DB2 on Unix&quot;</span>
+<span class="sd">                        &quot;SAP for Oracle&quot;</span>
+<span class="sd">                        &quot;SAP for MAX DB&quot;</span>
+<span class="sd">                        &quot;ProxyHost on Unix&quot;</span>
+<span class="sd">                        &quot;ProxyHost&quot;</span>
+<span class="sd">                        &quot;Image Level On Unix&quot;</span>
+<span class="sd">                        &quot;OSSV Plug-in on Windows&quot;</span>
+<span class="sd">                        &quot;OSSV Plug-in on Unix&quot;</span>
+<span class="sd">                        &quot;Unix File Archiver&quot;</span>
+<span class="sd">                        &quot;SQL Server&quot;</span>
+<span class="sd">                        &quot;Data Classification&quot;</span>
+<span class="sd">                        &quot;OES File System on Linux&quot;</span>
+<span class="sd">                        &quot;Centera&quot;</span>
+<span class="sd">                        &quot;Exchange PF Archiver&quot;</span>
+<span class="sd">                        &quot;Domino Mailbox Archiver&quot;</span>
+<span class="sd">                        &quot;MS SharePoint Archiver&quot;</span>
+<span class="sd">                        &quot;Content Indexing Agent&quot;</span>
+<span class="sd">                        &quot;SRM Agent For Windows File Systems&quot;</span>
+<span class="sd">                        &quot;SRM Agent For UNIX File Systems&quot;</span>
+<span class="sd">                        &quot;DB2 MultiNode&quot;</span>
+<span class="sd">                        &quot;MySQL&quot;</span>
+<span class="sd">                        &quot;Virtual Server&quot;</span>
+<span class="sd">                        &quot;SharePoint Search Connector&quot;</span>
+<span class="sd">                        &quot;Object Link&quot;</span>
+<span class="sd">                        &quot;PostgreSQL&quot;</span>
+<span class="sd">                        &quot;Sybase IQ&quot;</span>
+<span class="sd">                        &quot;External Data Connector&quot;</span>
+<span class="sd">                        &quot;Documentum&quot;</span>
+<span class="sd">                        &quot;Object Store&quot;</span>
+<span class="sd">                        &quot;SAP HANA&quot;</span>
+<span class="sd">                        &quot;Cloud Apps&quot;</span>
+<span class="sd">                        &quot;Exchange Mailbox&quot;</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict        --          settings of a specific jobtype</span>
+<span class="sd">                                        ex:</span>
+<span class="sd">                                        {</span>
+<span class="sd">                                            &quot;jobTypeName&quot;: &quot;Information Management&quot;,</span>
+<span class="sd">                                            &quot;combinedPriority&quot;: 0,</span>
+<span class="sd">                                            &quot;type_of_operation&quot;: 1</span>
+<span class="sd">                                        }</span>
+
+<span class="sd">                                        or</span>
+
+<span class="sd">                                        settings of a specific apptype</span>
+<span class="sd">                                        ex:</span>
+<span class="sd">                                        {</span>
+<span class="sd">                                            &quot;appTypeName&quot;: &quot;Windows File System&quot;,</span>
+<span class="sd">                                            &quot;combinedPriority&quot;: 6,</span>
+<span class="sd">                                            &quot;type_of_operation&quot;: 2</span>
+<span class="sd">                                        }</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jobtype</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span><span class="p">[</span><span class="s1">&#39;jobPrioritySettings&#39;</span><span class="p">][</span><span class="s1">&#39;jobTypePriorityList&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;jobTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">jobtype</span><span class="p">:</span>
+                    <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;jobTypeName&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;jobTypeName&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;combinedPriority&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;combinedPriority&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;type_of_operation&#39;</span><span class="p">:</span> <span class="mi">1</span>
+                    <span class="p">}</span>
+                    <span class="k">return</span> <span class="n">settings</span>
+            <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span><span class="p">[</span><span class="s1">&#39;jobPrioritySettings&#39;</span><span class="p">][</span><span class="s1">&#39;agentTypePriorityList&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;agentTypeEntity&#39;</span><span class="p">][</span><span class="s1">&#39;appTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">jobtype</span><span class="p">:</span>
+                    <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;appTypeName&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;agentTypeEntity&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;appTypeName&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;combinedPriority&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;combinedPriority&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;type_of_operation&#39;</span><span class="p">:</span> <span class="mi">2</span>
+                    <span class="p">}</span>
+                    <span class="k">return</span> <span class="n">settings</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobManagement.get_update_setting"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.get_update_setting">[docs]</a>    <span class="k">def</span> <span class="nf">get_update_setting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobtype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        update settings associated to particular jobtype can be obtained</span>
+<span class="sd">            Args:</span>
+<span class="sd">                jobtype     (str)       --      settings of jobtype to get</span>
+
+<span class="sd">                Available jobtype</span>
+
+<span class="sd">                    Check get_priority_setting(self, jobtype) method documentation.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict        -           settings of a jobtype</span>
+<span class="sd">                                        {</span>
+<span class="sd">                                            &quot;appTypeName&quot;: &quot;Windows File System&quot;,</span>
+<span class="sd">                                            &quot;recoveryTimeInMinutes&quot;: 20,</span>
+<span class="sd">                                            &quot;protectionTimeInMinutes&quot;: 20</span>
+<span class="sd">                                        }</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if input is not valid type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jobtype</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">job_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span><span class="p">[</span><span class="s1">&#39;jobUpdatesSettings&#39;</span><span class="p">][</span><span class="s1">&#39;agentTypeJobUpdateIntervalList&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">job_type</span><span class="p">[</span><span class="s1">&#39;agentTypeEntity&#39;</span><span class="p">][</span><span class="s1">&#39;appTypeName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">jobtype</span><span class="p">:</span>
+                    <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;appTypeName&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;agentTypeEntity&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;appTypeName&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;recoveryTimeInMinutes&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;recoveryTimeInMinutes&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;protectionTimeInMinutes&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;protectionTimeInMinutes&#39;</span><span class="p">)</span>
+                    <span class="p">}</span>
+                    <span class="k">return</span> <span class="n">settings</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">general_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the general settings.</span>
+<span class="sd">             Returns:   (dict)      --  The general settings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_settings</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restart_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the restart settings.</span>
+<span class="sd">                Returns:    (dict)    --  The restart settings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restart_settings</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">priority_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the priority settings.</span>
+<span class="sd">                Returns:    (dict)    --  The priority settings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_priority_settings</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">update_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the update settings.</span>
+<span class="sd">                Returns:    (dict)    --  The update settings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span></div>
+
+
 <div class="viewcode-block" id="Job"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.Job">[docs]</a><span class="k">class</span> <span class="nc">Job</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing client operations for a specific client.&quot;&quot;&quot;</span>
 
@@ -952,21 +2091,26 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_JOB</span><span class="p">)</span>
+        <span class="n">attempts</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">attempts</span><span class="p">):</span>  <span class="c1"># Retrying to ignore the transient case when no jobs are found</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_JOB</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;totalRecordsWithoutPaging&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;totalRecordsWithoutPaging&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                        <span class="k">continue</span>
 
-                <span class="k">if</span> <span class="s1">&#39;jobs&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobs&#39;</span><span class="p">]:</span>
-                        <span class="k">return</span> <span class="n">job</span><span class="p">[</span><span class="s1">&#39;jobSummary&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s1">&#39;jobs&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobs&#39;</span><span class="p">]:</span>
+                            <span class="k">return</span> <span class="n">job</span><span class="p">[</span><span class="s1">&#39;jobSummary&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_job_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the detailed properties of this job.</span>
@@ -1100,7 +2244,7 @@
             <span class="c1"># set the value of previous status as the value of current status</span>
             <span class="n">previous_status</span> <span class="o">=</span> <span class="n">status</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;killed&quot;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;killed&quot;</span><span class="p">,</span> <span class="s2">&quot;failed to start&quot;</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="kc">False</span></div>
 
@@ -1215,6 +2359,17 @@
         <span class="sd">&quot;&quot;&quot;Treats the job full summary as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">username</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the username as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;userName&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">userid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the userid as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;userName&#39;</span><span class="p">][</span><span class="s1">&#39;userId&#39;</span><span class="p">]</span>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

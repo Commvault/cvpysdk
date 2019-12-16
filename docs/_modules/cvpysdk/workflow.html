@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.workflow &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.workflow &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for performing Workflow related operations on Commcell.</span>
@@ -219,6 +229,8 @@
 
 <span class="sd">    _get_workflow_properties()          --  Get workflow properties</span>
 
+<span class="sd">    _get_workflow_definition()          --  Get workflow definition properties</span>
+
 <span class="sd">    @Class Modules</span>
 <span class="sd">    set_workflow_configuration()        -- Set workflow configuration</span>
 
@@ -231,6 +243,8 @@
 <span class="sd">    execute_workflow()                  --  Executes a workflow and returns the job instance</span>
 
 <span class="sd">    export_workflow()                   --  Exports a workflow and returns the workflow xml path</span>
+
+<span class="sd">    clone_workflow()                    --  Clones the workflow</span>
 
 <span class="sd">    refresh()                           --  Refreshes the workflow properties</span>
 
@@ -973,12 +987,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_DEPLOY_WORKFLOW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DEPLOY_WORKFLOW&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_EXECUTE_WORKFLOW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_WORKFLOW&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_GET_WORKFLOW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_WORKFLOW&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_workflow_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_GET_WORKFLOW_DEFINITION</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_WORKFLOW_DEFINITION&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_workflows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">workflows</span><span class="o">.</span><span class="n">all_workflows</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_activities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">workflows</span><span class="o">.</span><span class="n">all_activities</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_get_workflow_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the workflow id associated with this Workflow.</span>
@@ -1054,7 +1070,7 @@
             <span class="s2">&quot;Workflow_SetWorkflowProperties&quot;</span><span class="p">:</span>
             <span class="p">{</span>
                 <span class="n">attrname</span><span class="p">:</span> <span class="n">attrval</span><span class="p">,</span>
-                <span class="s2">&quot;workflow&quot;</span><span class="p">:{</span>
+                <span class="s2">&quot;workflow&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;workflowName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflow_name</span><span class="p">,</span>
                     <span class="s2">&quot;workflowId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflow_id</span>
                 <span class="p">}</span>
@@ -1097,6 +1113,31 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_workflow_definition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the workflow definition from the workflow properties</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                definition  (str)   - workflow attribute of workflow property response</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">workflow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflow_name</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_GET_WORKFLOW_DEFINITION</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_workflow_id</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to clone workflow&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
 
 <div class="viewcode-block" id="WorkFlow.set_workflow_configuration"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow.set_workflow_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">set_workflow_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_xml</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set Workflow configuration</span>
@@ -1206,7 +1247,13 @@
             <span class="p">}</span>
 
             <span class="k">if</span> <span class="n">workflow_engine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">workflow_xml</span><span class="p">[</span><span class="s1">&#39;Workflow_DeployWorkflow&#39;</span><span class="p">][</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workflow_engine</span>
+                <span class="n">workflow_xml</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;Workflow_DeployWorkflow&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">workflow_engine</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
         <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">workflow_xml</span><span class="p">):</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">workflow_xml</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_object</span><span class="p">:</span>
                 <span class="n">workflow_xml</span> <span class="o">=</span> <span class="n">file_object</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
@@ -1424,6 +1471,34 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.clone_workflow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow.clone_workflow">[docs]</a>    <span class="k">def</span> <span class="nf">clone_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clone_workflow_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clones the workflow</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clone_workflow_name (str)   : name for the new workflow(clone)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is not status</span>
+
+<span class="sd">                If cloning workflow operation fails</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">workflow_definition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_workflow_definition</span><span class="p">()</span>
+        <span class="n">workflow_definition</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">clone_workflow_name</span>
+        <span class="n">workflow_definition</span><span class="p">[</span><span class="s1">&#39;uniqueGuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;PUT&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_WORKFLOWS&#39;</span><span class="p">],</span>
+            <span class="n">workflow_definition</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;workflow&#39;</span><span class="p">][</span><span class="s1">&#39;workflowId&#39;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to clone the workflow&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkFlow.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refreshes the properties of the workflow.&quot;&quot;&quot;</span>
