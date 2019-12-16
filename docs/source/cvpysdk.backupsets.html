@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupsets package &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.backupsets package &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -178,6 +178,9 @@
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="cvpysdk.backupsets.cloudapps.html">cvpysdk.backupsets.cloudapps package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cvpysdk.backupsets.cloudapps.html#subpackages">Subpackages</a><ul class="simple">
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="cvpysdk.backupsets.cloudapps.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cvpysdk.backupsets.cloudapps.html#module-cvpysdk.backupsets.cloudapps.salesforce_backupset">cvpysdk.backupsets.cloudapps.salesforce_backupset module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cvpysdk.backupsets.cloudapps.html#module-cvpysdk.backupsets.cloudapps">Module contents</a></li>
@@ -392,6 +395,10 @@ versions of specified file</p>
 <dt>index_pruning_cycles_retention()    –  Sets the number of cycles to be maintained in</dt><dd><p>the index database</p>
 </dd>
 </dl>
+<p>create_fsblr_replication_pair()     –  Create Live/Granular Replication Pair</p>
+<p>create_replica_copy()               –  Triggers Replica Copy for live Replication.</p>
+<p>delete_replication_pair()           –   Delete Replication Pair</p>
+<p>create_granular_replica_copy()      –   Triggers  Granular replication permanent mount</p>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset">
@@ -399,6 +406,58 @@ versions of specified file</p>
 <dd><p>Bases: <a class="reference internal" href="cvpysdk.html#cvpysdk.backupset.Backupset" title="cvpysdk.backupset.Backupset"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.backupset.Backupset</span></code></a></p>
 <p>Derived class from Backupset Base class, representing a fs backupset,
 and to perform operations on that backupset.</p>
+<dl class="method">
+<dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.create_fsblr_replication_pair">
+<code class="descname">create_fsblr_replication_pair</code><span class="sig-paren">(</span><em>srcclientid</em>, <em>destclientid</em>, <em>rpstoreid=None</em>, <em>replicationtype=None</em>, <em>**replication_options</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.create_fsblr_replication_pair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.create_fsblr_replication_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>“Create granular replication pair  json</p>
+<dl>
+<dt>Args:</dt><dd><p>srcclientid   (int)  –  Source client id.</p>
+<p>destclientid    (dict)  – Destintion client id .</p>
+<p><a href="#id2"><span class="problematic" id="id3">**</span></a>replication_options (dict) – object instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.create_granular_replica_copy">
+<code class="descname">create_granular_replica_copy</code><span class="sig-paren">(</span><em>srcclientid</em>, <em>destclientid</em>, <em>scid</em>, <em>blrid</em>, <em>srcguid</em>, <em>dstguid</em>, <em>restoreguid</em>, <em>**replication_options</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.create_granular_replica_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.create_granular_replica_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>“setter for granular blklvl Replication replica copy…</p>
+<dl>
+<dt>Args:</dt><dd><p>srcclientid   (int)  –  Source client id.</p>
+<p>destclientid    (dict)  – Destintion client id .</p>
+<p>scid           (int) –  Replication Subclient id</p>
+<p>blrid           (int) – Blr pair id</p>
+<p>dstguid         (str) – Destination relication guid</p>
+<p>timestamp        (int) – Replication point timestamp</p>
+<p><a href="#id4"><span class="problematic" id="id5">**</span></a>replication_options (dict) – object instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.create_replica_copy">
+<code class="descname">create_replica_copy</code><span class="sig-paren">(</span><em>srcclientid</em>, <em>destclientid</em>, <em>scid</em>, <em>blrid</em>, <em>srcguid</em>, <em>dstguid</em>, <em>**replication_options</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.create_replica_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.create_replica_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>“setter for live  blklvl Replication replica copy…</p>
+<dl>
+<dt>Args:</dt><dd><p>srcclientid   (int)  –  Source client id.</p>
+<p>destclientid    (dict)  – Destintion client id .</p>
+<p>scid           (int) –  Replication Subclient id</p>
+<p>blrid           (int) – Blr pair id</p>
+<p><a href="#id6"><span class="problematic" id="id7">**</span></a>replication_options (dict) – object instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.delete_replication_pair">
+<code class="descname">delete_replication_pair</code><span class="sig-paren">(</span><em>blrid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.delete_replication_pair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.delete_replication_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>“Delete replication pair</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>blrid   (int)  –  blocklevel replication id.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.find_all_versions">
 <code class="descname">find_all_versions</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.find_all_versions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.find_all_versions" title="Permalink to this definition">¶</a></dt>
@@ -470,7 +529,7 @@ to_time=‘2016-04-31 12:00:00’</p>
 
 <dl class="method">
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.restore_in_place">
-<code class="descname">restore_in_place</code><span class="sig-paren">(</span><em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em>, <em>fs_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.restore_in_place" title="Permalink to this definition">¶</a></dt>
+<code class="descname">restore_in_place</code><span class="sig-paren">(</span><em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em>, <em>fs_options=None</em>, <em>restore_jobs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.restore_in_place" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restores the files/folders specified in the input paths list to the same location.</p>
 <dl>
 <dt>Args:</dt><dd><p>paths                   (list)  –  list of full paths of files/folders to restore</p>
@@ -502,6 +561,7 @@ validate_only       : To validate data backed up for restore</p>
 </dl>
 </dd>
 </dl>
+<p>restore_jobs    (list)          –  list of jobs to be restored if the job is index free restore</p>
 </dd>
 <dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
 </dd>
@@ -518,7 +578,7 @@ validate_only       : To validate data backed up for restore</p>
 
 <dl class="method">
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.restore_out_of_place">
-<code class="descname">restore_out_of_place</code><span class="sig-paren">(</span><em>client</em>, <em>destination_path</em>, <em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em>, <em>fs_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.restore_out_of_place" title="Permalink to this definition">¶</a></dt>
+<code class="descname">restore_out_of_place</code><span class="sig-paren">(</span><em>client</em>, <em>destination_path</em>, <em>paths</em>, <em>overwrite=True</em>, <em>restore_data_and_acl=True</em>, <em>copy_precedence=None</em>, <em>from_time=None</em>, <em>to_time=None</em>, <em>fs_options=None</em>, <em>restore_jobs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.restore_out_of_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.restore_out_of_place" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restores the files/folders specified in the input paths list to the input client,
 at the specified destionation location.</p>
 <dl>
@@ -564,6 +624,7 @@ validate_only       : To validate data backed up for restore</p>
 </dl>
 </dd>
 </dl>
+<p>restore_jobs    (list)          –  list of jobs to be restored if the job is index free restore</p>
 </dd>
 <dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
 </dd>
@@ -627,6 +688,7 @@ validate_only       : To validate data backed up for restore</p>
 <p>HyperVHost               (String)    : The Hyper-V host</p>
 <p>GuestUser                (String)    : The Username of the guest OS</p>
 <p>GuestPassword            (String)    : The Password of the guest OS</p>
+<p>CloneClientName          (String)    : The clone client name</p>
 </dd>
 <dt>Returns :</dt><dd><p>returns the task object</p>
 </dd>

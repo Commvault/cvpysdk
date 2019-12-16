@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.sqlsubclient &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.subclients.sqlsubclient &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -144,8 +144,18 @@
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="c1"># ————————————————————————–</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># ————————————————————————–</span>
 
 <span class="sd">&quot;&quot;&quot;File for operating on a SQL Server Subclient</span>
@@ -156,9 +166,9 @@
 <span class="sd">and to perform operations on that subclient</span>
 
 <span class="sd">SQLServerSubclient:</span>
-<span class="sd">    </span>
+
 <span class="sd">    _get_subclient_properties()         --  gets the subclient  related properties of SQL subclient.</span>
-<span class="sd">    </span>
+
 <span class="sd">    _get_subclient_properties_json()    --  gets all the subclient  related properties of SQL subclient.</span>
 
 <span class="sd">    content()                           --  sets the content of the subclient.</span>
@@ -182,21 +192,21 @@
 <span class="sd">        and to perform operations on that subclient.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Gets the subclient  related properties of SQL Server subclient.           </span>
-<span class="sd">           </span>
+        <span class="sd">&quot;&quot;&quot;Gets the subclient  related properties of SQL Server subclient.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">DatabaseSubclient</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DatabaseSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_mssql_subclient_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mssqlSubClientProp&#39;</span><span class="p">,</span> <span class="p">{})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="p">{})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_file_group_subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mssql_subclient_prop</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sqlSubclientType&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-    
+
     <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;get the all subclient related properties of this subclient.        </span>
-<span class="sd">           </span>
+        <span class="sd">&quot;&quot;&quot;Get the all subclient related properties of this subclient.</span>
+
 <span class="sd">           Returns:</span>
 <span class="sd">                dict - all subclient properties put inside a dict</span>
-<span class="sd">           </span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">subclient_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span>
@@ -276,7 +286,7 @@
                 <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sql_server_dict</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_content&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
-    
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;&#39;</span><span class="si">{0}</span><span class="s2">&#39; object has no attribute &#39;</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -312,16 +322,30 @@
             <span class="s1">&#39;restore_out_of_place&#39;</span>
         <span class="p">))</span>
 
-   
 <div class="viewcode-block" id="SQLServerSubclient.backup"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sqlsubclient.SQLServerSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
-            <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;Differential&quot;</span><span class="p">):</span>
+            <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;Differential&quot;</span><span class="p">,</span>
+            <span class="n">data_options</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&quot;&quot;&quot;Runs a backup job for the subclient of the level specified.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                backup_level    (str)   --  level of backup the user wish to run</span>
 <span class="sd">                        Full / Transaction_Log / Differential</span>
 <span class="sd">                    default: Differential</span>
+
+<span class="sd">                data_options    (list)  --  List of options to be enabled on backup</span>
+
+<span class="sd">                The accepted string values are:</span>
+<span class="sd">                    * start_log_backup_after_successfull_backup</span>
+<span class="sd">                    * copy_only</span>
+<span class="sd">                    * allow_diff_backup_on_read_only</span>
+<span class="sd">                    * partial_sql_backup</span>
+<span class="sd">                    * tail_log_backup</span>
+<span class="sd">                    * use_sql_compression</span>
+<span class="sd">                    * checksum</span>
+<span class="sd">                    * continue_after_error</span>
+
+<span class="sd">                    default: []</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this backup job</span>
@@ -339,12 +363,96 @@
         <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;transaction_log&#39;</span><span class="p">,</span> <span class="s1">&#39;differential&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
-        <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT_BACKUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">,</span> <span class="n">backup_level</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">data_options</span><span class="p">:</span>
+            <span class="n">invalid_full_data_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tail_log_backup&#39;</span><span class="p">,</span> <span class="s1">&#39;allow_diff_backup_on_read_only&#39;</span><span class="p">]</span>
+            <span class="n">invalid_transaction_log_data_opts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s1">&#39;start_log_backup_after_successfull_backup&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;allow_diff_backup_on_read_only&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;copy_only&#39;</span><span class="p">]</span>
+            <span class="n">invalid_differential_data_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tail_log_backup&#39;</span><span class="p">,</span> <span class="s1">&#39;copy_only&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="s1">&#39;checksum&#39;</span> <span class="ow">in</span> <span class="n">data_options</span> <span class="ow">and</span> <span class="s1">&#39;use_sql_compression&#39;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;checksum or use_sql_compression can be enabled , but not both&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span> <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_full_data_opts</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for full backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">invalid_full_data_opts</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;transaction_log&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span>
+                                                           <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_transaction_log_data_opts</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for Transaction log backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">invalid_transaction_log_data_opts</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;differential&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span>
+                                                        <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_differential_data_opts</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for full backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">invalid_differential_data_opts</span><span class="p">))</span>
+
+            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclient_name</span><span class="p">,</span>
+                            <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                            <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                            <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">name</span>
+                        <span class="p">}</span>
+                    <span class="p">],</span>
+                    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                        <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">2</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;truncateLogsOnSource&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                    <span class="s2">&quot;sybaseSkipFullafterLogBkp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                    <span class="s2">&quot;notSynthesizeFullFromPrevBackup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                    <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="n">backup_level</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                                    <span class="s2">&quot;incLevel&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                    <span class="s2">&quot;adHocBackup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                    <span class="s2">&quot;runIncrementalBackup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                    <span class="s2">&quot;doNotTruncateLog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                    <span class="s2">&quot;vsaBackupOptions&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                                    <span class="s2">&quot;dataOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;enableIndexCheckPointing&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;verifySynthFull&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;startLogBackupAfterSuccessfullBackup&quot;</span><span class="p">:</span>
+                                            <span class="s2">&quot;start_log_backup_after_successfull_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                                        <span class="s2">&quot;tailLogBackup&quot;</span><span class="p">:</span> <span class="s2">&quot;tail_log_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                                        <span class="s2">&quot;partailSqlBkp&quot;</span><span class="p">:</span> <span class="s2">&quot;partial_sql_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                                        <span class="s2">&quot;useSqlCompression&quot;</span><span class="p">:</span> <span class="s2">&quot;use_sql_compression&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                                        <span class="s2">&quot;useCatalogServer&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;enforceTransactionLogUsage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;copyOnly&quot;</span><span class="p">:</span> <span class="s2">&quot;copy_only&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                                        <span class="s2">&quot;skipConsistencyCheck&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;skipCatalogPhaseForSnapBackup&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;runIntegrityCheck&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;checksum&quot;</span><span class="p">:</span> <span class="s2">&quot;checksum&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                                        <span class="s2">&quot;continueaftererror&quot;</span><span class="p">:</span> <span class="s2">&quot;continue_after_error&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                                        <span class="s2">&quot;allowDiffBackupOnReadOnly&quot;</span><span class="p">:</span> <span class="s2">&quot;allow_diff_backup_on_read_only&quot;</span> <span class="ow">in</span> <span class="n">data_options</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT_BACKUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">,</span> <span class="n">backup_level</span>
+            <span class="p">)</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">request_json</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
@@ -378,7 +486,7 @@
 
 <span class="sd">            Args:</span>
 <span class="sd">                subclient_content (list)  --  list of the content to add to the subclient</span>
-<span class="sd">                </span>
+
 <span class="sd">                action (int)  --   action to perform on subclient</span>
 <span class="sd">                1: OVERWRITE, 2: ADD, 3: DELETE</span>
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.postgresinstance &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.instances.postgresinstance &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for operating on a POSTGRESQL Instance.</span>
@@ -583,21 +593,12 @@
             <span class="n">redirect_path</span><span class="o">=</span><span class="n">redirect_path</span><span class="p">,</span>
             <span class="n">restore_to_disk</span><span class="o">=</span><span class="n">restore_to_disk</span><span class="p">,</span>
             <span class="n">index_free_restore</span><span class="o">=</span><span class="n">index_free_restore</span><span class="p">,</span>
-            <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">)</span>
+            <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_to_disk_job</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">volume_level_restore</span><span class="p">:</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span>
                 <span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;destination&#39;</span><span class="p">][</span><span class="s2">&quot;noOfStreams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">no_of_streams</span>
-
-        <span class="k">if</span> <span class="n">restore_to_disk</span><span class="p">:</span>
-            <span class="c1">#### add jobIds and change operationType in subtask</span>
-            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;subTask&#39;</span><span class="p">][</span><span class="s1">&#39;operationType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1005</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">restore_to_disk_job</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">restore_to_disk_job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Job ID needs to be passed for restore to disk operation.&quot;</span><span class="p">)</span>
-            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span>
-                <span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;jobIds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_to_disk_job</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 </pre></div>

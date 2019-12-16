@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.client &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.client &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -146,8 +146,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for performing client related operations on the Commcell.</span>
@@ -303,6 +313,8 @@
 <span class="sd">    delete_additional_setting()  --  deletes registry key from the client property</span>
 
 <span class="sd">    release_license()            --  releases a license from a client</span>
+<span class="sd">    </span>
+<span class="sd">    retire()                     --  perform retire operation on the client</span>
 
 <span class="sd">    reconfigure_client()         --  reapplies license to the client</span>
 
@@ -313,6 +325,8 @@
 <span class="sd">    create_pseudo_client()       --  Creates a pseudo client</span>
 
 <span class="sd">    set_job_start_time()         -- sets the job start time at client level</span>
+
+<span class="sd">    uninstall_software()		 --	Uninstalls all the packages of the client</span>
 
 
 <span class="sd">Client Attributes</span>
@@ -332,6 +346,8 @@
 <span class="sd">    **client_name**                 --  returns the name of the client</span>
 
 <span class="sd">    **client_hostname**             --  returns the host name of the client</span>
+
+<span class="sd">    **timezone**                    --  returns the timezone of the client</span>
 
 <span class="sd">    **os_info**                     --  returns string consisting of OS information of the client</span>
 
@@ -408,10 +424,12 @@
 
 <span class="kn">import</span> <span class="nn">requests</span>
 
+<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
 <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agents</span>
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
+<span class="kn">from</span> <span class="nn">.deployment.uninstall</span> <span class="k">import</span> <span class="n">Uninstall</span>
 
 <span class="kn">from</span> <span class="nn">.network</span> <span class="k">import</span> <span class="n">Network</span>
 <span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="k">import</span> <span class="n">NetworkThrottle</span>
@@ -1488,6 +1506,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cvd_port</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_job_start_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timezone</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_readiness</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1557,6 +1576,8 @@
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_client_hostname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;hostName&#39;</span><span class="p">]</span>
 
+                <span class="bp">self</span><span class="o">.</span><span class="n">_timezone</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;TimeZone&#39;</span><span class="p">][</span><span class="s1">&#39;TimeZoneName&#39;</span><span class="p">]</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">_is_intelli_snap_enabled</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">client_props</span><span class="p">[</span><span class="s1">&#39;EnableSnapBackups&#39;</span><span class="p">])</span>
 
                 <span class="k">if</span> <span class="s1">&#39;installDirectory&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]:</span>
@@ -1590,12 +1611,18 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">_request_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">enable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">job_start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_request_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">enable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">job_start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                option (str)  --  string option for which to run the API for</span>
 <span class="sd">                    e.g.; Backup / Restore / Data Aging</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                dict - JSON request to pass to the API</span>
@@ -1639,7 +1666,7 @@
                             <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                             <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                             <span class="s2">&quot;dateTime&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timezone&quot;</span><span class="p">,</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span><span class="p">),</span>
                                 <span class="s2">&quot;timeValue&quot;</span><span class="p">:</span> <span class="n">enable_time</span>
                             <span class="p">}</span>
                         <span class="p">}]</span>
@@ -2068,6 +2095,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">update_properties</span><span class="p">)</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">timezone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the timezone of the client&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timezone</span>
+
+    <span class="nd">@timezone</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">timezone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timezone</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter to set the timezone of the client</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timezone    (str)   -- timezone to be set for the client</span>
+
+<span class="sd">        **Note** make use of TIMEZONES dict in constants.py to set timezone</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">update_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span>
+        <span class="n">update_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;TimeZone&#39;</span><span class="p">][</span><span class="s1">&#39;TimeZoneName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timezone</span>
+        <span class="n">update_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;timezoneSetByUser&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">update_properties</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">commcell_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the Client&#39;s commcell name&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;commCellName&#39;</span><span class="p">]</span>
@@ -2279,12 +2326,18 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Client.enable_backup_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="Client.enable_backup_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Backup if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format</span>
+<span class="sd">                enable_time (str)  --  Time to enable the backup at, in 24 Hour format</span>
 <span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -2305,7 +2358,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENT</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
 
@@ -2393,12 +2446,18 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Client.enable_restore_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.enable_restore_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="Client.enable_restore_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.enable_restore_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Restore if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format</span>
+<span class="sd">                enable_time (str)  --  Time to enable the restore at, in 24 Hour format</span>
 <span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -2419,7 +2478,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENT</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
 
@@ -2507,12 +2566,18 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Client.enable_data_aging_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.enable_data_aging_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="Client.enable_data_aging_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.enable_data_aging_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Data Aging if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                enable_time (str)  --  UTC time to enable the data aging at, in 24 Hour format</span>
+<span class="sd">                enable_time (str)  --  Time to enable the data aging at, in 24 Hour format</span>
 <span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -2533,7 +2598,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json</span><span class="p">(</span><span class="s1">&#39;Data Aging&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json</span><span class="p">(</span><span class="s1">&#39;Data Aging&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENT</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
 
@@ -3495,6 +3560,48 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+        
+<div class="viewcode-block" id="Client.retire"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.retire">[docs]</a>    <span class="k">def</span> <span class="nf">retire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Uninstalls the CommVault Software on the client, releases the license and deletes the client.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Job - job object of the uninstall job</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">                                        </span>
+<span class="sd">            SDKException:</span>
+<span class="sd">            </span>
+<span class="sd">                if failed to retire client</span>
+<span class="sd">                            </span>
+<span class="sd">                if response is empty</span>
+<span class="sd">                        </span>
+<span class="sd">                if response code is not as expected</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span> 
+            <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span> 
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_name</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RETIRE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorString&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;jobId&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobId&#39;</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to Retire Client. Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>  
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Client.reconfigure_client"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.reconfigure_client">[docs]</a>    <span class="k">def</span> <span class="nf">reconfigure_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reapplies license to the client</span>
@@ -3723,6 +3830,28 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Client.uninstall_software"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.uninstall_software">[docs]</a>    <span class="k">def</span> <span class="nf">uninstall_software</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force_uninstall</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs readiness check on the client</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                The job object of the uninstall software job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">uninstall</span> <span class="o">=</span> <span class="n">Uninstall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">uninstall</span><span class="o">.</span><span class="n">uninstall_software</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span> <span class="n">force_uninstall</span><span class="o">=</span><span class="n">force_uninstall</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">job_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

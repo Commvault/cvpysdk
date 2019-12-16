@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.clientgroup &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.clientgroup &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Main file for performing client group operations.</span>
@@ -1022,12 +1032,18 @@
                     <span class="k">elif</span> <span class="n">control_options</span><span class="p">[</span><span class="s1">&#39;activityType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">16</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_is_data_aging_enabled</span> <span class="o">=</span> <span class="n">control_options</span><span class="p">[</span><span class="s1">&#39;enableActivityType&#39;</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_request_json_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">enable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_request_json_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">enable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                option (str)  --  string option for which to run the API for</span>
 <span class="sd">                    e.g.; Backup / Restore / Data Aging</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                dict - JSON request to pass to the API</span>
@@ -1063,7 +1079,7 @@
                         <span class="s2">&quot;enableAfterADelay&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                         <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                         <span class="s2">&quot;dateTime&quot;</span><span class="p">:</span> <span class="p">{</span>
-                            <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timezone&quot;</span><span class="p">,</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span><span class="p">),</span>
                             <span class="s2">&quot;timeValue&quot;</span><span class="p">:</span> <span class="n">enable_time</span>
                         <span class="p">}</span>
                     <span class="p">}]</span>
@@ -1378,12 +1394,18 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_backup_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_backup_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_backup_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_backup_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Backup if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format</span>
 <span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1400,7 +1422,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Backup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
@@ -1458,12 +1480,18 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_restore_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_restore_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_restore_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_restore_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_restore_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables restore if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format</span>
 <span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1480,7 +1508,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 
@@ -1538,12 +1566,18 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ClientGroup.enable_data_aging_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_data_aging_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">):</span>
+<div class="viewcode-block" id="ClientGroup.enable_data_aging_at_time"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_data_aging_at_time">[docs]</a>    <span class="k">def</span> <span class="nf">enable_data_aging_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables Data Aging if not already disabled, and enables at the time specified.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format</span>
 <span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
+
+<span class="sd">                **kwargs (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    timezone    (str)   -- timezone to be used of the operation</span>
+
+<span class="sd">                        **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1560,7 +1594,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Data Aging&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_json_</span><span class="p">(</span><span class="s1">&#39;Data Aging&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
 

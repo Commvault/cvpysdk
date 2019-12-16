@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.organization &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.organization &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for doing operations on an organization.</span>
@@ -231,7 +241,9 @@
 
 <span class="sd">    disable_auth_code()         --  disable Auth Code generation for the organization</span>
 
-<span class="sd">    add_users_as_operator()     -- assigns users as operators</span>
+<span class="sd">    add_users_as_operator()     --  assigns users as operator</span>
+
+<span class="sd">    add_user_groups_as_operator()   -- assigns user groups as operator</span>
 
 <span class="sd">    activate()                  --  To activate the organization</span>
 
@@ -287,6 +299,7 @@
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 
 <span class="kn">from</span> <span class="nn">.security.user</span> <span class="k">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="k">import</span> <span class="n">UserGroup</span>
 
 
 <div class="viewcode-block" id="Organizations"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organizations">[docs]</a><span class="k">class</span> <span class="nc">Organizations</span><span class="p">:</span>
@@ -769,7 +782,6 @@
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_server_count</span> <span class="o">=</span> <span class="n">organization_properties</span><span class="p">[</span><span class="s1">&#39;serverCount&#39;</span><span class="p">]</span>
 
-
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organization_info</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
@@ -921,7 +933,6 @@
                 <span class="s1">&#39;subtype&#39;</span><span class="p">:</span> <span class="n">temp_plan</span><span class="o">.</span><span class="n">subtype</span>
             <span class="p">}]</span>
 
-
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">({</span><span class="s1">&#39;defaultPlans&#39;</span><span class="p">:</span> <span class="n">temp</span><span class="p">})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span>
 
@@ -975,7 +986,6 @@
             <span class="p">}</span>
 
             <span class="k">if</span> <span class="n">plan_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_start_time&#39;</span><span class="p">):</span>
-
                 <span class="n">temp</span><span class="p">[</span><span class="s1">&#39;jobStartTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plan_dict</span><span class="p">[</span><span class="s1">&#39;job_start_time&#39;</span><span class="p">]</span>
                 <span class="n">temp</span><span class="p">[</span><span class="s1">&#39;isStartTimeOverridden&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -1106,6 +1116,38 @@
         <span class="n">tenant_operators</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organization_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;organizationProperties&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;operators&#39;</span><span class="p">,</span> <span class="p">[])</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">role</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">tenant_operators</span><span class="p">]</span>
 
+<div class="viewcode-block" id="Organization.add_user_groups_as_operator"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.add_user_groups_as_operator">[docs]</a>    <span class="k">def</span> <span class="nf">add_user_groups_as_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_group_list</span><span class="p">,</span> <span class="n">request_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the local user_group as tenant operator of the company</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            user_group_list		(list)  -- user group list</span>
+
+<span class="sd">            request_type        (str)   --  decides whether to UPDATE, DELETE or OVERWRITE user_group</span>
+<span class="sd">            security association</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">update_operator_request_type</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;NONE&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;OVERWRITE&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;UPDATE&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;DELETE&quot;</span><span class="p">:</span> <span class="mi">3</span>
+        <span class="p">}</span>
+        <span class="n">user_group_list_object</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">user_group</span> <span class="ow">in</span> <span class="n">user_group_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_group</span><span class="p">,</span> <span class="n">UserGroup</span><span class="p">):</span>
+                <span class="n">user_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">user_groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_group</span><span class="p">)</span>
+            <span class="n">user_group_list_object</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user_group</span><span class="p">)</span>
+        <span class="n">request_operator</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;operators&#39;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s1">&#39;userGroup&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;userGroupName&#39;</span><span class="p">:</span> <span class="n">user_group</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">}</span> <span class="k">for</span> <span class="n">user_group</span> <span class="ow">in</span> <span class="n">user_group_list_object</span><span class="p">],</span>
+            <span class="s1">&#39;operatorsOperationType&#39;</span><span class="p">:</span> <span class="n">update_operator_request_type</span><span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">(</span><span class="n">request_operator</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="Organization.add_users_as_operator"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.add_users_as_operator">[docs]</a>    <span class="k">def</span> <span class="nf">add_users_as_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_list</span><span class="p">,</span> <span class="n">request_type</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Update the local user as tenant operator of the company</span>
 
@@ -1116,7 +1158,7 @@
 <span class="sd">                                       OVERWRITE user security association</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">update_opertaor_request_type</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">update_operator_request_type</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;NONE&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
             <span class="s2">&quot;OVERWRITE&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="s2">&quot;UPDATE&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
@@ -1126,7 +1168,7 @@
         <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">user_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
                 <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-                <span class="n">user_list_object</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+            <span class="n">user_list_object</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 
         <span class="n">request_operator</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;operators&#39;</span><span class="p">:</span> <span class="p">[{</span>
@@ -1134,7 +1176,7 @@
                     <span class="s1">&#39;userName&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">user_name</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">}</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">user_list_object</span><span class="p">],</span>
-            <span class="s1">&#39;operatorsOperationType&#39;</span><span class="p">:</span> <span class="n">update_opertaor_request_type</span><span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+            <span class="s1">&#39;operatorsOperationType&#39;</span><span class="p">:</span> <span class="n">update_operator_request_type</span><span class="p">[</span><span class="n">request_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">(</span><span class="n">request_operator</span><span class="p">)</span>
@@ -1232,11 +1274,11 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s2">&quot;deactivateOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
-                            <span class="s2">&quot;disableBackup&quot;</span><span class="p">:</span> <span class="n">disable_backup</span><span class="p">,</span>
-                            <span class="s2">&quot;disableRestore&quot;</span><span class="p">:</span> <span class="n">disable_restore</span><span class="p">,</span>
-                            <span class="s2">&quot;disableLogin&quot;</span><span class="p">:</span> <span class="n">disable_login</span>
-                        <span class="p">}</span>
+            <span class="s2">&quot;deactivateOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;disableBackup&quot;</span><span class="p">:</span> <span class="n">disable_backup</span><span class="p">,</span>
+                <span class="s2">&quot;disableRestore&quot;</span><span class="p">:</span> <span class="n">disable_restore</span><span class="p">,</span>
+                <span class="s2">&quot;disableLogin&quot;</span><span class="p">:</span> <span class="n">disable_login</span>
+            <span class="p">}</span>
         <span class="p">}</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>

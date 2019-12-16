@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.fssubclient &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.subclients.fssubclient &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for operating on a File System Subclient</span>
@@ -164,58 +174,12 @@
 <span class="sd">    _get_subclient_properties_json()    --  gets all the subclient related properties of the</span>
 <span class="sd">    File System subclient</span>
 
+<span class="sd">    _common_backup_options()            --  Generates the advanced job options dict</span>
+
 <span class="sd">    _advanced_backup_options()          --  sets the advanced backup options</span>
 
-<span class="sd">    content()                           --  update the content of the subclient</span>
-
-<span class="sd">    filter_content()                    --  update the filter of the subclient</span>
-
-<span class="sd">    exception_content()                 --  update the exception of the subclient</span>
-
-<span class="sd">    scan_type()                         --  update the scan type of the subclient</span>
-
-<span class="sd">    trueup_option()                     --  enable/disable trueup option of the subclient</span>
-
-<span class="sd">    backup_retention()                  -- 	enable/disable backup retention for the subclient</span>
-
-<span class="sd">    backup_retention_days()             -- 	set number of days for backup retention</span>
-
-<span class="sd">    archiver_retention()                --  enable/disable archiver_retention of the subclient.</span>
-
-<span class="sd">    archiver_retention_days()           --  set number of days for archiver retention</span>
-
-<span class="sd">    file_version()                      --  set version mode and no of version or days</span>
-
-<span class="sd">    disk_cleanup()                      --  enable/disable disk cleanup tab</span>
-
-<span class="sd">    disk_cleanup_rules()                --  update rules for disk_cleanup</span>
-
-<span class="sd">    backup_only_archiving_candidate     --  enable or disable backup only candidate on the subclient</span>
-
-<span class="sd">    trueup_days()                       --  update trueup after **n** days value of the subclient</span>
-
-<span class="sd">    generate_signature_on_ibmi()        --  enable or disable signature generation on ibmi</span>
-
-<span class="sd">    object_level_backup()               --  enable or disable object level backup for ibmi subclient</span>
-
-<span class="sd">    global_filter_status()              --  returns the status whther to include global filters</span>
-
-<span class="sd">    save_while_active_option()          --  enable or disable SAVACT option for ibmi subclients.</span>
-
 <span class="sd">    find_all_versions()                 --  returns the dict containing list of all the backed up</span>
-<span class="sd">    versions of specified file</span>
-
-<span class="sd">    block_level_backup_option()         -- 	Enable/Disable Blocklevel Option on subclient</span>
-
-<span class="sd">    create_file_level_index_option()    -- 	Enable/Disable Metadata collection Option on subclient</span>
-
-<span class="sd">    system_state_option()				--	Enable/Disable System state option for the subclient</span>
-
-<span class="sd">    onetouch_option()                   --  Enable/Disable One-Touch option for the subclient</span>
-
-<span class="sd">    onetouch_server()                   --  Provides the 1-touch server name</span>
-
-<span class="sd">    onetouch_server_directory()         --  Provides the 1-touch server directory</span>
+<span class="sd">                                            versions of specified file</span>
 
 <span class="sd">    backup()                            --  run a backup job for the subclient</span>
 
@@ -224,24 +188,80 @@
 <span class="sd">    restore_out_of_place()              --  Restores the files/folders specified in the input paths list</span>
 <span class="sd">                                            to the input client, at the specified destionation location</span>
 
-<span class="sd">    catalog_acl()                       --  To enable/disable ACL on the subclient</span>
-
-<span class="sd">    index_server()                      --  Sets/gets the index server client for the subclient</span>
-
-<span class="sd">    index_pruning_type()                --  Sets the index pruning type</span>
-
-<span class="sd">    index_pruning_days_retention()      --  Sets the number of days to be maintained in</span>
-<span class="sd">                                            subclient index</span>
-
-<span class="sd">    index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in</span>
-<span class="sd">                                            subclient index</span>
 
 <span class="sd">FileSystemSubclient Instance Attributes:</span>
 <span class="sd">=======================================</span>
 
-<span class="sd">    **software_compression**            --  The software compression setting&#39;s value for the subclient.</span>
+<span class="sd">    **_fs_subclient_prop**                --  Returns the JSON for the fsSubclientProp tag in the Subclient </span>
+<span class="sd">                                              Properties JSON</span>
+<span class="sd">                                             </span>
+<span class="sd">    **content**                           --  update the content of the subclient</span>
 
-<span class="sd">    **use_vss**                         --  The Use VSS setting&#39;s value for the subclient.</span>
+<span class="sd">    **filter_content**                    --  update the filter of the subclient</span>
+
+<span class="sd">    **exception_content**                 --  update the exception of the subclient</span>
+
+<span class="sd">    **scan_type**                         --  update the scan type of the subclient</span>
+
+<span class="sd">    **trueup_option**                     --  enable/disable trueup option of the subclient</span>
+
+<span class="sd">    **backup_retention**                  --  enable/disable backup retention for the subclient</span>
+
+<span class="sd">    **backup_retention_days**             --  set number of days for backup retention</span>
+
+<span class="sd">    **archiver_retention**                --  enable/disable archiver_retention of the subclient.</span>
+
+<span class="sd">    **archiver_retention_days**           --  set number of days for archiver retention</span>
+
+<span class="sd">    **file_version**                      --  set version mode and no of version or days</span>
+
+<span class="sd">    **disk_cleanup**                      --  enable/disable disk cleanup tab</span>
+
+<span class="sd">    **disk_cleanup_rules**                --  update rules for disk_cleanup</span>
+
+<span class="sd">    **backup_only_archiving_candidate**   --  enable or disable backup only candidate on the subclient</span>
+
+<span class="sd">    **trueup_days**                       --  update trueup after **n** days value of the subclient</span>
+
+<span class="sd">    **generate_signature_on_ibmi**        --  enable or disable signature generation on ibmi</span>
+
+<span class="sd">    **object_level_backup**               --  enable or disable object level backup for ibmi subclient</span>
+
+<span class="sd">    **global_filter_status**              --  returns the status whther to include global filters</span>
+
+<span class="sd">    **save_while_active_option**          --  enable or disable SAVACT option for ibmi subclients.</span>
+<span class="sd">    </span>
+<span class="sd">    **software_compression**              --  The software compression setting&#39;s value for the subclient.</span>
+
+<span class="sd">    **use_vss**                           --  The Use VSS setting&#39;s value for the subclient.</span>
+<span class="sd">  </span>
+<span class="sd">    **block_level_backup_option**         --  Enable/Disable Blocklevel Option on subclient</span>
+
+<span class="sd">    **create_file_level_index_option**    --  Enable/Disable Metadata collection Option on subclient</span>
+
+<span class="sd">    **system_state_option**               --  Enable/Disable System state option for the subclient</span>
+
+<span class="sd">    **onetouch_option**                   --  Enable/Disable One-Touch option for the subclient</span>
+
+<span class="sd">    **onetouch_server**                   --  Provides the 1-touch server name</span>
+
+<span class="sd">    **onetouch_server_directory**         --  Provides the 1-touch server directory</span>
+<span class="sd">    </span>
+<span class="sd">    **catalog_acl**                       --  To enable/disable ACL on the subclient</span>
+
+<span class="sd">    **index_server**                      --  Sets/gets the index server client for the subclient</span>
+
+<span class="sd">    **index_pruning_type**                --  Sets the index pruning type</span>
+
+<span class="sd">    **index_pruning_days_retention**      --  Sets the number of days to be maintained in</span>
+<span class="sd">                                              subclient index</span>
+
+<span class="sd">    **index_pruning_cycles_retention**    --  Sets the number of cycles to be maintained in</span>
+<span class="sd">                                              subclient index</span>
+<span class="sd">	</span>
+<span class="sd">    **ibmi_dr_config**                    --  Sets the subclient into one touch mode and adds ibmi DR parameters</span>
+
+<span class="sd">    **backup_savf_file_data**             --  Sets the savf file data property for ibmi backup.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -399,6 +419,40 @@
             <span class="n">update_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exception_dict</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_content&quot;</span><span class="p">,</span> <span class="n">update_content</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_common_backup_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Generates the advanced job options dict</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                options     (dict)  --  advanced job options that are to be included</span>
+<span class="sd">                                            in the request</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -   generated advanced options dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">final_dict</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">FileSystemSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_common_backup_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="n">common_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;jobDescription&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_description&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;jobRetryOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;killRunningJobWhenTotalRunningTimeExpires&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;kill_running_job_when_total_running_time_expires&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                    <span class="s2">&quot;numberOfRetries&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;number_of_retries&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="s2">&quot;enableNumberOfRetries&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enable_number_of_retries&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                    <span class="s2">&quot;runningTime&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;enableTotalRunningTime&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enable_total_running_time&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                        <span class="s2">&quot;totalRunningTime&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_running_time&#39;</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;startUpOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;startInSuspendedState&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;start_in_suspended_state&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                    <span class="s2">&quot;useDefaultPriority&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;use_default_priority&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                    <span class="s2">&quot;priority&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;priority&#39;</span><span class="p">,</span> <span class="mi">166</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">common_options</span>
 
     <span class="k">def</span> <span class="nf">_advanced_backup_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates the advanced backup options dict</span>
@@ -1513,7 +1567,8 @@
                <span class="n">collect_metadata</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                <span class="n">on_demand_input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+               <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">common_backup_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs a backup job for the subclient of the level specified.</span>
 
 <span class="sd">            Args:</span>
@@ -1548,6 +1603,41 @@
 <span class="sd">                            inline_backup_copy      :   to run backup copy immediately(inline)</span>
 <span class="sd">                            skip_catalog            :   skip catalog for intellisnap operation</span>
 
+<span class="sd">                common_backup_options      (dict)  --  advanced job options to be included while</span>
+<span class="sd">                                                        making request</span>
+
+<span class="sd">                        default: None</span>
+
+<span class="sd">                        options:</span>
+<span class="sd">                            job_description              :  job description to be set.</span>
+
+<span class="sd">                            enable_number_of_retries     :  enables/disables the property, number of retrys.</span>
+<span class="sd">                                values:</span>
+<span class="sd">                                    True/False</span>
+
+<span class="sd">                            number_of_retries            : total number of retries to be set.</span>
+
+<span class="sd">                            enable_total_running_time    :  enables/disables the property, toal running time.</span>
+<span class="sd">                                values:</span>
+<span class="sd">                                    True/False</span>
+
+<span class="sd">                            total_running_time           :  total run time to be set in (secs)</span>
+
+<span class="sd">                            kill_running_job_when_total_running_time_expires    :   enables/disables the property.</span>
+<span class="sd">                                values:</span>
+<span class="sd">                                    True/False</span>
+
+<span class="sd">                            start_in_suspended_state     :  enables/disables the property.</span>
+<span class="sd">                                values:</span>
+<span class="sd">                                    True/False</span>
+
+<span class="sd">                            use_default_priority         :  enables/disables the property.</span>
+<span class="sd">                                values:</span>
+<span class="sd">                                    True/False</span>
+
+<span class="sd">                            priority                     :  three digit number to be set.</span>
+<span class="sd">                                default: 166</span>
+
 <span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
 
 <span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
@@ -1581,13 +1671,14 @@
 
             <span class="n">advanced_options</span><span class="p">[</span><span class="s1">&#39;on_demand_input&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">on_demand_input</span>
 
-        <span class="k">if</span> <span class="n">advanced_options</span> <span class="ow">or</span> <span class="n">schedule_pattern</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">advanced_options</span> <span class="ow">or</span> <span class="n">schedule_pattern</span> <span class="ow">or</span> <span class="n">common_backup_options</span><span class="p">:</span>
             <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span>
                 <span class="n">backup_level</span><span class="p">,</span>
                 <span class="n">incremental_backup</span><span class="p">,</span>
                 <span class="n">incremental_level</span><span class="p">,</span>
                 <span class="n">advanced_options</span><span class="p">,</span>
-                <span class="n">schedule_pattern</span>
+                <span class="n">schedule_pattern</span><span class="p">,</span>
+                <span class="n">common_backup_options</span>
             <span class="p">)</span>
 
             <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
@@ -1868,7 +1959,79 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span>
                 <span class="s2">&quot;_commonProperties[&#39;indexSettings&#39;][&#39;indexRetCycle&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;120&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;120&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ibmi_dr_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the ibmi dr configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict)  --  Dictionary of DR parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;backupMaxTime&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ibmiSubclientprop&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupMaxTime&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s1">&#39;printSysInfo&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ibmiSubclientprop&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;printSysInfo&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s1">&#39;userProgram&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ibmiSubclientprop&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userProgram&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;saveSecData&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ibmiSubclientprop&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;saveSecData&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s1">&#39;saveConfObject&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ibmiSubclientprop&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;saveConfObject&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="nd">@ibmi_dr_config</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">ibmi_dr_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dr_config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Sets the subclient into one touch mode and adds ibmi DR parameters</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                dr_config   (dict)  --  Dictionary of IBMi DR parameters</span>
+<span class="sd">                </span>
+<span class="sd">                Example:</span>
+<span class="sd">                    ibmi_dr_config = {</span>
+<span class="sd">                        &#39;backupMaxTime&#39; : 120,</span>
+<span class="sd">                        &#39;printSysInfo&#39; : True,</span>
+<span class="sd">                        &#39;userProgram&#39; : &#39;QSYS/CVPGM&#39;,</span>
+<span class="sd">                        &#39;saveSecData&#39; : True,</span>
+<span class="sd">                        &#39;saveConfObject&#39; : False,</span>
+<span class="sd">                        &#39;library&#39; : [{path:&#39;/QSYS.LIB/TEST1.LIB&#39;}]</span>
+<span class="sd">                    }</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if parameters are not valid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onetouch_option</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dr_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">dr_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ibmiSubclientprop&#39;</span><span class="p">:</span><span class="n">dr_config</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fs_subclient_prop&quot;</span><span class="p">,</span> <span class="n">dr_config</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s2">&quot;The parameter should be dictionary&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_savf_file_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Return the ibmi savf file data configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool)  --  Is savf file data going to be backed up</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fsSubClientProp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupSaveFileData&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@backup_savf_file_data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backup_savf_file_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the backup save file data property on an ibmi subclient</span>
+<span class="sd">        Args:</span>
+<span class="sd">                value   (boolean)  --  Toggle the backup property</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_fsSubClientProp[&#39;backupSaveFileData&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.exchsubclient &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.subclients.exchsubclient &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for operating on an Exchange Subclient.</span>
@@ -317,6 +327,42 @@
             <span class="s2">&quot;exchangeRestoreDrive&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="s2">&quot;isJournalReport&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;journal_report&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;pstFilePath&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_json_restore_exchange_common_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            setter for  the Exchange Mailbox in place restore common options in restore json</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  restore common options need to be included</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (dict)  -       generated exchange restore common options JSON</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_common_option_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clusterDBBackedup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreToDisk&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreDataInsteadOfStub&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;offlineMiningRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;browse&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;skip&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreOnlyStubExists&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;truncateBody&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;truncate_body&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;restoreAsStubs&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restore_as_stubs&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;copyToObjectStore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;onePassRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;collectMsgsLargerThan&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collect_msgs_larger_than&quot;</span><span class="p">,</span> <span class="mi">1024</span><span class="p">),</span>
+            <span class="s2">&quot;collectMsgsDaysAfter&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collect_msgs_days_after&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="s2">&quot;unconditionalOverwrite&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;syncRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;leaveMessageBody&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;leave_message_body&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;collectMsgWithAttach&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collect_msg_with_attach&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;truncateBodyToBytes&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;truncate_body_to_bytes&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;recoverToRecoveredItemsFolder&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;append&quot;</span><span class="p">:</span> <span class="kc">False</span>
         <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">_json_out_of_place_destination_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -580,7 +626,8 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">paths</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">journal_report</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">journal_report</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">restore_as_stub</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the mailboxes/folders specified in the input paths list to the same location.</span>
 
 <span class="sd">            Args:</span>
@@ -591,6 +638,8 @@
 <span class="sd">                journal_report          (bool)  --  Journal report is true for journal and</span>
 <span class="sd">                                                        contentStore Mailbox</span>
 <span class="sd">                    default: False</span>
+
+<span class="sd">                restore_as_stub                   (dict)  --  setters for common options</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -622,6 +671,9 @@
             <span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span>
         <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
             <span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;exchangeOption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_option_restore_json</span>
+        <span class="k">if</span> <span class="n">restore_as_stub</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;commonOptions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_common_option_restore_json</span>
 
         <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
             <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s1">&#39;backupset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_backupset_json</span>
@@ -800,7 +852,7 @@
             <span class="p">}</span>
         <span class="p">}</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">commcell_obj</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s2">&quot;RESTORE&quot;</span><span class="p">],</span> <span class="n">payload_dict</span><span class="p">)</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s2">&quot;RESTORE&quot;</span><span class="p">],</span> <span class="n">payload_dict</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
 
@@ -888,7 +940,8 @@
 <span class="sd">                 Pst task json</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">task_json</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;ownerId&quot;</span><span class="p">:</span> <span class="n">commcell_obj</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">all_users</span><span class="p">[</span><span class="n">commcell_obj</span><span class="o">.</span><span class="n">commcell_username</span><span class="p">],</span>
+            <span class="s2">&quot;ownerId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">all_users</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_username</span><span class="p">],</span>
             <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="s2">&quot;ownerName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_username</span><span class="p">,</span>
             <span class="s2">&quot;sequenceNumber&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
@@ -941,8 +994,6 @@
             <span class="s2">&quot;createNewIndex&quot;</span><span class="p">:</span> <span class="kc">False</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">data_json</span></div></div>
-
-
 </pre></div>
 
            </div>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupsets.fsbackupset &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.backupsets.fsbackupset &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Module for performing operations on a Backupset for the **File System** Agent.</span>
@@ -185,6 +195,15 @@
 <span class="sd">    index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in</span>
 <span class="sd">                                            the index database</span>
 
+
+<span class="sd">    create_fsblr_replication_pair()     --  Create Live/Granular Replication Pair</span>
+
+<span class="sd">    create_replica_copy()               --  Triggers Replica Copy for live Replication.</span>
+
+<span class="sd">    delete_replication_pair()           --   Delete Replication Pair</span>
+
+<span class="sd">    create_granular_replica_copy()      --   Triggers  Granular replication permanent mount</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
@@ -192,7 +211,8 @@
 <span class="kn">from</span> <span class="nn">..backupset</span> <span class="k">import</span> <span class="n">Backupset</span>
 <span class="kn">from</span> <span class="nn">..client</span> <span class="k">import</span> <span class="n">Client</span>
 <span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-
+<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">..schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
 
 <div class="viewcode-block" id="FSBackupset"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.fsbackupset.FSBackupset">[docs]</a><span class="k">class</span> <span class="nc">FSBackupset</span><span class="p">(</span><span class="n">Backupset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Derived class from Backupset Base class, representing a fs backupset,</span>
@@ -206,7 +226,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the same location.</span>
 
 <span class="sd">            Args:</span>
@@ -238,6 +259,7 @@
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
 <span class="sd">                        validate_only       : To validate data backed up for restore</span>
 
+<span class="sd">                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -261,7 +283,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_jobs</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="FSBackupset.restore_out_of_place"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.fsbackupset.FSBackupset.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span>
@@ -274,7 +297,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
 <span class="sd">            at the specified destionation location.</span>
 
@@ -318,6 +342,7 @@
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
 <span class="sd">                        validate_only       : To validate data backed up for restore</span>
 
+<span class="sd">                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -347,7 +372,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_jobs</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="FSBackupset.find_all_versions"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.fsbackupset.FSBackupset.find_all_versions">[docs]</a>    <span class="k">def</span> <span class="nf">find_all_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -599,6 +625,8 @@
 
 <span class="sd">               GuestPassword            (String)    : The Password of the guest OS</span>
 
+<span class="sd">               CloneClientName          (String)    : The clone client name</span>
+
 <span class="sd">        Returns :</span>
 <span class="sd">                    returns the task object</span>
 
@@ -627,7 +655,7 @@
         <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;isoPath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IsoPath&#39;</span><span class="p">)</span>
 
         <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;backupSet&#39;</span><span class="p">][</span>
-            <span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;BackupsetName&#39;</span><span class="p">)</span>
+            <span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupset_name</span>
         <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;csinfo&#39;</span><span class="p">][</span><span class="s1">&#39;ip&#39;</span><span class="p">][</span>
             <span class="s1">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CommServIP&#39;</span><span class="p">)</span>
         <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;csinfo&#39;</span><span class="p">][</span><span class="s1">&#39;commservInfo&#39;</span><span class="p">][</span>
@@ -702,6 +730,9 @@
             <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;clone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;newclient&#39;</span><span class="p">][</span>
                 <span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CloneClientName&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;newclient&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;hostName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CloneClientName&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
 
         <span class="k">if</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;UseDhcp&#39;</span><span class="p">):</span>
             <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;netconfig&#39;</span><span class="p">][</span><span class="s1">&#39;ipinfo&#39;</span><span class="p">][</span><span class="s1">&#39;interfaces&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
@@ -1116,7 +1147,322 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_reponse</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="FSBackupset.create_replica_copy"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.fsbackupset.FSBackupset.create_replica_copy">[docs]</a>    <span class="k">def</span> <span class="nf">create_replica_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">srcclientid</span><span class="p">,</span> <span class="n">destclientid</span><span class="p">,</span> <span class="n">scid</span><span class="p">,</span> <span class="n">blrid</span><span class="p">,</span> <span class="n">srcguid</span><span class="p">,</span> <span class="n">dstguid</span><span class="p">,</span> <span class="o">**</span><span class="n">replication_options</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;&quot;setter for live  blklvl Replication replica copy...</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            srcclientid   (int)  --  Source client id.</span>
+
+<span class="sd">            destclientid    (dict)  -- Destintion client id .</span>
+
+<span class="sd">            scid           (int) --  Replication Subclient id</span>
+
+<span class="sd">            blrid           (int) -- Blr pair id</span>
+
+<span class="sd">            **replication_options (dict) -- object instance</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+
+        <span class="n">srcvol</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;srcvol&#39;</span><span class="p">)</span>
+        <span class="n">restorepath</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RestorePath&#39;</span><span class="p">)</span>
+        <span class="n">replicacopyjson</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;ownerId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;ownerName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4047</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;useScallableResourceManagement&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;blockOperation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;operations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                        <span class="p">{</span>
+                                            <span class="s2">&quot;appId&quot;</span><span class="p">:</span> <span class="n">scid</span><span class="p">,</span>
+                                            <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                                            <span class="s2">&quot;dstProxyClientId&quot;</span><span class="p">:</span> <span class="n">destclientid</span><span class="p">,</span>
+                                            <span class="s2">&quot;fsMountInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                <span class="s2">&quot;doLiveMount&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                                <span class="s2">&quot;lifeTimeInSec&quot;</span><span class="p">:</span> <span class="mi">7200</span><span class="p">,</span>
+                                                <span class="s2">&quot;blrPairId&quot;</span><span class="p">:</span> <span class="n">blrid</span><span class="p">,</span>
+                                                <span class="s2">&quot;mountPathPairs&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                                    <span class="p">{</span>
+                                                        <span class="s2">&quot;mountPath&quot;</span><span class="p">:</span> <span class="n">restorepath</span><span class="p">,</span>
+                                                        <span class="s2">&quot;srcPath&quot;</span><span class="p">:</span> <span class="n">srcvol</span><span class="p">,</span>
+                                                        <span class="s2">&quot;srcGuid&quot;</span><span class="p">:</span> <span class="n">dstguid</span><span class="p">,</span>
+                                                        <span class="s2">&quot;dstGuid&quot;</span><span class="p">:</span> <span class="n">srcguid</span>
+                                                    <span class="p">}</span>
+                                                <span class="p">]</span>
+                                            <span class="p">}</span>
+                                        <span class="p">}</span>
+                                    <span class="p">]</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;commonOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;subscriptionInfo&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;Api_Subscription subscriptionId =</span><span class="se">\&quot;</span><span class="s2">116</span><span class="se">\&quot;</span><span class="s2">/&gt;&quot;</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span> <span class="n">replicacopyjson</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="k">elif</span> <span class="s2">&quot;taskId&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">task_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskId&#39;</span><span class="p">])</span>
+
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Restore job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to run the restore job&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="FSBackupset.delete_replication_pair"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.fsbackupset.FSBackupset.delete_replication_pair">[docs]</a>    <span class="k">def</span> <span class="nf">delete_replication_pair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blrid</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;&quot;Delete replication pair</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            blrid   (int)  --  blocklevel replication id.</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DELETE_BLR_PAIR&#39;</span><span class="p">]</span><span class="o">%</span><span class="n">blrid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span> <span class="ow">and</span> <span class="n">flag</span> <span class="o">==</span>  <span class="kc">False</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="FSBackupset.create_fsblr_replication_pair"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.fsbackupset.FSBackupset.create_fsblr_replication_pair">[docs]</a>    <span class="k">def</span> <span class="nf">create_fsblr_replication_pair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">srcclientid</span><span class="p">,</span> <span class="n">destclientid</span><span class="p">,</span> <span class="n">rpstoreid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">replicationtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                      <span class="o">**</span><span class="n">replication_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;Create granular replication pair  json</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            srcclientid   (int)  --  Source client id.</span>
+
+<span class="sd">            destclientid    (dict)  -- Destintion client id .</span>
+
+<span class="sd">            **replication_options (dict) -- object instance</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">srcvol</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;srcvol&#39;</span><span class="p">)</span>
+        <span class="n">destvol</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destvol&#39;</span><span class="p">)</span>
+        <span class="n">destclient</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destclient&#39;</span><span class="p">)</span>
+        <span class="n">srcclient</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;srcclient&#39;</span><span class="p">)</span>
+        <span class="n">rpstore</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RPStore&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">replicationtype</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">blr_options</span> <span class="o">=</span> <span class="s2">&quot;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=</span><span class="se">\&quot;</span><span class="s2">4</span><span class="se">\&quot;</span><span class="s2">&gt;&lt;granularV2 ccrpInterval=</span><span class="se">\&quot;</span><span class="s2">120</span><span class="se">\&quot;</span><span class="s2"> acrpInterval=</span><span class="se">\&quot;</span><span class="s2">300</span><span class="se">\&quot;</span><span class="s2"> maxRpInterval=</span><span class="se">\&quot;</span><span class="s2">21600</span><span class="se">\&quot;</span><span class="s2"> rpMergeDelay=</span><span class="se">\&quot;</span><span class="s2">172800</span><span class="se">\&quot;</span><span class="s2"> rpRetention=</span><span class="se">\&quot;</span><span class="s2">604800</span><span class="se">\&quot;</span><span class="s2"> maxRpStoreOfflineTime=</span><span class="se">\&quot;</span><span class="s2">0</span><span class="se">\&quot;</span><span class="s2"> useOffPeakSchedule=</span><span class="se">\&quot;</span><span class="s2">0</span><span class="se">\&quot;</span><span class="s2"> rpStoreId=</span><span class="se">\&quot;</span><span class="si">{0}</span><span class="se">\&quot;</span><span class="s2"> rpStoreName=</span><span class="se">\&quot;</span><span class="si">{1}</span><span class="se">\&quot;</span><span class="s2">/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">rpstoreid</span><span class="p">,</span> <span class="n">rpstore</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">blr_options</span> <span class="o">=</span> <span class="s2">&quot;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=</span><span class="se">\&quot;</span><span class="s2">1</span><span class="se">\&quot;</span><span class="s2">&gt;&lt;granularV2 ccrpInterval=</span><span class="se">\&quot;</span><span class="s2">300</span><span class="se">\&quot;</span><span class="s2"> acrpInterval=</span><span class="se">\&quot;</span><span class="s2">0</span><span class="se">\&quot;</span><span class="s2"> maxRpInterval=</span><span class="se">\&quot;</span><span class="s2">21600</span><span class="se">\&quot;</span><span class="s2"> rpMergeDelay=</span><span class="se">\&quot;</span><span class="s2">172800</span><span class="se">\&quot;</span><span class="s2"> rpRetention=</span><span class="se">\&quot;</span><span class="s2">604800</span><span class="se">\&quot;</span><span class="s2"> maxRpStoreOfflineTime=</span><span class="se">\&quot;</span><span class="s2">0</span><span class="se">\&quot;</span><span class="s2"> useOffPeakSchedule=</span><span class="se">\&quot;</span><span class="s2">0</span><span class="se">\&quot;</span><span class="s2">/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&quot;</span>
+
+        <span class="n">granularjson</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;destEndPointType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;blrRecoveryOpts&quot;</span><span class="p">:</span> <span class="n">blr_options</span><span class="p">,</span>
+            <span class="s2">&quot;srcEndPointType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;srcDestVolumeMap&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;sourceVolumeGUID&quot;</span><span class="p">:</span> <span class="s2">&quot;55053f38-2de9-429c-945a-bb8827911c11&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;destVolume&quot;</span><span class="p">:</span> <span class="n">destvol</span><span class="p">,</span>
+                    <span class="s2">&quot;destVolumeGUID&quot;</span><span class="p">:</span> <span class="s2">&quot;3758a646-7b30-411b-88ea-12f6b957dfd1&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;sourceVolume&quot;</span><span class="p">:</span> <span class="n">srcvol</span>
+                <span class="p">}</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;destEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">destclientid</span><span class="p">,</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">destclient</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;sourceEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">srcclientid</span><span class="p">,</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">srcclient</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_BLR_PAIR&#39;</span><span class="p">],</span> <span class="n">granularjson</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span> <span class="ow">and</span> <span class="n">flag</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="FSBackupset.create_granular_replica_copy"><a class="viewcode-back" href="../../../source/cvpysdk.backupsets.html#cvpysdk.backupsets.fsbackupset.FSBackupset.create_granular_replica_copy">[docs]</a>    <span class="k">def</span> <span class="nf">create_granular_replica_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">srcclientid</span><span class="p">,</span> <span class="n">destclientid</span><span class="p">,</span> <span class="n">scid</span><span class="p">,</span> <span class="n">blrid</span><span class="p">,</span> <span class="n">srcguid</span><span class="p">,</span> <span class="n">dstguid</span><span class="p">,</span> <span class="n">restoreguid</span><span class="p">,</span>
+                                     <span class="o">**</span><span class="n">replication_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;setter for granular blklvl Replication replica copy...</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            srcclientid   (int)  --  Source client id.</span>
+
+<span class="sd">            destclientid    (dict)  -- Destintion client id .</span>
+
+<span class="sd">            scid           (int) --  Replication Subclient id</span>
+
+<span class="sd">            blrid           (int) -- Blr pair id</span>
+
+<span class="sd">            dstguid         (str) -- Destination relication guid</span>
+
+<span class="sd">            timestamp        (int) -- Replication point timestamp</span>
+
+<span class="sd">            **replication_options (dict) -- object instance</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span> <span class="nn">re</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GRANULAR_BLR_POINTS&#39;</span><span class="p">]</span>
+                                                           <span class="o">%</span><span class="p">(</span><span class="n">destclientid</span><span class="p">,</span> <span class="n">scid</span><span class="p">,</span> <span class="n">dstguid</span><span class="p">))</span>
+        <span class="n">replicapoints</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">replicapoints</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;},&quot;</span><span class="p">)</span>
+        <span class="n">list_rp</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">list_rp</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">list_rp</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[\W_]+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">list_rp</span><span class="p">)</span>
+        <span class="n">numbers</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numbers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">sequence_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numbers</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">data_changed_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numbers</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="n">srcvol</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;srcvol&#39;</span><span class="p">)</span>
+        <span class="n">restorepath</span> <span class="o">=</span> <span class="n">replication_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RestorePath&#39;</span><span class="p">)</span>
+        <span class="n">replicacopyjson</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;ownerId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;ownerName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4047</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;useScallableResourceManagement&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;blockOperation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;operations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                        <span class="p">{</span>
+                                            <span class="s2">&quot;appId&quot;</span><span class="p">:</span> <span class="n">scid</span><span class="p">,</span>
+                                            <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                                            <span class="s2">&quot;dstProxyClientId&quot;</span><span class="p">:</span> <span class="n">destclientid</span><span class="p">,</span>
+                                            <span class="s2">&quot;fsMountInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                <span class="s2">&quot;doLiveMount&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                                <span class="s2">&quot;lifeTimeInSec&quot;</span><span class="p">:</span> <span class="mi">7200</span><span class="p">,</span>
+                                                <span class="s2">&quot;blrPairId&quot;</span><span class="p">:</span> <span class="n">blrid</span><span class="p">,</span>
+                                                <span class="s2">&quot;mountPathPairs&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                                    <span class="p">{</span>
+                                                        <span class="s2">&quot;mountPath&quot;</span><span class="p">:</span> <span class="n">restorepath</span><span class="p">,</span>
+                                                        <span class="s2">&quot;srcPath&quot;</span><span class="p">:</span> <span class="n">srcvol</span><span class="p">,</span>
+                                                        <span class="s2">&quot;srcGuid&quot;</span><span class="p">:</span> <span class="n">restoreguid</span><span class="p">,</span>
+                                                        <span class="s2">&quot;dstGuid&quot;</span><span class="p">:</span> <span class="n">srcguid</span>
+                                                    <span class="p">}</span>
+                                                <span class="p">],</span>
+                                                <span class="s2">&quot;rp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                    <span class="s2">&quot;timeStamp&quot;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+                                                    <span class="s2">&quot;sequenceNumber&quot;</span><span class="p">:</span> <span class="n">sequence_number</span><span class="p">,</span>
+                                                    <span class="s2">&quot;rpType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                                    <span class="s2">&quot;appConsistent&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                                    <span class="s2">&quot;dataChangedSize&quot;</span><span class="p">:</span> <span class="n">data_changed_size</span>
+                                                <span class="p">}</span>
+                                            <span class="p">}</span>
+                                        <span class="p">}</span>
+                                    <span class="p">]</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;commonOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;subscriptionInfo&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;Api_Subscription subscriptionId =</span><span class="se">\&quot;</span><span class="s2">1451</span><span class="se">\&quot;</span><span class="s2">/&gt;&quot;</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span> <span class="n">replicacopyjson</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="k">elif</span> <span class="s2">&quot;taskId&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">task_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;taskId&#39;</span><span class="p">])</span>
+
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Restore job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to run the restore job&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div></div>
+
 </pre></div>
 
            </div>

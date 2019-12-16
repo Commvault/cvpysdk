@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.operation_window &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.operation_window &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,62 +145,162 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for performing Operation Window related operations on given Commcell entity.</span>
 
+<span class="sd">OperationWindow and OperationWindowDetails are 2 classes defined in this class.</span>
+
 <span class="sd">OperationWindow: Class for performing Operation Window related operations on given Commcell entity.</span>
 
+<span class="sd">OperationWindowDetails: Class for modifying an existing operation window</span>
+
+
 <span class="sd">OperationWindow:</span>
+<span class="sd">===============</span>
 
-<span class="sd">    __init__()                          --  initialize instance of the OperationWindow class</span>
+<span class="sd">    __init__()                          --  Initialize instance of the OperationWindow class</span>
 
-<span class="sd">    create_operation_window()           --  Creates a Operation rule on the given commcell instance</span>
+<span class="sd">    create_operation_window()           --  Creates a Operation rule on the given commcell entity</span>
 
-<span class="sd">    delete_operation_window()           --  deletes a Operation rule on the commcell instance</span>
+<span class="sd">    delete_operation_window()           --  Deletes a Operation rule on the commcell entity(Using rule_id/name)</span>
 
 <span class="sd">    list_operation_window()             --  Lists all the operation rule associated with given commcell entity</span>
 
-<span class="sd">        Example with client instance:</span>
-<span class="sd">            from cvpysdk.commcell import Commcell</span>
-<span class="sd">            commcell = Commcell(&lt;CS&gt;, username, password)</span>
-<span class="sd">            client = commcell.clients.get(&lt;client Name&gt;)</span>
-<span class="sd">            from cvpysdk.operation_window import OperationWindow</span>
-<span class="sd">            client_operation_window = OperationWindow(client)</span>
-<span class="sd">            rule_id = client_operation_window.create_operation_window(&quot;operation window example on clientLevel&quot;)</span>
-<span class="sd">            client_operation_window.list_operation_window()</span>
-<span class="sd">            client_operation_window.delete_operation_window(rule_id)</span>
+<span class="sd">    get()                               --  Returns instance of OperationWindowDetails class(Using rule_id/name)</span>
 
+<span class="sd">OperationWindowDetails:</span>
+<span class="sd">======================</span>
+
+<span class="sd">    __init__()                          --  Initialize instance of OperationWindowDetails class</span>
+
+<span class="sd">    modify_operation_window()           --  Modifies a Operation window</span>
+
+<span class="sd">    _refresh()                          --  Refreshes the properties of a rule</span>
+
+
+<span class="sd">    _get_rule_properties()              -- Assigns the properties of an operation by getting the rule using rule id</span>
+
+
+<span class="sd">OperationWindowDetails Instance Attributes:</span>
+<span class="sd">==========================================</span>
+<span class="sd">    **name**                            --  Returns/Modifies the name of the operation window</span>
+
+<span class="sd">    **start_date**                      --  Returns/Modifies the start date of the operation window</span>
+
+<span class="sd">    **end_date**                        --  Returns/Modifies the end date of the operation window</span>
+
+<span class="sd">    **operations**                      --  Returns/Modifies the operations of the operation window</span>
+
+<span class="sd">    **day_of_week**                     --  Returns/Modifies the day of week of the operation window</span>
+
+<span class="sd">    **start_time**                      --  Returns/Modifies the start time of the operation window</span>
+
+<span class="sd">    **end_time**                        --  Returns/Modifies the end time of the operation window</span>
+
+<span class="sd">    **rule_id**                         --  Returns rule id of the operation window</span>
+
+<span class="sd">    **commcell_id**                     --  Returns commcell id of the entity object</span>
+
+<span class="sd">    **clientgroup_id**                  --  Returns client group id of the entity object</span>
+
+<span class="sd">    **client_id**                       --  Returns client id of the entity object</span>
+
+<span class="sd">    **agent_id**                        --  Returns agent id of the entity object</span>
+
+<span class="sd">    **instance_id**                     --  Returns instance id of the entity object</span>
+
+<span class="sd">    **backupset_id**                    --  Returns backupset id of the entity object</span>
+
+<span class="sd">    **subclient_id**                    --  Returns subclient id of the entity object</span>
+
+<span class="sd">    **entity_level**                    --  Returns entity level of the entity object</span>
+
+<span class="sd">Example with client entity:</span>
+<span class="sd">        from cvpysdk.commcell import Commcell</span>
+<span class="sd">        commcell = Commcell(&lt;CS&gt;, username, password)</span>
+<span class="sd">        client = commcell.clients.get(&lt;client Name&gt;)</span>
+<span class="sd">        from cvpysdk.operation_window import OperationWindow</span>
+<span class="sd">        client_operation_window = OperationWindow(client)</span>
+<span class="sd">        client_operation_window.list_operation_window()</span>
+<span class="sd">        client_operation_window_details = client_operation_window.create_operation_window(name=&quot;operation</span>
+<span class="sd">                                                                                        window example on clientLevel&quot;)</span>
+<span class="sd">        client_operation_window.delete_operation_window(rule_id=client_operation_window_details.rule_id)</span>
+<span class="sd">        client_operation_window_details = client_operation_window.get(rule_id=client_operation_window_details.rule_id)</span>
+<span class="sd">        client_operation_window_details.modify_operation_window(name=&quot;Modified operation window example on clientLevel&quot;)</span>
+
+<span class="sd">Example for modifying a rule:</span>
+<span class="sd">        client_operation_window = OperationWindow(client)</span>
+<span class="sd">        rules = client_operation_window.list_operation_window()</span>
+<span class="sd">        ruleId = rules[0][&#39;ruleId&#39;]</span>
+<span class="sd">        client_operation_window_details = OperationWindowDetails(client, ruleId, client_operation_window.entity_details)</span>
+<span class="sd">        # You can use get(OperationWindow) method to modify a rule too.</span>
+<span class="sd">        client_operation_window_details.modify_operation_window(name=&quot;Modified operation window example on clientLevel&quot;)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">timedelta</span>
-
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="k">import</span> <span class="n">ClientGroup</span>
 <span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Client</span>
 <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agent</span>
 <span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instance</span>
 <span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupset</span>
 <span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
 
+<span class="n">DAY_OF_WEEK_MAPPING</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sunday&#39;</span><span class="p">,</span> <span class="s1">&#39;monday&#39;</span><span class="p">,</span> <span class="s1">&#39;tuesday&#39;</span><span class="p">,</span> <span class="s1">&#39;wednesday&#39;</span><span class="p">,</span> <span class="s1">&#39;thursday&#39;</span><span class="p">,</span> <span class="s1">&#39;friday&#39;</span><span class="p">,</span> <span class="s1">&#39;saturday&#39;</span><span class="p">]</span>
+<span class="n">OPERATION_MAPPING</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;FULL_DATA_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                     <span class="s2">&quot;NON_FULL_DATA_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                     <span class="s2">&quot;SYNTHETIC_FULL&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                     <span class="s2">&quot;DATA_RECOVERY&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                     <span class="s2">&quot;AUX_COPY&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+                     <span class="s2">&quot;DR_BACKUP&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+                     <span class="s2">&quot;DATA_VERIFICATION&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+                     <span class="s2">&quot;ERASE_SPARE_MEDIA&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+                     <span class="s2">&quot;SHELF_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+                     <span class="s2">&quot;DELETE_DATA_BY_BROWSING&quot;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+                     <span class="s2">&quot;DELETE_ARCHIVED_DATA&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+                     <span class="s2">&quot;OFFLINE_CONTENT_INDEXING&quot;</span><span class="p">:</span> <span class="mi">2048</span><span class="p">,</span>
+                     <span class="s2">&quot;ONLINE_CONTENT_INDEXING&quot;</span><span class="p">:</span> <span class="mi">4096</span><span class="p">,</span>
+                     <span class="s2">&quot;SRM&quot;</span><span class="p">:</span> <span class="mi">8192</span><span class="p">,</span>
+                     <span class="s2">&quot;INFORMATION_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">16384</span><span class="p">,</span>
+                     <span class="s2">&quot;MEDIA_REFRESHING&quot;</span><span class="p">:</span> <span class="mi">32768</span><span class="p">,</span>
+                     <span class="s2">&quot;DATA_ANALYTICS&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
+                     <span class="s2">&quot;DATA_PRUNING&quot;</span><span class="p">:</span> <span class="mi">131072</span><span class="p">,</span>
+                     <span class="s2">&quot;BACKUP_COPY&quot;</span><span class="p">:</span> <span class="mi">262144</span><span class="p">,</span>
+                     <span class="s2">&quot;CLEANUP_OPERATION&quot;</span><span class="p">:</span> <span class="mi">524288</span><span class="p">}</span>
 
-<div class="viewcode-block" id="OperationWindow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow">[docs]</a><span class="k">class</span> <span class="nc">OperationWindow</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="OperationWindow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow">[docs]</a><span class="k">class</span> <span class="nc">OperationWindow</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all operation window related operations&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_entity_obj</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize the OperationWindow class instance for performing OperationWindow related operations.</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the OperationWindow class instance for</span>
+<span class="sd">           performing Operation Window related operations.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                generic_entity_obj     (object)    --  Commcell entity object</span>
-<span class="sd">                    Expected value : commcell/Client/Agent/Instance/BackupSet/Subclient Instance</span>
+<span class="sd">                    Expected value : commcell/Client/Agent/Instance/BackupSet/Subclient/Clientgroup Instance</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object  -   instance of the OperationWindow class</span>
 
+<span class="sd">            Raises:</span>
+<span class="sd">                Exception:</span>
+<span class="sd">                    If invalid instance is passed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># imports inside the __init__ method definition to avoid cyclic imports</span>
         <span class="kn">from</span> <span class="nn">.commcell</span> <span class="k">import</span> <span class="n">Commcell</span>
@@ -216,6 +316,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span> <span class="o">=</span> <span class="mi">0</span>
@@ -223,48 +324,69 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_entity_obj</span> <span class="o">=</span> <span class="n">generic_entity_obj</span>
 
         <span class="c1"># we will derive all the entity id&#39;s based on the input entity type</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Commcell</span><span class="p">):</span>
-            <span class="k">pass</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;commserv&quot;</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">ClientGroup</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">clientgroup_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">=</span> <span class="s2">&quot;clientgroupId&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">client_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">=</span> <span class="s2">&quot;clientId&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Agent</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">agent_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">=</span> <span class="s2">&quot;applicationId&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;agent&quot;</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">instance_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">=</span> <span class="s2">&quot;instanceId&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Backupset</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span> \
+                <span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">backupset_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">backupset_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">=</span> <span class="s2">&quot;backupsetId&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupset_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Subclient</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span>  \
-                <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span> \
+                <span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span> \
+                <span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">backupset_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">subclient_id</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">=</span> <span class="s2">&quot;subclientId&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s2">&quot;Invalid instance passed&quot;</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;clientGroupId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_id</span><span class="p">,</span>
+                                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span>
+                                    <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span><span class="p">,</span>
+                                    <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">,</span>
+                                    <span class="s2">&quot;backupsetId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">,</span>
+                                    <span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">})</span>
+
         <span class="c1"># append the entity type and entity id to end of list operation window REST API.</span>
         <span class="c1"># For commcell it will empty string</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">connect_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_operation_window</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;?&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;?&#39;</span> <span class="o">+</span> \
-                              <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_operation_window</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;?&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;?&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_type</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span>
 
 <div class="viewcode-block" id="OperationWindow.create_operation_window"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow.create_operation_window">[docs]</a>    <span class="k">def</span> <span class="nf">create_operation_window</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -274,9 +396,8 @@
             <span class="n">operations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">day_of_week</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">end_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">client_group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Creates operation rule on the initialized commcell instance</span>
+            <span class="n">end_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates operation rule on the initialized commcell entity</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                name          (str)   --  Name of the Operation rule</span>
@@ -289,13 +410,15 @@
 <span class="sd">                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
 <span class="sd">                    default - 365 days</span>
 
-<span class="sd">                operations   (list)   -- The operations the operation rule applies to</span>
+<span class="sd">                operations (list)         --   List of operations for which the operation</span>
+<span class="sd">                                               window is created</span>
+
 <span class="sd">                    Acceptable Values:</span>
 <span class="sd">                        FULL_DATA_MANAGEMENT/NON_FULL_DATA_MANAGEMENT/SYNTHETIC_FULL/</span>
-<span class="sd">                        DATA_RECOVERY/AUX_COPY/ER_BACKUP/ARCHIVE_CHECK/TAPE_ERASE/</span>
+<span class="sd">                        DATA_RECOVERY/AUX_COPY/DR_BACKUP/DATA_VERIFICATION/ERASE_SPARE_MEDIA/</span>
 <span class="sd">                        SHELF_MANAGEMENT/DELETE_DATA_BY_BROWSING/DELETE_ARCHIVED_DATA/</span>
-<span class="sd">                        OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFOMGMT/</span>
-<span class="sd">                        MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/STUBBING</span>
+<span class="sd">                        OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFORMATION_MANAGEMENT/</span>
+<span class="sd">                        MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/CLEANUP_OPERATION</span>
 
 <span class="sd">                day_of_week (list)    -- List of days of the week on which the operation rule applies to</span>
 <span class="sd">                    Acceptable Values:</span>
@@ -311,10 +434,8 @@
 <span class="sd">                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
 <span class="sd">                    default - 86400 (6 PM)</span>
 
-<span class="sd">                client_group_name   (str)  -- Name of client group</span>
-
 <span class="sd">            Returns:</span>
-<span class="sd">                Returns the rule Id (system-generated ID assigned to the operation rule created)</span>
+<span class="sd">                Returns the instance of created Operation window details</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -325,28 +446,6 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">day_of_week_mapping</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sunday&#39;</span><span class="p">,</span> <span class="s1">&#39;monday&#39;</span><span class="p">,</span> <span class="s1">&#39;tuesday&#39;</span><span class="p">,</span> <span class="s1">&#39;wednesday&#39;</span><span class="p">,</span> <span class="s1">&#39;thursday&#39;</span><span class="p">,</span> <span class="s1">&#39;friday&#39;</span><span class="p">,</span> <span class="s1">&#39;saturday&#39;</span><span class="p">]</span>
-        <span class="n">operation_mapping</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;FULL_DATA_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;NON_FULL_DATA_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="s2">&quot;SYNTHETIC_FULL&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-            <span class="s2">&quot;DATA_RECOVERY&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
-            <span class="s2">&quot;AUX_COPY&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
-            <span class="s2">&quot;ER_BACKUP&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
-            <span class="s2">&quot;ARCHIVE_CHECK&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
-            <span class="s2">&quot;TAPE_ERASE&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
-            <span class="s2">&quot;SHELF_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
-            <span class="s2">&quot;DELETE_DATA_BY_BROWSING&quot;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
-            <span class="s2">&quot;DELETE_ARCHIVED_DATA&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
-            <span class="s2">&quot;OFFLINE_CONTENT_INDEXING&quot;</span><span class="p">:</span> <span class="mi">2048</span><span class="p">,</span>
-            <span class="s2">&quot;ONLINE_CONTENT_INDEXING&quot;</span><span class="p">:</span> <span class="mi">4096</span><span class="p">,</span>
-            <span class="s2">&quot;SRM&quot;</span><span class="p">:</span> <span class="mi">8192</span><span class="p">,</span>
-            <span class="s2">&quot;INFOMGMT&quot;</span><span class="p">:</span> <span class="mi">16384</span><span class="p">,</span>
-            <span class="s2">&quot;MEDIA_REFRESHING&quot;</span><span class="p">:</span> <span class="mi">32768</span><span class="p">,</span>
-            <span class="s2">&quot;DATA_ANALYTICS&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
-            <span class="s2">&quot;DATA_PRUNING&quot;</span><span class="p">:</span> <span class="mi">131072</span><span class="p">,</span>
-            <span class="s2">&quot;BACKUP_COPY&quot;</span><span class="p">:</span> <span class="mi">262144</span><span class="p">,</span>
-            <span class="s2">&quot;STUBBING&quot;</span><span class="p">:</span> <span class="mi">524288</span><span class="p">}</span>
 
         <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">start_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
@@ -359,28 +458,23 @@
 
         <span class="n">operations_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">operations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">operations_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">operation_mapping</span><span class="p">[</span><span class="s2">&quot;FULL_DATA_MANAGEMENT&quot;</span><span class="p">]]</span>
+            <span class="n">operations_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">OPERATION_MAPPING</span><span class="p">[</span><span class="s2">&quot;FULL_DATA_MANAGEMENT&quot;</span><span class="p">]]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">operation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">operation_mapping</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">operation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">OPERATION_MAPPING</span><span class="p">:</span>
                     <span class="n">response_string</span> <span class="o">=</span> <span class="s2">&quot;Invalid input </span><span class="si">%s</span><span class="s2"> for operation is passed&quot;</span> <span class="o">%</span> <span class="n">operation</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
-                <span class="n">operations_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operation_mapping</span><span class="p">[</span><span class="n">operation</span><span class="o">.</span><span class="n">upper</span><span class="p">()])</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="n">operations_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OPERATION_MAPPING</span><span class="p">[</span><span class="n">operation</span><span class="o">.</span><span class="n">upper</span><span class="p">()])</span>
 
         <span class="n">day_of_week_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">day_of_week</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">day_of_week_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>  <span class="c1"># defaults to weekdays</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">day_of_week_mapping</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DAY_OF_WEEK_MAPPING</span><span class="p">:</span>
                     <span class="n">response_string</span> <span class="o">=</span> <span class="s2">&quot;Invalid input value </span><span class="si">%s</span><span class="s2"> for day_of_week&quot;</span> <span class="o">%</span> <span class="n">day</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
-                <span class="n">day_of_week_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">day_of_week_mapping</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
-
-        <span class="n">client_group_id</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">client_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">client_groups</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">client_group_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">client_group_id</span> <span class="o">=</span> <span class="n">client_groups</span><span class="o">.</span><span class="n">all_clientgroups</span><span class="p">[</span><span class="n">client_group_name</span><span class="p">]</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="n">day_of_week_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
 
         <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;operationWindow&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -396,7 +490,7 @@
                 <span class="p">}]</span>
             <span class="p">},</span>
             <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;clientGroupId&quot;</span><span class="p">:</span> <span class="n">client_group_id</span><span class="p">,</span>
+                <span class="s2">&quot;clientGroupId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_id</span><span class="p">),</span>
                 <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
                 <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_id</span><span class="p">),</span>
                 <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">),</span>
@@ -408,24 +502,21 @@
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;error&quot;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;operationWindow&#39;</span><span class="p">][</span><span class="s1">&#39;ruleId&#39;</span><span class="p">])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                        <span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;error&quot;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span><span class="p">(</span>
-                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rule_id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;operationWindow&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ruleId&#39;</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="OperationWindow.delete_operation_window"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow.delete_operation_window">[docs]</a>    <span class="k">def</span> <span class="nf">delete_operation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Deletes the operation rule associated with given rule Id.</span>
+<div class="viewcode-block" id="OperationWindow.delete_operation_window"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow.delete_operation_window">[docs]</a>    <span class="k">def</span> <span class="nf">delete_operation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes the operation rule associated with given rule Id/Name.</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                rule_id       (int)   --  Rule Id of the operation window returned in create request</span>
+<span class="sd">                rule_id       (int)   --  Rule Id of the operation window</span>
+
+<span class="sd">                name           (str)   --  Name of the operation window</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -436,26 +527,55 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">rule_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Either Name or Rule Id is needed&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">rule_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;106&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">rule_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">rule_id</span>
+
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rule_id</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;error&quot;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                        <span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;error&quot;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span><span class="p">(</span>
                 <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="OperationWindow.list_operation_window"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow.list_operation_window">[docs]</a>    <span class="k">def</span> <span class="nf">list_operation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Lists the operation rules for the associated commcell entity.</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                Returns the List of operation rules (dictionary) associated with given commcell entity</span>
+
+<span class="sd">                Example --</span>
+
+<span class="sd">                    [{&#39;ruleEnabled&#39;: True,</span>
+<span class="sd">                      &#39;endDate&#39;: 0,</span>
+<span class="sd">                      &#39;level&#39;: 0,</span>
+<span class="sd">                      &#39;name&#39;: &#39;Rule1&#39;,</span>
+<span class="sd">                      &#39;ruleId&#39;: 1,</span>
+<span class="sd">                      &#39;startDate&#39;: 0,</span>
+<span class="sd">                      &#39;operations&#39;: [&#39;FULL_DATA_MANAGEMENT&#39;, &#39;NON_FULL_DATA_MANAGEMENT&#39;],</span>
+<span class="sd">                      &#39;company&#39;: {&#39;_type_&#39;: 61,</span>
+<span class="sd">                                  &#39;providerId&#39;: 0,</span>
+<span class="sd">                                  &#39;providerDomainName&#39;: &#39;&#39;},</span>
+<span class="sd">                      &#39;dayTime&#39;: [{&#39;startTime&#39;: 28800,</span>
+<span class="sd">                                   &#39;endTime&#39;: 64800,</span>
+<span class="sd">                                   &#39;dayOfWeek&#39;: [&#39;sunday&#39;,&#39;monday&#39;]}]}</span>
+<span class="sd">                    ]</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -470,18 +590,418 @@
             <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">connect_string</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;error&quot;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;operationWindow&#39;</span><span class="p">]</span>
+                    <span class="n">list_of_rules</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operationWindow&quot;</span><span class="p">)</span>
+                    <span class="n">operation_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPERATION_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                    <span class="k">if</span> <span class="n">list_of_rules</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">operation_rule</span> <span class="ow">in</span> <span class="n">list_of_rules</span><span class="p">:</span>
+                            <span class="n">operations</span> <span class="o">=</span> <span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operations&quot;</span><span class="p">)</span>
+                            <span class="n">day_of_week</span> <span class="o">=</span> <span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dayTime&quot;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dayOfWeek&quot;</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">operations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">operation_rule</span><span class="p">[</span><span class="s2">&quot;operations&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">operation_reverse_mapping</span><span class="p">[</span><span class="n">operation</span><span class="p">]</span>
+                                                                <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">day_of_week</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">operation_rule</span><span class="p">[</span><span class="s2">&quot;dayTime&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;dayOfWeek&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="p">[</span><span class="n">day</span><span class="p">]</span>
+                                                                             <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="n">list_of_rules</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OperationWindow.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the operation rule object for a given rule</span>
+
+<span class="sd">         Args:</span>
+<span class="sd">            rule_id               (int)   --  Rule Id of an operation Window</span>
+
+<span class="sd">            name                  (str)   --  Name of the operation window</span>
+
+<span class="sd">         Returns:</span>
+<span class="sd">                object - instance of the OperationWindowDetails class</span>
+<span class="sd">                            for the given operation window name/rule</span>
+<span class="sd">         Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the operation window name argument is not string</span>
+
+<span class="sd">                    if no operation window exists with such name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">rule_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Either Name or Rule Id is needed&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">rule_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;106&#39;</span><span class="p">)</span>
+
+        <span class="n">list_of_rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_operation_window</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rule_id</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">operation_rule</span> <span class="ow">in</span> <span class="n">list_of_rules</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ruleId&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">rule_id</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">OperationWindowDetails</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">rule_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No such operation window with rule id as </span><span class="si">{0}</span><span class="s2"> exists&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rule_id</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">rules</span> <span class="o">=</span> <span class="p">[</span><span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ruleId&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">operation_rule</span> <span class="ow">in</span> <span class="n">list_of_rules</span>
+                     <span class="k">if</span> <span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">rules</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No such operation window with name as </span><span class="si">{0}</span><span class="s2"> exists&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rules</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">OperationWindowDetails</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">rules</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_details</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;More than one operation window are named as </span><span class="si">{0}</span><span class="s2"> exists&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="OperationWindowDetails"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindowDetails">[docs]</a><span class="k">class</span> <span class="nc">OperationWindowDetails</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Helper class for modifying operation window&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">rule_id</span><span class="p">,</span> <span class="n">entity_details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the OperationWindowDetails class instance for</span>
+<span class="sd">           modifying OperationWindow.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                generic_entity_obj     (object)    --  Commcell entity object</span>
+<span class="sd">                    Expected value : commcell/Client/Agent/Instance/BackupSet/Subclient/Clientgroup Entity</span>
+
+<span class="sd">                rule_id (int)   -- Rule id of the operation window to be modified</span>
+
+<span class="sd">                entity_details -- Details related to the entity</span>
+
+<span class="sd">            Usually gets initialized from OperationWindow class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the OperationWindowDetails class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="k">import</span> <span class="n">Commcell</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Commcell</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">generic_entity_obj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">generic_entity_obj</span><span class="o">.</span><span class="n">_commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_services</span><span class="p">[</span><span class="s1">&#39;OPERATION_WINDOW&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rule_id</span> <span class="o">=</span> <span class="n">rule_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_operations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_day_of_week</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_id</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;clientGroupId&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client_id</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;clientId&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;applicationId&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;instanceId&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_id</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;backupsetId&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;subclientId&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_level</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;entity_level&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_refresh</span><span class="p">()</span>
+
+<div class="viewcode-block" id="OperationWindowDetails.modify_operation_window"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindowDetails.modify_operation_window">[docs]</a>    <span class="k">def</span> <span class="nf">modify_operation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">modify_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Modifies the Operation rule.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                modify_options(dict)  -- Arbitrary keyword arguments.</span>
+
+<span class="sd">                modify_options Args:</span>
+<span class="sd">                    name          (str)   --  Name of the Operation rule</span>
+
+<span class="sd">                    start_date    (int)   -- The start date for the operation rule.</span>
+<span class="sd">                        Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">                        default - current date</span>
+
+<span class="sd">                    end_date      (int)   -- The end date for the operation rule.</span>
+<span class="sd">                        Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">                        default - 365 days</span>
+
+<span class="sd">                    operations (list)         --   List of operations for which the operation</span>
+<span class="sd">                                                   window is created</span>
+
+<span class="sd">                        Acceptable Values:</span>
+<span class="sd">                            FULL_DATA_MANAGEMENT/NON_FULL_DATA_MANAGEMENT/SYNTHETIC_FULL/</span>
+<span class="sd">                            DATA_RECOVERY/AUX_COPY/DR_BACKUP/DATA_VERIFICATION/ERASE_SPARE_MEDIA/</span>
+<span class="sd">                            SHELF_MANAGEMENT/DELETE_DATA_BY_BROWSING/DELETE_ARCHIVED_DATA/</span>
+<span class="sd">                            OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFORMATION_MANAGEMENT/</span>
+<span class="sd">                            MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/CLEANUP_OPERATION</span>
+
+<span class="sd">                    day_of_week (list)    -- List of days of the week on which the operation rule applies to</span>
+<span class="sd">                        Acceptable Values:</span>
+<span class="sd">                            sunday/ monday/ tuesday/ wednesday/ thursday/ friday/ saturday</span>
+
+<span class="sd">                        default- Weekdays</span>
+
+<span class="sd">                    start_time  (int)     -- The start time for the &quot;do not run&quot; interval.</span>
+<span class="sd">                        Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">                        default - 28800 (8 AM)</span>
+
+<span class="sd">                    end_time    (int)     -- The end time for the &quot;do not run&quot; interval.</span>
+<span class="sd">                        Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">                        default - 86400 (6 PM)</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if the Operation window could not be Modified</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start_date</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;start_date&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="p">)</span>
+        <span class="n">end_date</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_date&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;start_time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">operations</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operations&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations</span><span class="p">)</span>
+        <span class="n">day_of_week</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;day_of_week&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">day_of_week</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operations</span><span class="p">:</span>
+            <span class="c1"># Empty list can be passed</span>
+            <span class="n">operations_list</span> <span class="o">=</span> <span class="n">operations</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">operations_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">OPERATION_MAPPING</span><span class="p">[</span><span class="n">operation</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span> <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">]</span>
+
+        <span class="n">day_of_week_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">]</span>
+
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;operationWindow&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ruleEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;startDate&quot;</span><span class="p">:</span> <span class="n">start_date</span><span class="p">,</span>
+                <span class="s2">&quot;endDate&quot;</span><span class="p">:</span> <span class="n">end_date</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;ruleId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rule_id</span><span class="p">),</span>
+                <span class="s2">&quot;operations&quot;</span><span class="p">:</span> <span class="n">operations_list</span><span class="p">,</span>
+                <span class="s2">&quot;dayTime&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;startTime&quot;</span><span class="p">:</span> <span class="n">start_time</span><span class="p">,</span>
+                    <span class="s2">&quot;endTime&quot;</span><span class="p">:</span> <span class="n">end_time</span><span class="p">,</span>
+                    <span class="s2">&quot;dayOfWeek&quot;</span><span class="p">:</span> <span class="n">day_of_week_list</span>
+                <span class="p">}]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientGroupId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_id</span><span class="p">),</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_id</span><span class="p">),</span>
+                <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span><span class="p">),</span>
+                <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span><span class="p">),</span>
+                <span class="s2">&quot;backupsetId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backupset_id</span><span class="p">),</span>
+                <span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;PUT&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operation_window</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;operationWindow&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ruleId&#39;</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_refresh</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                        <span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;error&quot;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span><span class="p">(</span>
-                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refreshes the properties of a rule&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_rule_properties</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_rule_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assigns the properties of an operation rule by getting the rule using rule id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xml</span> <span class="o">=</span> <span class="s2">&quot;&lt;Api_GetOperationWindowReq&gt;&lt;ruleId&gt;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rule_id</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;&lt;/ruleId&gt;&lt;/Api_GetOperationWindowReq&gt;&quot;</span>
+        <span class="n">response_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_qoperation_execute</span><span class="p">(</span><span class="n">xml</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response_json</span><span class="p">:</span>
+            <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">response_json</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;operationWindow&#39;</span><span class="p">,</span> <span class="p">{})[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_start_date</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;startDate&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_end_date</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;endDate&#39;</span><span class="p">)</span>
+                <span class="n">operations</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;operations&#39;</span><span class="p">)</span>
+                <span class="n">operation_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPERATION_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_operations</span> <span class="o">=</span> <span class="p">[</span><span class="n">operation_reverse_mapping</span><span class="p">[</span><span class="n">operation</span><span class="p">]</span> <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">]</span>
+                <span class="n">day_of_week</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dayTime&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dayOfWeek&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_day_of_week</span> <span class="o">=</span> <span class="p">[</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="p">[</span><span class="n">day</span><span class="p">]</span> <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dayTime&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;startTime&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dayTime&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;endTime&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                   <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats name as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the name of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">             name: (str) --Name of the operation rule to be modified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats start_date as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_date</span>
+
+    <span class="nd">@start_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_date</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the start_date of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            start_date: (int) --The start date for the operation rule.</span>
+<span class="sd">                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats end_date as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_date</span>
+
+    <span class="nd">@end_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_date</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the end_date of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            end_date: (int)   -- The end date for the operation rule.</span>
+<span class="sd">                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">end_date</span><span class="o">=</span><span class="n">end_date</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">operations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats opearations as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_operations</span>
+
+    <span class="nd">@operations</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">operations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operations</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the operations of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            operations: (list)         --   List of operations for which the operation</span>
+<span class="sd">                                               window is created</span>
+<span class="sd">                    Acceptable Values:</span>
+<span class="sd">                        FULL_DATA_MANAGEMENT/NON_FULL_DATA_MANAGEMENT/SYNTHETIC_FULL/</span>
+<span class="sd">                        DATA_RECOVERY/AUX_COPY/DR_BACKUP/DATA_VERIFICATION/ERASE_SPARE_MEDIA/</span>
+<span class="sd">                        SHELF_MANAGEMENT/DELETE_DATA_BY_BROWSING/DELETE_ARCHIVED_DATA/</span>
+<span class="sd">                        OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFORMATION_MANAGEMENT/</span>
+<span class="sd">                        MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/CLEANUP_OPERATION</span>
+
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">operations</span><span class="o">=</span><span class="n">operations</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">day_of_week</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats day_of_week as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_day_of_week</span>
+
+    <span class="nd">@day_of_week</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">day_of_week</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">day_of_week</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the day_of_week of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            day_of_week: (list)    -- List of days of the week on which the operation rule applies to</span>
+<span class="sd">                    Acceptable Values:</span>
+<span class="sd">                        sunday/ monday/ tuesday/ wednesday/ thursday/ friday/ saturday</span>
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">day_of_week</span><span class="o">=</span><span class="n">day_of_week</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats start_time as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span>
+
+    <span class="nd">@start_time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the start_time of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            start_time: (int)     -- The start time for the &quot;do not run&quot; interval.</span>
+<span class="sd">                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats end_time as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span>
+
+    <span class="nd">@end_time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the end_time of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            end_time: -- The end time for the &quot;do not run&quot; interval.</span>
+<span class="sd">                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rule_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats rule_id as read-only attribute&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rule_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">commcell_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the commcell id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">clientgroup_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the client group id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">client_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the client id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">agent_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the agent id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">instance_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the instance id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backupset_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the backupset id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">subclient_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the sub client id as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">entity_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the entity level as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_level</span></div>
 </pre></div>
 
            </div>

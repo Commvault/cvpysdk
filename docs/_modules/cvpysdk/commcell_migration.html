@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.commcell_migration &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.commcell_migration &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -144,8 +144,18 @@
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;Class to perform all the CommCell Migration operations on commcell</span>
@@ -161,6 +171,8 @@
 <span class="sd">    commcell_export()               --  function to run CCM Export operation.</span>
 
 <span class="sd">    commcell_import()               --  function to run CCM Import operation.</span>
+
+<span class="sd">    tape_import()                   --  function to run tape import operation.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
@@ -483,6 +495,88 @@
                 <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
             <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;CCM Import job failed with error code : &#39;</span> <span class="o">+</span>
+                                   <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CommCellMigration.tape_import"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell_migration.CommCellMigration.tape_import">[docs]</a>    <span class="k">def</span> <span class="nf">tape_import</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">library_id</span><span class="p">,</span> <span class="n">medias_id</span><span class="p">,</span> <span class="n">drive_pool_id</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; performs the tape import import operation for the specified tape.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                library_id      (int)       --      tape library id.</span>
+
+<span class="sd">                medias_id        (list)       --      tape id.</span>
+
+<span class="sd">                drive_pool_id   (int)       --      drive pool id</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                Tape import job instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tape_import_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">],</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;ownerId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;ownerName&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;sequenceNumber&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;taskId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span> <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4017</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;contentIndexingOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;subClientBasedAnalytics&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                <span class="p">},</span> <span class="s2">&quot;libraryOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;operation&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span> <span class="s2">&quot;media&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                    <span class="p">],</span> <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span> <span class="s2">&quot;libraryId&quot;</span><span class="p">:</span> <span class="n">library_id</span>
+                                    <span class="p">},</span> <span class="s2">&quot;catalogMedia&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;fileMarkerToStart&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;fileMarkerToEnd&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;reCatalog&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;maxNumOfDrives&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s2">&quot;spareGroupId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;merge&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                        <span class="s2">&quot;drivePoolEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">47</span><span class="p">,</span> <span class="s2">&quot;drivePoolId&quot;</span><span class="p">:</span> <span class="n">drive_pool_id</span>
+                                        <span class="p">}</span>
+                                    <span class="p">},</span> <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;mediaAgentId&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">11</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span> <span class="s2">&quot;restoreOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;virtualServerRstOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;isBlockLevelReplication&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                <span class="p">},</span> <span class="s2">&quot;commonOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;syncRestore&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">sub_dict</span> <span class="o">=</span> <span class="n">tape_import_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;adminOpts&quot;</span><span class="p">][</span><span class="s2">&quot;libraryOption&quot;</span><span class="p">][</span><span class="s2">&quot;media&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">media</span> <span class="ow">in</span> <span class="n">medias_id</span><span class="p">:</span>
+            <span class="n">temp_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">46</span><span class="p">,</span> <span class="s2">&quot;mediaId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">media</span><span class="p">),</span> <span class="s2">&quot;mediaName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">}</span>
+            <span class="n">sub_dict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">],</span>
+                                                           <span class="n">tape_import_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;jobIds&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CommCellMigration&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Tape Import job failed with error code : &#39;</span> <span class="o">+</span>
                                    <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>

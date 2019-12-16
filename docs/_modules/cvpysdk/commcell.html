@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.17 documentation</title>
+  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.18 documentation</title>
   
 
   
@@ -145,8 +145,18 @@
 
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
-<span class="c1"># See LICENSE.txt in the project root for</span>
-<span class="c1"># license information.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="sd">&quot;&quot;&quot;Main file for performing operations on Commcell via REST API.</span>
 
@@ -345,6 +355,11 @@
 <span class="sd">    **commcell_migration**      --  returns the instance of the &#39;CommCellMigration&#39; class,</span>
 <span class="sd">    to interact with the Commcell Export &amp; Import on the Commcell</span>
 
+<span class="sd">    **backup_network_pairs**    --  returns the instance of &#39;BackupNetworkPairs&#39; class to</span>
+<span class="sd">    perform backup network pairs operations on the commcell class</span>
+
+<span class="sd">    **recovery_targets**        -- Returns the instance of RecoverTargets class</span>
+<span class="sd">    </span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
@@ -399,6 +414,8 @@
 <span class="kn">from</span> <span class="nn">.deployment.download</span> <span class="k">import</span> <span class="n">Download</span>
 <span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
 <span class="kn">from</span> <span class="nn">.name_change</span> <span class="k">import</span> <span class="n">NameChange</span>
+<span class="kn">from</span> <span class="nn">.backup_network_pairs</span> <span class="k">import</span> <span class="n">BackupNetworkPairs</span>
+<span class="kn">from</span> <span class="nn">.recovery_targets</span> <span class="k">import</span> <span class="n">RecoveryTargets</span>
 
 <span class="n">USER_LOGGED_OUT_MESSAGE</span> <span class="o">=</span> <span class="s1">&#39;User Logged Out. Please initialize the Commcell object again.&#39;</span>
 <span class="sd">&quot;&quot;&quot;str:     Message to be returned to the user, when trying the get the value of an attribute</span>
@@ -590,6 +607,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_registered_commcells</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_rules_service</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backup_network_pairs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_recovery_targets</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
@@ -674,6 +693,7 @@
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_network_pairs</span>
         <span class="k">del</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">_get_commserv_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1247,6 +1267,30 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_rules_service</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_rules_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_redirect_rules_service_commcell</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_rules_service</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">recovery_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of RecoverTargets class&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recovery_targets</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_recovery_targets</span> <span class="o">=</span> <span class="n">RecoveryTargets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recovery_targets</span>
+
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_network_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of BackupNetworkPairs class&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_network_pairs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backup_network_pairs</span> <span class="o">=</span> <span class="n">BackupNetworkPairs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_network_pairs</span>
+
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
 
 <div class="viewcode-block" id="Commcell.logout"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.logout">[docs]</a>    <span class="k">def</span> <span class="nf">logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Logs out the user associated with the current instance.&quot;&quot;&quot;</span>
