@@ -50,6 +50,7 @@ class CloudAppsSubclient(Subclient):
             1: GoogleSubclient,
             2: GoogleSubclient,
             3: SalesforceSubclient,
+            4: CloudDatabaseSubclient, # Amazon RDS Subclient
             5: CloudStorageSubclient,  # AmazonS3 Subclient
             6: CloudStorageSubclient,  # AzureBlob Subclient
             7: GoogleSubclient,  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too

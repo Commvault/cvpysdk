@@ -45,7 +45,7 @@ from enum import Enum
 from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-from .vmwaresubclient import VMWareVirtualServerSubclient
+from .vmwaresubclient import vmware
 
 
 

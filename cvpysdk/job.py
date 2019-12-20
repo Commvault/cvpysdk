@@ -261,6 +261,21 @@ Job instance Attributes
 
 **job.state**                       -- returns the current state of the job.
 
+ErrorRule
+=========
+
+    _get_xml_for_rule()             --  Returns the XML for a given rule's dictionary of key value pairs.
+
+    add_error_rule()                --  Add new error rules as well as update existing rules.
+
+    _modify_job_status_on_errors()  --  Internally used to enable or disable job status on errors.
+
+    enable()                        --  Enable an error rule for a specific iDA using _modify_job_status_on_errors.
+
+    disable()                       --  Disable an error rule for a specific iDA using _modify_job_status_on_errors.
+
+    _modify_job_status_on_errors()  --  To enable or disable job status on errors.
+
 """
 
 from __future__ import absolute_import
@@ -849,7 +864,14 @@ class JobManagement(object):
         self._comcell = commcell_object
         self._service = commcell_object._services.get('JOB_MANAGEMENT_SETTINGS')
         self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._error_rules = None
         self.refresh()
+
+    @property
+    def error_rules(self):
+        if not  self._error_rules:
+            self._error_rules = _ErrorRule(self._comcell)
+        return self._error_rules
 
     def _set_jobmanagement_settings(self):
         """
@@ -1840,6 +1862,18 @@ class JobManagement(object):
 
         return self._update_settings
 
+    def set_job_error_threshold(self, error_threshold_dict):
+        """
+
+        Args:
+            error_threshold_dict  (dict)  :   A dictionary of following  key/value pairs can be set.
+
+        Returns:
+            None
+
+        """
+        raise NotImplementedError("Yet To Be Implemented")
+
 
 class Job(object):
     """Class for performing client operations for a specific client."""
@@ -2436,3 +2470,271 @@ class Job(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+class _ErrorRule:
+    """Class for enabling, disabling, adding, getting and deleting error rules."""
+
+    def __init__(self, commcell):
+        #
+        self.commcell = commcell
+        self.rule_dict = {}
+        self.xml_body = """
+        <App_SetJobErrorDecision>
+        <entity _type_="1" commCellId="{commcell_id}" commCellName="{commserv_name}" />
+        <jobErrorRuleList>
+        <idaRuleList isEnabled="{enable_flag_ida}">
+        <ida _type_="78" appGroupId="57" appGroupName="{app_group_name}" />
+        <ruleList>{final_str}<srcEntity _type_="1" commCellId="{commcell_id}" /></ruleList>
+        <osEntity _type_="161" />
+        </idaRuleList>
+        </jobErrorRuleList>
+        </App_SetJobErrorDecision>
+        """
+
+        self.error_rule_str = """
+        <ruleList blockedFileTypes="0" isEnabled="{is_enabled}" jobDecision="{job_decision}" pattern="{pattern}" skipTLbackups="0" skipofflineDBs="0" skippedFiles="0">
+        <errorCode allErrorCodes="{all_error_codes}" fromValue="{from_error_code}" skipReportingError="{skip_reporting_error}" toValue="{to_error_code}" />
+        </ruleList>
+        """
+
+    def _get_xml_for_rule(self, rule_dict):
+        """
+        Returns the XML for a given rule's dictionary of key value pairs. The XML output is used internally when
+        when adding new or updating existing rules.
+
+        Args:
+            rule_dict   (dict)  -   Dictionary of a rule's key value pairs.
+
+        Returns:
+            str -   The XML output formatted as a string.
+
+        Raises:
+            None
+
+        """
+
+        return self.error_rule_str.format(pattern=rule_dict['pattern'],
+                                          all_error_codes=rule_dict['all_error_codes'],
+                                          from_error_code=rule_dict['from_error_code'],
+                                          to_error_code=rule_dict['to_error_code'],
+                                          job_decision=rule_dict['job_decision'],
+                                          is_enabled=rule_dict['is_enabled'],
+                                          skip_reporting_error=rule_dict['skip_reporting_error'])
+
+    def add_error_rule(self, rules_arg):
+        """
+        Add new error rules as well as update existing rules, each rule is identified by its rule name denoted by key
+        rule_name.
+
+            Args:
+                rules_arg   (dict)  --  A dictionary whose key is the application group name and value is a rules list.
+
+                    Supported value(s) for key is
+                        APPGRP_WindowsFileSystemIDA for Windows
+
+                    The value for above key is a list
+                    where each item of the list is a dictionary of the following key value pairs.
+
+                        is_enabled              (str)   --  Specifies whether the rule should be enabled or not.
+
+                        pattern                 (str)   --  Specifies the file pattern for the error rule.
+
+                        all_error_codes         (bool)  --  Specifies whether all error codes should be enabled.
+
+                        from_error_code         (int)   --  Error code range's lower value.
+                        Valid values are all non negative integers.
+
+                        to_error_code           (int)   --  Error code range's upper value.
+                        Valid values are all non negative integers higher larger the from_ec value.
+
+                        skip_reporting_error    (bool)  --  Specifies if error codes need to be skipped from being reported.
+
+                    Example:
+                            {
+                             APPGRP_WindowsFileSystemIDA : { 'rule_1': { 'appGroupName': APPGRP_WindowsFileSystemIDA,
+                                                                        'pattern': "*",
+                                                                        'all_error_codes': False,
+                                                                        'from_error_code': 1,
+                                                                        'to_error_code': 2,
+                                                                        'job_decision': 0,
+                                                                        'is_enabled': True,
+                                                                        'skip_reporting_error': False
+                                                                        },
+                                                             'rule_2' : { ......}
+                                                            }
+                            }
+
+            Returns:
+                None
+
+            Raises:
+                Exception in case of invalid key/value pair(s).
+        """
+
+        final_str = ""
+        old_values = []
+
+        for app_group, rules_dict in rules_arg.items():
+            existing_error_rules = self._get_error_rules(app_group)
+            for rule_name, rule in rules_dict.items():
+                assert (isinstance(rule['pattern'], str) and
+                        isinstance(rule['all_error_codes'], bool) and
+                        isinstance(rule['skip_reporting_error'], int) and
+                        isinstance(rule['from_error_code'], int) and
+                        isinstance(rule['to_error_code'], int) and
+                        isinstance(rule['job_decision'], int) and rule['job_decision'] in range(0, 3) and
+                        isinstance(rule['is_enabled'], bool), "Invalid key value pairs provided.")
+
+                rule_dict = {k:v for k,v in rule.items() if k != 'appGroupName'}
+
+                # GET RULE STRING FOR EACH RULE DICTIONARY PROVIDED IN THE ARGUMENT
+                new_rule_str = self._get_xml_for_rule(rule_dict)
+
+                # IF RULE NAME NOT PRESENT IN OUR INTERNAL STRUCTURE, IT MEANS USER IS ADDING NEW RULE
+                if rule_name not in list(self.rule_dict.keys()):
+                    self.rule_dict[rule_name] = {'new_value': new_rule_str, 'old_value': new_rule_str}
+                    final_str = ''.join((final_str, new_rule_str))
+
+                # ELSE CHECK IF THE RULE'S VALUE REMAINS SAME AND IF IT DOES, WE SIMPLY CONTINUE AND STORE EXISTING VALUE
+                elif new_rule_str == self.rule_dict[rule_name]['old_value']:
+                    final_str = ''.join((final_str, self.rule_dict[rule_name]['old_value']))
+
+                # ELSE RULE IS BEING UPDATED, STORE NEW VALUE IN FINAL STRING AND PRESERVE OLD VALUE AS WELL
+                else:
+                    self.rule_dict[rule_name]['old_value'] = self.rule_dict[rule_name]['new_value']
+                    self.rule_dict[rule_name]['new_value'] = new_rule_str
+                    final_str = ''.join((final_str, new_rule_str))
+
+            # NOW GO THROUGH ALL EXISTING RULES ON CS AND EITHER PRESERVE OR UPDATE IT
+            # PREPARE A LIST OF ALL OLD VALUES FIRST
+            for rule_name, values in self.rule_dict.items():
+                old_values.extend([value for value_type, value in values.items() if value_type == 'old_value'])
+            for existing_error_rule in existing_error_rules:
+                existing_rule_dict = {'pattern': existing_error_rule['pattern'],
+                                      'all_error_codes': existing_error_rule['errorCode']['allErrorCodes'],
+                                      'skip_reporting_error': existing_error_rule['errorCode']['skipReportingError'],
+                                      'from_error_code': existing_error_rule['errorCode']['fromValue'],
+                                      'to_error_code': existing_error_rule['errorCode']['toValue'],
+                                      'job_decision': existing_error_rule['jobDecision'],
+                                      'is_enabled': existing_error_rule['isEnabled']}
+
+                existing_rule_str = self._get_xml_for_rule(existing_rule_dict)
+                # AN EXISTING RULE THAT HAS NOT BEEN UPDATED AND IS NOT ADDED BY THE TEST CASE OR THROUGH AUTOMATION.
+                # IN OTHER WORDS, AN EXISTING RULE THAT WAS ADDED OUTSIDE OF THE SCOPE OF THE TEST CASE
+                if existing_rule_str not in old_values:
+                    final_str = ''.join((final_str, existing_rule_str))
+
+        # NEED TO ADD SUPPORT FOR UPDATION OF ERROR RULES FOR MULTIPLE iDAs SIMULTANEOUSLY
+        xml_body = self.xml_body.format(commcell_id=self.commcell.commcell_id,
+                                        commserv_name=self.commcell.commserv_name,
+                                        enable_flag_ida=1,
+                                        app_group_name=app_group,
+                                        final_str=final_str)
+
+        xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
+        self.commcell.qoperation_execute(xml_body)
+
+    def enable(self, app_group):
+        """Enables the job error control rules for the specified Application Group Type.
+            Args:
+                app_group   (str)   --  The iDA for which the enable flag needs to be set.
+                Currently supported values are APPGRP_WindowsFileSystemIDA.
+
+            Returns:
+                None
+
+            Raises:
+                None
+
+        """
+        return self._modify_job_status_on_errors(app_group, enable_flag=True)
+
+    def disable(self, app_group):
+        """Disables the job error control rules for the specified Application Group Type.
+            Args:
+                app_group   (str)   --  The iDA for which the enable flag needs to be set.
+                Currently supported values are APPGRP_WindowsFileSystemIDA.
+
+            Returns:
+                None
+
+            Raises:
+                None
+        """
+        return self._modify_job_status_on_errors(app_group, enable_flag=False)
+
+    def _modify_job_status_on_errors(self, app_group, enable_flag):
+        """To enable or disable job status on errors.
+            Args:
+                app_group   (str)   --  The iDA for which the enable flag needs to be set.
+                Currently supported values are APPGRP_WindowsFileSystemIDA.
+
+                enable_flag (bool)  --  Enables and disables job status on errors.
+            Returns:
+                None
+
+            Raises:
+                None
+        """
+
+        # FETCHING ALL EXISTING RULES
+        error_rules = self._get_error_rules(app_group)
+
+        # FOR EVERY RULE IN RULE LIST
+        for rule in error_rules:
+            rule_str = self.error_rule_str.format(pattern=rule['pattern'],
+                                                  all_error_codes=rule['errorCode']['allErrorCodes'],
+                                                  from_error_code=rule['errorCode']['fromValue'],
+                                                  to_error_code=rule['errorCode']['toValue'],
+                                                  job_decision=rule['jobDecision'],
+                                                  is_enabled=rule['isEnabled'],
+                                                  skip_reporting_error=rule['errorCode']['skipReportingError'])
+
+            final_str = ''.join((final_str, rule_str))
+
+        xml_body = self.xml_body.format(commcell_id=self.commcell.commcell_id,
+                                        commserv_name=self.commcell.commserv_name,
+                                        enable_flag_ida=1 if enable_flag else 0,
+                                        final_str=final_str)
+
+        xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
+        return self.commcell.qoperation_execute(xml_body)
+
+    def _get_error_rules(self, app_group):
+        """
+        Returns the error rules set on the CS in the form of a dictionary.
+
+        Args:
+            app_group   (str)   --  The iDA for which the enable flag needs to be set.
+                Currently supported values are APPGRP_WindowsFileSystemIDA.
+
+        Returns:
+            list    -   A list of error rules. Each rule will be a dictionary of key value pairs for pattern,
+            error code from value, error code to value etc.
+
+        Raises:
+            None
+        """
+
+        rule_list = []
+
+        xml_body = f"""
+        <App_GetJobErrorDecisionReq>
+        <entity _type_="1" commCellId="{self.commcell.commcell_id}" commCellName="{self.commcell.commserv_name}"/>
+        </App_GetJobErrorDecisionReq>"""
+
+        xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
+        error_rules = self.commcell.qoperation_execute(xml_body)
+
+        if any(error_rules):
+
+            ida_rule_lists = error_rules['jobErrorRuleList']['idaRuleList']
+            for ida_rule_list in ida_rule_lists:
+                # HARD CODED FOR WINDOWS SUPPORT ONLY
+                if ida_rule_list['ida']['appGroupName'] == app_group:
+                    try:
+                        rule_list = ida_rule_list['ruleList']['ruleList']
+                    except:
+                        pass
+
+        return rule_list

@@ -67,11 +67,12 @@ class CloudAppsInstance(Instance):
         from .cloudapps.cloud_storage_instance import CloudStorageInstance
         from .cloudapps.amazon_instance import AmazonRedshiftInstance
         from .cloudapps.amazon_instance import AmazonDocumentDBInstance
-
+        from .cloudapps.amazon_instance import AmazonRDSInstance
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
             3: SalesforceInstance,
+            4: AmazonRDSInstance,     # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
             6: CloudStorageInstance,  # AzureBlob Instance
             # OneDrive Instance, GoogleInstance class is used for OneDrive instance too.

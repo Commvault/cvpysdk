@@ -1023,6 +1023,16 @@ class Instances(object):
                             'number_of_streams': 1,
                             'cloudapps_type': 'azureDL'
                         }
+        Cloud : Amazon RDS
+        cloud_options = {
+                            'instance_name': 'RDS',
+                            'storage_plan': 'cs_sp',
+                            'storage_policy': 'cs_sp',
+                            'access_node': 'CS',
+                            'access_key': 'xxxxx',
+                            'secret_key': 'xxxxx',
+                            'cloudapps_type': 'amazon_rds'
+                        }
         Cloud : Amazon Redshift
         cloud_options = {
 
@@ -1274,8 +1284,9 @@ class Instances(object):
             }
 
         """
-        if value.get("cloudapps_type") == "amazon_redshift" or \
-                value.get("cloudapps_type") == "amazon_docdb":
+
+        supported_cloudapps_type = ["amazon_rds", "amazon_redshift", "amazon_docdb"]
+        if value.get("cloudapps_type") in supported_cloudapps_type:
             self._general_properties = {
                 "accessNodes": {
                     "memberServers": [
@@ -1328,6 +1339,7 @@ class Instances(object):
 
         """
 
+        supported_cloudapps_type = {"amazon_rds": 4, "amazon_redshift": 26, "amazon_docdb": 27}
         self._general_properties_json = value
         if value.get("cloudapps_type") == 's3':
             self._instance_properties = {
@@ -1403,9 +1415,9 @@ class Instances(object):
                 },
                 "generalCloudProperties": self._general_properties_json
             }
-        elif value.get("cloudapps_type") == 'amazon_redshift':
+        elif value.get("cloudapps_type") in supported_cloudapps_type:
             self._instance_properties = {
-                "instanceType": 26,
+                "instanceType": supported_cloudapps_type[value.get("cloudapps_type")],
                 "rdsInstance": {
                     "secretKey": value.get("secret_key"),
                     "accessKey": value.get("access_key"),
@@ -1413,18 +1425,6 @@ class Instances(object):
                 },
                 "generalCloudProperties": self._general_properties_json
             }
-        elif value.get("cloudapps_type") == 'amazon_docdb':
-            self._instance_properties = {
-                "instanceType": 27,
-                "rdsInstance": {
-                    "secretKey": value.get("secret_key"),
-                    "accessKey": value.get("access_key"),
-                    "regionEndPoints": "default"
-                },
-                "generalCloudProperties": self._general_properties_json
-            }
-
-
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""

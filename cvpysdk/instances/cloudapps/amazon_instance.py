@@ -18,7 +18,20 @@
 
 """ File for operating on a amazon instances.
 
-AmazonRedshiftInstance and AmazonDocumentDBInstance are the only classes defined in this file.
+AmazonRDSInstance, AmazonRedshiftInstance and AmazonDocumentDBInstance are the only classes defined in this file.
+
+AmazonRDSInstance:  Derived class from CloudDatabaseInstance Base class, representing a Cloud Database instance of
+                    type Amazon RDS and to perform operations on that instance
+
+AmazonRDSInstance:
+
+    __init__()                      --  Initializes amazon rds instance object with associated
+    agent_object, instance name and instance id
+
+    _process_browse_request()       --  Process the response received from browse request
+
+    _restore_json()                 -- Generates Restore json with restore options
+
 
 AmazonRedshiftInstance:   Derived class from CloudDatabaseInstance Base class, representing a
                         Cloud Database instance of type Amazon Redshift and to
@@ -52,6 +65,141 @@ AmazonDocumentDBInstance
 from __future__ import unicode_literals
 from .cloud_database_instance import CloudDatabaseInstance
 from ...exception import SDKException
+
+
+class AmazonRDSInstance(CloudDatabaseInstance):
+    """Class for representing an Instance of Amazon RDS"""
+
+    def __init__(self, agent_object, instance_name, instance_id=None):
+        """Initializes the object of the AmazonRDSInstance class
+
+            Args:
+                agent_object    (object)  --  instance of the Agent class
+
+                instance_name   (str)     --  name of the instance
+
+                instance_id     (str)     --  id of the instance
+                    default: None
+
+            Returns:
+                object - instance of the Instance class
+
+        """
+        super(
+            AmazonRDSInstance,
+            self).__init__(
+                agent_object,
+                instance_name,
+                instance_id)
+
+        self._browse_url = self._services['CLOUD_DATABASE_BROWSE']
+
+    def _process_browse_response(self, flag, response):
+        """ Process browse request response
+
+            Args:
+
+                flag -- indicates whether the rest API request is successful
+
+                response -- response returned if the request was successful.
+
+            Returns:
+
+                dict    - The snapshot list JSON response received from the browse request
+
+                Exception - If the browse request failed
+        """
+        if flag:
+            if response.json() and 'snapList' in response.json():
+                snapshot_list = response.json()['snapList']
+            else:
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    "Incorrect response from browse.\nResponse : {0}".format(
+                        response.json()))
+        else:
+            o_str = 'Failed to browse content of this instance backups.\nError: "{0}"'
+            raise SDKException('Instance', '102', o_str.format(response))
+        return snapshot_list
+
+    def _restore_json(self, **kwargs):
+        """Returns the JSON request to pass to the API as per the options selected by the user.
+
+             Args:
+                kwargs   (list)  --  list of options need to be set for restore
+
+                Ex: For RDS Instance Cluster Restore following are the possible options
+                    {
+                        destination : 'instance/cluster',
+                        source : 'snapshot',
+                        options :   {
+                                        'archFileId': 123
+                                        'isMultiAZ' : true,
+                                        'publicallyAccess' : true,
+                                        'copyTagsToSnapshot' : false,
+                                        'enableDeletionProtection': false,
+                                        'targetParameterGroupName': 'param',
+                                        'targetSubnetGroup': 'subnet',
+                                        'targetDBInstanceClass': 'dc-large-8',
+                                        'targetPort': 2990
+                                    }
+                    }
+
+            Returns:
+                dict - JSON request to pass to the API
+        """
+        restore_json = super(
+            AmazonRDSInstance,
+            self)._restore_json(**kwargs)
+
+        restore_options = {}
+        if kwargs.get("restore_options"):
+            restore_options = kwargs["restore_options"]
+            for key in kwargs:
+                if not key == "restore_options":
+                    restore_options[key] = kwargs[key]
+        else:
+            restore_options.update(kwargs)
+
+        # Populate Redshift restore options
+        rds_restore_json = {
+            "rdsRestoreOptions": {
+                "sourceSnap": {
+                    "snapShotName": restore_options['source']
+                },
+                "targetDbName": restore_options['destination']
+            }
+        }
+
+        rds_restore_json['rdsRestoreOptions']['isMultiAZ'] = \
+            restore_options.get('options', {}).get('isMultiAZ', False)
+
+        rds_restore_json['rdsRestoreOptions']['publicallyAccess'] = \
+            restore_options.get('options', {}).get('publicallyAccess', True)
+
+        rds_restore_json['rdsRestoreOptions']['copyTagsToSnapshot'] = \
+            restore_options.get('options', {}).get('copyTagsToSnapshot', False)
+
+        rds_restore_json['rdsRestoreOptions']['enableDeletionProtection'] = \
+            restore_options.get('options', {}).get('enableDeletionProtection', False)
+
+        rds_restore_json['rdsRestoreOptions']['targetParameterGroupName'] = \
+            restore_options.get('options', {}).get('targetParameterGroupName', '')
+
+        rds_restore_json['rdsRestoreOptions']['targetSubnetGroup'] = \
+            restore_options.get('options', {}).get('targetSubnetGroup', '')
+
+        rds_restore_json['rdsRestoreOptions']['targetDBInstanceClass'] = \
+            restore_options.get('options', {}).get('targetDBInstanceClass', '')
+
+        rds_restore_json['rdsRestoreOptions']['targetPort'] = \
+            restore_options.get('options', {}).get('targetPort', 0)
+
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = \
+            rds_restore_json
+
+        return restore_json
 
 
 class AmazonRedshiftInstance(CloudDatabaseInstance):
