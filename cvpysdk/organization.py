@@ -106,6 +106,10 @@ Organization
 
     deactivate()                --  To deactivate the organization
 
+    enable_auto_discover()      --  Enable autodiscover option for the oraganization
+
+    disable_auto_discover()      --  Diable autodiscover option for the oraganization
+
 Organization Attributes
 -----------------------
 
@@ -143,9 +147,11 @@ Organization Attributes
         **plans = ['plan1',
         'plan2']**                  --  update the list of plans associated with the organization
 
-        **operator_role**	    	 -- returns the operator role assigned to an user
+        **operator_role**             -- returns the operator role assigned to an user
 
-        **tenant_operator**			 -- returns the operators associated with the organization
+        **tenant_operator**             -- returns the operators associated with the organization
+
+         **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
 """
 
@@ -312,7 +318,8 @@ class Organizations:
             company_alias,
             email_domain=None,
             primary_domain=None,
-            default_plans=None):
+            default_plans=None,
+            enable_auto_discover=False):
         """Adds a new organization with the given name to the Commcell.
 
             Args:
@@ -409,6 +416,7 @@ class Organizations:
                     }
                 },
                 'organizationProperties': {
+                    'enableAutoDiscovery': enable_auto_discover,
                     'primaryDomain': primary_domain,
                     'primaryContacts': [
                         {
@@ -521,7 +529,6 @@ class Organizations:
     def refresh(self):
         """Refresh the list of organizations associated to the Commcell."""
         self._organizations = self._get_organizations()
-
 
 class Organization:
     """Class for performing operations on an Organization."""
@@ -749,6 +756,11 @@ class Organization:
     def is_auth_code_enabled(self):
         """Returns boolean whether Auth Code generation is enabled for this Organization or not."""
         return self._is_auth_code_enabled
+
+    @property
+    def is_auto_discover_enabled(self):
+        """Returns boolen whether organization autodiscover attribute enabled for this organization."""
+        return self._properties['organizationProperties'].get('enableAutoDiscovery', False)
 
     @property
     def shared_laptop(self):
@@ -996,7 +1008,7 @@ class Organization:
         """Update the local user_group as tenant operator of the company
 
         Args:
-            user_group_list		(list)  -- user group list
+            user_group_list        (list)  -- user group list
 
             request_type        (str)   --  decides whether to UPDATE, DELETE or OVERWRITE user_group
             security association
@@ -1028,7 +1040,7 @@ class Organization:
         """Update the local user as tenant operator of the company
 
         Args:
-            user_list		(list) -- list of users
+            user_list        (list) -- list of users
 
             request_type    (Str)  --  decides whether to UPDATE, DELETE or
                                        OVERWRITE user security association
@@ -1176,3 +1188,23 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def enable_auto_discover(self):
+        """Enables autodiscover at company level..
+
+            Raises:
+                SDKException:
+                    if failed to update enableAutoDiscovery property
+        """
+        self._update_properties_json({'enableAutoDiscovery': True})
+        self._update_properties()
+
+    def disable_auto_discover(self):
+        """Disables autodiscover at company level..
+
+            Raises:
+                SDKException:
+                    if failed to update enableAutoDiscovery property
+        """
+        self._update_properties_json({'enableAutoDiscovery': False})
+        self._update_properties()

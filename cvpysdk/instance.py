@@ -2405,6 +2405,11 @@ class Instance(object):
             "validateOnly": value.get("validate_only", False)
         }
 
+        if value.get("instant_clone_options", {}).get("post_clone_script", None):
+            self._commonoption_restore_json['prePostCloneOption'] = {
+                'postCloneCmd': value.get("instant_clone_options").get("post_clone_script")
+            }
+
         _advance_fs_keys = ["restoreDataInsteadOfStub",
                             "restoreOnlyStubExists",
                             "overwriteFiles",
@@ -2448,9 +2453,20 @@ class Instance(object):
     def _restore_fileoption_json(self, value):
         """setter for  the fileoption restore option in restore JSON"""
         self._fileoption_restore_json = {
-            "sourceItem": value.get("paths", []),
+            "sourceItem": value["instant_clone_options"]["instant_clone_src_path"] if value.get("instant_clone_options", None) else value.get("paths", []),
             "browseFilters": value.get("browse_filters", [])
         }
+
+        if value.get("instant_clone_options", None):
+            self._fileoption_restore_json["fsCloneOptions"] = {
+                "reservationTime": value["instant_clone_options"]["reservation_time"],
+                "cloneMountPath": value["instant_clone_options"]["clone_mount_path"]}
+
+            if value["instant_clone_options"].get("clone_cleanup_script", None):
+                self._fileoption_restore_json["fsCloneOptions"]["cloneCleanupOptions"] = {
+                    "cleanupScriptPath": value.get("instant_clone_options").get("clone_cleanup_script")
+                }
+
 
     def _restore_volume_rst_option_json(self, value):
         """setter for the volumeRst restore option in restore JSON"""

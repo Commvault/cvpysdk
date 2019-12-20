@@ -1531,7 +1531,6 @@ class VirtualServerSubclient(Subclient):
         copy_precedence=options.get('copy_precedence',0)
         preserve_level=options.get('preserve_level',1)
         unconditional_overwrite=options.get('unconditional_overwrite',False)
-        v2_indexing=options.get('v2_indexing',False)
         restore_ACL=options.get('restore_ACL',True)
         from_date=options.get('from_date',0)
         to_date=options.get('to_date',0)
@@ -1607,30 +1606,6 @@ class VirtualServerSubclient(Subclient):
 
         # prepare and execute the Json
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
-
-        if v2_indexing:
-
-            _vmclient_obj = self._commcell_object.clients.get(vm_name)
-            _vmagent_obj = _vmclient_obj.agents.get(self._agent_object._agent_name)
-            _vminstance_obj = _vmagent_obj.instances.get('VMInstance')
-            _vmbackupset_obj = _vminstance_obj.backupsets.get(
-                self._backupset_object._backupset_name)
-            _vmsub_obj = _vmbackupset_obj.subclients.get('default')
-
-            request_json['taskInfo']['associations'][0]['clientName'] = vm_name
-            request_json['taskInfo']['associations'][0]['clientId'] = \
-                _vmsub_obj._subClientEntity['clientId']
-            request_json['taskInfo']['associations'][0]['instanceName'] = 'VMInstance'
-            request_json['taskInfo']['associations'][0]['backupsetId'] = \
-                _vmsub_obj._subClientEntity['backupsetId']
-            request_json['taskInfo']['associations'][0]['instanceId'] = \
-                _vmsub_obj._subClientEntity['instanceId']
-            request_json['taskInfo']['associations'][0]['subclientGUID'] = \
-                subclientGUID = _vmsub_obj._subClientEntity['subclientGUID']
-            request_json['taskInfo']['associations'][0]['subclientName'] = 'default'
-            request_json['taskInfo']['associations'][0]['subclientId'] = \
-                _vmsub_obj._subClientEntity['subclientId']
-
         return self._process_restore_response(request_json)
 
     def vm_files_browse(self, vm_path='\\', show_deleted_files=False):

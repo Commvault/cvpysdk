@@ -1599,17 +1599,34 @@ class FileSystemSubclient(Subclient):
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
                     options:
-                        preserve_level      : preserve level option to set in restore
-                        proxy_client        : proxy that needed to be used for restore
-                        impersonate_user    : Impersonate user options for restore
-                        impersonate_password: Impersonate password option for restore
-                                                in base64 encoded form
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-                        versions            : list of version numbers to be backed up
-                        media_agent         : Media Agent need to be used for Browse and restore
-                        is_vlr_restore      : sets if the restore job is to be triggered as vlr
-                        validate_only       : To validate data backed up for restore
+                        preserve_level          : preserve level option to set in restore
+                        proxy_client            : proxy that needed to be used for restore
+                        impersonate_user        : Impersonate user options for restore
+                        impersonate_password    : Impersonate password option for restore
+                        in base64 encoded form
+                        all_versions            : if set to True restores all the versions of the
+                        specified file
+                        versions                : list of version numbers to be backed up
+                        media_agent             : Media Agent need to be used for Browse and restore
+                        is_vlr_restore          : sets if the restore job is to be triggered as vlr
+                        validate_only           : To validate data backed up for restore
+                        instant_clone_options   : Options for FS clone found on Command Center, the value must be
+                        a dictionary containing the following key value pairs.
+
+                            reservation_time        (int)   --  The amount of time, specified in seconds, that the mounted
+                            snapshot needs to be reserved for before it is cleaned up.
+                            This is an OPTIONAL key.
+
+                                Default :   3600
+
+                            clone_mount_path        (str)   --  The path to which the snapshot needs to be mounted.
+                            This is NOT an optional key.
+
+                            post_clone_script       (str)   --  The script that will run post clone.
+                            This is an OPTIONAL key.
+
+                            clone_cleanup_script    (str)   --  The script that will run after clean up.
+                            This is an OPTIONAL key.
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 

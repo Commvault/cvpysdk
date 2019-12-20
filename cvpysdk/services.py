@@ -180,6 +180,10 @@ SERVICES_DICT_TEMPLATE = {
     'DATACUBE_IMPORT_DATA': '{0}dcube/post/%s/%s',
     'START_JOB_DATASOURCE': '{0}dcube/startjob/%s',
     'GET_STATUS_DATASOURCE': '{0}dcube/GetStatus/%s',
+    'EXECUTE_HANDLER': '{0}dcube/handler/%s/%s?%s',
+    'DELETE_HANDLER': '{0}dcube/deletehandler/%s',
+    'SHARE_HANDLER': '{0}dcube/share/handler',
+    'SHARE_DATASOURCE': '{0}dcube/share/datasource',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',

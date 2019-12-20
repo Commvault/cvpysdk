@@ -96,10 +96,11 @@ class Credentials(object):
                 object - instance of the Clients class
         """
         self._commcell_object = commcell_object
+        self._services = commcell_object._services
         self._credentials = self._get_credentials()
         self.record_type = {
-            'windows':1,
-            'Linux':2
+            'windows': 1,
+            'Linux': 2
         }
 
     def __str__(self):
@@ -128,24 +129,22 @@ class Credentials(object):
         Raises:
             Exception if response is not success
         """
-        get_all_credential_service = self._commcell_object._services['ALL_CREDENTIALS']
+        get_all_credential_service = self._services['ALL_CREDENTIALS']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', get_all_credential_service
         )
 
         if flag:
+            credentials_dict = {}
             if response.json() and 'credentialRecordInfo' in response.json():
-                credentials_dict = {}
 
                 for credential in response.json()['credentialRecordInfo']:
                     temp_id = credential['credentialRecord']['credentialId']
                     temp_name = credential['credentialRecord']['credentialName'].lower()
                     credentials_dict[temp_name] = temp_id
 
-                return credentials_dict
-            else:
-                raise SDKException('Response', '102')
+            return credentials_dict
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -194,8 +193,7 @@ class Credentials(object):
         return Credential(self._commcell_object, credential_name, self._credentials[
             credential_name.lower()])
 
-    def add(self, record_type, credential_name, user_name, user_password, owner, isuser=1,
-            description=None):
+    def add(self, record_type, credential_name, user_name, user_password, owner, isuser=1, description=None):
         """Creates credential account on this commcell
 
             Args:
@@ -238,30 +236,30 @@ class Credentials(object):
         creator = self.owner_json(owner=owner, isuser_flag=isuser)
 
         record = {
-            "userName":user_name,
+            "userName": user_name,
             "password": password
         }
         create_credential_account = {
             "credentialRecordInfo": [{
-                "recordType":self.record_type[record_type.lower()],
-                "description":description,
-                "credentialRecord":{
-                    "credentialName":credential_name
+                "recordType": self.record_type[record_type.lower()],
+                "description": description,
+                "credentialRecord": {
+                    "credentialName": credential_name
                 },
-                "record":record,
-                "createAs":creator['createAs']
+                "record": record,
+                "createAs": creator['createAs']
             }]
         }
 
-        request = self._commcell_object._services['CREDENTIAL']
+        request = self._services['CREDENTIAL']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', request, create_credential_account
         )
         if flag:
-            if response.json() and 'response' in response.json():
-                response_json = response.json()['response'][0]
+            if response.json():
+                response_json = response.json()['error']
                 error_code = response_json['errorCode']
-                error_message = response_json['errorString']
+                error_message = response_json['errorMessage']
                 if not error_code == 0:
                     raise SDKException('Response', '101', error_message)
             else:
@@ -281,19 +279,19 @@ class Credentials(object):
         """
         if isuser_flag is 1:
             creator = {
-                "createAs":{
-                    "user":{
-                        "user":{
-                            "userName":owner
+                "createAs": {
+                    "user": {
+                        "user": {
+                            "userName": owner
                         }
                     }
                 }
             }
         else:
             creator = {
-                "createAs":{
-                    "userGroup":{
-                        "userGroupName":owner
+                "createAs": {
+                    "userGroup": {
+                        "userGroupName": owner
                     }
                 }
             }
@@ -325,12 +323,12 @@ class Credentials(object):
                     credential_name)
             )
 
-        delete_credential = self._commcell_object._services['DELETE_RECORD']
+        delete_credential = self._services['DELETE_RECORD']
 
         request_json = {
-            "credentialRecordInfo":[{
-                "credentialRecord":{
-                    "credentialName":credential_name
+            "credentialRecordInfo": [{
+                "credentialRecord": {
+                    "credentialName": credential_name
                 }
             }]
         }
@@ -339,10 +337,10 @@ class Credentials(object):
             'POST', delete_credential, request_json
         )
         if flag:
-            if response.json() and 'response' in response.json():
-                response_json = response.json()['response'][0]
+            if response.json():
+                response_json = response.json()['error']
                 error_code = response_json['errorCode']
-                error_message = response_json['errorString']
+                error_message = response_json['errorMessage']
                 if not error_code == 0:
                     raise SDKException('Response', '101', error_message)
             else:
@@ -351,6 +349,7 @@ class Credentials(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
 
 class Credential(object):
     """"Class for representing a particular Credential record on this commcell"""
@@ -368,6 +367,7 @@ class Credential(object):
 
         """
         self._commcell_object = commcell_object
+        self._services = commcell_object._services
         self._credential_name = credential_name.lower()
 
         if credential_id is None:
@@ -380,11 +380,12 @@ class Credential(object):
         self._credential_owner_json = None
         self._credential_owner = None
         self._credential_properties = None
+        self._credential_security_assoc = []
         self._record_type = None
         self._credential_password = ""
         self._record_types = {
-            1:'Windows',
-            2:'Linux'
+            1: 'Windows',
+            2: 'Linux'
         }
         self._get_credential_properties()
 
@@ -416,9 +417,9 @@ class Credential(object):
 
         """
         props_dict = {
-            "credentialRecord":{
-                "credentialId":self._credential_id,
-                "credentialName":val
+            "credentialRecord": {
+                "credentialId": self._credential_id,
+                "credentialName": val
             }
         }
         self._update_credential_props(properties_dict=props_dict)
@@ -442,6 +443,43 @@ class Credential(object):
         self._update_credential_props(props_dict)
 
     @property
+    def credential_security_properties(self):
+        """Returns the Credential's security association"""
+        return self._credential_security_assoc
+
+    def update_securtiy(self, name, is_user=True):
+        """Updates the security association for this commcell Credential record
+
+        Args:
+            name    (str)   -- User or UserGroupName
+            is_user (bool)  -- Set False for UserGroup
+
+        """
+
+        props_dict = {
+            "securityAssociations": {
+                "associationsOperationType": 1,
+                "associations": [{
+                    "userOrGroup": [{
+                        "_type_": 13 if is_user else 15,
+                        "userName" if is_user else "userGroupName": name
+                    }],
+                    "properties": {
+                        "isCreatorAssociation": False,
+                        "permissions": [{
+                            "permissionId": 218,
+                            "_type_": 122,
+                            "permissionName": "User Credential"
+                        }]
+                    }
+                }],
+                "ownerAssociations": {}
+            }
+        }
+
+        return self._update_credential_props(props_dict)
+
+    @property
     def credential_user_name(self):
         """Returns the Credential name of this commcell Credential record"""
         return self._credential_user_name
@@ -455,7 +493,7 @@ class Credential(object):
 
         """
         creds_dict = {
-            "record":{
+            "record": {
                 "userName": uname,
                 "password": b64encode(upassword.encode()).decode()
             }
@@ -489,7 +527,7 @@ class Credential(object):
 
     def _get_credential_properties(self):
         """Gets the properties of this Credential record"""
-        property_request = self._commcell_object._services['ONE_CREDENTIAL'] % (
+        property_request = self._services['ONE_CREDENTIAL'] % (
             self._credential_name)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', property_request
@@ -516,6 +554,7 @@ class Credential(object):
                 else:
                     self._credential_owner = self._credential_owner_json.get('user', {}).get(
                         'user').get('userName')
+                    self._credential_owner_json = self._credential_owner_json.get('user')
             else:
                 raise SDKException('Response', '102')
 
@@ -555,35 +594,32 @@ class Credential(object):
         else:
             owner_json = self._credential_owner_json
 
+        if "securityAssociations" in properties_dict:
+            self._credential_security_assoc = properties_dict['securityAssociations']
+
         request_json = {
             "credentialRecordInfo": [{
                 "recordType": self._record_type,
-                "credentialRecord":{
-                    "credentialId":self._credential_id,
+                "credentialRecord": {
+                    "credentialId": self._credential_id,
                     "credentialName": self._credential_name
                 },
-                "record":{
-                    "userName": self._credential_user_name,
-                    "password":self._credential_password
+                "record": {
+                    "userName": self._credential_user_name
                 },
-                "createAs":owner_json
+                "createAs": owner_json
                 }]
             }
 
-        request = self._commcell_object._services['CREDENTIAL']
+        if self._credential_security_assoc:
+            request_json['credentialRecordInfo'][0].update(securityAssociations=self._credential_security_assoc)
+
+        request = self._services['CREDENTIAL']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', request, request_json
         )
-        if flag:
-            if response.json() and 'response' in response.json():
-                response_json = response.json()['response'][0]
-                error_code = response_json['errorCode']
-                error_message = response_json['errorString']
-                if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
-            else:
-                raise SDKException('Response', '102')
-        else:
+
+        if not flag:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()

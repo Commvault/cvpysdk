@@ -120,6 +120,12 @@ ClientGroup:
 
     add_additional_setting()        -- adds registry key to client group property
 
+    is_auto_discover_enabled()      -- gets the autodiscover option for the Organization
+
+    enable_auto_discover()          -- enables  autodiscover option at client group level
+
+    disable_auto_discover()         -- disables  autodiscover option at client group level
+
 """
 
 from __future__ import absolute_import
@@ -1205,6 +1211,11 @@ class ClientGroup(object):
 
         return client_group_filters
 
+    @property
+    def is_auto_discover_enabled(self):
+        """Returns boolen for clientgroup autodiscover attribute whether property is enabled or not."""
+        return self._properties.get('enableAutoDiscovery', False)
+
     @client_group_filter.setter
     def client_group_filter(self, filters):
         """""Sets the specified server group filters"""
@@ -1762,6 +1773,56 @@ class ClientGroup(object):
         }
 
         self.update_properties(properties_dict)
+
+    def enable_auto_discover(self):
+        """Enables autodiscover at ClientGroup level..
+
+            Raises:
+                SDKException:
+                    if failed to enable_auto_discover
+        """
+        request_json = {
+            "clientGroupOperationType": 2,
+            'clientGroupDetail': {
+                    'enableAutoDiscovery': True,
+                    "clientGroup": {
+                            "clientGroupName": self.clientgroup_name
+            }
+        }
+        }
+        error_code, error_message = self._process_update_request(request_json)
+        if error_code != '0':
+            if error_message:
+                o_str = 'Failed to enable autodiscover \nError: "{0}"'.format(error_message)
+            else:
+                o_str = 'Failed to enable autodiscover'
+
+            raise SDKException('ClientGroup', '102', o_str)
+
+    def disable_auto_discover(self):
+        """Disables autodiscover at ClientGroup level..
+
+            Raises:
+                SDKException:
+                    if failed to disable_auto_discover
+        """
+        request_json = {
+            "clientGroupOperationType": 2,
+            'clientGroupDetail': {
+                    'enableAutoDiscovery': False,
+                    "clientGroup": {
+                            "clientGroupName": self.clientgroup_name
+            }
+        }
+        }
+        error_code, error_message = self._process_update_request(request_json)
+        if error_code != '0':
+            if error_message:
+                o_str = 'Failed to Disable autodiscover \nError: "{0}"'.format(error_message)
+            else:
+                o_str = 'Failed to Disable autodiscover'
+
+            raise SDKException('ClientGroup', '102', o_str)
 
     def refresh(self):
         """Refresh the properties of the ClientGroup."""
