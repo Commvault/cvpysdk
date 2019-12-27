@@ -166,7 +166,7 @@ class DownloadCenter(object):
 
         if flag:
             try:
-                self._response = xmltodict.parse(response.text)['App_DCGetDataToCreatePackageResp']
+                self._response = response.json()
             except ExpatError:
                 raise SDKException('DownloadCenter', '101', response.text)
         else:

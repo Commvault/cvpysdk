@@ -761,7 +761,7 @@ class VirtualServerSubclient(Subclient):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
-        self._json_restore_virtualServerRstOption_filelevelrestoreoption = {
+        return {
             "serverName": value.get("server_name", ''),
             "vmGuid": value.get("vm_guid", ''),
             "vmName": value.get("vm_name", '')
@@ -774,7 +774,7 @@ class VirtualServerSubclient(Subclient):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
-        self._json_restore_guest_password = {
+        return {
             "userName": value.get("user_name", ''),
             "password": value.get("password", '')
         }
@@ -2177,14 +2177,13 @@ class VirtualServerSubclient(Subclient):
             "restoreOptions"]["virtualServerRstOption"] = self._virtualserver_option_restore_json
 
         if _file_restore_option.get('agentless'):
-            self._json_restore_virtualServerRstOption_filelevelrestoreoption(_file_restore_option)
-            self._json_restore_guest_password(_file_restore_option)
             request_json["taskInfo"]["subTasks"][0]["options"][
                 "restoreOptions"]["virtualServerRstOption"][
-                "fileLevelVMRestoreOption"]= self._json_restore_virtualServerRstOption_filelevelrestoreoption
+                "fileLevelVMRestoreOption"] = \
+                self._json_restore_virtualServerRstOption_filelevelrestoreoption(_file_restore_option)
             request_json["taskInfo"]["subTasks"][0]["options"][
                 "restoreOptions"]["virtualServerRstOption"]["fileLevelVMRestoreOption"][
-                "guestUserPassword"] = self._json_restore_guest_password
+                "guestUserPassword"] = self._json_restore_guest_password(_file_restore_option)
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(_file_restore_option)

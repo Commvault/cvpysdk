@@ -78,6 +78,8 @@ Clients
 
     add_salesforce_client()               --  adds a new salesforce client
 
+    add_azure_client()                    --  adds a new azure cloud client
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -1351,6 +1353,86 @@ class Clients(object):
                 "clientName": client_name
             }
         }
+        self._process_add_response(request_json)
+
+    def add_azure_client(self, client_name, access_node, azure_options):
+        """
+            Method to add new azure cloud client
+            Args:
+                client_name     (str)   -- azure client name
+                access_node     (str)   -- cloud access node name
+                azure_options   (dict)  -- dictionary for Azure details:
+                                            Example:
+                                               azure_options = {
+                                                    "subscription_id": 'subscription id',
+                                                    "tenant_id": 'tenant id',
+                                                    "application_id": 'application id',
+                                                    "password": 'application password',
+                                                }
+            Returns:
+                object  -   instance of the Client class for this new client
+            Raises:
+                SDKException:
+                    if None value in azure options
+
+                    if pseudo client with same name already exists
+
+        """
+
+        if None in azure_options.values():
+            raise SDKException(
+                'Client',
+                '102',
+                "One of the azure parameters is none so cannot proceed with pseudo client creation")
+
+        if self.has_client(client_name):
+            raise SDKException(
+                'Client', '102', 'Client "{0}" already exists.'.format(
+                    client_name)
+            )
+
+        # encodes the plain text password using base64 encoding
+        password = b64encode(azure_options.get("password").encode()).decode()
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "virtualServerClientProperties": {
+                    "virtualServerInstanceInfo": {
+                        "vsInstanceType": 7,
+                        "azureResourceManager": {
+                            "tenantId": azure_options.get("tenant_id"),
+                            "serverName": client_name,
+                            "subscriptionId": azure_options.get("subscription_id"),
+                            "credentials": {
+                                "password": password,
+                                "userName": azure_options.get("application_id")
+                            }
+                        },
+                        "associatedClients": {
+                            "memberServers": [
+                                {
+                                    "client": {
+                                        "clientName": access_node
+                                    }
+                                }
+                            ]
+                        },
+                        "vmwareVendor": {
+                            "vcenterHostName": client_name
+                        }
+                    },
+                    "appTypes": [
+                        {
+                            "appName": "Virtual Server"
+                        }
+                    ]
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
         self._process_add_response(request_json)
 
     def get(self, name):

@@ -48,6 +48,10 @@ Agents:
 
     refresh()                   --  refresh the agents installed on the client
 
+    _process_add_response()     --  processes add agent request response
+
+    add_database_agent()        --  adds database agent
+
 
 Agent:
     __init__(client_object,
@@ -286,6 +290,127 @@ class Agents(object):
     def refresh(self):
         """Refresh the agents installed on the Client."""
         self._agents = self._get_agents()
+
+    def _process_add_response(self, request_json):
+        """Runs the Agent Add API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['AGENT'], request_json)
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response'][0]['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response'][0]['errorString']
+                        o_str = 'Failed to create agent\nError: "{0}"'.format(error_string)
+                        raise SDKException('Agent', '102', o_str)
+                    else:
+                        # initialize the agetns again
+                        # so the agent object has all the agents
+                        agent_name = request_json['association']['entity'][0]['appName']
+                        self.refresh()
+                        return self.get(agent_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create agent\nError: "{0}"'.format(error_string)
+                    raise SDKException('Agent', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_database_agent(self, agent_name, access_node, **kwargs):
+        """Adds database agent to cloud client
+            Args:
+                agent_name      (str)   --  agent name
+                access_node     (str)   --  access node name
+                **kwargs        (dict)  --  dict of keyword arguments as follows
+                                            install_dir     (str)   --  database client install directory
+                                            version         (str)   --  database version
+            Returns:
+                object - instance of the Agent class
+
+            Raises:
+                SDKException:
+                  if agent with given name already exists
+
+                    if failed to add the agent
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        if self.has_agent(agent_name):
+            raise SDKException(
+                'Agent', '102', 'Agent "{0}" already exists.'.format(
+                    agent_name)
+            )
+
+        request_json = {
+                "createAgent": True,
+                "association": {
+                    "entity": [
+                        {
+                            "clientName": self._client_object.client_name,
+                            "appName": agent_name
+                        }
+                    ]
+                },
+                "agentProperties": {
+                    "AgentProperties": {
+                    "createIndexOnFail": False,
+                    "createIndexOnFull": False,
+                    "installDate": 0,
+                    "userDescription": "",
+                    "runTrueUpJobAfterDaysForOnePass": 0,
+                    "maxSimultaneousStubRecoveries": 0,
+                    "agentVersion": "",
+                    "isTrueUpOptionEnabledForOnePass": False
+                },
+                "cloudDbConfig": {
+                    "enabled": True,
+                    "dbProxyClientList": [
+                        {
+                            "dbSoftwareConfigList": [
+                                {
+                                    "installDir": kwargs.get("install_dir",""),
+                                    "version": kwargs.get("version","10.0")
+                                }
+                            ],
+                            "client": {
+                                "clientName": access_node
+                            }
+                        }
+                    ]
+                },
+                "idaEntity": {
+                    "clientName": self._client_object.client_name,
+                    "appName": agent_name
+                }
+            }
+        }
+        self._process_add_response(request_json)
 
 
 class Agent(object):

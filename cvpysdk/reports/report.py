@@ -31,20 +31,28 @@ Report:
      set_format(format_type)                     --  sets specified file extension for the report
                                                      to be generated
 
-     select_local_drive(client_name)             --  Selects local drive as report generation
+     select_local_drive(report_copy_location, client_name) --  Selects local drive as report generation
                                                      location for specified client
 
      select_network_share()                      --  select network share as location
 
-     set_report_copy_location(report_save_path)  --  sets report copy location to specified path
-
      set_report_custom_name(name)                --  sets custom report name
 
-      run_report()                               --  Generates the report
+     run_report()                                --  Generates the report
+
 
 BackupJobSummary:
 
     __init__(commcell_object)                   --  Initialize the backup job summary report object
+
+     select_protected_objects()                  --  Select protected object option
+
+     set_last_hours(hours)                       --  Jobs to be included since n hours
+
+     set_last_days(hours)                        --  Jobs to be included since n days
+
+     select_computers(clients, client_groups)    --  select specific clients and clientgroups
+
 
 """
 
@@ -93,10 +101,11 @@ class Report:
                 return
         raise Exception("Invalid format type,format should be one among the type in FormatType")
 
-    def select_local_drive(self, client_name=None):
+    def select_local_drive(self, report_copy_location, client_name=None):
         """Select local drive
         Args:
-            client_name(String)        --       Name of the client
+            client_name          (String)        --       Name of the client
+            report_copy_location (String)        --       location where report need to be saved
         """
         if not client_name:
             client_name = self._commcell.commserv_name
@@ -106,18 +115,13 @@ class Report:
         self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption']\
         ['commonOpt']['savedTo']['reportSavedToClient']['clientName'] = client_name
 
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['commonOpt']['savedTo']['locationURL'] = report_copy_location
+
     def select_network_share(self):
         """Select network share"""
         self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption']\
             ['commonOpt']['savedTo']['isNetworkDrive'] = 1
-
-    def set_report_copy_location(self, report_save_path):
-        """ Sets the path of report
-        Args:
-            report_save_path (String)   --      Report copy location of the report
-        """
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption']\
-            ['commonOpt']['savedTo']['locationURL'] = report_save_path
 
     def set_report_custom_name(self, name):
         """ Sets report custom name
@@ -227,7 +231,12 @@ class BackupJobSummary(Report):
                                         }
                                     },
                                     "computerSelectionList": {
-                                        "includeAll": True
+                                        "includeAll": True,
+                                        "clientGroupList": [
+                                        ],
+                                        "clientList": [
+                                        ]
+
                                     },
                                     "jobSummaryReport": {
                                         "subClientDescription": "",
@@ -270,6 +279,11 @@ class BackupJobSummary(Report):
                                             "IncludeMediaDeletedJobs": False,
                                             "drive": False
                                         }
+                                    },
+                                    "timeRangeOption": {
+                                        "TimeZoneName": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
+                                        "toTimeValue": "24",
+                                        "type": 13
                                     }
                                 }
                             }
@@ -278,3 +292,77 @@ class BackupJobSummary(Report):
                 ]
             }
         }
+
+    def select_protected_objects(self):
+        """select protected objects"""
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['jobSummaryReport']['rptSelections']['protectedObjects'] = True
+
+    def __set_include_all(self, status=True):
+        """
+        Set include all computers true/false if any client/client group are getting selected
+        Args:
+                status     (Boolean)    --  Set True to include all the clients otherwise set false
+
+        """
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['computerSelectionList']['includeAll'] = status
+
+    def __select_client_groups(self, client_groups):
+        """
+        Select client groups
+        Args:
+                client_groups     (List)    --  list of clientgroups
+        """
+        client_group_list_dict = []
+        for each_client_group in client_groups:
+            client_group_list_dict.append({"clientGroupName": each_client_group})
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['computerSelectionList']['clientGroupList'] = client_group_list_dict
+
+    def __select_clients(self, client_list):
+        """
+        Select client clients
+         Args:
+                client_list     (List)    --  list of clients
+        """
+        client_list_dict = []
+        for each_client in client_list:
+            client_list_dict.append({"clientName": each_client})
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['computerSelectionList']['clientList'] = client_list_dict
+
+    def set_last_hours(self, number_of_hours=24):
+        """
+        Set time range to generate report since n number of hours
+        Args:
+                number_of_hours     (Int)    --  number of hours
+        """
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['timeRangeOption']['type'] = 13
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['timeRangeOption']['toTimeValue'] = str(number_of_hours)
+
+    def set_last_days(self, number_of_days=24):
+        """
+        Set time range to generate report since n number of days
+        Args:
+                number_of_hours     (Int)    --  number of hours
+        """
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['timeRangeOption']['type'] = 11
+        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
+            ['timeRangeOption']['toTimeValue'] = str(number_of_days)
+
+    def select_computers(self, clients=None, client_groups=None):
+        """
+        Select clients and client groups for generating the report
+        Args:
+                clients           (List)    --  List of clients
+                client_groups     (List)    --  List of client groups
+        """
+        self.__set_include_all(status=False)
+        if clients:
+            self.__select_clients(clients)
+        if client_groups:
+            self.__select_client_groups(client_groups)

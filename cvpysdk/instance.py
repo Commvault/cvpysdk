@@ -63,6 +63,8 @@ Instances:
 
     add_salesforce_instance()       --  Method to add a new salesforce instance
 
+    add_postgresql_instance()       --  Method to add a new postgresql instance
+
     _set_general_properties_json()  --  setter for general cloud properties while adding a new
     cloud storage instance
 
@@ -1259,6 +1261,66 @@ class Instances(object):
             },
         }
         self._process_add_response(request_json)
+
+    def add_postgresql_instance(self, instance_name, **kwargs):
+        """Adds new postgresql instance to given client
+            Args:
+                instance_name       (str)   --  instance_name
+                kwargs              (dict)  --  dict of keyword arguments as follows:
+                                                   storage_policy       (str)          -- storage policy
+                                                   port                 (int or str)   -- port or end point
+                                                   postgres_user_name   (str)          -- postgres user name
+                                                   postgres_password    (str)          -- postgres password
+                                                   version              (str)          -- postgres version
+                                                   maintenance_db       (str)          -- maintenance db
+                                                   binary_directory     (str)          -- postgres binary location
+                                                   lib_directory        (str)          -- postgres lib location
+                                                   archive_log_directory (str)         -- postgres archive log location
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in mysql options
+
+                    if mysql instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        """
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+        password = b64encode(kwargs.get("postgres_password","").encode()).decode()
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": "PostgreSQL",
+                },
+                "version": kwargs.get("version","10.0"),
+                "postGreSQLInstance": {
+                    "LibDirectory": kwargs.get("lib_directory",""),
+                    "MaintainenceDB": kwargs.get("maintenance_db","postgres"),
+                    "port": kwargs.get("port","5432"),
+                    "ArchiveLogDirectory": kwargs.get("archive_log_directory",""),
+                    "BinaryDirectory": kwargs.get("binary_directory",""),
+                    "SAUser": {
+                        "password": password,
+                        "userName": kwargs.get("postgres_user_name","postgres")
+                    },
+                    "logStoragePolicy": {
+                            "storagePolicyName": kwargs.get("storage_policy","")
+                    },
+
+                }
+            }
+        }
+        self._process_add_response(request_json)
+
 
     @property
     def _general_properties_json(self):
