@@ -138,6 +138,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
+    'EXECUTE_WORKFLOW_API': '{0}Workflow/%s/action/execute',
     'EXECUTE_WORKFLOW': '{0}wapi/%s',
     'GET_WORKFLOW': '{0}Workflow/%s',
     'GET_WORKFLOW_DEFINITION': '{0}Workflow/%s/definition',
@@ -201,6 +202,7 @@ SERVICES_DICT_TEMPLATE = {
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
     'DRBACKUP': '{0}/CommServ/DRBackup',
+    'DISASTER_RECOVERY_PROPERTIES': '{0}/Commcell/DRBackup/Properties',
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
     'METRICS': '{0}CommServ/MetricsReporting',
@@ -251,7 +253,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
 
-    'GET_ALL_MONITORING_POLICIES': '{0}getLMCloudAndMonitoringPolicyList',
+    'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
     'GET_ALL_TEMPLATES': '{0}logmonitoring/search/getListOfTemplate',
     'CREATE_DELETE_EDIT_OPERATIONS': '{0}logmonitoring/policy/operations',
@@ -330,7 +332,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_RECOVERY_TARGETS':
         '{0}/VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
     'GET_RECOVERY_TARGET': '{0}/VMAllocationPolicy/%s',
-    
+
     'RETIRE': '{0}Client/%s/Retire'
 }
 

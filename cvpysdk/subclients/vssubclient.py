@@ -2397,7 +2397,8 @@ class VirtualServerSubclient(Subclient):
                incremental_backup=False,
                incremental_level='BEFORE_SYNTH',
                collect_metadata=False,
-               advanced_options=None):
+               advanced_options=None,
+               schedule_pattern=None):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -2420,8 +2421,16 @@ class VirtualServerSubclient(Subclient):
                         create_backup_copy_immediately  --  Run Backup copy just after snap backup
                         backup_copy_type                --  Backup Copy level using storage policy
                                                             or subclient rule
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
             Returns:
-                object : instance of the Job class for this backup job
+                object - instance of the Job class for this backup job if its an immediate Job
+
+                         instance of the Schedule class for the backup job if its a scheduled Job
 
             Raises:
                 SDKException:
@@ -2437,9 +2446,14 @@ class VirtualServerSubclient(Subclient):
                                 'differential', 'synthetic_full']:
             raise SDKException('Subclient', '103')
 
-        if advanced_options:
-            request_json = self._backup_json(backup_level, incremental_backup, incremental_level,
-                                             advanced_options)
+        if advanced_options or schedule_pattern:
+            request_json = self._backup_json(
+                backup_level=backup_level,
+                incremental_backup=incremental_backup,
+                incremental_level=incremental_level,
+                advanced_options=advanced_options,
+                schedule_pattern=schedule_pattern
+            )
 
             backup_service = self._commcell_object._services['CREATE_TASK']
 
@@ -2447,13 +2461,13 @@ class VirtualServerSubclient(Subclient):
                 'POST', backup_service, request_json
             )
 
+            return self._process_backup_response(flag, response)
+
         else:
             return super(VirtualServerSubclient, self).backup(backup_level=backup_level,
                                                               incremental_backup=incremental_backup,
                                                               incremental_level=incremental_level,
                                                               collect_metadata=collect_metadata)
-
-        return self._process_backup_response(flag, response)
 
     def _advanced_backup_options(self, options):
         """Generates the advanced backup options dict

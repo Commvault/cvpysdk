@@ -121,6 +121,8 @@ Instance:
 
     _process_update_request()       --  to process the request using API call
 
+    _get_instance_properties_json() --  returns the instance properties
+
     update_properties()             --  to update the instance properties
 
     instance_id()                   --  id of this instance
@@ -1065,6 +1067,25 @@ class Instances(object):
 
                 if given storage policy does not exist in commcell
 
+        Cloud : Amazon DynamoDB
+        cloud_options = {
+                            'instance_name': 'DynamoDB',
+                            'storage_plan': 'cs_sp',
+                            'storage_policy': 'cs_sp',
+                            'access_node': 'CS',
+                            'access_key': 'xxxxxx',
+                            'secret_key': 'xxxxxx',
+                            'cloudapps_type': 'amazon_dynamodb'
+                        }
+        Returns:
+            dict     --   JSON request to pass to the API
+        Raises :
+            SDKException :
+
+                if cloud storage instance with same name already exists
+
+                if given storage policy does not exist in commcell
+
         """
         if cloud_options.get("instance_name"):
             if self.has_instance(cloud_options.get("instance_name")):
@@ -1347,7 +1368,8 @@ class Instances(object):
 
         """
 
-        supported_cloudapps_type = ["amazon_rds", "amazon_redshift", "amazon_docdb"]
+        supported_cloudapps_type = ["amazon_rds", "amazon_redshift",
+                                    "amazon_docdb", "amazon_dynamodb"]
         if value.get("cloudapps_type") in supported_cloudapps_type:
             self._general_properties = {
                 "accessNodes": {
@@ -1401,7 +1423,8 @@ class Instances(object):
 
         """
 
-        supported_cloudapps_type = {"amazon_rds": 4, "amazon_redshift": 26, "amazon_docdb": 27}
+        supported_cloudapps_type = {"amazon_rds": 4, "amazon_redshift": 26,
+                                    "amazon_docdb": 27, "amazon_dynamodb": 22}
         self._general_properties_json = value
         if value.get("cloudapps_type") == 's3':
             self._instance_properties = {
@@ -1596,6 +1619,23 @@ class Instance(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_instance_properties_json(self):
+        """get the all instance related properties.
+
+           Returns:
+                dict - all instance properties put inside a dict
+
+        """
+        instance_json = {
+            "instanceProperties": {
+                "isDeleted": False,
+                "instance": self._instance,
+                "instanceActivityControl": self._instanceActivityControl
+            }
+        }
+
+        return instance_json
 
     def _set_instance_properties(self, attr_name, value):
         """sets the properties of this sub client.value is updated to instance once when post call
@@ -1889,12 +1929,6 @@ class Instance(object):
 
         if restore_option.get("multinode_restore", False) or restore_option.get("no_of_streams", 1) > 1:
 
-            self._destination_restore_json["destinationInstance"] = {
-                "instanceName": restore_option.get('destination_instance', self.instance_name)
-            }
-
-            self._destination_restore_json["noOfStreams"] = restore_option.get('no_of_streams', 2)
-
             self._distributed_restore_json = {
                 "clientType": restore_option.get('client_type', 0),
                 "distributedRestore": restore_option.get("multinode_restore", False),
@@ -1917,7 +1951,6 @@ class Instance(object):
                 }
             }
 
-            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = self._destination_restore_json
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["distributedAppsRestoreOptions"] = self._distributed_restore_json
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["qrOption"] = self._qr_restore_option
 
@@ -2511,6 +2544,13 @@ class Instance(object):
                     "clientName": value.get("client_name", ""),
                 }
             }
+
+        if value.get("multinode_restore", False) or value.get("no_of_streams", 1) > 1:
+            self._destination_restore_json["destinationInstance"] = {
+                "instanceName": value.get('destination_instance', self.instance_name)
+            }
+
+            self._destination_restore_json["noOfStreams"] = value.get('no_of_streams', 2)
 
     def _restore_fileoption_json(self, value):
         """setter for  the fileoption restore option in restore JSON"""

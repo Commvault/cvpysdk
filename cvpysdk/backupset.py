@@ -655,7 +655,7 @@ request_json['backupSetInfo'].update({
                         "numberOfBackupStreams": kwargs.get('streams', 2),
                         "storageDevice": {
                             "dataBackupStoragePolicy": {
-                                "storagePolicyName": kwargs.get('storage_policy','')
+                                "storagePolicyName": kwargs.get('storage_policy', '')
                             },
                         },
                     },
@@ -1260,7 +1260,7 @@ class Backupset(object):
         """Retrieves the items from browse response.
 
         Args:
-            result_set  (dict)  --  browse response dict obtained from server
+            result_set  (list of dict)  --  browse response dict obtained from server
 
         Returns:
             dict - Dictionary of the specified file with list of all the file versions and
@@ -1282,13 +1282,13 @@ class Backupset(object):
             path = result['path']
 
             if 'modificationTime' in result:
-                mod_time = time.localtime(result['modificationTime'])
+                mod_time = time.localtime(int(result['modificationTime']))
                 mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
             else:
                 mod_time = None
 
             if 'file' in result['flags']:
-                if result['flags']['file'] is True:
+                if result['flags']['file'] in (True, '1'):
                     file_or_folder = 'File'
                 else:
                     file_or_folder = 'Folder'
@@ -1381,18 +1381,20 @@ class Backupset(object):
                             break
 
                 if not browse_result:
-                    if 'messages' in response_json['browseResponses'][0]:
+                    try:
                         message = response_json['browseResponses'][0]['messages'][0]
                         error_message = message['errorMessage']
 
                         o_str = exception_message
                         raise SDKException('Subclient', '102', o_str.format(error_message))
-
-                    else:
+                    except KeyError:
                         return [], {}
 
                 if not result_set:
                     raise SDKException('Subclient', exception_code)
+
+                if not isinstance(result_set, list):
+                    result_set = [result_set]
 
                 if 'all_versions' in options['operation']:
                     return self._process_browse_all_versions_response(result_set)
@@ -1406,14 +1408,14 @@ class Backupset(object):
                     else:
                         path = '\\'.join([options['path'], name])
 
-                    if 'modificationTime' in result and result['modificationTime'] > 0:
-                        mod_time = time.localtime(result['modificationTime'])
+                    if 'modificationTime' in result and int(result['modificationTime']) > 0:
+                        mod_time = time.localtime(int(result['modificationTime']))
                         mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
                     else:
                         mod_time = None
 
                     if 'file' in result['flags']:
-                        if result['flags']['file'] is True:
+                        if result['flags']['file'] in (True, '1'):
                             file_or_folder = 'File'
                         else:
                             file_or_folder = 'Folder'
@@ -1575,11 +1577,10 @@ class Backupset(object):
 
             if output[0]:
                 return
-            else:
-                o_str = 'Failed to update the name of the backupset\nError: "{0}"'
-                raise SDKException('Backupset', '102', o_str.format(output[2]))
-        else:
-            raise SDKException('Backupset', '102', 'Backupset name should be a string value')
+            o_str = 'Failed to update the name of the backupset\nError: "{0}"'
+            raise SDKException('Backupset', '102', o_str.format(output[2]))
+
+        raise SDKException('Backupset', '102', 'Backupset name should be a string value')
 
     @description.setter
     def description(self, value):
@@ -1603,15 +1604,15 @@ class Backupset(object):
 
                 if output[0]:
                     return
-                else:
-                    o_str = 'Failed to update the description of the backupset\nError: "{0}"'
-                    raise SDKException('Backupset', '102', o_str.format(output[2]))
-            else:
-                raise SDKException(
-                    'Backupset', '102', 'Backupset description should be a string value'
-                )
-        else:
-            raise SDKException('Backupset', '102', 'Description cannot be modified')
+
+                o_str = 'Failed to update the description of the backupset\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(output[2]))
+
+            raise SDKException(
+                'Backupset', '102', 'Backupset description should be a string value'
+            )
+
+        raise SDKException('Backupset', '102', 'Description cannot be modified')
 
     @plan.setter
     def plan(self, value):
@@ -1661,9 +1662,8 @@ class Backupset(object):
 
             if response[0]:
                 return
-            else:
-                o_str = 'Failed to asspciate plan to the backupset\nError: "{0}"'
-                raise SDKException('Backupset', '102', o_str.format(response[2]))
+            o_str = 'Failed to asspciate plan to the backupset\nError: "{0}"'
+            raise SDKException('Backupset', '102', o_str.format(response[2]))
         else:
             raise SDKException(
                 'Backupset',
@@ -1688,9 +1688,9 @@ class Backupset(object):
 
             if output[0]:
                 return
-            else:
-                o_str = 'Failed to set this as the Default Backup Set\nError: "{0}"'
-                raise SDKException('Backupset', '102', o_str.format(output[2]))
+
+            o_str = 'Failed to set this as the Default Backup Set\nError: "{0}"'
+            raise SDKException('Backupset', '102', o_str.format(output[2]))
 
     def backup(self):
         """Runs Incremental backup job for all subclients in this backupset.
@@ -1874,7 +1874,7 @@ class Backupset(object):
             'path': paths
         }
 
-        files, metadata = self._do_browse(options)
+        files, _ = self._do_browse(options)
 
         # Delete operation does not return any result, hence consider the operation successful
         if files:

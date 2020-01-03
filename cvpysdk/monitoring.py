@@ -184,19 +184,17 @@ class MonitoringPolicies(object):
                         if response is not success
         """
         request = {
-            "monitoringPolicyReq": {
                 "flag": 2, "appType": 1
             }
-        }
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._MONITORING_POLICIES, request)
 
         if flag:
-            if response.json() and 'cloudClientList' in response.json():
+            if response.json() and 'monitoringPolicies' in response.json():
                 monitoring_policies_dict = {}
 
-                for dictionary in response.json(
-                )['cloudClientList'][0]['monitoringPolicyResp']['monitoringPolicies']:
+                for dictionary in response.json()['monitoringPolicies']:
                     temp_name = dictionary['monitoringPolicyName'].lower()
                     temp_id = int(dictionary['monitoringPolicyid'])
                     monitoring_policies_dict[temp_name] = temp_id
@@ -444,7 +442,9 @@ class MonitoringPolicies(object):
             analytics_server_name,
             client_name,
             content=None,
-            win_flag=False):
+            win_flag=False,
+            policy_type=0,
+            **kwargs):
         """Adds a new Monitoring Policy to the Commcell.
 
             Args:
@@ -460,11 +460,15 @@ class MonitoringPolicies(object):
                 client_name (str)            -- client from which data
                                                     has to be picked
 
-                content                      -- content to be used for
+                content (str)                     -- content to be used for
                                                     running the policy
 
-                win_flag                     -- For executing Text based
+                win_flag (bool)                    -- For executing Text based
                                                     WindowsEvents Policy
+
+                policy_type (int)                -- type of policy to be created 0 - index server 1 - event raiser
+
+                kwargs                          -- continuousMode - true/false, conditionsXML - criteria for policy
 
             Raises:
                 SDKException:
@@ -481,9 +485,10 @@ class MonitoringPolicies(object):
                     if response is not success
         """
         template_name = template_name.lower()
-        analytics_server_name = analytics_server_name.lower()
         client_name = client_name.lower()
         template_dict = {}
+        cloud_id = 0
+        analytics_server_name = ''
 
         if template_name == "ondemand":
             template_id = 1
@@ -503,13 +508,15 @@ class MonitoringPolicies(object):
         if content is None:
             content = ""
 
-        if self.has_analytics_server(analytics_server_name):
-            cloud_id = self.all_analytics_servers[analytics_server_name]
-        else:
-            err_msg = 'Analytics Server "{0}" doesn\'t exist'.format(
-                analytics_server_name
-            )
-            raise SDKException('Monitoring', '102', err_msg)
+        if policy_type==0:
+            analytics_server_name = analytics_server_name.lower()
+            if self.has_analytics_server(analytics_server_name):
+                cloud_id = self.all_analytics_servers[analytics_server_name]
+            else:
+                err_msg = 'Analytics Server "{0}" doesn\'t exist'.format(
+                    analytics_server_name
+                )
+                raise SDKException('Monitoring', '102', err_msg)
 
         client_dict = {}
         if self._commcell_object.clients.has_client(client_name):
@@ -525,7 +532,8 @@ class MonitoringPolicies(object):
                 "monitoringPolicyName": monitoring_policy_name,
                 "monitoringPolicyid": 0,
                 "content": content,
-                "indexAllLines": True,
+                "continuousMode": kwargs.get('continuousMode',False),
+                "indexAllLines": False if kwargs.get('conditionsXML') else True,
                 "associations": [{
                     "clientName": client_name,
                     "clientId": client_id,
@@ -538,6 +546,12 @@ class MonitoringPolicies(object):
                     "templateName": template_name,
                     "templateId": template_id
                 }],
+                "criteria": [
+                    {
+                        "conditionsXML": kwargs.get('conditionsXML',''),
+                        "templateId": template_id
+                    }
+                ],
                 "dataCapturingOptions": {
                     "cloudId": cloud_id,
                     "ageCIDataAfterDays": 15,
@@ -545,6 +559,7 @@ class MonitoringPolicies(object):
                     "doNotMonitorOldData": False,
                     "enableContentIndexing": True,
                     "asFtp": False,
+                    "dataCapturingType": policy_type,
                     "captureEntireFile": False
                 }
             }

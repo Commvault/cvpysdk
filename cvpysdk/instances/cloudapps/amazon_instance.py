@@ -18,7 +18,8 @@
 
 """ File for operating on a amazon instances.
 
-AmazonRDSInstance, AmazonRedshiftInstance and AmazonDocumentDBInstance are the only classes defined in this file.
+AmazonRDSInstance, AmazonRedshiftInstance, AmazonDocumentDBInstance, AmazonDynamoDBInstance
+are the classes defined in this file.
 
 AmazonRDSInstance:  Derived class from CloudDatabaseInstance Base class, representing a Cloud Database instance of
                     type Amazon RDS and to perform operations on that instance
@@ -60,6 +61,13 @@ AmazonDocumentDBInstance
 
     _restore_json()                 -- Generates Restore json with restore options
 
+AmazonDynamoDBInstance: Derived class from CloudDatabaseInstance Base class, representing a
+                        Cloud Database instance of type Amazon DynamoDB and to
+                        perform operations on that instance
+
+AmazonDynamoDBInstance:
+
+    _restore_json()                 -- Generates Restore json with restore option
 """
 
 from __future__ import unicode_literals
@@ -466,5 +474,89 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
 
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = \
             documentdb_restore_option
+
+        return restore_json
+
+class AmazonDynamoDBInstance(CloudDatabaseInstance):
+    """Class for representing an Instance of the Amazon DynamoDB"""
+
+    def _restore_json(self, **kwargs):
+        """Returns the JSON request to pass to the API as per the options selected by the user.
+
+             Args:
+                kwargs   (list)  --  list of options need to be set for restore
+
+                For DynamoDB Instance Cluster Restore following are the required parameters
+                        destination : "",
+                        source : "",
+                        options = {
+                            'paths':  (list of strings)
+                            'table_map': (list of dicts)
+                            'adjust_write_capacity': (int)
+                            'destination_client': (string))
+                            'destination_instance': string
+                    }
+
+                    }
+                Example:
+                        destination : "",
+                        source : "",
+                        options :   {
+                                    'paths': ['/us-east-1/table_1'],
+                                    'table_map': [{
+                                    'srcTable':{'name': 'table_1', 'region':'us-east-1'},
+                                    'destTable':{'name': 'table_2', 'region': 'us-east-2'}
+                                    }]
+                                    'adjust_write_capacity': 100,
+                                    'destination_client': 'client1',
+                                    'destination_instance': 'DynamoDB'
+                                    }
+            Returns:
+                dict - JSON request to pass to the API
+        """
+        restore_json = super(
+            AmazonDynamoDBInstance,
+            self)._restore_json(**kwargs)
+
+        restore_options = {}
+        if kwargs.get('options'):
+            restore_options = kwargs['options']
+            for key in kwargs:
+                if not key == 'options':
+                    restore_options[key] = kwargs[key]
+        else:
+            restore_options.update(kwargs)
+
+        source_backupset_id = int(self._agent_object.backupsets.get
+                                  ('defaultBackupSet')._get_backupset_id())
+        dynamodb_restore_option = {
+            "dynamoDbRestoreOptions": {
+                'tempWriteThroughput': restore_options.get('adjust_write_capacity', ''),
+                'overwrite': restore_options.get('overwrite', False),
+                'destinationTableList': restore_options.get('table_map', [])
+            }
+        }
+        destination_restore_json = (
+            {
+                "noOfStreams": restore_options.get("number_of_streams", 2),
+                "destClient": {
+                    "clientName": restore_options.get("destination_client", "")
+                },
+                "destinationInstance": {
+                    "clientName": restore_options.get("destination_client", ""),
+                    "instanceName": restore_options.get("destination_instance", ""),
+                    "appName": self._instance['appName']
+                }
+
+            })
+        restore_json['taskInfo']['associations'][0]['backupsetId'] = source_backupset_id
+        restore_json['taskInfo']['subTasks'][0]['options'][
+            "restoreOptions"]["destination"] = destination_restore_json
+        restore_json['taskInfo']['subTasks'][0]['options'][
+            'restoreOptions']['cloudAppsRestoreOptions'] = dynamodb_restore_option
+        restore_json['taskInfo']['subTasks'][0]['options'][
+            'restoreOptions']['fileOption']['sourceItem'] = restore_options.get("paths", "")
+        restore_json['taskInfo']['subTasks'][0]['options'][
+            'restoreOptions']['cloudAppsRestoreOptions']['instanceType'] = 22
 
         return restore_json

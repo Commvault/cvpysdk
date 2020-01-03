@@ -297,7 +297,8 @@ class StoragePolicies(object):
             retention_period=5,
             number_of_streams=None,
             ocum_server=None,
-            dedup_media_agent=None):
+            dedup_media_agent=None,
+            dr_sp=False):
         """Adds a new Storage Policy to the Commcell.
 
             Args:
@@ -328,6 +329,10 @@ class StoragePolicies(object):
 
                 dedup_media_agent   (str)          --  name of media agent where deduplication database is hosted.
                 default:None
+
+                dr_sp                (bool)         --  if True creates dr storage policy
+                                                        if False creates data protection policy
+                default:False
 
             Raises:
                 SDKException:
@@ -366,6 +371,8 @@ class StoragePolicies(object):
         else:
             raise SDKException('Storage', '103')
 
+        sp_type = 2 if dr_sp else 1
+
         request_json = {
             "storagePolicyCopyInfo": {
                 "library": {
@@ -378,7 +385,8 @@ class StoragePolicies(object):
                     "retainBackupDataForDays": retention_period
                 }
             },
-            "storagePolicyName": storage_policy_name
+            "storagePolicyName": storage_policy_name,
+            "type": sp_type
         }
 
         if number_of_streams is not None:

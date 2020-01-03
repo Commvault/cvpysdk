@@ -103,6 +103,10 @@ EXCEPTION_DICT = {
         '106': 'The token has expired. Please login again',
         '107': 'No mapping exists for the given token for any user'
     },
+    'DisasterRecovery': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
     'Client': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',

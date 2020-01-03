@@ -118,6 +118,8 @@ Alert Attributes
     **description**             --  returns the description of an alert
 
     **entities**                --  returns the list of entities associated with an alert
+
+    **email_recipients**        --  returns the list of email recipients associated to the alert
 """
 
 from __future__ import absolute_import
@@ -416,7 +418,10 @@ class Alerts(object):
         flag, response = self._cvpysdk_object.make_request('GET', get_alert)
         if flag:
             if response.json():
-                return response.json()["senderInfo"]['senderName']
+                sender = response.json()["senderInfo"]['senderName']
+                if not sender:
+                    sender = response.json()["senderInfo"]['senderAddress']
+                return sender
             else:
                 raise SDKException('Alert', '102', "Failed to get sender address")
         else:
@@ -810,6 +815,10 @@ class Alert(object):
                 if 'userGroupList' in self._alert_detail:
                     self._user_group_list = [grp['name'] for grp in self._alert_detail['userGroupList']]
 
+                self._email_recipients = []
+                if 'nonGalaxyUserList' in self._alert_detail:
+                    self._email_recipients = [email['name'] for email in self._alert_detail['nonGalaxyUserList']]
+
             else:
                 raise SDKException('Response', '102')
         else:
@@ -838,6 +847,9 @@ class Alert(object):
                     "userList": {
                         "userList": [{"userName": user} for user in self._users_list]
                     },
+                    "nonGalaxyList": {
+                        "nonGalaxyUserList": [{"nonGalaxyUser": email} for email in self._email_recipients]
+                    },
                     "EntityList": {
                         "associations": self._entities_list
                     }
@@ -854,6 +866,7 @@ class Alert(object):
             if response.json():
                 error_code = str(response.json()['errorCode'])
                 if error_code == '0':
+                    self.refresh()
                     return
                 else:
                     o_str = 'Failed to update properties of Alert\nError: "{0}"'
@@ -865,7 +878,7 @@ class Alert(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-        self.refresh()
+
 
     @property
     def name(self):
@@ -957,6 +970,17 @@ class Alert(object):
             raise SDKException('Alert', '101')
 
         self._entities_list = self._alerts_obj._get_entities(entity_json)
+        self._modify_alert_properties()
+
+    @property
+    def email_recipients(self):
+        """returns the email recipients associated to the alert"""
+        return self._email_recipients
+
+    @email_recipients.setter
+    def email_recipients(self, email_recipients):
+        """Modifies the email_recipients for the alert"""
+        self._email_recipients.extend(email_recipients)
         self._modify_alert_properties()
 
     @property

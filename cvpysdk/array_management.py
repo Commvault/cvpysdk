@@ -48,7 +48,7 @@ ArrayManagement:
 """
 
 from __future__ import unicode_literals
-
+import json
 from .job import Job
 from .exception import SDKException
 
@@ -260,7 +260,7 @@ class ArrayManagement(object):
 
                     control_host        (str)               -- control host of the array
 
-                    array_access_node    (str)              -- Array Access Node MediaAgent Name
+                    array_access_node   (list)              -- Array Access Node MediaAgent's Name list
 
                     is_ocum             (bool)              -- used for netapp to specify whether
                                                                to use Primary file server or OCUM
@@ -270,20 +270,16 @@ class ArrayManagement(object):
                 errorMessage   (string) :  Error message
         """
 
-        client_id = int(self._commcell_object.clients.get(array_access_node).client_id)
-        request_json = {
-            "clientId": 0,
-            "flags": 0,
-            "assocType": 0,
-            "copyId": 0,
-            "appId": 0,
-            "selectedMAs":[
-                {
+        selectedMAs = []
+        if array_access_node is not None:
+            for node in array_access_node:
+                client_id = int(self._commcell_object.clients.get(node).client_id)
+                node_dict = {
                     "arrayControllerId":0,
                     "mediaAgent":{
-                        "name": array_access_node,
+                        "name": node,
                         "id": client_id
-                    },
+                        },
                     "arrCtrlOptions":[
                         {
                             "isEnabled": True,
@@ -294,7 +290,15 @@ class ArrayManagement(object):
                         }
                     ]
                 }
-            ],
+                selectedMAs.append(node_dict)
+
+        request_json = {
+            "clientId": 0,
+            "flags": 0,
+            "assocType": 0,
+            "copyId": 0,
+            "appId": 0,
+            "selectedMAs":selectedMAs,
             "hostDG": {
                 "doNotMoveDevices": True,
                 "isOverridden": False,
@@ -418,19 +422,15 @@ class ArrayManagement(object):
 
     def edit_array(self,
                    control_host_id,
-                   master_config_id,
-                   value,
+                   config_data,
                    config_update_level,
                    level_id,
-                   array_access_node,
-                   mode):
-        """Method to Update Snap Configuration and Array controllers for the Array
+                   array_access_node):
+        """Method to Update Snap Configuration and Array access nodes for the given Array
         Args:
             control_host_id        (int)        -- Control Host Id of the Array
 
-            master_config_id       (int)        -- Master config Id of Snap config
-
-            value                  (str)        -- Value to Update
+            Config_data            (dict)       -- Master config Id and the config value in dict format
 
             config_update_level    (str)        -- update level for the Snap config
             ex: "array", "subclient", "copy", "client"
@@ -438,13 +438,11 @@ class ArrayManagement(object):
             level_id               (int)        -- level Id where the config needs to be
                                                    added/updated
 
-            array_access_node       (str)        -- Array Access Node MA
+            array_access_node      (dict)       -- Array Access Node MA's in dict format with
+                                                   operation mode
             default: None
+            Ex: {"snapautotest3" : "add", "linuxautomation1" : "add", "snapautofc1" : "delete"}
 
-            mode                    (str)       -- Operation type for the Array Access Node whether
-                                                   to add or remove
-            default: add
-            values: add, remove
         """
 
         copy_level_id = app_level_id = client_level_id = 0
@@ -479,62 +477,100 @@ class ArrayManagement(object):
             }
         request_json.update(update_dict)
 
-        if master_config_id is not None:
-            for config in request_json['configList']['configList']:
-                if config['masterConfigId'] == int(master_config_id):
-                    config['value'] = str(value)
-                    if config_update_level != "array":
-                        config['isOverridden'] = True
+        if config_data is not None:
+            x = json.loads(config_data)
+            for m_config, value in x.items():
+                for config in request_json['configList']['configList']:
+                    if config['masterConfigId'] == int(m_config):
+                        if isinstance(value, dict):
+                            for alias, mode in value.items():
+                                if mode == "add":
+                                    config_values_dict = {
+                                        "name": str(alias),
+                                        "id": 0
+                                        }
+                                    aliasPresent = False
+                                    for alias_name in config['values']:
+                                        if alias_name['name'] == alias:
+                                            aliasPresent = True
+                                    if not aliasPresent:
+                                        config['values'].append(config_values_dict)
+                                if mode != "add" and mode != "delete":
+                                    for alias_name in config['values']:
+                                        if alias_name['name'] == mode:
+                                            alias_name['name'] = alias
+                                if mode == "delete":
+                                    for alias_name in range(len(config['values'])):
+                                        if config['values'][alias_name]['name'] == alias:
+                                            del config['values'][alias_name]
+                                            break
+                            if config_update_level != "array":
+                                config['isOverridden'] = True
 
-        if array_access_node is not None and mode == "add":
-            client_id = int(self._commcell_object.clients.get(array_access_node).client_id)
-            if "selectedMAs" in request_json:
-                update_dict = {
-                    "arrayControllerId": 0,
-                    "mediaAgent": {
-                        "name": array_access_node,
-                        "id": client_id
-                    },
-                    "arrCtrlOptions": [
-                        {
-                            "isEnabled": True,
-                            "arrCtrlOption": {
-                                "name": "Pruning",
-                                "id": 262144
-                            }
-                        }
-                    ]
-                }
-                request_json['selectedMAs'].append(update_dict)
-            else:
-                update_dict = {
-                    "selectedMAs": [
-                        {
+                        else:
+                            config['value'] = str(value)
+                            if config_update_level != "array":
+                                config['isOverridden'] = True
+
+        if array_access_node is not None:
+            z = json.loads(array_access_node)
+            for access_node, mode in z.items():
+                client_id = int(self._commcell_object.clients.get(access_node).client_id)
+                if mode == "add":
+                    if "selectedMAs" in request_json:
+                        update_dict = {
                             "arrayControllerId": 0,
                             "mediaAgent": {
-                                "name": array_access_node,
+                                "name": access_node,
                                 "id": client_id
-                            },
+                                },
                             "arrCtrlOptions": [
                                 {
                                     "isEnabled": True,
                                     "arrCtrlOption": {
                                         "name": "Pruning",
                                         "id": 262144
+                                        }
                                     }
-                                }
-                            ]
-                        }
-                    ]}
-                request_json.update(update_dict)
+                                ]
+                            }
+                        isNodePresent = False
+                        for nodes in request_json['selectedMAs']:
+                            if nodes['mediaAgent']['id'] == int(client_id):
 
-        elif array_access_node is not None and mode == "remove":
-            client_id = int(self._commcell_object.clients.get(array_access_node).client_id)
-            if "selectedMAs" in request_json:
-                for controller in range(len(request_json['selectedMAs'])):
-                    if request_json['selectedMAs'][controller]['mediaAgent']['id'] == int(client_id):
-                        del request_json['selectedMAs'][controller]
-                        break
+                                isNodePresent = True
+                        if not isNodePresent:
+                            request_json['selectedMAs'].append(update_dict)
+
+                    else:
+                        update_dict = {
+                            "selectedMAs": [
+                                {
+                                    "arrayControllerId": 0,
+                                    "mediaAgent": {
+                                        "name": access_node,
+                                        "id": client_id
+                                    },
+                                    "arrCtrlOptions": [
+                                        {
+                                            "isEnabled": True,
+                                            "arrCtrlOption": {
+                                                "name": "Pruning",
+                                                "id": 262144
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]}
+                        request_json.update(update_dict)
+
+                elif mode == "delete":
+                    client_id = int(self._commcell_object.clients.get(access_node).client_id)
+                    if "selectedMAs" in request_json:
+                        for controller in range(len(request_json['selectedMAs'])):
+                            if request_json['selectedMAs'][controller]['mediaAgent']['id'] == int(client_id):
+                                del request_json['selectedMAs'][controller]
+                                break
 
         request_json['configs'] = request_json.pop('configList')
 

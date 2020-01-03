@@ -53,7 +53,7 @@ OracleSubclient:
 
     _get_oracle_restore_json            --  To get restore JSON for an oracle instance
 
-    _oracle_cumulative_backup_json      --  Get cumulative backup JSON for oracle instance
+    _oracle_backup_json                 --  Get backup JSON for oracle instance
 
     is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient
 
@@ -84,18 +84,34 @@ class OracleSubclient(DatabaseSubclient):
         self._get_subclient_properties()
         #self._oracle_properties = {}
 
-    def _oracle_cumulative_backup_json(self):
-        """
-        Adds oracle options to oracle backup
+    def _oracle_backup_json(
+            self,
+            backup_level="full",
+            schedule_pattern=None):
+        """Runs a backup job for the subclient of the level specified.
 
-        Returns:
-            dict    -- dict containing request JSON
+            Args:
+                backup_level            (str)   --  level of backup the user wish to run
+                                                    Full / Incremental
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+            Returns:
+                dict    -- dict containing request JSON
 
         """
         oracle_options = {
             "oracleOptions": {}
         }
-        request_json = self._backup_json(InstanceBackupType.CUMULATIVE, False, "BEFORE SYNTH")
+        request_json = self._backup_json(
+            backup_level,
+            False,
+            "BEFORE_SYNTH",
+            schedule_pattern=schedule_pattern
+        )
 
         # Add option to run RMAN cumulatives
         oracle_options["oracleOptions"]["cumulative"] = True
@@ -354,17 +370,31 @@ class OracleSubclient(DatabaseSubclient):
         raise AttributeError("'{0}' object has no attribute '{1}'".format(
             self.__class__.__name__, 'find'))
 
-    def backup(self, backup_level=InstanceBackupType.FULL.value, cumulative=False):
+    def backup(
+            self,
+            backup_level=InstanceBackupType.FULL.value,
+            cumulative=False,
+            schedule_pattern=None):
         """
 
         Args:
+
+            backup_level            (str)   --  level of backup the user wish to run
+                                                Full / Incremental
+                                                    default: Full
+
             cumulative (Bool) -- True if cumulative backup is required
-                default: False
-            backup_level (str)  -- Level of backup. Can be full or incremental
-                default: full
+                                    default: False
+
+            schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
 
         Returns:
-            object -- instance of Job class
+            object - instance of the Job class for this backup job if its an immediate Job
+
+                     instance of the Schedule class for the backup job if its a scheduled Job
 
         Raises:
             SDKException:
@@ -378,10 +408,15 @@ class OracleSubclient(DatabaseSubclient):
         if backup_level not in ['full', 'incremental']:
             raise SDKException(r'Subclient', r'103')
 
-        if not cumulative:
+        if not (cumulative or schedule_pattern):
             return super(OracleSubclient, self).backup(backup_level)
 
-        request_json = self._oracle_cumulative_backup_json()
+        if cumulative:
+            backup_level = InstanceBackupType.CUMULATIVE.value
+        request_json = self._oracle_backup_json(
+            backup_level,
+            schedule_pattern
+        )
         backup_service = self._commcell_object._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', backup_service, request_json

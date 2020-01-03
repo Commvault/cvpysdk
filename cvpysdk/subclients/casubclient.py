@@ -62,6 +62,7 @@ class CloudAppsSubclient(Subclient):
             27: CloudDatabaseSubclient, # Amazon Document DB subclient
             25: CloudStorageSubclient,  # AliBaba
             24: CloudStorageSubclient,  #IBM
+            22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

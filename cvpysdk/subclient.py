@@ -42,6 +42,8 @@ Subclients:
 
     _get_subclients()           --  gets all the subclients associated with the backupset specified
 
+    _process_add_request()      --  to post the add client request
+
     default_subclient()         --  returns the name of the default subclient
 
     all_subclients()            --  returns dict of all the subclients on commcell
@@ -49,6 +51,8 @@ Subclients:
     has_subclient()             --  checks if a subclient exists with the given name or not
 
     add()                       --  adds a new subclient to the backupset
+
+    add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
     get(subclient_name)         --  returns the subclient object of the input subclient name
 
@@ -163,7 +167,6 @@ from .job import JobController
 from .schedules import Schedules
 from .exception import SDKException
 from .schedules import SchedulePattern
-from .schedules import Schedule
 
 install_aliases()
 
@@ -559,6 +562,60 @@ class Subclients(object):
 
         return self._subclients and subclient_name.lower() in self._subclients
 
+    def _process_add_request(self, request_json):
+        """To post the add subclient request
+
+        Args:
+            request_json    (dict)  -- Request json to be passed as the payload
+
+        Returns:
+            object  -   instance of the Subclient class
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_SUBCLIENT, request_json
+        )
+
+        if flag:
+            if response.json() and 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['response']['errorString']
+                    raise SDKException(
+                        'Subclient',
+                        '102',
+                        'Failed to create subclient\nError: "{0}"'.format(error_string)
+                    )
+                else:
+                    subclient_id = response.json()['response']['entity']['subclientId']
+
+                    # initialize the subclients again so the subclient object has all the subclients
+                    self.refresh()
+
+                    agent_name = self._agent_object.agent_name
+
+                    if isinstance(self._subclients_dict[agent_name], list):
+                        if self._instance_object.instance_name == "vminstance":
+                            subclient = self._subclients_dict[agent_name][-1]
+                        elif self._client_object.client_type and int(self._client_object.client_type) == 36:
+                            # client type 36 is case manager client
+                            subclient = self._subclients_dict[agent_name][-1]
+                        else:
+                            subclient = self._subclients_dict[agent_name][0]
+                    else:
+                        subclient = self._subclients_dict[agent_name]
+
+                    return subclient(
+                        self._backupset_object,
+                        request_json['subClientProperties']['subClientEntity']['subclientName'],
+                        subclient_id
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add(self, subclient_name, storage_policy,
             subclient_type=None, description='', advanced_options=None,
             pre_scan_cmd=None):
@@ -687,43 +744,141 @@ class Subclients(object):
                 'sqlSubclientType': self._sqlsubclient_type_dict[subclient_type]
             }
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._ADD_SUBCLIENT, request_json
-        )
+        return self._process_add_request(request_json)
 
-        if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response']['errorCode']
+    def add_virtual_server_subclient(
+            self,
+            subclient_name,
+            subclient_content,
+            **kwargs
+    ):
+        """Adds a new virtual server subclient to the backupset.
 
-                if error_code != 0:
-                    error_string = response.json()['response']['errorString']
-                    raise SDKException(
-                        'Subclient',
-                        '102',
-                        'Failed to create subclient\nError: "{0}"'.format(
-                            error_string)
-                    )
-                else:
-                    subclient_id = response.json(
-                    )['response']['entity']['subclientId']
+            Args:
+                subclient_name      (str)   --  Name of the subclient to be created
 
-                    # initialize the subclients again
-                    # so the subclient object has all the subclients
-                    self.refresh()
+                subclient_content   (list)  --  Content to be added to the subclient
 
-                    agent_name = self._agent_object.agent_name
+                    Example:
+                        [
+                            {
+                            'type' : VSAObjects.APPLICATION,
+                            'name' : '',
+                            },
+                            {
+                            'type' : VSAObjects.PROJECT,
+                            'name' : '',
+                            },
+                        ]
 
-                    return self._subclients_dict[agent_name](
-                        self._backupset_object, subclient_name, subclient_id
-                    )
-            else:
-                raise SDKException('Response', '102')
-        else:
+                        **Note** Use VSAObjects Enum present in constants.py to pass value to type
+
+                kwargs      (dict)  -- dict of keyword arguments as follows
+
+                    plan_name           (str)   --  Plan to be associated with the subclient
+
+                    storage_policy      (str)   --  Storage policy to be associated with the subclient
+
+                    description         (str)   --  Description for the subclient
+
+                        default: ''
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if storage policy argument is not of type string
+
+                    if description argument is not of type string
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+        """
+        if not (isinstance(subclient_name, basestring) and
+                isinstance(subclient_content, list)):
+            raise SDKException('Subclient', '101')
+
+        if self.has_subclient(subclient_name):
             raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
+                    subclient_name)
+            )
+
+        if self._backupset_object is None:
+            if self._instance_object.backupsets.has_backupset(
+                    'defaultBackupSet'):
+                self._backupset_object = self._instance_object.backupsets.get(
+                    'defaultBackupSet')
+            else:
+                self._backupset_object = self._instance_object.backupsets.get(
+                    sorted(self._instance_object.backupsets.all_backupsets)[0]
+                )
+
+        content = []
+        for item in subclient_content:
+            content.append({
+                    "equalsOrNotEquals": True,
+                    "name": item['name'],
+                    "allOrAnyChildren": True,
+                    "type": item['type'].value
+                })
+
+        request_json = {
+            "subClientProperties": {
+                "vmContentOperationType": 2,
+                "vmContent": {
+                    "children": content
+                },
+                "subClientEntity": {
+                    "clientName": self._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": subclient_name
+                },
+                "commonProperties": {
+                    "description": kwargs.get('description'),
+                    "enableBackup": True
+                }
+            }
+        }
+
+        if kwargs.get('plan_name'):
+            if not self._commcell_object.plans.has_plan(kwargs['plan_name']):
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Plan: "{0}" does not exist in the Commcell'.format(kwargs['plan_name'])
+                )
+            request_json['subClientProperties']['planEntity'] = {
+                "planName": kwargs['plan_name']
+            }
+
+        elif kwargs.get('storage_policy'):
+            if not self._commcell_object.storage_policies.has_policy(kwargs.get('storage_policy')):
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Storage Policy: "{0}" does not exist in the Commcell'.format(kwargs.get('storage_policy'))
+                )
+            request_json['subClientProperties']['commonProperties']['storageDevice'] = {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": kwargs.get('storage_policy')
+                        }
+                    }
+        else:
+            raise SDKException('Subclient', '102', 'Either Plan or Storage policy should be given as input')
+
+        return self._process_add_request(request_json)
 
     def get(self, subclient_name):
         """Returns a subclient object of the specified backupset name.
@@ -1243,7 +1398,7 @@ class Subclient(object):
             Args:
                 options     (dict)  --  advanced backup options that are to be included
                                             in the request
-
+c
             Returns:
                 (dict)  -   generated advanced options dict
         """

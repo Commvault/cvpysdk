@@ -164,7 +164,9 @@ class MYSQLSubclient(Subclient):
             backup_level,
             inc_with_data=False,
             truncate_logs_on_source=False,
-            do_not_truncate_logs=False):
+            do_not_truncate_logs=False,
+            schedule_pattern=None
+    ):
         """
         prepares the json for the backup request
 
@@ -187,11 +189,16 @@ class MYSQLSubclient(Subclient):
 
                     default: False
 
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
             Returns:
                 dict - JSON request to pass to the API
 
         """
-        request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
+        request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH", schedule_pattern=schedule_pattern)
 
         backup_options = {
             "truncateLogsOnSource":truncate_logs_on_source,
@@ -307,7 +314,9 @@ class MYSQLSubclient(Subclient):
             backup_level="Differential",
             inc_with_data=False,
             truncate_logs_on_source=False,
-            do_not_truncate_logs=False):
+            do_not_truncate_logs=False,
+            schedule_pattern=None
+    ):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -329,8 +338,15 @@ class MYSQLSubclient(Subclient):
 
                     default: False
 
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
             Returns:
-                object - instance of the Job class for this backup job
+                object - instance of the Job class for this backup job if its an immediate Job
+
+                         instance of the Schedule class for the backup job if its a scheduled Job
 
             Raises:
                 SDKException:
@@ -346,13 +362,15 @@ class MYSQLSubclient(Subclient):
         if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
             raise SDKException('Subclient', '103')
 
-        if not (inc_with_data or truncate_logs_on_source or do_not_truncate_logs):
+        if not (inc_with_data or truncate_logs_on_source or do_not_truncate_logs or schedule_pattern):
             return super(MYSQLSubclient, self).backup(backup_level)
         request_json = self._backup_request_json(
             backup_level,
             inc_with_data,
             truncate_logs_on_source=truncate_logs_on_source,
-            do_not_truncate_logs=do_not_truncate_logs)
+            do_not_truncate_logs=do_not_truncate_logs,
+            schedule_pattern=schedule_pattern
+        )
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['CREATE_TASK'], request_json
         )
