@@ -82,6 +82,9 @@ SERVICES_DICT_TEMPLATE = {
     'ALL_JOBS': '{0}Jobs',
     'JOB_MANAGEMENT_SETTINGS': '{0}CommServ/JobManagementSetting',
 
+    'ENABLE_SHARED_LAPTOP': '{0}Commcell/Properties/SharedLaptopUsage/Action/Enable',
+    'DISABLE_SHARED_LAPTOP': '{0}Commcell/Properties/SharedLaptopUsage/Action/Disable',
+
     'GET_MEDIA_AGENTS': '{0}V2/MediaAgents',
     'LIBRARY': '{0}Library',
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
@@ -333,7 +336,14 @@ SERVICES_DICT_TEMPLATE = {
         '{0}/VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
     'GET_RECOVERY_TARGET': '{0}/VMAllocationPolicy/%s',
 
-    'RETIRE': '{0}Client/%s/Retire'
+    'RETIRE': '{0}Client/%s/Retire',
+
+    'INDEX_SERVER_CREATION': '{0}cloud/create',
+    'INDEX_SERVER_EDITION': '{0}cloud/modify',
+    'INDEX_SERVER_DELETION': '{0}cloud/delete',
+    'INDEX_SERVER_ROLE_UPDATE': '{0}cloud/role/update',
+    'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
+    'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
 }
 
 

@@ -392,6 +392,12 @@ EXCEPTION_DICT = {
     'Uninstall': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
+    },
+    'IndexServers': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'Index Server not found',
+        '103': 'Invalid role name',
+        '104': '',
     }
 }
 

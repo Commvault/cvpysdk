@@ -72,6 +72,10 @@ Commcell:
     enable_auth_code()              --  executes the request on the server to enable Auth Code
     for installation on the commcell
 
+    enable_shared_laptop()          --   Executes the request on the server to enable Shared Laptop on commcell
+
+    disable_shared_laptop()          --  Executes the request on the server to disable Shared Laptop on commcell
+
     execute_qcommand()              --  executes the ExecuteQCommand API on the commcell
 
     add_associations_to_saml_app()  --  Adds the given user under associations of the SAML app
@@ -281,6 +285,7 @@ from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
 from .job import JobManagement
+from .index_server import IndexServers
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -477,6 +482,7 @@ class Commcell(object):
         self._reports = None
         self._recovery_targets = None
         self._job_management = None
+        self._index_servers = None
         self.refresh()
 
         del self._password
@@ -562,6 +568,7 @@ class Commcell(object):
         del self._commcell_migration
         del self._backup_network_pairs
         del self._job_management
+        del self._index_servers
         del self
 
     def _get_commserv_details(self):
@@ -821,6 +828,17 @@ class Commcell(object):
                 self._clients = Clients(self)
 
             return self._clients
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def index_servers(self):
+        """Returns the instance of the Index Servers class."""
+        try:
+            if self._index_servers is None:
+                self._index_servers = IndexServers(self)
+
+            return self._index_servers
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
@@ -1361,6 +1379,7 @@ class Commcell(object):
         self._get_commserv_details()
         self._registered_commcells = None
         self._redirect_rules_service = None
+        self._index_servers = None
 
     def run_data_aging(
             self,
@@ -1824,6 +1843,73 @@ class Commcell(object):
             raise SDKException('Response', '101', response_string)
 
         return response.json()['organizationProperties']['authCode']
+
+    def enable_shared_laptop(self):
+        """Executes the request on the server to enable Shared Laptop on commcell
+
+            Args:
+                None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if response is empty
+                    if failed to enable shared laptop
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ENABLE_SHARED_LAPTOP']
+        )
+
+        if flag:
+            if response.json():
+                response = response.json().get('response', [{}])[0]
+                if not response:
+                    raise SDKException('Response', '102')
+                if response.get('errorCode', -1) != 0:
+                    raise SDKException(
+                        'Response', '101', 'Failed to enable shared laptop')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_shared_laptop(self):
+        """Executes the request on the server to disable Shared Laptop on commcell
+
+            Args:
+                None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if response is empty
+                    if failed to disable shared laptop
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['DISABLE_SHARED_LAPTOP']
+        )
+
+        if flag:
+            if response.json():
+                response = response.json().get('response', [{}])[0]
+                if not response:
+                    raise SDKException('Response', '102')
+                if response.get('errorCode', -1) != 0:
+                    raise SDKException(
+                        'Response', '101', 'Failed to disable shared laptop')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def set_default_plan(self, plan_name):
         """Executes the request on the server to set Default Plan at commcell level.

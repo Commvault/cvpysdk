@@ -189,6 +189,7 @@ class Backupsets(object):
         from .backupsets.adbackupset import ADBackupset
         from .backupsets.db2backupset import DB2Backupset
         from .backupsets.vsbackupset import VSBackupset
+        from .backupsets.aadbackupset import AzureAdBackupset															 
 
         self._backupsets_dict = {
             'file system': FSBackupset,
@@ -199,7 +200,8 @@ class Backupsets(object):
             'postgresql': PostgresBackupset,
             "active directory" : ADBackupset,
             'db2': DB2Backupset,
-            'virtual server': VSBackupset
+            'virtual server': VSBackupset,
+            "azure ad" : AzureAdBackupset										 
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
@@ -1150,7 +1152,8 @@ class Backupset(object):
         # if agent is not added in the dict, default value 2 will be used
         browse_mode = {
             'virtual server': 4,
-            'cloud apps': 3
+            'cloud apps': 3,
+            'azure ad' : 3						  
         }
 
         mode = 2

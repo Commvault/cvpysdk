@@ -248,6 +248,7 @@ class Subclients(object):
         from .subclients.vminstancesubclient import VMInstanceSubclient
         from .subclients.db2subclient import DB2Subclient
         from .subclients.casesubclient import CaseSubclient
+        from .subclients.aadsubclient import AzureAdSubclient															 
 
         globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
         globals()['FileSystemSubclient'] = FileSystemSubclient
@@ -272,6 +273,7 @@ class Subclients(object):
         globals()['SharepointSubclient'] = SharepointSubclient
         globals()['VMInstanceSubclient'] = VMInstanceSubclient
         globals()['CaseSubclient'] = CaseSubclient
+        globals()['AzureADSubclient'] = AzureAdSubclient														
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -297,7 +299,8 @@ class Subclients(object):
             'db2': DB2Subclient,
             'informix': InformixSubclient,
             'active directory': ADSubclient,
-            'sharepoint server': SharepointSubclient
+            'sharepoint server': SharepointSubclient,
+            "azure ad" : AzureAdSubclient										 
         }
 
         # sql server subclient type dict
@@ -1919,7 +1922,7 @@ c
         """
         backup_level = backup_level.lower()
 
-        if backup_level not in ['full', 'incremental',
+        if backup_level not in ['full', 'incremental', 'transaction_log',
                                 'differential', 'synthetic_full']:
             raise SDKException('Subclient', '103')
 

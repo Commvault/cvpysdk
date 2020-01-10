@@ -113,6 +113,12 @@ DiskLibrary:
 
     _get_library_id()           --  gets the id of the DiskLibrary instance from commcell
 
+    move_mountpath()            --  To perform move mountpath operation
+
+    validate_mountpath()        --  To perform storage validation on mountpath
+
+    add_cloud_mount_path()      --  Adds a mount path to the cloud library
+
     add_mount_path()            --  adds the mount path on the local/ remote machine
 
     _get_library_properties()   --  gets the disk library properties
@@ -894,6 +900,230 @@ class DiskLibrary(object):
         return representation_string.format(
             self.library_name, self._commcell_object.commserv_name
         )
+
+    def move_mountpath(self, mountpath_id, source_device_path,
+                       source_mediaagent_id, target_device_path, target_mediaagent_id):
+
+        """ To perform move mountpath operation
+        Args:
+            mountpath_id  (int)   --  Mountpath Id that need to be moved.
+
+            source_device_path (str)   -- Present Mountpath location
+
+            source_mediaagent_id    (int)   -- MediaAgent Id on which present mountpath exists
+
+            target_device_path    (str)   -- New Mountpath location
+
+            target_mediaagent_id    (int)   -- MediaAgent Id on which new mountpath exists
+
+        Returns:
+            instance of the Job class for this move mountpath job
+
+        Raises
+            Exception:
+                - if argument datatype is invalid
+
+                - if API response error code is not 0
+
+                - if response is empty
+
+                - if response code is not as expected
+        """
+
+        if not (isinstance(mountpath_id, int) and
+                isinstance(source_mediaagent_id, int) and
+                isinstance(target_mediaagent_id, int) and
+                isinstance(target_device_path, basestring) and
+                isinstance(source_device_path, basestring)):
+            raise SDKException('Storage', '101')
+
+        request_xml = """<TMMsg_CreateTaskReq>
+                        <taskInfo>
+                            <task initiatedFrom="1" ownerId="1" sequenceNumber="0" taskId="0" taskType="1">
+                                <taskFlags disabled="0" />
+                            </task>
+                            <associations mountPathId="{1}" />
+                            <subTasks subTaskOperation="1">
+                                <subTask operationType="5017" subTaskType="1" />
+                                <options> <adminOpts> <libraryOption>
+                                    <library libraryId="{0}" />
+                                    <moveMPOption>
+                                        <mountPathMoveList mountPathId="{1}" sourceDevicePath="{2}" 
+                                        sourcemediaAgentId="{3}" targetDevicePath="{4}" targetMediaAgentId="{5}">
+                                        <credential credentialId="0" credentialName=" " />
+                                        </mountPathMoveList>
+                                    </moveMPOption>
+                                </libraryOption> </adminOpts> </options>
+                            </subTasks>
+                        </taskInfo>
+                    </TMMsg_CreateTaskReq>""".format(self.library_id, mountpath_id, source_device_path,
+                                                     source_mediaagent_id, target_device_path, target_mediaagent_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['CREATE_TASK'], request_xml)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    from cvpysdk.job import Job
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                if "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Error: "{0}"'.format(error_message)
+                    raise SDKException('Commcell', '105', o_str)
+
+                else:
+                    raise SDKException('Commcell', '105')
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def validate_mountpath(self, mountpath_drive_id, media_agent):
+
+        """ To perform storage validation on mountpath
+        Args:
+            mountpath_drive_id  (int)   --  Drive Id of mountpath that need to be validate.
+
+            media_agent (str)   -- MediaAgent on which Mountpath exists
+
+        Returns:
+            instance of the Job class for this storage validation job
+
+        Raises
+            Exception:
+                - if argument datatype is invalid
+
+                - if API response error code is not 0
+
+                - if response is empty
+
+                - if response code is not as expected
+        """
+
+        if not (isinstance(mountpath_drive_id, int) and
+                isinstance(media_agent,basestring)):
+            raise SDKException('Storage', '101')
+
+
+        request_xml = """<TMMsg_CreateTaskReq>
+                        <taskInfo taskOperation="1">
+                            <task associatedObjects="0" description="Storage Validation - Automation" initiatedFrom="1" 
+                            isEZOperation="0" isEditing="0" isFromCommNetBrowserRootNode="0" ownerId="1" ownerName="" 
+                            policyType="0" runUserId="1" sequenceNumber="0" taskType="1">
+                            <taskFlags notRunnable="0" />
+                            </task>
+                            <subTasks subTaskOperation="1">
+                                <subTask flags="0" operationType="4013" subTaskId="1" subTaskOrder="0" subTaskType="1"/>
+                                <options originalJobId="0">
+                                    <adminOpts>
+                                        <libraryOption  operation="13" validationFlags="0" validattionReservedFlags="0">
+                                            <library libraryId="{0}" />
+                                            <mediaAgent mediaAgentName="{1}" />
+                                            <driveIds driveId="{2}" />
+                                            <validateDrive chunkSize="16384" chunksTillEnd="0" fileMarkerToStart="2"
+                                             numberOfChunks="2" threadCount="2" volumeBlockSize="64" />
+                                        </libraryOption> </adminOpts> </options> </subTasks>  </taskInfo>
+                            </TMMsg_CreateTaskReq>""".format(self.library_id,media_agent,mountpath_drive_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['CREATE_TASK'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    from cvpysdk.job import Job
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                if "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Error: "{0}"'.format(error_message)
+                    raise SDKException('Commcell', '105', o_str)
+
+                else:
+                    raise SDKException('Commcell', '105')
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def add_cloud_mount_path(self, mount_path, media_agent, username, password, server_type):
+        """ Adds a mount path to the cloud library
+
+        Args:
+            mount_path  (str)   -- cloud container or bucket.
+
+            media_agent (str)   -- MediaAgent on which mountpath exists
+
+            username    (str)   -- Username to access the mount path in the format <Service Host>//<Account Name>
+            Eg: s3.us-west-1.amazonaws.com//MyAccessKeyID. For more information refer http://documentation.commvault.com/commvault/v11/article?p=97863.htm.
+
+            password    (str)   -- Password to access the mount path
+
+            server_type  (int)   -- provide cloud library server type
+                                    Eg: 3-Microsoft Azure Storage . For more information refer http://documentation.commvault.com/commvault/v11/article?p=97863.htm.
+        Returns:
+            None
+
+        Raises
+            Exception:
+                - if mountpath or mediaagent or username or password or servertype arguments dataype is invalid
+
+                - if servertype input data is incorrect
+
+                - if API response error code is not 0
+
+                - if response is empty
+
+                - if response code is not as expected
+            """
+
+        if not (isinstance(mount_path, basestring) or isinstance(media_agent, basestring)
+                or isinstance(username,basestring) or isinstance(password,basestring)
+                or isinstance(server_type,int)):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "isConfigRequired": 1,
+            "library": {
+                "opType": 4,
+                "isCloud": 1,
+                "mediaAgentName": media_agent,
+                "libraryName": self._library_name,
+                "mountPath": mount_path,
+                "loginName": username,
+                "password": b64encode(password.encode()).decode(),
+                "serverType": server_type
+            }
+        }
+
+        exec_command = self._commcell_object._services['LIBRARY']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', exec_command, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'library' in response.json():
+                    _response = response.json()['library']
+
+                    if 'errorCode' in _response:
+                        if _response['errorCode'] != 0:
+                            raise SDKException('Storage', '102', _response['errorMessage'])
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            _stdout = 'Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]'
+            _stderr = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', _stdout.format(mount_path,
+                                                                 self._library_name,
+                                                                 _stderr))
 
     def _get_library_properties(self):
         """Gets the disk library properties.
