@@ -178,7 +178,7 @@ Client
     delete_additional_setting()  --  deletes registry key from the client property
 
     release_license()            --  releases a license from a client
-    
+
     retire()                     --  perform retire operation on the client
 
     reconfigure_client()         --  reapplies license to the client
@@ -1520,7 +1520,7 @@ class Clients(object):
                 error_code = warning_code = 0
 
                 if flag:
-                    if response.json() and 'response' in response.json():
+                    if response.json():
                         o_str = 'Failed to delete client'
                         if 'response' in response.json():
                             if response.json()['response'][0]['errorCode'] == 0:
@@ -2134,9 +2134,11 @@ class Client(object):
             if response.json():
                 if 'response' in response.json():
                     if response.json()['response'][0].get('errorCode', 0):
-                        error_message = response.json()['response'][0]['errorMessage']
-                        o_str = 'Failed to set property\nError: "{0}"'.format(
-                            error_message)
+                        error_message = response.json()['response'][0].get('errorMessage')
+                        if not error_message:
+                            error_message = response.json()['response'][0].get('errorString', '')
+
+                        o_str = 'Failed to set property\nError: "{0}"'.format(error_message)
                         raise SDKException('Client', '102', o_str)
                     self.refresh()
             else:
@@ -3719,25 +3721,25 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-        
+
     def retire(self):
         """Uninstalls the CommVault Software on the client, releases the license and deletes the client.
-        
+
         Returns:
             Job - job object of the uninstall job
-            
+
         Raises:
-                                        
+
             SDKException:
-            
+
                 if failed to retire client
-                            
+
                 if response is empty
-                        
+
                 if response code is not as expected
         """
-        request_json = { 
-            "client": { 
+        request_json = {
+            "client": {
                 "clientId": int(self.client_id),
                 "clientName": self.client_name
             }
@@ -3745,7 +3747,7 @@ class Client(object):
         flag, response = self._cvpysdk_object.make_request(
             'DELETE', self._services['RETIRE'] % self.client_id, request_json
         )
-        
+
         if flag:
             if response.json() and 'response' in response.json():
                 error_code = response.json()['response']['errorCode']
@@ -3756,7 +3758,7 @@ class Client(object):
                         return Job(self._commcell_object, (response.json()['jobId']))
                 else:
                     o_str = 'Failed to Retire Client. Error: "{0}"'.format(error_string)
-                    raise SDKException('Client', '102', o_str)  
+                    raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
         else:
