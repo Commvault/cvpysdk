@@ -58,3 +58,34 @@ class IndexServerConstants:
         "cloudMetaInfos": []
 
     }
+
+
+class ContentAnalyzerConstants:
+    """Class to maintain all the content analyzer cloud related constants"""
+
+    OPERATION_ADD = 1
+    OPERATION_DELETE = 2
+    OPERATION_EDIT = 3
+
+    REQUEST_JSON = {
+        "opType": OPERATION_ADD,
+        "type": 2,
+        "configureNodes": True,
+        "cloudNodes": [],
+        "cloudInfoEntity": {},
+    }
+
+
+class ActivateEntityConstants:
+    """Class to maintain all the Activate entity related constants"""
+
+    REQUEST_JSON = {
+        "regularExpression": "",
+        "flags": 0,
+        "enabled": True,
+        "entityName": "",
+        "entityXML": {
+            "keywords": "",
+            "isSystemDefinedEntity": False
+        }
+    }

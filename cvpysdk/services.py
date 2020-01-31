@@ -51,6 +51,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
     'CLIENT': '{0}Client/%s',
+    'FILTER_CLIENTS':'{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
@@ -188,6 +189,9 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_HANDLER': '{0}dcube/deletehandler/%s',
     'SHARE_HANDLER': '{0}dcube/share/handler',
     'SHARE_DATASOURCE': '{0}dcube/share/datasource',
+    'GET_CONTENT_ANALYZER_CLOUD':'{0}getContentAnalyzerCloud',
+    'ACTIVATE_ENTITIES':'{0}dcube/entity',
+    'ACTIVATE_ENTITY':'{0}dcube/entity/%s',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
@@ -255,6 +259,7 @@ SERVICES_DICT_TEMPLATE = {
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
+    'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',

@@ -226,6 +226,19 @@ EXCEPTION_DICT = {
         '103': 'Failed to get the list of analytics engines',
         '104': 'Failed to get the datasources'
     },
+    'ContentAnalyzer': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get ContentAnalyzer cloud details'
+    },
+    'ActivateEntity': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get entity regex details from commcell',
+        '104': 'Unable to create regex entity in the commcell',
+        '105': 'Unable to delete regex entity in the commcell',
+        '106': 'Unable to modify regex entity in the commcell'
+    },
     'GlobalFilter': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''

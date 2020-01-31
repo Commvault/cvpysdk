@@ -383,7 +383,7 @@ class DisasterRecovery(object):
                 }
 
             self._droptions = {
-                "drbackupType": self._backuptype, "dbName": "commserv",
+                "drbackupType": self._backup_type, "dbName": "commserv",
                 "backupHistoryDataBase": self.is_history_db_enabled,
                 "backupWFEngineDataBase": self.is_workflow_db_enabled,
                 "backupAppStudioDataBase": self.is_appstudio_db_enabled,
@@ -526,13 +526,13 @@ class DisasterRecovery(object):
     @property
     def backup_type(self):
         """Treats the backup_type as a read-only attribute."""
-        return self._backuptype
+        return self._backup_type
 
     @backup_type.setter
     def backup_type(self, value):
         """Treats the backup_type as a read-only attribute."""
         if isinstance(value, basestring):
-            self._backuptype = value
+            self._backup_type = value
         else:
             raise SDKException('DisasterRecovery', '101')
 

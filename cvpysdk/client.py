@@ -86,6 +86,8 @@ Clients
     delete(client_name)                   --  deletes the client specified by the client name from
     the commcell
 
+    filter_clients_return_displaynames()  --  filter clients based on criteria
+    
     refresh()                             --  refresh the clients associated with the commcell
 
 Clients Attributes
@@ -329,7 +331,7 @@ class Clients(object):
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._services['ADD_EXCHANGE']
-
+        
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -3398,6 +3400,79 @@ class Client(object):
             properties_dict['clientProps'] = {'securityAssociations': {'ownerAssociations':{
                 "ownersOperationType": 1, "owners": owners}}}
         self.update_properties(properties_dict)
+    
+    def filter_clients_return_displaynames(self, filter_by="OS", **kwargs):
+        """Gets all the clients associated with the commcell with properties
+
+        Args:
+            filter_by   (str)         --  filters clients based on criteria
+            
+                                            Accepted values: 
+                                            
+                                            1. OS
+                                            
+            **kwargs    (str)         --  accepted optional arguments:
+            
+                                            os_type    (str)  - accepted values Windows, Unix, NAS
+                                            
+                                            url_params (dict) - dict of url parameters and values
+                                            
+                                                                Example:
+                                                                
+                                                               {"Hiddenclients":"true"}
+                                                
+        Returns:
+
+            list    -   list of clients of given os_type
+       
+        Raises:
+        
+            SDKException:
+            
+                if response is empty
+
+                if response is not success
+            
+        """
+
+        client_list = []
+        param_string = ""
+
+        if "url_params" in kwargs:
+            for url_param, param_val in kwargs['url_params'].items():
+                param_string += f"{url_param}={param_val}&"
+
+        if "os_type" in kwargs:
+            os_filter = kwargs['os_type']
+
+        # To get the complete properties in the response
+        self._commcell_object._headers["mode"] = "EdgeMode"
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['FILTER_CLIENTS'] % param_string)
+
+        self._commcell_object._headers.pop("mode")
+
+        if flag:
+            if response.json() and 'clientProperties' in response.json():
+                properties = response.json()['clientProperties']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        if filter_by.lower() == 'os':
+            for dictionary in properties:
+                temp_name = dictionary['client']['clientEntity']['displayName']
+
+                if 'idaList' in dictionary['client']:
+                    ida_list = dictionary['client']['idaList']
+                    for ida in ida_list:
+                        os_type = ida['idaEntity']['appName']
+                        if os_filter.lower() in os_type.lower():
+                            client_list.append(temp_name)
+
+        return client_list
 
     def refresh(self):
         """Refreshes the properties of the Client."""

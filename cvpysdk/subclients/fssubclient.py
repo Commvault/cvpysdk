@@ -120,6 +120,8 @@ FileSystemSubclient Instance Attributes:
 
     **backup_savf_file_data**             --  Sets the savf file data property for ibmi backup.
 
+	**pre_post_commands**				  --  Sets the pre/post commands for the subclient
+
 """
 
 from __future__ import unicode_literals
@@ -1906,3 +1908,56 @@ class FileSystemSubclient(Subclient):
                 None
         """
         self._set_subclient_properties("_fsSubClientProp['backupSaveFileData']", value)
+
+    @property
+    def pre_post_commands(self):
+        """
+         Return the prep_post commands set for a subclient
+
+        Returns:
+            (dict)  --  All the pre/post commands
+        """
+        pre_scan_command = self._commonProperties["prepostProcess"]["preScanCommand"]
+        post_scan_command = self._commonProperties["prepostProcess"]["postScanCommand"]
+        pre_backup_command = self._commonProperties["prepostProcess"]["preBackupCommand"]
+        post_backup_command = self._commonProperties["prepostProcess"]["postBackupCommand"]
+
+        pre_post_commands = {'pre_scan_command': pre_scan_command, 'post_scan_command': post_scan_command, 'pre_backup_command': pre_backup_command, 'post_backup_command': post_backup_command}
+
+        return pre_post_commands
+
+    @pre_post_commands.setter
+    def pre_post_commands(self, value):
+        """
+        Sets the pre post commands on a subclient
+        Args:
+
+            value   (dict)      --  Specifies the pre.post commands to be set
+
+                pre_scan_command    (str)       --     The pre scan command to be set
+
+                post_scan_command   (str)       --     The post scan command to be set
+
+                pre_backup_command  (str)       --     The pre backup command to be set
+
+                post_backup_command (str)       --     The post backup command to be set
+
+            Returns:
+                None
+
+            Raises:
+                None
+        """
+        if isinstance(value, dict):
+
+            pre_post_process = self._commonProperties["prepostProcess"]
+
+            pre_post_process["preScanCommand"] = value.get("pre_scan_command", "")
+            pre_post_process["postScanCommand"] = value.get("post_scan_command", "")
+            pre_post_process["preBackupCommand"] = value.get("pre_backup_command", "")
+            pre_post_process["postBackupCommand"] = value.get("post_backup_command", "")
+
+            self._set_subclient_properties('_commonProperties["prepostProcess"]', pre_post_process)
+
+        else:
+            raise SDKException('Subclient', '101')

@@ -74,6 +74,7 @@ class UnixDownloadFeatures(Enum):
     VIRTUAL_SERVER = 1136
     TEST_AUTOMATION = 1153
     PYTHON_SDK = 1154
+    CONTENT_ANALYZER=1108
 
 
 class WindowsDownloadFeatures(Enum):
@@ -96,4 +97,5 @@ class WindowsDownloadFeatures(Enum):
     TEST_AUTOMATION = 719
     PYTHON_SDK = 754
     COMMSERVE_LITE = 25
+    CONTENT_ANALYZER=729
 

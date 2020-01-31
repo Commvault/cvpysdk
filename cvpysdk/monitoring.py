@@ -488,7 +488,8 @@ class MonitoringPolicies(object):
         client_name = client_name.lower()
         template_dict = {}
         cloud_id = 0
-        analytics_server_name = ''
+        if analytics_server_name is None:
+            analytics_server_name = ''
 
         if template_name == "ondemand":
             template_id = 1
@@ -670,6 +671,7 @@ class MonitoringPolicy(object):
 
         self._monitoring_policy_name = monitoring_policy_name.lower()
         self._commcell_object = commcell_object
+        self._update_response_ = self._commcell_object._update_response_
 
         if monitoring_policy_id:
             self._monitoring_policy_id = str(monitoring_policy_id)

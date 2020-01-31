@@ -1929,7 +1929,7 @@ class Instance(object):
             request_json = SchedulePattern().create_schedule(request_json,
                                                              restore_option['schedule_pattern'])
 
-        if restore_option.get("multinode_restore", False) or restore_option.get("no_of_streams", 1) > 1:
+        if restore_option.get("multinode_restore", False):
 
             self._distributed_restore_json = {
                 "clientType": restore_option.get('client_type', 0),
@@ -1955,6 +1955,13 @@ class Instance(object):
 
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["distributedAppsRestoreOptions"] = self._distributed_restore_json
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["qrOption"] = self._qr_restore_option
+
+        if restore_option.get("destination_appTypeId", False):
+            self._qr_restore_option = {
+                "destAppTypeId": restore_option.get('destination_appTypeId')
+            }
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "qrOption"] = self._qr_restore_option
 
         if "sync_restore" in restore_option:
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["syncOption"] = self._sync_restore_json

@@ -48,6 +48,8 @@ StoragePools
     add()                       --  Adds a storage pool, according to given input and returns
                                     StoragePool object
 
+    delete()                    --  deletes the specified storage pool
+
     refresh()                   --  refresh the list of storage pools associated with the commcell
 
 
@@ -400,6 +402,59 @@ class StoragePools:
 
         self.refresh()
         return self.get(storage_pool_name)
+
+    def delete(self, storage_pool_name):
+        """deletes the specified storage pool.
+
+            Args:
+                storage_pool_name (str)  --  name of the storage pool to delete
+
+            Raises:
+                SDKException:
+                    if type of the storage pool name is not string
+
+                    if failed to delete storage pool
+
+                    if no storage pool exists with the given name
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not isinstance(storage_pool_name, basestring):
+            raise SDKException('Storage', '101')
+        else:
+            storage_pool_name = storage_pool_name.lower()
+
+            if self.has_storage_pool(storage_pool_name):
+                storage_pool_id = self._storage_pools[storage_pool_name]
+
+                delete_storage_pool = self._services['DELETE_STORAGE_POOL'] % (storage_pool_id)
+
+                flag, response = self._cvpysdk_object.make_request('DELETE', delete_storage_pool)
+
+                if flag:
+                    error_code = response.json()['error']['errorCode']
+                    if int(error_code) != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        o_str = f'Failed to delete storage pools {storage_pool_name}'
+                        o_str += '\nError: "{0}"'.format(error_message)
+                        raise SDKException('Storage', '102', o_str)
+                    else:
+                        # initialize the storage pool again
+                        # so the storage pool object has all the storage pools
+                        self.refresh()
+                else:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+            else:
+                raise SDKException(
+                    'Storage',
+                    '102',
+                    'No storage pool exists with name: {0}'.format(storage_pool_name)
+                )
 
 
 class StoragePool(object):

@@ -164,6 +164,12 @@ Commcell instance Attributes
     **datacube**                --  returns the instance of the `Datacube` class,
     to interact with the datacube engine deployed on the Commcell
 
+    **content_analyzers**       --  returns the instance of the `ContentAnalyzers` class,
+    to interact with the CA cloud deployed on the Commcell
+
+    **activate_entity**         --  returns the instance of the `ActivateEntities` class,
+    to interact with the regex entity on the Commcell
+
     **plans**                   --  returns the instance of the `Plans` class,
     to interact with the plans associated with the Commcell
 
@@ -226,7 +232,7 @@ Commcell instance Attributes
     **reports**                 --  Return the instance of Report class
 
     **job_management**          --  Returns an instance of the JobManagement class.
-    
+
 """
 
 from __future__ import absolute_import
@@ -244,7 +250,6 @@ from requests.exceptions import Timeout
 # ConnectionError is a built-in exception, do not override it
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
-
 from .services import get_services
 from .cvpysdk import CVPySDK
 from .client import Clients
@@ -258,6 +263,8 @@ from .exception import SDKException
 from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
+from .content_analyzer import ContentAnalyzers
+from .activate_entity import ActivateEntities
 from .plan import Plans
 from .job import JobController
 from .security.user import Users
@@ -459,6 +466,8 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
+        self._activate_entity = None
+        self._content_analyzers = None
         self._plans = None
         self._job_controller = None
         self._users = None
@@ -546,6 +555,8 @@ class Commcell(object):
         del self._client_groups
         del self._global_filters
         del self._datacube
+        del self._activate_entity
+        del self._content_analyzers
         del self._plans
         del self._job_controller
         del self._users
@@ -963,6 +974,28 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def content_analyzers(self):
+        """Returns the instance of the ContentAnalyzers class."""
+        try:
+            if self._content_analyzers is None:
+                self._content_analyzers = ContentAnalyzers(self)
+
+            return self._content_analyzers
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def activate_entity(self):
+        """Returns the instance of the ContentAnalyzers class."""
+        try:
+            if self._activate_entity is None:
+                self._activate_entity = ActivateEntities(self)
+
+            return self._activate_entity
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def plans(self):
         """Returns the instance of the Plans class."""
         try:
@@ -1358,6 +1391,8 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
+        self._activate_entity = None
+        self._content_analyzers = None
         self._plans = None
         self._job_controller = None
         self._users = None

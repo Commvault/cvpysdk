@@ -268,7 +268,7 @@ class Install(object):
         elif unix_features:
             os_type = 1
             install_options = [{'osType': 'Unix', 'ComponentId': feature_id}
-                               for feature_id in windows_features]
+                               for feature_id in unix_features]
 
         else:
             raise SDKException('Install', '105')
