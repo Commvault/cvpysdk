@@ -119,6 +119,12 @@ from .backupset import Backupset
 from .subclient import Subclient
 
 DAY_OF_WEEK_MAPPING = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+WEEK_OF_THE_MONTH_MAPPING = {"all": 32,
+                             "first": 1,
+                             "second": 2,
+                             "third": 4,
+                             "fourth": 8,
+                             "last": 16}
 OPERATION_MAPPING = {"FULL_DATA_MANAGEMENT": 1,
                      "NON_FULL_DATA_MANAGEMENT": 2,
                      "SYNTHETIC_FULL": 4,
@@ -138,7 +144,8 @@ OPERATION_MAPPING = {"FULL_DATA_MANAGEMENT": 1,
                      "DATA_ANALYTICS": 65536,
                      "DATA_PRUNING": 131072,
                      "BACKUP_COPY": 262144,
-                     "CLEANUP_OPERATION": 524288}
+                     "CLEANUP_OPERATION": 524288,
+                     "ALL": 1048576}
 
 
 class OperationWindow:
@@ -253,7 +260,9 @@ class OperationWindow:
             operations=None,
             day_of_week=None,
             start_time=None,
-            end_time=None):
+            end_time=None,
+            week_of_the_month=None,
+            do_not_submit_job=False):
         """ Creates operation rule on the initialized commcell entity
 
             Args:
@@ -277,6 +286,12 @@ class OperationWindow:
                         OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFORMATION_MANAGEMENT/
                         MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/CLEANUP_OPERATION
 
+                week_of_the_month(list)     -- List of week of the month on which the operation rule applies to
+                        Acceptable Values:
+                            all/first/second/third/fourth/last
+
+                            default - None
+
                 day_of_week (list)    -- List of days of the week on which the operation rule applies to
                     Acceptable Values:
                         sunday/ monday/ tuesday/ wednesday/ thursday/ friday/ saturday
@@ -290,6 +305,8 @@ class OperationWindow:
                 end_time    (int)     -- The end time for the "do not run" interval.
                     Valid values are UNIX-style timestamps (seconds since January 1, 1970).
                     default - 86400 (6 PM)
+
+                do_not_submit_job   (bool) -- doNotSubmitJob of the operation rule
 
             Returns:
                 Returns the instance of created Operation window details
@@ -325,7 +342,7 @@ class OperationWindow:
 
         day_of_week_list = []
         if day_of_week is None:
-            day_of_week_list = [1, 2, 3, 4, 5]  # defaults to weekdays
+            day_of_week_list = [1, 2, 3, 4, 5]      # defaults to weekdays
         else:
             for day in day_of_week:
                 if day.lower() not in DAY_OF_WEEK_MAPPING:
@@ -333,9 +350,18 @@ class OperationWindow:
                     raise SDKException('OperationWindow', '102', response_string)
                 day_of_week_list.append(DAY_OF_WEEK_MAPPING.index(day.lower()))
 
+        week_of_the_month_list = []
+        if week_of_the_month:
+            for week in week_of_the_month:
+                if week.lower() not in WEEK_OF_THE_MONTH_MAPPING:
+                    response_string = "Invalid input %s for week_of_the_month" % week
+                    raise SDKException('OperationWindow', '102', response_string)
+                week_of_the_month_list.append(WEEK_OF_THE_MONTH_MAPPING[week.lower()])
+
         payload = {
             "operationWindow": {
                 "ruleEnabled": True,
+                "doNotSubmitJob": do_not_submit_job,
                 "startDate": start_date,
                 "endDate": end_date,
                 "name": name,
@@ -343,6 +369,7 @@ class OperationWindow:
                 "dayTime": [{
                     "startTime": start_time,
                     "endTime": end_time,
+                    "weekOfTheMonth": week_of_the_month_list,
                     "dayOfWeek": day_of_week_list
                 }]
             },
@@ -420,6 +447,7 @@ class OperationWindow:
                 Example --
 
                     [{'ruleEnabled': True,
+                      'doNotSubmitJob': False,
                       'endDate': 0,
                       'level': 0,
                       'name': 'Rule1',
@@ -431,6 +459,7 @@ class OperationWindow:
                                   'providerDomainName': ''},
                       'dayTime': [{'startTime': 28800,
                                    'endTime': 64800,
+                                   'weekOfTheMonth': ['first','third'],
                                    'dayOfWeek': ['sunday','monday']}]}
                     ]
 
@@ -450,17 +479,22 @@ class OperationWindow:
                 error_code = response.json().get("error", {}).get('errorCode')
                 if int(error_code) == 0:
                     list_of_rules = response.json().get("operationWindow")
-                    operation_reverse_mapping = {value:key for key, value in OPERATION_MAPPING.items()}
+                    operation_reverse_mapping = {value: key for key, value in OPERATION_MAPPING.items()}
+                    wotm_reverse_mapping = {value: key for key, value in WEEK_OF_THE_MONTH_MAPPING.items()}
                     if list_of_rules is not None:
                         for operation_rule in list_of_rules:
                             operations = operation_rule.get("operations")
+                            week_of_the_month = operation_rule.get("dayTime", [{}])[0].get("weekOfTheMonth")
                             day_of_week = operation_rule.get("dayTime", [{}])[0].get("dayOfWeek")
                             if operations is not None:
-                                operation_rule["operations"] = [operation_reverse_mapping[operation]
-                                                                for operation in operations]
+                                operation_rule["operations"] = [operation_reverse_mapping[operation] for operation in
+                                                                operations]
+                            if week_of_the_month is not None:
+                                operation_rule["dayTime"][0]["weekOfTheMonth"] = [wotm_reverse_mapping[week] for week in
+                                                                                  week_of_the_month]
                             if day_of_week is not None:
-                                operation_rule["dayTime"][0]["dayOfWeek"] = [DAY_OF_WEEK_MAPPING[day]
-                                                                             for day in day_of_week]
+                                operation_rule["dayTime"][0]["dayOfWeek"] = [DAY_OF_WEEK_MAPPING[day] for day in
+                                                                             day_of_week]
                     return list_of_rules
                 raise SDKException('OperationWindow', '104')
             raise SDKException('Response', '102')
@@ -546,9 +580,11 @@ class OperationWindowDetails:
         self._start_date = None
         self._end_date = None
         self._operations = None
+        self._week_of_the_month = None
         self._day_of_week = None
         self._start_time = None
         self._end_time = None
+        self._do_not_submit_job = False
 
         self._commcell_id = self._commcell_object.commcell_id
         self._clientgroup_id = entity_details["clientGroupId"]
@@ -588,6 +624,12 @@ class OperationWindowDetails:
                             OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFORMATION_MANAGEMENT/
                             MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/CLEANUP_OPERATION
 
+                    week_of_the_month(list)     -- List of week of the month on which the operation rule applies to
+                        Acceptable Values:
+                            all/first/second/third/fourth/last
+
+                            default - None
+
                     day_of_week (list)    -- List of days of the week on which the operation rule applies to
                         Acceptable Values:
                             sunday/ monday/ tuesday/ wednesday/ thursday/ friday/ saturday
@@ -601,6 +643,8 @@ class OperationWindowDetails:
                     end_time    (int)     -- The end time for the "do not run" interval.
                         Valid values are UNIX-style timestamps (seconds since January 1, 1970).
                         default - 86400 (6 PM)
+
+                    do_not_submit_job   (bool)  -- doNotSubmitJob of the operation rule
 
             Raises:
                 SDKException:
@@ -618,7 +662,9 @@ class OperationWindowDetails:
         end_time = modify_options.get("end_time", self.end_time)
         name = modify_options.get("name", self.name)
         operations = modify_options.get("operations", self.operations)
+        week_of_the_month = modify_options.get("week_of_the_month", self.week_of_the_month)
         day_of_week = modify_options.get("day_of_week", self.day_of_week)
+        do_not_submit_job = modify_options.get("do_not_submit_job", self.do_not_submit_job)
 
         if not operations:
             # Empty list can be passed
@@ -626,11 +672,13 @@ class OperationWindowDetails:
         else:
             operations_list = [OPERATION_MAPPING[operation.upper()] for operation in operations]
 
+        week_of_the_month_list = [WEEK_OF_THE_MONTH_MAPPING[week.lower()] for week in week_of_the_month]
         day_of_week_list = [DAY_OF_WEEK_MAPPING.index(day.lower()) for day in day_of_week]
 
         payload = {
             "operationWindow": {
                 "ruleEnabled": True,
+                "doNotSubmitJob": do_not_submit_job,
                 "startDate": start_date,
                 "endDate": end_date,
                 "name": name,
@@ -639,6 +687,7 @@ class OperationWindowDetails:
                 "dayTime": [{
                     "startTime": start_time,
                     "endTime": end_time,
+                    "weekOfTheMonth": week_of_the_month_list,
                     "dayOfWeek": day_of_week_list
                 }]
             },
@@ -681,12 +730,16 @@ class OperationWindowDetails:
             error_code = response_json.get("error", {}).get('errorCode')
             if int(error_code) == 0:
                 response_json = response_json.get('operationWindow', {})[0]
+                self._do_not_submit_job = response_json.get('doNotSubmitJob')
                 self._name = response_json.get('name')
                 self._start_date = response_json.get('startDate')
                 self._end_date = response_json.get('endDate')
                 operations = response_json.get('operations')
-                operation_reverse_mapping = {value:key for key, value in OPERATION_MAPPING.items()}
+                operation_reverse_mapping = {value: key for key, value in OPERATION_MAPPING.items()}
                 self._operations = [operation_reverse_mapping[operation] for operation in operations]
+                week_of_the_month = response_json.get("dayTime", [{}])[0].get("weekOfTheMonth", [])
+                wotm_reverse_mapping = {value: key for key, value in WEEK_OF_THE_MONTH_MAPPING.items()}
+                self._week_of_the_month = [wotm_reverse_mapping[week] for week in week_of_the_month]
                 day_of_week = response_json.get('dayTime', [{}])[0].get('dayOfWeek')
                 self._day_of_week = [DAY_OF_WEEK_MAPPING[day] for day in day_of_week]
                 self._start_time = response_json.get('dayTime', [{}])[0].get('startTime')
@@ -696,6 +749,19 @@ class OperationWindowDetails:
                                    response_json.get("error", {}).get('errorMessage'))
         else:
             raise SDKException('Response', '102')
+
+    @property
+    def do_not_submit_job(self):
+        """Treats do_not_submit_job as a read-only attribute."""
+        return self._do_not_submit_job
+
+    @do_not_submit_job.setter
+    def do_not_submit_job(self, do_not_submit_job):
+        """
+        Modifies do_not_submit_job of the operation rule
+        Args:
+             do_not_submit_job: (bool) -- do_not_submit_job of the operation rule to be modified"""
+        self.modify_operation_window(do_not_submit_job=do_not_submit_job)
 
     @property
     def name(self):
@@ -765,6 +831,23 @@ class OperationWindowDetails:
         Returns: None
         """
         self.modify_operation_window(operations=operations)
+
+    @property
+    def week_of_the_month(self):
+        """Treats week_of_the_month as a read-only attribute."""
+        return self._week_of_the_month
+
+    @week_of_the_month.setter
+    def week_of_the_month(self, week_of_the_month):
+        """
+        Modifies the week_of_the_month of the operation rule
+        Args:
+            week_of_the_month: (list)         --   List of week of the month on which the operation rule applies to
+                     Acceptable Values:
+                            all/first/second/third/fourth/fifth
+        Returns: None
+        """
+        self.modify_operation_window(week_of_the_month=week_of_the_month)
 
     @property
     def day_of_week(self):

@@ -2553,6 +2553,8 @@ class Instance(object):
                     "clientName": value.get("client_name", ""),
                 }
             }
+            # removing 'destPath' if restoring in place
+            self._destination_restore_json.pop('destPath') if value.get("in_place", True) else None
 
         if value.get("multinode_restore", False) or value.get("no_of_streams", 1) > 1:
             self._destination_restore_json["destinationInstance"] = {

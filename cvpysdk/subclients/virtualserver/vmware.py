@@ -44,8 +44,8 @@ VMWareVirtualServerSubclient:
 from cvpysdk.storage import RPStore
 from cvpysdk.subclients.vssubclient import VirtualServerSubclient
 from cvpysdk.virtualmachinepolicies import VirtualMachinePolicy
-from ...exception import SDKException
 from past.builtins import basestring
+from ...exception import SDKException
 
 
 class VMWareVirtualServerSubclient(VirtualServerSubclient):
@@ -285,7 +285,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             vcenter_client=vcenter_client,
             datastore=datastore,
             esx_host=esx_host,
-            esx_server='',
+            esx_server=None,
             unconditional_overwrite=overwrite,
             power_on=power_on,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
@@ -517,7 +517,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             _attach_disk_restore_option['client'] = proxy_client
         else:
-            _disk_restore_option['client'] = self._backupset_object._instance_object.co_ordinator
+            _attach_disk_restore_option['client'] = self._backupset_object._instance_object.co_ordinator
 
         # set Source item List
         src_item_list = []
@@ -611,7 +611,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option = {}
 
         # check mandatory input parameters are correct
-        if not (isinstance(azure_client, basestring)):
+        if not isinstance(azure_client, basestring):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -695,7 +695,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 volume_level_restore=1,
                 block_level=True,
                 new_name=target.properties()["vmNameEditString"],
-                prefix=True if target.properties()["vmNameEditType"] == 1 else False,
+                prefix=bool(target.properties()["vmNameEditType"] == 1),
                 plan_name=plan_name,
                 source_network=target.properties()["networkList"][0]["sourceNetwork"],
                 destination_network=target.properties()["networkList"][0]["destinationNetwork"]

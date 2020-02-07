@@ -45,8 +45,7 @@ from enum import Enum
 from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-from .vmwaresubclient import vmware
-
+# from .vmware import VMWareVirtualServerSubclient
 
 
 class HyperVVirtualServerSubclient(VirtualServerSubclient):
@@ -78,15 +77,15 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         stores all the XML tag for OS
         """
 
-        _os_name_dict ={
-            "2012" : "windows8Server64Guest"
+        _os_name_dict = {
+            "2012": "windows8Server64Guest"
         }
 
-        for os in _os_name_dict.keys():
+        for os in _os_name_dict:
             if os in os_name:
                 return _os_name_dict[os]
 
-        raise SDKException('Subclient', '102', "Input parameter specified is incorrect" )
+        raise SDKException('Subclient', '102', "Input parameter specified is incorrect")
 
     def disk_restore(self,
                      vm_name,
@@ -146,9 +145,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         # check if inputs are correct
         if not (isinstance(destination_path, basestring) and
-                (isinstance(vm_name, basestring) or (isinstance(vm_name, list)))):
+                isinstance(vm_name, (basestring, list))):
             raise SDKException('Subclient', '101')
-
 
         if proxy_client is None:
             _disk_restore_option[
@@ -171,10 +169,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             _disk_extn = self._get_disk_extension(disk_list)
             if isinstance(_disk_extn, list):
                 raise SDKException('Subclient', '101')
-            else:
-                _disk_restore_option["destination_vendor"], \
-                    _disk_restore_option["destination_disktype"] = \
-                    self._get_conversion_disk_type(_disk_extn, convert_to)
+            _disk_restore_option["destination_vendor"], \
+                _disk_restore_option["destination_disktype"] = \
+                self._get_conversion_disk_type(_disk_extn, convert_to)
 
         else:
             _disk_restore_option["destination_vendor"] = \
@@ -308,7 +305,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         if restored_vm_name:
             if not (isinstance(vm_to_restore, basestring) or
-                        isinstance(restored_vm_name, basestring)):
+                    isinstance(restored_vm_name, basestring)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
@@ -425,8 +422,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             disk_option='Original',
             transport_mode='Auto',
             proxy_client=None,
-            destination_network = None
-            ):
+            destination_network=None
+    ):
         """
         This converts the Hyperv VM to VMware
         Args:
@@ -612,7 +609,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             restore_option = {}
 
         # check mandatory input parameters are correct
-        if not (isinstance(azure_client, basestring)):
+        if not isinstance(azure_client, basestring):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -638,7 +635,6 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             destination_instance=instance.instance_name,
             backupset_client_name=instance._agent_object._client_object.client_name
         )
-
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
