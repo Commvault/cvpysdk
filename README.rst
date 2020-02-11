@@ -3,7 +3,7 @@ CVPySDK
 
 CVPySDK is a Python Package for Commvault Software.
 
-CVPySDK uses Commvault REST API to perform operations on a Commcell via WebConsole.
+CVPySDK uses REST APIs to perform CommCell operations.
 
 
 Requirements
@@ -180,17 +180,6 @@ Pull Requests
     - **master**
     - **dev**
 
-    * where the other branches refer to the already released code / branched code, which may only get some bug-fixes, with no active development
-        - SP7
-        - SP8
-        - SP9
-        - SP10
-        - SP11
-        - SP12
-        - SP13
-	- SP14
-	- SP15
-
 - The contributor should *Fork* the **dev** branch, and make their changes on top of it, and open a *Pull Request*
 - The **master** branch will then be updated with the **dev** branch, once everything is verified
 
@@ -222,7 +211,7 @@ License
 
 About Commvault
 ---------------
-.. image:: https://upload.wikimedia.org/wikipedia/en/thumb/1/12/Commvault_logo.png/150px-Commvault_logo.png
+.. image:: https://upload.wikimedia.org/wikipedia/en/thumb/2/2f/Commvault_logo.svg/320px-Commvault_logo.svg.png
     :align: center
 
 |
