@@ -1152,7 +1152,11 @@ class Schedules:
         Returns:
             (int) schedule id of the schedule
         """
-        return [k for k,v in self.schedules.items() if v['task_id']==task_id][0]
+        task_ids = [k for k, v in self.schedules.items() if v['task_id'] == task_id]
+        if task_ids:
+            return task_ids[0]
+        else:
+            raise SDKException('Schedules', '102', 'Schedule id not found for corresponding task id')
 
     def _get_schedule_id(self, schedule_name=None, schedule_id=None, task_id=None):
         """Gets the schedule id from the provided inputs.

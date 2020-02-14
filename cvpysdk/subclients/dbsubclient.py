@@ -33,6 +33,7 @@ DatabaseSubclient:
 
 """
 from __future__ import unicode_literals
+from past.builtins import basestring
 
 from ..subclient import Subclient
 from ..exception import SDKException
@@ -65,9 +66,25 @@ class DatabaseSubclient(Subclient):
 
                     if log backup storage policy name is not in string format
         """
-        if isinstance(value, str):
-            self._set_subclient_properties("_commonProperties['storageDevice']['logBackupStoragePolicy']['storagePolicyName']",value)
-        else:
-            raise SDKException(
-                'Subclient', '102', 'Subclient log backup storage policy should be a string value'
+        if isinstance(value, basestring):
+            value = value.lower()
+
+            if not self._commcell_object.storage_policies.has_policy(value):
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Storage Policy: "{0}" does not exist in the Commcell'.format(value)
+                )
+
+            self._set_subclient_properties(
+                "_commonProperties['storageDevice']['logBackupStoragePolicy']",
+                {
+                    "storagePolicyName": value,
+                    "storagePolicyId": int(
+                        self._commcell_object.storage_policies.all_storage_policies[value]
+                    )
+                }
             )
+        else:
+            raise SDKException('Subclient', '101')
+

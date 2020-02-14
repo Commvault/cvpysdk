@@ -833,9 +833,10 @@ class VirtualServerSubclient(Subclient):
 
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
+        vcenter_userpwd = self._instance_object._user_name
 
         json_disklevel_option_restore = {
-            "esxServerName": value.get("esx_server_name", ""),
+            "esxServerName": value.get("esx_server", ""),
             "vmFolderName": value.get("vm_folder", ""),
             "dataCenterName": value.get("data_center", ""),
             "hostOrCluster": value.get("host_cluster", ""),
@@ -845,7 +846,7 @@ class VirtualServerSubclient(Subclient):
             "passUnconditionalOverride": value.get("unconditional_overwrite", False),
             "powerOnVmAfterRestore": value.get("power_on", False),
             "registerWithFailoverCluster": value.get("add_to_failover", False),
-            "userPassword": {"userName": "admin"}
+            "userPassword": {"userName": vcenter_userpwd or "admin"}
         }
         if value['in_place']:
             json_disklevel_option_restore["dataStore"] = {}
