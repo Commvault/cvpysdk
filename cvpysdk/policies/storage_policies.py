@@ -38,6 +38,8 @@ StoragePolicies:
 
     has_policy(policy_name)      --  checks if a storage policy exists with the given name
 
+    add_global_storage_policy()  --  adds a new global storage policy to the commcell
+
     add()                        --  adds a new storage policy to the commcell
 
     add_tape_sp()                --  add new storage policy with tape library as data path
@@ -288,6 +290,149 @@ class StoragePolicies(object):
                 'Storage', '102', 'No policy exists with name: {0}'.format(storage_policy_name)
             )
 
+    def add_global_storage_policy(self,
+                                  global_storage_policy_name,
+                                  library,
+                                  media_agent,
+                                  dedup_path=None,
+                                  dedup_path_media_agent=None):
+
+        """adds a global storage policy
+
+            Args:
+                global_storage_policy_name   (str)  --  name of the global storage policy which you want to add
+
+                library                      (str)  --  name of the library which you want to be associated with your
+                global storage policy
+
+                media_agent                  (str)  --  name of the media agent which you want to be associated with
+                the global storage policy
+
+                        *enter BOTH, the dedup_path and dedup_path_media_agent if you want the deduplication
+                         to be enabled.
+
+                dedup_path                    (str) -- path of the deduplication database
+                default- None
+
+                dedup_path_media_agent:       (str) -- name of the media agent where the deduplication database
+                                                       is stored
+                default- None
+
+            Returns:
+                    the success message along with the name of the global storage policy if created successfully
+                    else the error messages or the exceptions raised
+
+            Raises:
+                SDKException:
+                        if the global_storage_policy_name,library,media_agent,dedup_path,dedup_path_media_agent
+                        is not of type String
+
+                        if response is empty
+
+                        if response is not success
+
+        """
+
+        if not (isinstance(global_storage_policy_name, basestring) and
+                isinstance(library, basestring) and
+                isinstance(media_agent, basestring)):
+            raise SDKException("Storage", "101")
+
+        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
+                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, basestring)):
+            raise SDKException("Storage", "101")
+
+        request_json = {
+            "storagePolicyName": global_storage_policy_name,
+            "copyName": "Primary_Global",
+            "storagePolicyCopyInfo": {
+                "storagePolicyFlags": {
+                    "globalStoragePolicy": 1
+                },
+                "library": {
+                    "libraryName": library
+                },
+                "mediaAgent": {
+                    "mediaAgentName": media_agent
+                },
+                "retentionRules": {
+                    "retainArchiverDataForDays": -1,
+                    "retainBackupDataForCycles": -1,
+                    "retainBackupDataForDays": -1
+                }
+            }
+        }
+
+        if dedup_path is not None and dedup_path_media_agent is not None:
+            storage_policy_copy_info = {
+                "dedupeFlags": {
+                    "enableDASHFull": 1,
+                    "hostGlobalDedupStore": 1,
+                    "enableDeduplication": 1
+                },
+                "storagePolicyFlags": {
+                    "blockLevelDedup": 1,
+                    "enableGlobalDeduplication": 1
+                },
+                "DDBPartitionInfo": {
+                    "maInfoList": [
+                        {
+                            "mediaAgent": {
+                                "mediaAgentName": dedup_path_media_agent
+                            },
+                            "subStoreList": [
+                                {
+                                    "diskFreeWarningThreshholdMB": 10240,
+                                    "diskFreeThresholdMB": 5120,
+                                    "accessPath": {
+                                        "path": dedup_path
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+            request_json["storagePolicyCopyInfo"].update(storage_policy_copy_info)
+
+        # don't create dedup global storage policy if the arguments are not supplied
+        elif(dedup_path or dedup_path_media_agent):
+            raise SDKException("Storage","101","cannot create dedup global policy without complete arguments \n"
+                                               "supply both dedup path and dedup path media agent")
+
+        # checking to create non dedup global storage policy
+        elif(dedup_path is None and dedup_path_media_agent is None):
+            storage_policy_copyinfo = {
+                "extendedFlags" : {
+                    "globalStoragePolicy" : 1
+                }
+            }
+            request_json["storagePolicyCopyInfo"].update(storage_policy_copyinfo)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._POLICY, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'error' in response.json() and response.json()['error']['errorCode'] == 0:
+                    # initialize the policies again
+                    # so the policies object has all the policies
+                    self.refresh()
+
+                else:
+                    error_message = response.json()['error']['errorMessage']
+                    o_str = 'Failed to create storage policy\nError: "{0}"'
+
+                    raise SDKException('Storage', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return self.get(global_storage_policy_name)
+
     def add(self,
             storage_policy_name,
             library,
@@ -298,7 +443,9 @@ class StoragePolicies(object):
             number_of_streams=None,
             ocum_server=None,
             dedup_media_agent=None,
-            dr_sp=False):
+            dr_sp=False,
+            **kwargs):
+
         """Adds a new Storage Policy to the Commcell.
 
             Args:
@@ -319,7 +466,7 @@ class StoragePolicies(object):
 
                 retention_period    (int)         --  time period in days to retain
                 the data backup for
-                default: 5
+                default:5
 
                 number_of_streams   (int)         --  the number of streams for the storage policy
                 default: None
@@ -333,6 +480,15 @@ class StoragePolicies(object):
                 dr_sp                (bool)         --  if True creates dr storage policy
                                                         if False creates data protection policy
                 default:False
+
+                **kwargs    --  dict of keyword arguments as follows:
+
+                    global_policy_name   (str)         --  name of the global storage policy on which you want
+                                                           the policy being created to be dependent.
+
+                    global_dedup_policy (bool)  -- whether the global storage policy has a global deduplication pool
+                                                   or not
+                    default:True                  (meaning the global storage policy will have deduplication enabled)
 
             Raises:
                 SDKException:
@@ -350,6 +506,12 @@ class StoragePolicies(object):
 
                     if response is not success
         """
+
+        extra_arguments = {
+            'global_policy_name': None,
+            'global_dedup_policy': True
+        }
+        extra_arguments.update(kwargs)
 
         if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
                 (not (isinstance(storage_policy_name, basestring) and
@@ -389,38 +551,11 @@ class StoragePolicies(object):
             "type": sp_type
         }
 
-        if number_of_streams is not None:
-            number_of_streams_dict = {
-                "numberOfStreams": number_of_streams
-            }
-            request_json.update(number_of_streams_dict)
-
-        if ocum_server is not None:
-            ocum_server_dict1 = {
-                "dfmServer": {
-                    "name": ocum_server,
-                    "id": 0
-                }
-            }
-            ocum_server_dict2 = {
-                "storagePolicyCopyInfo": {
-                    "storagePolicyFlags": {
-                        "enableSnapshot": 1
-                    },
-                    "retentionRules": {
-                        "retainBackupDataForCycles": 1
-                    }
-                }
-            }
-
-            request_json["storagePolicyCopyInfo"].update(ocum_server_dict2["storagePolicyCopyInfo"])
-            request_json.update(ocum_server_dict1)
-
         if dedup_path:
             if dedup_media_agent is None:
                 dedup_media_agent = media_agent
             elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
-                pass
+                dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
             else:
                 raise SDKException('Storage', '103')
 
@@ -446,9 +581,81 @@ class StoragePolicies(object):
 
             request_json["storagePolicyCopyInfo"].update(dedup_info["storagePolicyCopyInfo"])
 
+        # since we are supplying a global policy thus there is no need of the
+        # dedup store details and the library details which got included above,
+        # it will take up the settings of the global storage policy
+        # thus redefining request_json
+
+        if extra_arguments["global_policy_name"] is not None and extra_arguments["global_dedup_policy"] is True:
+            request_json = {
+                "storagePolicyCopyInfo": {
+                    "useGlobalPolicy": {
+                        "storagePolicyName": extra_arguments["global_policy_name"]
+                    },
+                    "retentionRules": {
+                        "retainBackupDataForDays": retention_period
+                    },
+                    "dedupeFlags": {
+                        "useGlobalDedupStore": 1,
+                        "enableClientSideDedup": 1,
+                        "enableDASHFull": 1,
+                        "enableDeduplication": 1
+                    }
+                },
+                "storagePolicyName": storage_policy_name
+            }
+
+        elif extra_arguments["global_policy_name"] is not None and extra_arguments["global_dedup_policy"] is False:
+            request_json = {
+                "storagePolicyName": storage_policy_name,
+                "storagePolicyCopyInfo": {
+                    "dedupeFlags": {
+                        "enableDASHFull": 1
+                    },
+                    "retentionRules": {
+                        "retainBackupDataForDays": retention_period
+                    },
+                    "extendedFlags": {
+                        "useGlobalStoragePolicy": 1
+                    },
+                    "useGlobalPolicy": {
+                        "storagePolicyName": extra_arguments["global_policy_name"]
+                    }
+                }
+            }
+
+        if number_of_streams is not None:
+            number_of_streams_dict = {
+                "numberOfStreams": number_of_streams
+            }
+            request_json.update(number_of_streams_dict)
+
+        if ocum_server is not None:
+            ocum_server_dict1 = {
+                "dfmServer": {
+                    "name": ocum_server,
+                    "id": 0
+                }
+            }
+            ocum_server_dict2 = {
+                "storagePolicyCopyInfo": {
+                    "snapLibrary": {
+                        "libraryName": "Use primary copy's library and mediaAgent"
+                    },
+                    "storagePolicyFlags": {
+                        "enableSnapshot": 1
+                    }
+                }
+            }
+
+            request_json["storagePolicyCopyInfo"].update(ocum_server_dict2["storagePolicyCopyInfo"])
+            request_json.update(ocum_server_dict1)
+
         if incremental_sp:
             incremental_sp_info = {
-                "incrementalStoragePolicy": incremental_sp
+                "incrementalStoragePolicy": {
+                    "storagePolicyName": incremental_sp
+                }
             }
 
             request_json.update(incremental_sp_info)
@@ -477,13 +684,14 @@ class StoragePolicies(object):
 
         return self.get(storage_policy_name)
 
-    def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool):
+    def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool, retention_period_days=15,
+                    ocum_server=None):
         """
         Adds storage policy with tape data path
         Args:
                 storage_policy_name (str)         --  name of the new storage policy to add
 
-                library             (str)          --  name or instance of the library
+                library             (str)     --  name or instance of the library
                 to add the policy to
 
                 media_agent         (str/object)  --  name or instance of media agent
@@ -492,6 +700,13 @@ class StoragePolicies(object):
                 drive_pool          (str)         --  Drive pool name of the tape library
 
                 scratch_pool      (str)          --  Scratch pool name of the tape library
+
+                retention_period_days    (int)         --  time period in days to retain
+                the data backup for
+                default: 15
+
+                ocum_server         (str)         --  On Command Unified Server Name
+                default: None
 
             Raises:
                 SDKException:
@@ -509,40 +724,72 @@ class StoragePolicies(object):
 
                     if response is not success
         """
-
-        from urllib.parse import urlencode
+        tape_library = library
         if not (isinstance(drive_pool, basestring) and
                 isinstance(scratch_pool, basestring) and
-                isinstance(library, basestring) and
+                isinstance(tape_library, basestring) and
                 isinstance(media_agent, basestring) and
-                isinstance(storage_policy_name, basestring)):
+                isinstance(storage_policy_name, basestring) and
+                (retention_period_days is None or isinstance(retention_period_days, int))):
             raise SDKException('Storage', '101')
 
-        tape_library = library
-        encode_dict = {"storagepolicy": storage_policy_name, "mediaagent": media_agent,
-                       "library": tape_library, "drivepool": drive_pool,
-                       "scratchpool": scratch_pool}
-        web_service = self._POLICY + '?' + urlencode(encode_dict)
+        request_json = {
+            "storagePolicyCopyInfo": {
+                "retentionRules": {
+                    "retainBackupDataForDays": retention_period_days
+                },
+                "library": {
+                    "libraryName": tape_library
+                },
+                "mediaAgent": {
+                    "mediaAgentName": media_agent
+                }
+            },
+            "drivePool": drive_pool,
+            "scratchpool": scratch_pool,
+            "storagePolicyName": storage_policy_name
+        }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', web_service)
+        if ocum_server is not None:
+            ocum_server_dict1 = {
+                "dfmServer": {
+                    "name": ocum_server,
+                    "id": 0
+                }
+            }
+
+            ocum_server_dict2 = {
+                "storagePolicyCopyInfo": {
+                    "snapLibrary": {
+                        "libraryName": "Use primary copy's library and mediaAgent"
+                    },
+                    "storagePolicyFlags": {
+                        "enableSnapshot": 1
+                    }
+                }
+            }
+
+            request_json["storagePolicyCopyInfo"].update(ocum_server_dict2["storagePolicyCopyInfo"])
+            request_json.update(ocum_server_dict1)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._POLICY, request_json
+        )
 
         if flag:
-            try:
-                if response.json():
-                    if 'errorCode' in response.json():
-                        error_code = response.json()['errorCode']
-                        if error_code != 0:
-                            o_str = 'Failed to add storage policy\nError: "{0}"'
-                            raise SDKException('Storage', '102', o_str.format(error_code))
-
-            except ValueError:
-                if response.text:
+            if response.json():
+                if 'error' in response.json() and response.json()['error']['errorCode'] == 0:
                     # initialize the policies again
                     # so the policies object has all the policies
                     self.refresh()
-                    return response.text.strip()
+
                 else:
-                    raise SDKException('Response', '102')
+                    error_message = response.json()['error']['errorMessage']
+                    o_str = 'Failed to create storage policy with tape data path\nError: "{0}"'
+
+                    raise SDKException('Storage', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
