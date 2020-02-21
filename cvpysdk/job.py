@@ -274,8 +274,6 @@ ErrorRule
 
     disable()                       --  Disable an error rule for a specific iDA using _modify_job_status_on_errors.
 
-    _modify_job_status_on_errors()  --  To enable or disable job status on errors.
-
 """
 
 from __future__ import absolute_import
@@ -285,7 +283,7 @@ import time
 import copy
 
 from .exception import SDKException
-from .constants import AdvancedJobDetailType
+from .constants import AdvancedJobDetailType, ApplicationGroup
 
 
 class JobController(object):
@@ -2475,7 +2473,6 @@ class _ErrorRule:
     """Class for enabling, disabling, adding, getting and deleting error rules."""
 
     def __init__(self, commcell):
-        #
         self.commcell = commcell
         self.rule_dict = {}
         self.xml_body = """
@@ -2513,13 +2510,14 @@ class _ErrorRule:
 
         """
 
-        return self.error_rule_str.format(pattern=rule_dict['pattern'],
-                                          all_error_codes=rule_dict['all_error_codes'],
-                                          from_error_code=rule_dict['from_error_code'],
-                                          to_error_code=rule_dict['to_error_code'],
-                                          job_decision=rule_dict['job_decision'],
-                                          is_enabled=rule_dict['is_enabled'],
-                                          skip_reporting_error=rule_dict['skip_reporting_error'])
+        return self.error_rule_str.format(
+            pattern=rule_dict['pattern'],
+            all_error_codes=rule_dict['all_error_codes'],
+            from_error_code=rule_dict['from_error_code'],
+            to_error_code=rule_dict['to_error_code'],
+            job_decision=rule_dict['job_decision'],
+            is_enabled=rule_dict['is_enabled'],
+            skip_reporting_error=rule_dict['skip_reporting_error'])
 
     def add_error_rule(self, rules_arg):
         """
@@ -2529,8 +2527,7 @@ class _ErrorRule:
             Args:
                 rules_arg   (dict)  --  A dictionary whose key is the application group name and value is a rules list.
 
-                    Supported value(s) for key is
-                        APPGRP_WindowsFileSystemIDA for Windows
+                    Supported value(s) for key is all constants under ApplicationGroup(Enum)
 
                     The value for above key is a list
                     where each item of the list is a dictionary of the following key value pairs.
@@ -2551,17 +2548,17 @@ class _ErrorRule:
 
                     Example:
                             {
-                             APPGRP_WindowsFileSystemIDA : { 'rule_1': { 'appGroupName': APPGRP_WindowsFileSystemIDA,
-                                                                        'pattern': "*",
-                                                                        'all_error_codes': False,
-                                                                        'from_error_code': 1,
-                                                                        'to_error_code': 2,
-                                                                        'job_decision': 0,
-                                                                        'is_enabled': True,
-                                                                        'skip_reporting_error': False
-                                                                        },
-                                                             'rule_2' : { ......}
-                                                            }
+                             WINDOWS : { 'rule_1': { 'appGroupName': WINDOWS,
+                                                     'pattern': "*",
+                                                     'all_error_codes': False,
+                                                     'from_error_code': 1,
+                                                     'to_error_code': 2,
+                                                     'job_decision': 0,
+                                                     'is_enabled': True,
+                                                     'skip_reporting_error': False
+                                                   },
+                                         'rule_2' : { ......}
+                                       }
                             }
 
             Returns:
@@ -2575,15 +2572,22 @@ class _ErrorRule:
         old_values = []
 
         for app_group, rules_dict in rules_arg.items():
+            assert (app_group.name in [i.name for i in ApplicationGroup])
+
+            # FETCH ALL EXISTING RULES ON THE COMMCELL FOR THE APPLICATION
+            # GROUP IN QUESTION
             existing_error_rules = self._get_error_rules(app_group)
+
             for rule_name, rule in rules_dict.items():
-                assert (isinstance(rule['pattern'], str) and
-                        isinstance(rule['all_error_codes'], bool) and
-                        isinstance(rule['skip_reporting_error'], int) and
-                        isinstance(rule['from_error_code'], int) and
-                        isinstance(rule['to_error_code'], int) and
-                        isinstance(rule['job_decision'], int) and rule['job_decision'] in range(0, 3) and
-                        isinstance(rule['is_enabled'], bool), "Invalid key value pairs provided.")
+                assert isinstance(
+                    rule['pattern'], str) and isinstance(
+                    rule['all_error_codes'], bool) and isinstance(
+                    rule['skip_reporting_error'], int) and isinstance(
+                    rule['from_error_code'], int) and isinstance(
+                    rule['to_error_code'], int) and isinstance(
+                        rule['job_decision'], int) and rule['job_decision'] in range(
+                            0, 3) and isinstance(
+                                rule['is_enabled'], bool), "Invalid key value pairs provided."
 
                 rule_dict = {k:v for k,v in rule.items() if k != 'appGroupName'}
 
@@ -2734,7 +2738,7 @@ class _ErrorRule:
                 if ida_rule_list['ida']['appGroupName'] == app_group:
                     try:
                         rule_list = ida_rule_list['ruleList']['ruleList']
-                    except:
+                    except Exception:
                         pass
 
         return rule_list

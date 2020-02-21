@@ -24,9 +24,9 @@ and to perform operations on that subclient
 
 SQLServerSubclient:
 
-    _get_subclient_properties()         --  gets the subclient  related properties of SQL subclient.
+    _get_subclient_properties()         --  gets the subclient related properties of SQL subclient.
 
-    _get_subclient_properties_json()    --  gets all the subclient  related properties of SQL subclient.
+    _get_subclient_properties_json()    --  gets all the subclient related properties of SQL subclient.
 
     content()                           --  sets the content of the subclient.
 
@@ -35,6 +35,8 @@ SQLServerSubclient:
     backup()                            --  run a backup job for the subclient.
 
     update_content()                    --  add, delete, overwrite the sql server subclient contents.
+
+    blocklevel_backup_option            --  setter for block level backup option on SQL subclient
 
 """
 
@@ -359,3 +361,34 @@ class SQLServerSubclient(DatabaseSubclient):
         else:
             o_str = 'Failed to update content of subclient\nError: "{0}"'
             raise SDKException('Subclient', '102', o_str.format(output[2]))
+
+    @property
+    def blocklevel_backup_option(self):
+        """returns True if block level backup is enabled else returns false
+
+            Returns:
+                bool - boolean value based on blocklevel enable status
+
+                    True if block level is enabled
+                    False if block level is not enabled
+
+        """
+        return bool(
+            self._subclient_properties.get(
+                'mssqlSubClientProp', {}).get('useBlockLevelBackupWithOptimizedRecovery', False))
+
+    @blocklevel_backup_option.setter
+    def blocklevel_backup_option(self, value):
+        """Enables or disables block level option on SQL subclient
+
+            Args:
+                value (bool)  --  Boolean value whether to set block level option on or off
+
+        """
+
+        if self._is_file_group_subclient:
+            err_message = 'Updating properties is not supported for FILE/ FILE GROUP subclient.'
+            'Please use Commcell Console to update the subclient.'
+            raise SDKException('Subclient', '102', err_message)
+
+        self._set_subclient_properties("_mssql_subclient_prop['useBlockLevelBackupWithOptimizedRecovery']", value)

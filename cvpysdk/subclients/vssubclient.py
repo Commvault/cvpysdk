@@ -1539,6 +1539,7 @@ class VirtualServerSubclient(Subclient):
         fbr_ma=options.get('fbr_ma',None)
         browse_ma=options.get('browse_ma',"")
         agentless=options.get('agentless',"")
+        in_place=options.get('in_place',False)
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
@@ -1590,6 +1591,7 @@ class VirtualServerSubclient(Subclient):
         _file_restore_option["preserve_level"] = preserve_level
         _file_restore_option["unconditional_overwrite"] = unconditional_overwrite
         _file_restore_option["restore_ACL"] = restore_ACL
+        _file_restore_option["in_place"] = in_place
 
         # set the browse option
         _file_restore_option["copy_precedence_applicable"] = True

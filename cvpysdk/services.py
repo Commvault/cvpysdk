@@ -343,10 +343,11 @@ SERVICES_DICT_TEMPLATE = {
 
     'RETIRE': '{0}Client/%s/Retire',
 
-    'INDEX_SERVER_CREATION': '{0}cloud/create',
-    'INDEX_SERVER_EDITION': '{0}cloud/modify',
-    'INDEX_SERVER_DELETION': '{0}cloud/delete',
-    'INDEX_SERVER_ROLE_UPDATE': '{0}cloud/role/update',
+    'CLOUD_CREATE': '{0}cloud/create',
+    'CLOUD_MODIFY': '{0}cloud/modify',
+    'CLOUD_DELETE': '{0}cloud/delete',
+    'CLOUD_ROLE_UPDATE': '{0}cloud/role/update',
+    'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
 }

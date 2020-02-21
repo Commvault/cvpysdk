@@ -32,9 +32,10 @@ AdvancedJobDetailType   --  Enum to maintain advanced job details info type
 
 VSALiveSyncStatus       --  Enum to maintain status of the VSA Live sync
 
+ApplicationGroup        --  Enum to maintain Application Group Types.
 """
 
-from enum import Enum
+from enum import Enum, auto
 
 
 TIMEZONES = {
@@ -576,3 +577,15 @@ class VSALiveSyncStatus(Enum):
     SYNC_QUEUED = 9
     REVERT_FAILED = 10
     SYNC_STARTING = 11
+
+
+class ApplicationGroup(Enum):
+    """Class to maintain application group types."""
+
+    WINDOWS = 'APPGRP_WindowsFileSystemIDA'
+    UNIX = auto()
+    IBMi = auto()
+    OPENVMS = auto()
+    CLOUDAPPS = auto()
+    MSSQLSERVER = auto()
+    SHAREPOINTSERVER = auto()

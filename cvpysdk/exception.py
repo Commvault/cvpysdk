@@ -411,6 +411,16 @@ EXCEPTION_DICT = {
         '102': 'Index Server not found',
         '103': 'Invalid role name',
         '104': '',
+    },
+    'HACClusters': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'HAC not found',
+        '103': 'HAC zKeeper node not found',
+    },
+    'IndexPools': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'Index pool not found',
+        '103': 'Index pool node not found',
     }
 }
 

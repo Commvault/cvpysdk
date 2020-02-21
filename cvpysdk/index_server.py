@@ -140,6 +140,7 @@ _Roles Attributes
     **roles_data**                      --  returns the list of details of all cloud roles
     """
 
+from copy import deepcopy
 from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
@@ -161,7 +162,6 @@ class IndexServers(object):
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
-
         self._all_index_servers = None
         self._roles_obj = None
         self.refresh()
@@ -350,19 +350,22 @@ class IndexServers(object):
 
     def create(
             self,
-            client_name,
             index_server_name,
+            index_server_node_names,
             index_directory,
-            roles,
+            index_server_roles,
+            index_pool_name=None,
+            is_cloud=False,
             cloud_param=None):
         """Creates an index server within the commcell
 
                 Args:
-                    client_name        (str)    --  client name for the node assigned to index
-                    index_server_name  (str)    --  name for the index server
-                    index_directory    (str)    --  index location for the index server
-                    roles              (list)   --  list of role names to be assigned
-                    cloud_param        (list)   --  list of custom parameters to be parsed
+                    index_server_node_names         (list)  --  client names for index server node
+                    index_server_name               (str)   --  name for the index server
+                    index_directory                 (str)   --  index location for the index server
+                    index_server_roles              (list)  --  list of role names to be assigned
+                    index_pool_name                 (str)   --  name for the index pool to used by cloud index server
+                    cloud_param                     (list)  --  list of custom parameters to be parsed
                                                     into the json for index server meta info
                                                     [
                                                         {
@@ -370,6 +373,7 @@ class IndexServers(object):
                                                             "value": <value>
                                                         }
                                                     ]
+                    is_cloud            (bool)  --  if true then creates a cloud mode index server
 
                 Raises:
                     SDKException:
@@ -379,58 +383,77 @@ class IndexServers(object):
 
                         Response was empty.
         """
-        if not (isinstance(roles, list) or isinstance(client_name, basestring)
-                or isinstance(index_server_name, basestring)):
+        if not (isinstance(index_server_roles, list) and isinstance(index_server_node_names, list)
+                and isinstance(index_server_name, basestring)):
             raise SDKException('IndexServers', '101')
-
-        client = self._commcell_object.clients.get(client_name)
-        req_json = IndexServerConstants.REQUEST_JSON
-        req_json['cloudNodes'] = [
-            {
+        cloud_meta_infos = {
+            'INDEXLOCATION': index_directory,
+            'REPLICATION': '1',
+            'LANGUAGE': '0'
+        }
+        node_meta_infos = {
+            'PORTNO': '20000',
+            'JVMMAXMEMORY': '8191'
+        }
+        role_meta_infos = {}
+        req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
+        req_json['cloudInfoEntity'] = {
+            'cloudName': index_server_name,
+            'cloudDisplayName': index_server_name
+        }
+        if is_cloud:
+            index_pool_obj = self._commcell_object.index_pools[index_pool_name]
+            req_json['type'] = 5
+            req_json['solrCloudInfo']['cloudPoolInfo'] = {
+                'cloudId': int(index_pool_obj['pool_id'])
+            }
+            role_meta_infos['ISCLOUDMODE'] = '3'
+            node_meta_infos['WEBSERVER'] = 'true'
+        for node_name in index_server_node_names:
+            node_obj = self._commcell_object.clients[node_name]
+            node_data = {
                 "opType": IndexServerConstants.OPERATION_ADD,
                 "nodeClientEntity": {
-                    "hostName": client.client_hostname,
-                    "clientId": int(client.client_id),
-                    "clientName": client.client_name,
-                    "_type_": 3
+                    "hostName": node_obj['hostname'],
+                    "clientId": int(node_obj['id']),
+                    "clientName": node_name
                 },
-                "nodeMetaInfos": [
-                    {
-                        "name": "PORTNO",
-                        "value": "20000"
-                    },
-                    {
-                        "name": "JVMMAXMEMORY",
-                        "value": "4096"
-                    },
-                    {
-                        "name": "INDEXLOCATION",
-                        "value": index_directory
-                    }
-                ]
+                'nodeMetaInfos': []
             }
-        ]
-        req_json['cloudInfoEntity']['cloudName'] = index_server_name
-        req_json['cloudInfoEntity']['cloudDisplayName'] = index_server_name
-
-        for role in roles:
+            for node_info in node_meta_infos:
+                node_data['nodeMetaInfos'].append({
+                    'name': node_info,
+                    'value': node_meta_infos[node_info]
+                })
+            req_json['cloudNodes'].append(node_data)
+        for role in index_server_roles:
             role_id = self._roles_obj.get_role_id(role)
             if not role_id:
                 raise SDKException('IndexServers', '103')
-            req_json['solrCloudInfo']['roles'].append(
-                {
-                    "roleId": role_id,
-                    "roleName": role,
-                    "operationType": IndexServerConstants.OPERATION_ADD
-                }
-            )
-
+            role_data = {
+                "roleId": role_id,
+                "roleName": role,
+                "operationType": IndexServerConstants.OPERATION_ADD,
+                'roleMetaInfos': []
+            }
+            for role_info in role_meta_infos:
+                role_data['roleMetaInfos'].append({
+                    'name': role_info,
+                    'value': role_meta_infos[role_info]
+                })
+            req_json['solrCloudInfo']['roles'].append(role_data)
         if cloud_param:
             for param in cloud_param:
+                if param['name'] in cloud_meta_infos:
+                    del cloud_meta_infos[param['name']]
                 req_json['cloudMetaInfos'].append(param)
-
+        for cloud_info in cloud_meta_infos:
+            req_json['cloudMetaInfos'].append({
+                'name': cloud_info,
+                'value': cloud_meta_infos[cloud_info]
+            })
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['INDEX_SERVER_CREATION'], req_json)
+            'POST', self._services['CLOUD_CREATE'], req_json)
         if flag:
             if response.json():
                 error_code = response.json()['genericResp']['errorCode']
@@ -461,20 +484,18 @@ class IndexServers(object):
 
                         Response was empty.
         """
-        if cloud_name is None:
+        if not isinstance(cloud_name, basestring):
             raise SDKException('IndexServers', '101')
-
         cloud_id = self.get(cloud_name).cloud_id
-        req_json = IndexServerConstants.REQUEST_JSON
+        req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
         req_json["opType"] = IndexServerConstants.OPERATION_DELETE
         req_json['cloudInfoEntity']['cloudId'] = cloud_id
-
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['INDEX_SERVER_DELETION'], req_json
+            'POST', self._services['CLOUD_DELETE'], req_json
         )
         if flag:
-            if response.json() and 'genericResp' in response.json(
-            ) and 'errorCode' not in response.json()['genericResp']:
+            if response.json() and 'genericResp' in response.json() \
+                    and 'errorCode' not in response.json()['genericResp']:
                 self.refresh()
                 return
             if response.json() and 'genericResp' in response.json():
@@ -560,7 +581,7 @@ class IndexServer(object):
                     Response was not success.
                     Response was empty.
         """
-        json_req = IndexServerConstants.REQUEST_JSON
+        json_req = deepcopy(IndexServerConstants.REQUEST_JSON)
         json_req['opType'] = IndexServerConstants.OPERATION_EDIT
         json_req['cloudNodes'] = [{
             "opType": IndexServerConstants.OPERATION_EDIT,
@@ -575,12 +596,10 @@ class IndexServer(object):
             ]
         }]
         json_req['cloudInfoEntity']['cloudId'] = self.cloud_id
-
         for param in node_params:
             json_req['cloudNodes'][0]['nodeMetaInfos'].append(param)
-
         flag, response = self._cvpysdk_object.make_request(
-            "POST", self._services['INDEX_SERVER_EDITION'], json_req)
+            "POST", self._services['CLOUD_MODIFY'], json_req)
         if flag:
             if response.json():
                 if 'cloudId' in response.json():
@@ -618,9 +637,8 @@ class IndexServer(object):
                     raise SDKException('IndexServers', '103')
                 prop['roleId'] = role_id
                 json_req['roles'].append(prop)
-
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['INDEX_SERVER_ROLE_UPDATE'], json_req
+            'POST', self._services['CLOUD_ROLE_UPDATE'], json_req
         )
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -629,6 +647,10 @@ class IndexServer(object):
                     return
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
+
+    @property
+    def is_cloud(self):
+        return self.server_type == 5
 
     @property
     def roles_data(self):
