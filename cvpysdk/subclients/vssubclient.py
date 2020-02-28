@@ -833,7 +833,9 @@ class VirtualServerSubclient(Subclient):
 
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
-        vcenter_userpwd = self._instance_object._user_name
+        vcenter_userpwd =''
+        if 'vmware' in self._instance_object.instance_name:
+            vcenter_userpwd = self._instance_object._user_name
 
         json_disklevel_option_restore = {
             "esxServerName": value.get("esx_server", ""),

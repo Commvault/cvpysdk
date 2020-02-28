@@ -1051,6 +1051,15 @@ class Subclient(object):
             '_json_restore_subtask'
         ]
 
+        self._restore_options_json = [
+            '_impersonation_json_',
+            '_browse_restore_json',
+            '_destination_restore_json',
+            '_commonoption_restore_json',
+            '_fileoption_restore_json',
+
+        ]
+
         self._backupcopy_interfaces = {
             'FILESYSTEM': 1,
             'RMAN': 2,
@@ -1077,6 +1086,8 @@ class Subclient(object):
     def __getattr__(self, attribute):
         """Returns the persistent attributes"""
         if attribute in self._restore_methods:
+            return getattr(self._backupset_object, attribute)
+        if attribute in self._restore_options_json:
             return getattr(self._backupset_object, attribute)
 
         return super(Subclient, self).__getattribute__(attribute)

@@ -278,6 +278,9 @@ SERVICES_DICT_TEMPLATE = {
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',
 
+    'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
+    'CREATE_PSEUDO_CLIENT': '{0}pseudoClient',
+
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',

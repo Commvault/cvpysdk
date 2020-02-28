@@ -45,6 +45,8 @@ Clients
 
     _get_clients()                        --  gets all the clients associated with the commcell
 
+    _get_office_365_clients()             --  get all office365 clients in the commcell
+
     _get_hidden_clients()                 --  gets all the hidden clients associated with the
     commcell
 
@@ -72,7 +74,11 @@ Clients
     add_vmware_client()                   --  adds a new VMWare Virtualization Client to the
     Commcell
 
+    add_share_point_client()      -- adds a new sharepoint pseudo client to the Commcell
+
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
+
+    add_splunk_client()                   --  adds a new Splunk Client to the Commcell
 
     add_case_client()                     --  adds a new Case Manger Client to the Commcell
 
@@ -87,7 +93,7 @@ Clients
     the commcell
 
     filter_clients_return_displaynames()  --  filter clients based on criteria
-    
+
     refresh()                             --  refresh the clients associated with the commcell
 
 Clients Attributes
@@ -101,6 +107,9 @@ Clients Attributes
 
     **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
+    
+    **office365_clients** -- returns the dictioanry consisting of all the office 365 clients that are
+    associated with the commcell
 
 
 Client
@@ -170,7 +179,7 @@ Client
     push_network_config()        --  performs a push network configuration on the client
 
     add_user_association()       --  adds the user associations on this client
-	
+
 	add_client_owner()			 --  adds users to owner list of this client
 
     refresh()                    --  refresh the properties of the client
@@ -328,13 +337,15 @@ class Clients(object):
         # and use a single API call to get all types of clients, and to be able to distinguish
         # them
         self._CLIENTS = self._ADD_CLIENT = self._services['GET_ALL_CLIENTS']
+        self._OFFICE_365_CLIENTS = self._services['GET_OFFICE_365_ENTITIES']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
-        self._ADD_EXCHANGE_CLIENT = self._services['ADD_EXCHANGE']
-        
+        self._ADD_EXCHANGE_CLIENT =  self._ADD_SHAREPOINT_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
+        self._office_365_clients = None
 
         self.refresh()
 
@@ -438,6 +449,57 @@ class Clients(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+        
+    def _get_office_365_clients(self):
+        """REST API call to get all office365 clients in the commcell
+
+                  Returns:
+                      dict    -   consists of all office 365 clients in the commcell
+                          {
+                              "client1_name": {
+
+                                  "id": client1_id
+
+                              },
+
+                              "client2_name": {
+
+                                  "id": client2_id
+                              }
+                          }
+
+                  Raises:
+                      SDKException:
+                          if response is empty
+
+                          if response is not success
+
+              """
+        flag, response = self._cvpysdk_object.make_request('GET', self._OFFICE_365_CLIENTS)
+
+        if flag:
+            if response.json() and "o365Client" in response.json():
+                clients_dict = {}
+
+                for dictionary in response.json()['o365Client']:
+                    temp_name = dictionary['clientName'].lower()
+                    temp_id = str(dictionary['clientId']).lower()
+                    clients_dict[temp_name] = {
+                        'id': temp_id
+                    }
+
+                return clients_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def office_365_clients(self):
+        """Returns the dict of all office 365 clients in the commcell"""
+        if self._office_365_clients is None:
+            self._office_365_clients = self._get_office_365_clients()
+        return self._office_365_clients
 
     def _get_hidden_clients(self):
         """Gets all the clients associated with the commcell, including all VM's and hidden clients
@@ -684,22 +746,22 @@ class Clients(object):
 
         request_json = {
             'App_CreatePseudoClientRequest':
-            {
-                "registerClient": "false",
-                "clientInfo":{
-                    "clientType":0,
-                    "openVMSProperties":{
-                        "cvdPort":0
+                {
+                    "registerClient": "false",
+                    "clientInfo": {
+                        "clientType": 0,
+                        "openVMSProperties": {
+                            "cvdPort": 0
+                        },
+                        "ibmiInstallOptions": {}
                     },
-                    "ibmiInstallOptions":{}
-                },
-                "entity":{
-                    "hostName":client_name,
-                    "clientName":client_name,
-                    "clientId":0,
-                    "_type_":3
+                    "entity": {
+                        "hostName": client_name,
+                        "clientName": client_name,
+                        "clientId": 0,
+                        "_type_": 3
+                    }
                 }
-            }
         }
 
         flag, response = self._cvpysdk_object.make_request(
@@ -928,6 +990,317 @@ class Clients(object):
                 elif 'errorMessage' in response.json():
                     error_string = response.json()['errorMessage']
                     o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_share_point_client(
+            self,
+            client_name,
+            server_plan,
+            service_type,
+            index_server,
+            access_nodes_list,
+            global_administrator,
+            global_administrator_password,
+            azure_app_id,
+            azure_app_key_id,
+            azure_directory_id):
+        """Adds a new Office 365 Share Point Pseudo Client to the Commcell.
+
+            Args:
+                client_name                 (str)   --  name of the new Sharepoint Pseudo Client
+
+                server_plan                 (str)   --  server_plan to associate with the client
+
+                service_type                (dict)  --  service type of Sharepoint
+                                                         "ServiceType": {
+                                                                    "SharePoint": 4
+                                                         }
+
+                index_server                (str)   --  index server for virtual client
+
+                access_nodes_list           (list)  --  list containing client names / client objects,
+
+                global_administrator        (str)   --  username of global administrator
+
+                global_administrator_password (str)  -- password of global administrator
+
+                azure_app_id            (str)       --  azure app id for sharepoint online
+
+                azure_app_key_id        (str)       --  app key for sharepoint online
+
+                azure_directory_id    (str)   --  azure directory id for sharepoint online
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        index_server_dict = {}
+
+        if self.has_client(index_server):
+            index_server_cloud = self.get(index_server)
+
+            if index_server_cloud.agents.has_agent('big data apps'):
+                index_server_dict = {
+                    "mediaAgentId": int(index_server_cloud.client_id),
+                    "_type_": 11,
+                    "mediaAgentName": index_server_cloud.client_name
+                }
+        else:
+            raise SDKException('IndexServers', '102')
+
+        server_plan_dict = {}
+
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id),
+                "planType": int(server_plan_object.plan_type)
+            }
+        else:
+            raise SDKException('Storage', '102')
+
+        member_servers = []
+
+        for client in access_nodes_list:
+            if isinstance(client, basestring):
+                client = client.strip().lower()
+
+                if self.has_client(client):
+                    client_dict = {
+                        "client": {
+                            "clientName": client,
+                            "clientId": int(self.all_clients[client]['id']),
+                            "_type_": 3
+                        }
+                    }
+                    member_servers.append(client_dict)
+
+            elif isinstance(client, Client):
+                client_dict = {
+                    "client": {
+                        "clientName": client.client_name,
+                        "clientId": int(client.client_id),
+                        "_type_": 3
+                    }
+                }
+                member_servers.append(client_dict)
+        azure_app_key_id = b64encode(azure_app_key_id.encode()).decode()
+        global_administrator_password = b64encode(global_administrator_password.encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 37,
+                "sharepointPseudoClientProperties": {
+                    "sharePointVersion": 23,
+                    "sharepointBackupSet": {
+                        "spOffice365BackupSetProp": {
+                            "cloudRegion": 1,
+                            "infraStructurePoolEnabled": False,
+                            "serviceAccounts": {
+                                "accounts": [
+                                    {
+                                        "serviceType": service_type["SharePoint"],
+                                        "userAccount": {
+                                             "userName": global_administrator,
+                                             "password": global_administrator_password
+                                        }
+                                    }
+                                ]
+                            },
+                            "office365Credentials": {},
+                            "azureAppList": {
+                                "azureApps": [
+                                    {
+                                        "azureAppId": azure_app_id,
+                                         "azureAppKeyValue": azure_app_key_id,
+                                         "azureDirectoryId": azure_directory_id
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "indexServer": index_server_dict,
+                    "jobResultsDir": {},
+                    "primaryMemberServer": {
+                        "sharePointVersion": 23
+                    },
+                    "spMemberServers": {
+                        "memberServers": member_servers
+                    }
+                },
+                "plan": server_plan_dict
+            },
+            "entity": {
+                "clientName": client_name
+            }
+
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_SHAREPOINT_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_splunk_client(self,
+                          new_client_name,
+                          password,
+                          master_uri,
+                          master_node,
+                          user_name,
+                          plan):
+
+        """
+        Adds new splunk client after clientname and plan validation
+
+        Args:
+            new_client_name       (str)   --  new splunk client name
+
+            password              (str)   --  splunk instance password
+
+            master_uri            (str)   --  URI for the master node
+
+            master_node           (str)   --  master node name
+
+            user_name             (str)   --  splunk instance username
+
+            plan                  (str)   --  plan assocated with the new client
+
+        Returns:
+                client_object     (obj)   --  client object associated with the new splunk client
+
+        Raises:
+            SDKException:
+                if failed to add the client
+
+                if response is empty
+
+                if response is not success
+        """
+        if self._commcell_object.plans.has_plan(plan):
+            plan_object = self._commcell_object.plans.get(plan)
+            plan_id = int(plan_object.plan_id)
+            plan_type = int(plan_object.plan_type)
+            plan_subtype = int(plan_object.subtype)
+
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        if self._commcell_object.clients.has_client(master_node):
+            client_id = int(self._commcell_object.clients.all_clients[master_node.lower()]['id'])
+
+        else:
+            raise SDKException('Client', '102', 'Provide Valid Master Client')
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 29,
+                "distributedClusterInstanceProperties": {
+                    "clusterType": 16,
+                    "opType": 2,
+                    "instance": {
+                        "clientName": new_client_name,
+                        "instanceName": new_client_name,
+                        "instanceId": 0,
+                        "applicationId": 64
+                    },
+                    "clusterConfig": {
+                        "splunkConfig": {
+                            "url": master_uri,
+                            "primaryNode": {
+                                "entity": {
+                                    "clientId": client_id,
+                                    "clientName": master_node
+                                }
+                            },
+                            "splunkUser": {
+                                "password": password,
+                                "userName": user_name
+                            }
+                        }
+                    }
+                },
+                "plan": {
+                    "planSubtype": plan_subtype,
+                    "planType": plan_type,
+                    "planName": plan,
+                    "planId": plan_id
+                }
+            },
+            "entity": {
+                "clientName": new_client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_SPLUNK_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(new_client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
                     raise SDKException('Client', '102', o_str)
                 else:
                     raise SDKException('Response', '102')
@@ -1322,11 +1695,11 @@ class Clients(object):
                                         "dbEnabled": db_options.get('db_enabled', False),
                                         "dbPort": db_options.get('db_port', '1433'),
                                         "dbInstance": db_options.get('db_instance', ''),
-                                        "dbName": db_options.get('db_name', kwargs.get('instance_name','ORG1')),
+                                        "dbName": db_options.get('db_name', kwargs.get('instance_name', 'ORG1')),
                                         "dbType": db_options.get('db_type', "SQLSERVER"),
                                         "dbHost": db_options.get('db_host_name', ''),
                                         "dbUserPassword": {
-                                            "userName": db_options.get('db_user_name',''),
+                                            "userName": db_options.get('db_user_name', ''),
                                             "password": db_user_password,
 
                                         },
@@ -1342,7 +1715,7 @@ class Clients(object):
                                 ],
                                 "storageDevice": {
                                     "dataBackupStoragePolicy": {
-                                        "storagePolicyName": kwargs.get('storage_policy','')
+                                        "storagePolicyName": kwargs.get('storage_policy', '')
                                     },
                                 },
                             },
@@ -1564,7 +1937,7 @@ class Clients(object):
         self._clients = self._get_clients()
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
-
+        self._office_365_clients = None
 
 class Client(object):
     """Class for performing client operations for a specific client."""
@@ -3157,6 +3530,7 @@ class Client(object):
 
                     if response is not success
         """
+
         def _create_destination_path(base_path, *args):
             """Returns the path obtained by joining the items in argument
 
@@ -3378,8 +3752,8 @@ class Client(object):
             raise SDKException('Client', '101')
         properties_dict = self.properties
         owners, current_owners = list(), list()
-        if 'owners' in properties_dict.get('clientProps', {}).get('securityAssociations',{}).get(
-                'ownerAssociations',{}):
+        if 'owners' in properties_dict.get('clientProps', {}).get('securityAssociations', {}).get(
+                'ownerAssociations', {}):
             owners = properties_dict['clientProps']['securityAssociations'][
                 'ownerAssociations']['owners']
             current_owners = (o['userName'].lower() for o in owners)
@@ -3397,42 +3771,42 @@ class Client(object):
                 properties_dict['clientProps']['securityAssociations'] = {'ownerAssociations': {
                     "ownersOperationType": 1, "owners": owners}}
         else:
-            properties_dict['clientProps'] = {'securityAssociations': {'ownerAssociations':{
+            properties_dict['clientProps'] = {'securityAssociations': {'ownerAssociations': {
                 "ownersOperationType": 1, "owners": owners}}}
         self.update_properties(properties_dict)
-    
+
     def filter_clients_return_displaynames(self, filter_by="OS", **kwargs):
         """Gets all the clients associated with the commcell with properties
 
         Args:
             filter_by   (str)         --  filters clients based on criteria
-            
-                                            Accepted values: 
-                                            
+
+                                            Accepted values:
+
                                             1. OS
-                                            
+
             **kwargs    (str)         --  accepted optional arguments:
-            
+
                                             os_type    (str)  - accepted values Windows, Unix, NAS
-                                            
+
                                             url_params (dict) - dict of url parameters and values
-                                            
+
                                                                 Example:
-                                                                
+
                                                                {"Hiddenclients":"true"}
-                                                
+
         Returns:
 
             list    -   list of clients of given os_type
-       
+
         Raises:
-        
+
             SDKException:
-            
+
                 if response is empty
 
                 if response is not success
-            
+
         """
 
         client_list = []
@@ -4008,7 +4382,7 @@ class Client(object):
                                 'licenseName', "")] = license_details['license']
                             licenses_dict[license_details['license'].get(
                                 'licenseName', "")]['platformType'] = license_details.get(
-                                    'platformType')
+                                'platformType')
                     self._license_info = licenses_dict
                 else:
                     self._license_info = {}
@@ -4105,6 +4479,7 @@ class Client(object):
 
 class _Readiness:
     """ Class for checking the connection details of a client """
+
     def __init__(self, commcell, client_id):
         self.__commcell = commcell
         self.__client_id = client_id
@@ -4129,7 +4504,8 @@ class _Readiness:
                     if response is not success
         """
         flag, response = self.__commcell._cvpysdk_object.make_request(
-            'GET', self.__commcell._services['CHECK_READINESS'] % (self.__client_id, network, resource, disabled_clients)
+            'GET',
+            self.__commcell._services['CHECK_READINESS'] % (self.__client_id, network, resource, disabled_clients)
         )
 
         if flag:

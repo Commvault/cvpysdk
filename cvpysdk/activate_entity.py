@@ -334,7 +334,7 @@ class ActivateEntities(object):
             regex_entity_dict['flags'] = regex_entity.get('flags', 0)
             regex_entity_dict['entityType'] = regex_entity.get('entityType', 0)
             regex_entity_dict['enabled'] = regex_entity.get('enabled', False)
-            _regex_entity[regex_entity['displayName']] = regex_entity_dict
+            _regex_entity[regex_entity['entityName']] = regex_entity_dict
         return _regex_entity
 
     def refresh(self):
