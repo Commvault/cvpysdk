@@ -208,8 +208,13 @@ SERVICES_DICT_TEMPLATE = {
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
+
     'DRBACKUP': '{0}/CommServ/DRBackup',
     'DISASTER_RECOVERY_PROPERTIES': '{0}/Commcell/DRBackup/Properties',
+    'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
+    'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
+    'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
+
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
     'METRICS': '{0}CommServ/MetricsReporting',
@@ -260,6 +265,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
+    'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',

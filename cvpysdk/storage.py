@@ -44,6 +44,8 @@ MediaAgents:
 
     get(media_agent_name)       --  returns the instance of MediaAgent class
     of the media agent specified
+    
+    delete(media_agent)     --  Deletes the media agent from the commcell.
 
     refresh()                   --  refresh the media agents associated with the commcell
 
@@ -308,6 +310,63 @@ class MediaAgents(object):
             raise SDKException(
                 'Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)
             )
+    
+    def delete(self, media_agent, force=False):
+        """Deletes the media agent from the commcell.
+
+            Args:
+                media_agent (str)  --  name of the Mediaagent to remove from the commcell
+                
+                force       (bool)     --  True if you want to delete media agent forcefully.
+
+            Raises:
+                SDKException:
+                    if type of the media agent name argument is not string
+
+                    if failed to delete Media agent
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no media agent exists with the given name
+
+        """
+        if not isinstance(media_agent, basestring):
+            raise SDKException('Storage', '101')
+        else:
+            media_agent = media_agent.lower()
+
+            if self.has_media_agent(media_agent):
+                mediagent_id = self.all_media_agents[media_agent]['id']
+                mediagent_delete_service = self._commcell_object._services['MEDIA_AGENT'] % (mediagent_id)
+                if force:
+                    mediagent_delete_service += "?forceDelete=1"
+
+                flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', mediagent_delete_service)
+
+                error_code = 0
+                if flag:
+                    if 'errorCode' in response.json():
+                        o_str = 'Failed to delete mediaagent' 
+                        error_code = response.json()['errorCode'] 
+                        if error_code == 0:
+                            # initialize the mediaagents again
+                            # so the mediaagents object has all the mediaagents
+                            self.refresh()
+                        else:                                
+                            error_message = response.json()['errorMessage']
+                            if error_message:
+                                o_str += '\nError: "{0}"'.format(error_message)                        
+                            raise SDKException('Storage', '102', o_str)
+                    else:
+                        raise SDKException('Response', '102')
+                else:
+                    raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            else:
+                raise SDKException(
+                    'Storage', '102', 'No Mediaagent exists with name: {0}'.format(media_agent)
+                )
 
     def refresh(self):
         """Refresh the media agents associated with the Commcell."""
@@ -1004,7 +1063,7 @@ class DiskLibrary(object):
         """
 
         if not (isinstance(mountpath_drive_id, int) and
-                isinstance(media_agent,basestring)):
+                isinstance(media_agent, basestring)):
             raise SDKException('Storage', '101')
 
 
@@ -1026,7 +1085,7 @@ class DiskLibrary(object):
                                             <validateDrive chunkSize="16384" chunksTillEnd="0" fileMarkerToStart="2"
                                              numberOfChunks="2" threadCount="2" volumeBlockSize="64" />
                                         </libraryOption> </adminOpts> </options> </subTasks>  </taskInfo>
-                            </TMMsg_CreateTaskReq>""".format(self.library_id,media_agent,mountpath_drive_id)
+                            </TMMsg_CreateTaskReq>""".format(self.library_id, media_agent, mountpath_drive_id)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['CREATE_TASK'], request_xml
@@ -1083,8 +1142,8 @@ class DiskLibrary(object):
             """
 
         if not (isinstance(mount_path, basestring) or isinstance(media_agent, basestring)
-                or isinstance(username,basestring) or isinstance(password,basestring)
-                or isinstance(server_type,int)):
+                or isinstance(username, basestring) or isinstance(password, basestring)
+                or isinstance(server_type, int)):
             raise SDKException('Storage', '101')
 
         request_json = {
@@ -1271,11 +1330,11 @@ class DiskLibrary(object):
         self._EXECUTE = self._commcell_object._services['EXECUTE_QCOMMAND']
         self.library = {
             "opType": 64,
-            "mediaAgentName": "%s" %
+            "mediaAgentName": "%s" % 
                               self.mediaagent,
-            "libraryName": "%s" %
+            "libraryName": "%s" % 
                            self.library_name,
-            "mountPath": "%s" %
+            "mountPath": "%s" % 
                          self.mountpath}
         self.libNewprop = {
             "deviceAccessType": 22,
