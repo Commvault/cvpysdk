@@ -139,6 +139,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
+    'SQL_CLONES': '{0}sql/clones',
+    'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
