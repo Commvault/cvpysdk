@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupsets.fsbackupset &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.backupsets.fsbackupset &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -700,7 +700,8 @@
             <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;vmInfo&#39;</span><span class="p">][</span><span class="s1">&#39;vmLocation&#39;</span><span class="p">][</span><span class="s1">&#39;vCenter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;VcenterServerName&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HyperVInstance&#39;</span><span class="p">):</span>
-
+            <span class="k">if</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;OsType&#39;</span><span class="p">)</span><span class="o">==</span><span class="s1">&#39;UNIX&#39;</span><span class="p">:</span>
+                <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;vendor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;MICROSOFT&#39;</span>
             <span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span>
             <span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerRstOption&#39;</span><span class="p">][</span><span class="s1">&#39;diskLevelVMRestoreOption&#39;</span><span class="p">][</span>
                 <span class="s1">&#39;esxServerName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HyperVInstance&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -732,8 +733,15 @@
                 <span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CloneClientName&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;newclient&#39;</span><span class="p">][</span>
                 <span class="s1">&#39;hostName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CloneClientName&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-
-
+        <span class="k">if</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;OsType&#39;</span><span class="p">)</span><span class="o">==</span><span class="s1">&#39;UNIX&#39;</span><span class="p">:</span>
+            <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;newclient&#39;</span><span class="p">][</span>
+            <span class="s1">&#39;hostName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;backupSet&#39;</span><span class="p">][</span>
+            <span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;backupSetEntity&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetName&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">response_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;adminOpts&#39;</span><span class="p">][</span>
+                <span class="s1">&#39;vmProvisioningOption&#39;</span><span class="p">][</span><span class="s1">&#39;virtualMachineOption&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">]</span>
+                <span class="p">[</span><span class="s1">&#39;hwconfig&#39;</span><span class="p">][</span><span class="s1">&#39;mem_size&#39;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">4096</span><span class="p">:</span>
+                <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;hwconfig&#39;</span><span class="p">][</span><span class="s1">&#39;mem_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4096</span>
         <span class="k">if</span> <span class="n">restore_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;UseDhcp&#39;</span><span class="p">):</span>
             <span class="n">vm_option</span><span class="p">[</span><span class="s1">&#39;oneTouchResponse&#39;</span><span class="p">][</span><span class="s1">&#39;clients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;netconfig&#39;</span><span class="p">][</span><span class="s1">&#39;ipinfo&#39;</span><span class="p">][</span><span class="s1">&#39;interfaces&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
             <span class="s1">&#39;protocols&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;useDhcp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>

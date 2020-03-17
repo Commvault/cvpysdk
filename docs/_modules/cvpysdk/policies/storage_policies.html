@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -440,7 +440,8 @@
             <span class="n">retention_period</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
             <span class="n">number_of_streams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">ocum_server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">dedup_media_agent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">dedup_media_agent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">dr_sp</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new Storage Policy to the Commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -471,6 +472,10 @@
 
 <span class="sd">                dedup_media_agent   (str)          --  name of media agent where deduplication database is hosted.</span>
 <span class="sd">                default:None</span>
+
+<span class="sd">                dr_sp                (bool)         --  if True creates dr storage policy</span>
+<span class="sd">                                                        if False creates data protection policy</span>
+<span class="sd">                default:False</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -509,6 +514,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
+        <span class="n">sp_type</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">dr_sp</span> <span class="k">else</span> <span class="mi">1</span>
+
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -521,7 +528,8 @@
                     <span class="s2">&quot;retainBackupDataForDays&quot;</span><span class="p">:</span> <span class="n">retention_period</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy_name</span>
+            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy_name</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">sp_type</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="n">number_of_streams</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>

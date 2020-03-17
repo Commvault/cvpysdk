@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.monitoring &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.monitoring &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -327,19 +327,17 @@
 <span class="sd">                        if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;monitoringPolicyReq&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;flag&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;appType&quot;</span><span class="p">:</span> <span class="mi">1</span>
             <span class="p">}</span>
-        <span class="p">}</span>
+
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MONITORING_POLICIES</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;cloudClientList&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;monitoringPolicies&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="n">monitoring_policies_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
-                <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">(</span>
-                <span class="p">)[</span><span class="s1">&#39;cloudClientList&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;monitoringPolicyResp&#39;</span><span class="p">][</span><span class="s1">&#39;monitoringPolicies&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;monitoringPolicies&#39;</span><span class="p">]:</span>
                     <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;monitoringPolicyName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                     <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;monitoringPolicyid&#39;</span><span class="p">])</span>
                     <span class="n">monitoring_policies_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
@@ -587,7 +585,9 @@
             <span class="n">analytics_server_name</span><span class="p">,</span>
             <span class="n">client_name</span><span class="p">,</span>
             <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">win_flag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">win_flag</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">policy_type</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new Monitoring Policy to the Commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -603,11 +603,15 @@
 <span class="sd">                client_name (str)            -- client from which data</span>
 <span class="sd">                                                    has to be picked</span>
 
-<span class="sd">                content                      -- content to be used for</span>
+<span class="sd">                content (str)                     -- content to be used for</span>
 <span class="sd">                                                    running the policy</span>
 
-<span class="sd">                win_flag                     -- For executing Text based</span>
+<span class="sd">                win_flag (bool)                    -- For executing Text based</span>
 <span class="sd">                                                    WindowsEvents Policy</span>
+
+<span class="sd">                policy_type (int)                -- type of policy to be created 0 - index server 1 - event raiser</span>
+
+<span class="sd">                kwargs                          -- continuousMode - true/false, conditionsXML - criteria for policy</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -624,9 +628,10 @@
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">template_name</span> <span class="o">=</span> <span class="n">template_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="n">analytics_server_name</span> <span class="o">=</span> <span class="n">analytics_server_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="n">client_name</span> <span class="o">=</span> <span class="n">client_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="n">template_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cloud_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">analytics_server_name</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
         <span class="k">if</span> <span class="n">template_name</span> <span class="o">==</span> <span class="s2">&quot;ondemand&quot;</span><span class="p">:</span>
             <span class="n">template_id</span> <span class="o">=</span> <span class="mi">1</span>
@@ -646,13 +651,15 @@
         <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_analytics_server</span><span class="p">(</span><span class="n">analytics_server_name</span><span class="p">):</span>
-            <span class="n">cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_analytics_servers</span><span class="p">[</span><span class="n">analytics_server_name</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Analytics Server &quot;</span><span class="si">{0}</span><span class="s1">&quot; doesn</span><span class="se">\&#39;</span><span class="s1">t exist&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="n">analytics_server_name</span>
-            <span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Monitoring&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">policy_type</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">analytics_server_name</span> <span class="o">=</span> <span class="n">analytics_server_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_analytics_server</span><span class="p">(</span><span class="n">analytics_server_name</span><span class="p">):</span>
+                <span class="n">cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_analytics_servers</span><span class="p">[</span><span class="n">analytics_server_name</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Analytics Server &quot;</span><span class="si">{0}</span><span class="s1">&quot; doesn</span><span class="se">\&#39;</span><span class="s1">t exist&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">analytics_server_name</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Monitoring&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
 
         <span class="n">client_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">client_name</span><span class="p">):</span>
@@ -668,7 +675,8 @@
                 <span class="s2">&quot;monitoringPolicyName&quot;</span><span class="p">:</span> <span class="n">monitoring_policy_name</span><span class="p">,</span>
                 <span class="s2">&quot;monitoringPolicyid&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
                 <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
-                <span class="s2">&quot;indexAllLines&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;continuousMode&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;continuousMode&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">),</span>
+                <span class="s2">&quot;indexAllLines&quot;</span><span class="p">:</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;conditionsXML&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[{</span>
                     <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client_name</span><span class="p">,</span>
                     <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">client_id</span><span class="p">,</span>
@@ -681,6 +689,12 @@
                     <span class="s2">&quot;templateName&quot;</span><span class="p">:</span> <span class="n">template_name</span><span class="p">,</span>
                     <span class="s2">&quot;templateId&quot;</span><span class="p">:</span> <span class="n">template_id</span>
                 <span class="p">}],</span>
+                <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;conditionsXML&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;conditionsXML&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">),</span>
+                        <span class="s2">&quot;templateId&quot;</span><span class="p">:</span> <span class="n">template_id</span>
+                    <span class="p">}</span>
+                <span class="p">],</span>
                 <span class="s2">&quot;dataCapturingOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;cloudId&quot;</span><span class="p">:</span> <span class="n">cloud_id</span><span class="p">,</span>
                     <span class="s2">&quot;ageCIDataAfterDays&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
@@ -688,6 +702,7 @@
                     <span class="s2">&quot;doNotMonitorOldData&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                     <span class="s2">&quot;enableContentIndexing&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                     <span class="s2">&quot;asFtp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;dataCapturingType&quot;</span><span class="p">:</span> <span class="n">policy_type</span><span class="p">,</span>
                     <span class="s2">&quot;captureEntireFile&quot;</span><span class="p">:</span> <span class="kc">False</span>
                 <span class="p">}</span>
             <span class="p">}</span>

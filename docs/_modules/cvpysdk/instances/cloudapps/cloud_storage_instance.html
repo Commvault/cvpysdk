@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.cloudapps.cloud_storage_instance &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.instances.cloudapps.cloud_storage_instance &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -289,6 +289,19 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_google_access_key</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span>
                     <span class="s1">&#39;googleCloudInstance&#39;</span><span class="p">][</span><span class="s1">&#39;credentials&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
 
+
+            <span class="c1"># Ali Cloud</span>
+            <span class="k">if</span> <span class="s1">&#39;alibabaInstance&#39;</span> <span class="ow">in</span> <span class="n">cloud_apps_instance</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_host_url</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span><span class="s1">&#39;alibabaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;hostURL&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_access_key</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span><span class="s1">&#39;alibabaInstance&#39;</span><span class="p">][</span><span class="s1">&#39;accessKey&#39;</span><span class="p">]</span>
+
+
+            <span class="c1">#IBM Cloud</span>
+            <span class="k">if</span> <span class="s1">&#39;ibmCosInstance&#39;</span> <span class="ow">in</span> <span class="n">cloud_apps_instance</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_host_url</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span><span class="s1">&#39;ibmCosInstance&#39;</span><span class="p">][</span><span class="s1">&#39;hostURL&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_access_key</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span><span class="s1">&#39;ibmCosInstance&#39;</span><span class="p">][</span><span class="s1">&#39;credentials&#39;</span><span class="p">][</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>
+
+
             <span class="k">if</span> <span class="s1">&#39;generalCloudProperties&#39;</span> <span class="ow">in</span> <span class="n">cloud_apps_instance</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_access_node</span> <span class="o">=</span> <span class="n">cloud_apps_instance</span><span class="p">[</span>
                     <span class="s1">&#39;generalCloudProperties&#39;</span><span class="p">][</span><span class="s1">&#39;proxyServers&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
@@ -407,6 +420,8 @@
             <span class="s2">&quot;cloudAppsRestoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_restore_options_json</span>
         <span class="n">cloud_restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
             <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;commonOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_options_json</span>
+        <span class="n">cloud_restore_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;associations&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;backupsetId&quot;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">cloud_restore_json</span>
 
@@ -414,7 +429,8 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">paths</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">no_of_streams</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the same location.</span>
 
 <span class="sd">            Args:</span>
@@ -425,6 +441,9 @@
 
 <span class="sd">                copy_precedence         (int)   --  copy precedence value of storage policy copy</span>
 <span class="sd">                    default: None</span>
+
+<span class="sd">                no_of_streams           (int)   --  number of streams for restore</span>
+<span class="sd">                                                    default : 2</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -453,7 +472,8 @@
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">in_place</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
-            <span class="n">restore_To_FileSystem</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">restore_To_FileSystem</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">no_of_streams</span><span class="o">=</span><span class="n">no_of_streams</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
@@ -464,7 +484,8 @@
             <span class="n">destination_instance_name</span><span class="p">,</span>
             <span class="n">destination_path</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">no_of_streams</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
 <span class="sd">            at the specified destination location.</span>
 
@@ -486,6 +507,8 @@
 <span class="sd">                copy_precedence          (int)   --  copy precedence value of storage policy copy</span>
 <span class="sd">                    default: None</span>
 
+<span class="sd">                no_of_streams           (int)   --  number of streams for restore</span>
+<span class="sd">                                                    default : 2</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -522,6 +545,7 @@
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">no_of_streams</span><span class="o">=</span><span class="n">no_of_streams</span><span class="p">,</span>
             <span class="n">restore_To_FileSystem</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
@@ -532,7 +556,8 @@
             <span class="n">destination_path</span><span class="p">,</span>
             <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">no_of_streams</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
 <span class="sd">            at the specified destination location.</span>
 
@@ -551,6 +576,9 @@
 
 <span class="sd">                copy_precedence         (int)   --  copy precedence value of storage policy copy</span>
 <span class="sd">                    default: None</span>
+
+<span class="sd">                no_of_streams           (int)   --  number of streams for restore</span>
+<span class="sd">                                                    default : 2</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -579,6 +607,8 @@
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
+        <span class="n">destination_appTypeId</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">destination_client</span><span class="p">)</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;file system&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agent_id</span><span class="p">)</span>
+
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_json</span><span class="p">(</span>
             <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
             <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
@@ -586,7 +616,9 @@
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
-            <span class="n">restore_To_FileSystem</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">restore_To_FileSystem</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">no_of_streams</span><span class="o">=</span><span class="n">no_of_streams</span><span class="p">,</span>
+            <span class="n">destination_appTypeId</span><span class="o">=</span><span class="n">destination_appTypeId</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
@@ -612,6 +644,7 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloud_destination_options_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;isLegalHold&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;noOfStreams&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;no_of_streams&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
                 <span class="s2">&quot;inPlace&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;in_place&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;destPath&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)],</span>
                 <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -635,6 +668,7 @@
 
             <span class="n">regular_instance_restore_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;isLegalHold&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;noOfStreams&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;no_of_streams&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
                 <span class="s2">&quot;inPlace&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;in_place&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;destPath&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">)],</span>
                 <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>

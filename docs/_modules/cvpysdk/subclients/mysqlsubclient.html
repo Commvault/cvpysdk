@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.mysqlsubclient &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.subclients.mysqlsubclient &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -307,7 +307,9 @@
             <span class="n">backup_level</span><span class="p">,</span>
             <span class="n">inc_with_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">truncate_logs_on_source</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">do_not_truncate_logs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">do_not_truncate_logs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        prepares the json for the backup request</span>
 
@@ -330,11 +332,16 @@
 
 <span class="sd">                    default: False</span>
 
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
+
 <span class="sd">            Returns:</span>
 <span class="sd">                dict - JSON request to pass to the API</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span><span class="n">backup_level</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;BEFORE_SYNTH&quot;</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span><span class="n">backup_level</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;BEFORE_SYNTH&quot;</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span><span class="p">)</span>
 
         <span class="n">backup_options</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;truncateLogsOnSource&quot;</span><span class="p">:</span><span class="n">truncate_logs_on_source</span><span class="p">,</span>
@@ -450,7 +457,9 @@
             <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;Differential&quot;</span><span class="p">,</span>
             <span class="n">inc_with_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">truncate_logs_on_source</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">do_not_truncate_logs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">do_not_truncate_logs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs a backup job for the subclient of the level specified.</span>
 
 <span class="sd">            Args:</span>
@@ -472,8 +481,15 @@
 
 <span class="sd">                    default: False</span>
 
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
+
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Job class for this backup job</span>
+<span class="sd">                object - instance of the Job class for this backup job if its an immediate Job</span>
+
+<span class="sd">                         instance of the Schedule class for the backup job if its a scheduled Job</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -489,13 +505,15 @@
         <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">,</span> <span class="s1">&#39;differential&#39;</span><span class="p">,</span> <span class="s1">&#39;synthetic_full&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">inc_with_data</span> <span class="ow">or</span> <span class="n">truncate_logs_on_source</span> <span class="ow">or</span> <span class="n">do_not_truncate_logs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">inc_with_data</span> <span class="ow">or</span> <span class="n">truncate_logs_on_source</span> <span class="ow">or</span> <span class="n">do_not_truncate_logs</span> <span class="ow">or</span> <span class="n">schedule_pattern</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">MYSQLSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="n">backup_level</span><span class="p">)</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_request_json</span><span class="p">(</span>
             <span class="n">backup_level</span><span class="p">,</span>
             <span class="n">inc_with_data</span><span class="p">,</span>
             <span class="n">truncate_logs_on_source</span><span class="o">=</span><span class="n">truncate_logs_on_source</span><span class="p">,</span>
-            <span class="n">do_not_truncate_logs</span><span class="o">=</span><span class="n">do_not_truncate_logs</span><span class="p">)</span>
+            <span class="n">do_not_truncate_logs</span><span class="o">=</span><span class="n">do_not_truncate_logs</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span>
+        <span class="p">)</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">],</span> <span class="n">request_json</span>
         <span class="p">)</span>

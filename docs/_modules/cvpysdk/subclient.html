@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -185,6 +185,8 @@
 
 <span class="sd">    _get_subclients()           --  gets all the subclients associated with the backupset specified</span>
 
+<span class="sd">    _process_add_request()      --  to post the add client request</span>
+
 <span class="sd">    default_subclient()         --  returns the name of the default subclient</span>
 
 <span class="sd">    all_subclients()            --  returns dict of all the subclients on commcell</span>
@@ -192,6 +194,8 @@
 <span class="sd">    has_subclient()             --  checks if a subclient exists with the given name or not</span>
 
 <span class="sd">    add()                       --  adds a new subclient to the backupset</span>
+
+<span class="sd">    add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset</span>
 
 <span class="sd">    get(subclient_name)         --  returns the subclient object of the input subclient name</span>
 
@@ -306,7 +310,6 @@
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedule</span>
 
 <span class="n">install_aliases</span><span class="p">()</span>
 
@@ -702,6 +705,60 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span> <span class="ow">and</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients</span></div>
 
+    <span class="k">def</span> <span class="nf">_process_add_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;To post the add subclient request</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            request_json    (dict)  -- Request json to be passed as the payload</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object  -   instance of the Subclient class</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SUBCLIENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Failed to create subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">subclient_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">]</span>
+
+                    <span class="c1"># initialize the subclients again so the subclient object has all the subclients</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+                    <span class="n">agent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="o">==</span> <span class="s2">&quot;vminstance&quot;</span><span class="p">:</span>
+                            <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_type</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_type</span><span class="p">)</span> <span class="o">==</span> <span class="mi">36</span><span class="p">:</span>
+                            <span class="c1"># client type 36 is case manager client</span>
+                            <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">]</span>
+
+                    <span class="k">return</span> <span class="n">subclient</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="p">,</span>
+                        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">][</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">],</span>
+                        <span class="n">subclient_id</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
 <div class="viewcode-block" id="Subclients.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span>
             <span class="n">subclient_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">pre_scan_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -830,43 +887,141 @@
                 <span class="s1">&#39;sqlSubclientType&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqlsubclient_type_dict</span><span class="p">[</span><span class="n">subclient_type</span><span class="p">]</span>
             <span class="p">}</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SUBCLIENT</span><span class="p">,</span> <span class="n">request_json</span>
-        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
-        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+<div class="viewcode-block" id="Subclients.add_virtual_server_subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.add_virtual_server_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">add_virtual_server_subclient</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">subclient_name</span><span class="p">,</span>
+            <span class="n">subclient_content</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new virtual server subclient to the backupset.</span>
 
-                <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                        <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;Failed to create subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                            <span class="n">error_string</span><span class="p">)</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">subclient_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">(</span>
-                    <span class="p">)[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">]</span>
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_name      (str)   --  Name of the subclient to be created</span>
 
-                    <span class="c1"># initialize the subclients again</span>
-                    <span class="c1"># so the subclient object has all the subclients</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+<span class="sd">                subclient_content   (list)  --  Content to be added to the subclient</span>
 
-                    <span class="n">agent_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+<span class="sd">                    Example:</span>
+<span class="sd">                        [</span>
+<span class="sd">                            {</span>
+<span class="sd">                            &#39;type&#39; : VSAObjects.APPLICATION,</span>
+<span class="sd">                            &#39;name&#39; : &#39;&#39;,</span>
+<span class="sd">                            },</span>
+<span class="sd">                            {</span>
+<span class="sd">                            &#39;type&#39; : VSAObjects.PROJECT,</span>
+<span class="sd">                            &#39;name&#39; : &#39;&#39;,</span>
+<span class="sd">                            },</span>
+<span class="sd">                        ]</span>
 
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclients_dict</span><span class="p">[</span><span class="n">agent_name</span><span class="p">](</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span>
-                    <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
+<span class="sd">                        **Note** Use VSAObjects Enum present in constants.py to pass value to type</span>
+
+<span class="sd">                kwargs      (dict)  -- dict of keyword arguments as follows</span>
+
+<span class="sd">                    plan_name           (str)   --  Plan to be associated with the subclient</span>
+
+<span class="sd">                    storage_policy      (str)   --  Storage policy to be associated with the subclient</span>
+
+<span class="sd">                    description         (str)   --  Description for the subclient</span>
+
+<span class="sd">                        default: &#39;&#39;</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the Subclient class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if subclient name argument is not of type string</span>
+
+<span class="sd">                    if storage policy argument is not of type string</span>
+
+<span class="sd">                    if description argument is not of type string</span>
+
+<span class="sd">                    if failed to create subclient</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if subclient already exists with the given name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_content</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_subclient</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;101&#39;</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
-                    <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">subclient_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">has_backupset</span><span class="p">(</span>
+                    <span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>
+
+        <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">:</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;equalsOrNotEquals&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;allOrAnyChildren&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+                <span class="p">})</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;vmContentOperationType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;vmContent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;children&quot;</span><span class="p">:</span> <span class="n">content</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                    <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">,</span>
+                    <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;enableBackup&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;plan_name&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plan_name&#39;</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;Plan: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plan_name&#39;</span><span class="p">])</span>
+                <span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">][</span><span class="s1">&#39;planEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;planName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plan_name&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">))</span>
+                <span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">][</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">][</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">)</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Either Plan or Storage policy should be given as input&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclients.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a subclient object of the specified backupset name.</span>
@@ -1386,7 +1541,7 @@
 <span class="sd">            Args:</span>
 <span class="sd">                options     (dict)  --  advanced backup options that are to be included</span>
 <span class="sd">                                            in the request</span>
-
+<span class="sd">c</span>
 <span class="sd">            Returns:</span>
 <span class="sd">                (dict)  -   generated advanced options dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1907,7 +2062,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">backup_level</span> <span class="o">=</span> <span class="n">backup_level</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">,</span>
+        <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">,</span> <span class="s1">&#39;transaction_log&#39;</span><span class="p">,</span>
                                 <span class="s1">&#39;differential&#39;</span><span class="p">,</span> <span class="s1">&#39;synthetic_full&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 

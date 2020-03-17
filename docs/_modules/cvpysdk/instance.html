@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -191,6 +191,8 @@
 <span class="sd">    get(instance_name)              --  returns the Instance class object</span>
 <span class="sd">    of the input backup set name</span>
 
+<span class="sd">    _process_add_response()         --  to process the add instance request using API call</span>
+
 <span class="sd">    add_informix_instance()         --  adds new Informix Instance to given Client</span>
 
 <span class="sd">    delete()                        --  deletes the instance specified by the instance_name</span>
@@ -201,6 +203,10 @@
 <span class="sd">    add_big_data_apps_instance()    --  To add an instance with the big data apps agent specified</span>
 
 <span class="sd">    add_cloud_storage_instance()    --  Method to add a new cloud storage instance</span>
+
+<span class="sd">    add_salesforce_instance()       --  Method to add a new salesforce instance</span>
+
+<span class="sd">    add_postgresql_instance()       --  Method to add a new postgresql instance</span>
 
 <span class="sd">    _set_general_properties_json()  --  setter for general cloud properties while adding a new</span>
 <span class="sd">    cloud storage instance</span>
@@ -257,6 +263,8 @@
 <span class="sd">    restore json</span>
 
 <span class="sd">    _process_update_request()       --  to process the request using API call</span>
+
+<span class="sd">    _get_instance_properties_json() --  returns the instance properties</span>
 
 <span class="sd">    update_properties()             --  to update the instance properties</span>
 
@@ -548,6 +556,55 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Instance exists with the given ID: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance_name</span><span class="p">))</span>
 
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_add_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the Intance Add API with the request JSON provided,</span>
+<span class="sd">            and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_json    (dict)  --  JSON request to run for the API</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (bool, basestring, basestring):</span>
+<span class="sd">                    bool -  flag specifies whether success / failure</span>
+
+<span class="sd">                    str  -  error code received in the response</span>
+
+<span class="sd">                    str  -  error message received</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ADD_INSTANCE&#39;</span><span class="p">],</span> <span class="n">request_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create instance</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># initialize the instances again</span>
+                        <span class="c1"># so the instance object has all the instances</span>
+                        <span class="n">instance_name</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">(</span>
+                        <span class="p">)[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="s1">&#39;instanceName&#39;</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">instance_name</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create instance</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Instances.add_informix_instance"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instances.add_informix_instance">[docs]</a>    <span class="k">def</span> <span class="nf">add_informix_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">informix_options</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds new Informix Instance to given Client</span>
@@ -1084,8 +1141,8 @@
 <span class="sd">                            &#39;storage_policy&#39;:&#39;cs_sp&#39;,</span>
 <span class="sd">                            &#39;number_of_streams&#39;: 2,</span>
 <span class="sd">                            &#39;access_node&#39;: &#39;CS&#39;,</span>
-<span class="sd">                            &#39;accesskey&#39;:&#39;AKIAJOMLRIFGP3FQUIKA&#39;,</span>
-<span class="sd">                            &#39;secretkey&#39;:&#39;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&#39;,</span>
+<span class="sd">                            &#39;accesskey&#39;:&#39;xxxxxxxx&#39;,</span>
+<span class="sd">                            &#39;secretkey&#39;:&#39;yyyyyyyy&#39;,</span>
 <span class="sd">                            &#39;cloudapps_type&#39;: &#39;s3&#39;</span>
 
 <span class="sd">            }</span>
@@ -1112,6 +1169,56 @@
 <span class="sd">                            &#39;accesskey&#39;: &#39;xxxxxx&#39;,</span>
 <span class="sd">                            &#39;number_of_streams&#39;: 1,</span>
 <span class="sd">                            &#39;cloudapps_type&#39;: &#39;azureDL&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">        Cloud : Amazon RDS</span>
+<span class="sd">        cloud_options = {</span>
+<span class="sd">                            &#39;instance_name&#39;: &#39;RDS&#39;,</span>
+<span class="sd">                            &#39;storage_plan&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;access_node&#39;: &#39;CS&#39;,</span>
+<span class="sd">                            &#39;access_key&#39;: &#39;xxxxx&#39;,</span>
+<span class="sd">                            &#39;secret_key&#39;: &#39;xxxxx&#39;,</span>
+<span class="sd">                            &#39;cloudapps_type&#39;: &#39;amazon_rds&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">        Cloud : Amazon Redshift</span>
+<span class="sd">        cloud_options = {</span>
+
+<span class="sd">                            &#39;instance_name&#39;: &#39;Redshift&#39;,</span>
+<span class="sd">                            &#39;storage_plan&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;access_node&#39;: &#39;CS&#39;,</span>
+<span class="sd">                            &#39;access_key&#39;: &#39;xxxxx&#39;,</span>
+<span class="sd">                            &#39;secret_key&#39;: &#39;xxxxx&#39;,</span>
+<span class="sd">                            &#39;cloudapps_type&#39;: &#39;amazon_redshift&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">        Cloud : Amazon Document DB</span>
+<span class="sd">        cloud_options = {</span>
+<span class="sd">                            &#39;instance_name&#39;: &#39;DocumentDB&#39;,</span>
+<span class="sd">                            &#39;storage_plan&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;access_node&#39;: &#39;CS&#39;,</span>
+<span class="sd">                            &#39;access_key&#39;: &#39;xxxxxx&#39;,</span>
+<span class="sd">                            &#39;secret_key&#39;: &#39;xxxxxx&#39;,</span>
+<span class="sd">                            &#39;cloudapps_type&#39;: &#39;amazon_docdb&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict     --   JSON request to pass to the API</span>
+<span class="sd">        Raises :</span>
+<span class="sd">            SDKException :</span>
+
+<span class="sd">                if cloud storage instance with same name already exists</span>
+
+<span class="sd">                if given storage policy does not exist in commcell</span>
+
+<span class="sd">        Cloud : Amazon DynamoDB</span>
+<span class="sd">        cloud_options = {</span>
+<span class="sd">                            &#39;instance_name&#39;: &#39;DynamoDB&#39;,</span>
+<span class="sd">                            &#39;storage_plan&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,</span>
+<span class="sd">                            &#39;access_node&#39;: &#39;CS&#39;,</span>
+<span class="sd">                            &#39;access_key&#39;: &#39;xxxxxx&#39;,</span>
+<span class="sd">                            &#39;secret_key&#39;: &#39;xxxxxx&#39;,</span>
+<span class="sd">                            &#39;cloudapps_type&#39;: &#39;amazon_dynamodb&#39;</span>
 <span class="sd">                        }</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            dict     --   JSON request to pass to the API</span>
@@ -1162,6 +1269,12 @@
                 <span class="s2">&quot;cloudAppsInstance&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_properties_json</span>
             <span class="p">}</span>
         <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">cloud_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;storage_plan&quot;</span><span class="p">):</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;instanceProperties&quot;</span><span class="p">][</span><span class="s2">&quot;planEntity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;planName&quot;</span><span class="p">:</span> <span class="n">cloud_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;storage_plan&quot;</span><span class="p">)</span>
+            <span class="p">}</span>
+
         <span class="n">add_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ADD_INSTANCE&#39;</span><span class="p">]</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">add_instance</span><span class="p">,</span> <span class="n">request_json</span>
@@ -1193,6 +1306,186 @@
                 <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Instances.add_salesforce_instance"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instances.add_salesforce_instance">[docs]</a>    <span class="k">def</span> <span class="nf">add_salesforce_instance</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">access_node</span><span class="p">,</span>
+            <span class="n">salesforce_options</span><span class="p">,</span>
+            <span class="n">db_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new salesforce instance.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                instance_name               (str)   -- instance_name</span>
+<span class="sd">                access_node                 (str)   -- access node name</span>
+<span class="sd">                salesforce_options          (dict)  -- salesforce options</span>
+<span class="sd">                                                        {</span>
+<span class="sd">                                                                &quot;login_url&quot;: &#39;salesforce login url&#39;,</span>
+<span class="sd">                                                                &quot;consume_id&quot;: &#39;salesforce consumer key&#39;,</span>
+<span class="sd">                                                                &quot;consumer_secret&quot;: &#39;salesforce consumer secret&#39;,</span>
+<span class="sd">                                                                &quot;salesforce_user_name&quot;: &#39;salesforce login user&#39;,</span>
+<span class="sd">                                                                &quot;salesforce_user_password&quot;: &#39;salesforce user password&#39;,</span>
+<span class="sd">                                                                &quot;salesforce_user_token&quot;: &#39;salesforce user token&#39;</span>
+<span class="sd">                                                        }</span>
+
+<span class="sd">                db_options                  (dict)  -- database options to configure sync db</span>
+<span class="sd">                                                        {</span>
+<span class="sd">                                                            &quot;db_enabled&quot;: &#39;True or False&#39;,</span>
+<span class="sd">                                                            &quot;db_type&quot;: &#39;SQLSERVER or POSTGRESQL&#39;,</span>
+<span class="sd">                                                            &quot;db_host_name&quot;: &#39;database hostname&#39;,</span>
+<span class="sd">                                                            &quot;db_instance&quot;: &#39;database instance name&#39;,</span>
+<span class="sd">                                                            &quot;db_name&quot;: &#39;database name&#39;,</span>
+<span class="sd">                                                            &quot;db_port&quot;: &#39;port of the database&#39;,</span>
+<span class="sd">                                                            &quot;db_user_name&quot;: &#39;database user name&#39;,</span>
+<span class="sd">                                                            &quot;db_user_password&quot;: &#39;database user password&#39;</span>
+<span class="sd">                                                        }</span>
+
+<span class="sd">                **kwargs                    (dict)   -- dict of keyword arguments as follows</span>
+
+<span class="sd">                                                         download_cache_path     (str)   -- download cache path</span>
+<span class="sd">                                                         mutual_auth_path        (str)   -- mutual auth cert path</span>
+<span class="sd">                                                         storage_policy          (str)   -- storage policy</span>
+<span class="sd">                                                         streams                 (int)   -- number of streams</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the instance class for this new instance</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if instance with given name already exists</span>
+
+<span class="sd">                    if failed to add the instance</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">db_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">db_options</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;db_enabled&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_instance</span><span class="p">(</span><span class="n">instance_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;Instance &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">instance_name</span><span class="p">))</span>
+
+        <span class="n">salesforce_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">salesforce_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;salesforce_user_password&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">salesforce_consumer_secret</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span>
+            <span class="n">salesforce_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;consumer_secret&#39;</span><span class="p">,</span> <span class="s1">&#39;3951207263309722430&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">salesforce_token</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">salesforce_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;salesforce_user_token&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">db_user_password</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">db_user_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_user_password&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instanceProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">instance_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;cloudAppsInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;salesforceInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;enableREST&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;endpoint&quot;</span><span class="p">:</span> <span class="n">salesforce_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;login_url&#39;</span><span class="p">,</span> <span class="s2">&quot;https://login.salesforce.com&quot;</span><span class="p">),</span>
+                        <span class="s2">&quot;consumerId&quot;</span><span class="p">:</span> <span class="n">salesforce_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;consumer_id&#39;</span><span class="p">,</span>
+                                                             <span class="s1">&#39;3MVG9Nc1qcZ7BbZ0Ep18pfQsltTkZtbcMG9GMQzsVHGS8268yaOqmZ1lEEakAs8Xley85RBH1xKR1.eoUu1Z4&#39;</span><span class="p">),</span>
+                        <span class="s2">&quot;consumerSecret&quot;</span><span class="p">:</span> <span class="n">salesforce_consumer_secret</span><span class="p">,</span>
+                        <span class="s2">&quot;defaultBackupsetProp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;downloadCachePath&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;download_cache_path&#39;</span><span class="p">,</span> <span class="s1">&#39;/tmp&#39;</span><span class="p">),</span>
+                            <span class="s2">&quot;mutualAuthPath&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mutual_auth_path&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                            <span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">salesforce_token</span><span class="p">,</span>
+                            <span class="s2">&quot;userPassword&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">salesforce_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;salesforce_user_name&#39;</span><span class="p">),</span>
+                                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">salesforce_password</span><span class="p">,</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;syncDatabase&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;dbEnabled&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                                <span class="s2">&quot;dbPort&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_port&#39;</span><span class="p">,</span> <span class="s2">&quot;1433&quot;</span><span class="p">),</span>
+                                <span class="s2">&quot;dbInstance&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_instance&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                                <span class="s2">&quot;dbName&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_name&#39;</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">),</span>
+                                <span class="s2">&quot;dbType&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_type&#39;</span><span class="p">,</span> <span class="s1">&#39;SQLSERVER&#39;</span><span class="p">),</span>
+                                <span class="s2">&quot;dbHost&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_host_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                                <span class="s2">&quot;dbUserPassword&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_user_name&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">),</span>
+                                    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">db_user_password</span><span class="p">,</span>
+
+                                <span class="p">},</span>
+                            <span class="p">},</span>
+                        <span class="p">},</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;generalCloudProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;numberOfBackupStreams&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;streams&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="s2">&quot;proxyServers&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">access_node</span>
+                            <span class="p">}</span>
+                        <span class="p">],</span>
+                        <span class="s2">&quot;storageDevice&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                            <span class="p">},</span>
+                        <span class="p">},</span>
+                    <span class="p">},</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Instances.add_postgresql_instance"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instances.add_postgresql_instance">[docs]</a>    <span class="k">def</span> <span class="nf">add_postgresql_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds new postgresql instance to given client</span>
+<span class="sd">            Args:</span>
+<span class="sd">                instance_name       (str)   --  instance_name</span>
+<span class="sd">                kwargs              (dict)  --  dict of keyword arguments as follows:</span>
+<span class="sd">                                                   storage_policy       (str)          -- storage policy</span>
+<span class="sd">                                                   port                 (int or str)   -- port or end point</span>
+<span class="sd">                                                   postgres_user_name   (str)          -- postgres user name</span>
+<span class="sd">                                                   postgres_password    (str)          -- postgres password</span>
+<span class="sd">                                                   version              (str)          -- postgres version</span>
+<span class="sd">                                                   maintenance_db       (str)          -- maintenance db</span>
+<span class="sd">                                                   binary_directory     (str)          -- postgres binary location</span>
+<span class="sd">                                                   lib_directory        (str)          -- postgres lib location</span>
+<span class="sd">                                                   archive_log_directory (str)         -- postgres archive log location</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Instance class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if None value in mysql options</span>
+
+<span class="sd">                    if mysql instance with same name already exists</span>
+
+<span class="sd">                    if given storage policy does not exists in commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_instance</span><span class="p">(</span><span class="n">instance_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Instance &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">instance_name</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;postgres_password&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instanceProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">instance_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="s2">&quot;PostgreSQL&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span><span class="s2">&quot;10.0&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;postGreSQLInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;LibDirectory&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lib_directory&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;MaintainenceDB&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;maintenance_db&quot;</span><span class="p">,</span><span class="s2">&quot;postgres&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;port&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;port&quot;</span><span class="p">,</span><span class="s2">&quot;5432&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;ArchiveLogDirectory&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;archive_log_directory&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;BinaryDirectory&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;binary_directory&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;SAUser&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">password</span><span class="p">,</span>
+                        <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;postgres_user_name&quot;</span><span class="p">,</span><span class="s2">&quot;postgres&quot;</span><span class="p">)</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;logStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;storage_policy&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="p">},</span>
+
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_general_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the general properties json.&quot;&quot;&quot;</span>
@@ -1211,24 +1504,46 @@
 <span class="sd">            value = {</span>
 <span class="sd">                &quot;number_of_streams&quot;:1,</span>
 <span class="sd">                &quot;access_node&quot;:&quot;test&quot;,</span>
-<span class="sd">                &quot;storage_policy&quot;:&quot;policy1&quot;</span>
+<span class="sd">                &quot;storage_policy&quot;:&quot;policy1&quot;,</span>
+<span class="sd">                &quot;access_key&quot;: &quot;xxxxxx&quot;,</span>
+<span class="sd">                &quot;secret_key&quot;: &quot;xxxxxx&quot;</span>
 <span class="sd">            }</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_general_properties</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;numberOfBackupStreams&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;number_of_streams&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;proxyServers&quot;</span><span class="p">:</span> <span class="p">[</span>
-                <span class="p">{</span>
-                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;access_node&quot;</span><span class="p">)</span>
-                <span class="p">}</span>
-            <span class="p">],</span>
-            <span class="s2">&quot;storageDevice&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;storage_policy&quot;</span><span class="p">)</span>
+        <span class="n">supported_cloudapps_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;amazon_rds&quot;</span><span class="p">,</span> <span class="s2">&quot;amazon_redshift&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;amazon_docdb&quot;</span><span class="p">,</span> <span class="s2">&quot;amazon_dynamodb&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cloudapps_type&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">supported_cloudapps_type</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_general_properties</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;accessNodes&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;memberServers&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;access_node&quot;</span><span class="p">)</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;amazonInstanceInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;secretKey&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;secret_key&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;accessKey&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;access_key&quot;</span><span class="p">)</span>
                 <span class="p">}</span>
             <span class="p">}</span>
-        <span class="p">}</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_general_properties</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;numberOfBackupStreams&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;number_of_streams&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;proxyServers&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;access_node&quot;</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;storageDevice&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;storage_policy&quot;</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_instance_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1245,12 +1560,14 @@
 
 <span class="sd">        Example:</span>
 <span class="sd">            value = {</span>
-<span class="sd">                &quot;accesskey&quot; : &quot;AKIAJOMLRIFGP3FQUIKA&quot;</span>
-<span class="sd">                &quot;secretkey&quot; : &quot; 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&quot;</span>
+<span class="sd">                &quot;accesskey&quot; : &quot;xxxxxxxxx&quot;</span>
+<span class="sd">                &quot;secretkey&quot; : &quot;yyyyyyyy&quot;</span>
 <span class="sd">            }</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="n">supported_cloudapps_type</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;amazon_rds&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;amazon_redshift&quot;</span><span class="p">:</span> <span class="mi">26</span><span class="p">,</span>
+                                    <span class="s2">&quot;amazon_docdb&quot;</span><span class="p">:</span> <span class="mi">27</span><span class="p">,</span> <span class="s2">&quot;amazon_dynamodb&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_general_properties_json</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cloudapps_type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;s3&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_instance_properties</span> <span class="o">=</span> <span class="p">{</span>
@@ -1323,6 +1640,16 @@
                         <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;accountname&quot;</span><span class="p">),</span>
                         <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">accesskey</span>
                     <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;generalCloudProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_properties_json</span>
+            <span class="p">}</span>
+        <span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cloudapps_type&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">supported_cloudapps_type</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance_properties</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="n">supported_cloudapps_type</span><span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cloudapps_type&quot;</span><span class="p">)],</span>
+                <span class="s2">&quot;rdsInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;secretKey&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;secret_key&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;accessKey&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;access_key&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;regionEndPoints&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;generalCloudProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_properties_json</span>
             <span class="p">}</span>
@@ -1435,6 +1762,23 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_instance_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get the all instance related properties.</span>
+
+<span class="sd">           Returns:</span>
+<span class="sd">                dict - all instance properties put inside a dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instanceProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;isDeleted&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span>
+                <span class="s2">&quot;instanceActivityControl&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instanceActivityControl</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">instance_json</span>
 
     <span class="k">def</span> <span class="nf">_set_instance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;sets the properties of this sub client.value is updated to instance once when post call</span>
@@ -1726,13 +2070,7 @@
             <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">()</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">request_json</span><span class="p">,</span>
                                                              <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;schedule_pattern&#39;</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multinode_restore&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_of_streams&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;destinationInstance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_instance&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span>
-            <span class="p">}</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;noOfStreams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;no_of_streams&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multinode_restore&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_distributed_restore_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;client_type&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
@@ -1756,9 +2094,15 @@
                 <span class="p">}</span>
             <span class="p">}</span>
 
-            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;destination&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;distributedAppsRestoreOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distributed_restore_json</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;qrOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qr_restore_option</span>
+
+        <span class="k">if</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_appTypeId&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_qr_restore_option</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;destAppTypeId&quot;</span><span class="p">:</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_appTypeId&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;qrOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qr_restore_option</span>
 
         <span class="k">if</span> <span class="s2">&quot;sync_restore&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">:</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;syncOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sync_restore_json</span>
@@ -2306,6 +2650,11 @@
             <span class="s2">&quot;validateOnly&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;validate_only&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="p">}</span>
 
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_clone_script&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commonoption_restore_json</span><span class="p">[</span><span class="s1">&#39;prePostCloneOption&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;postCloneCmd&#39;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_clone_script&quot;</span><span class="p">)</span>
+            <span class="p">}</span>
+
         <span class="n">_advance_fs_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;restoreDataInsteadOfStub&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;restoreOnlyStubExists&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;overwriteFiles&quot;</span><span class="p">,</span>
@@ -2346,12 +2695,30 @@
                 <span class="p">}</span>
             <span class="p">}</span>
 
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multinode_restore&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_of_streams&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;destinationInstance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_instance&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span>
+            <span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;noOfStreams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;no_of_streams&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_restore_fileoption_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for  the fileoption restore option in restore JSON&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fileoption_restore_json</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;sourceItem&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;paths&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="s2">&quot;sourceItem&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">][</span><span class="s2">&quot;instant_clone_src_path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;paths&quot;</span><span class="p">,</span> <span class="p">[]),</span>
             <span class="s2">&quot;browseFilters&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;browse_filters&quot;</span><span class="p">,</span> <span class="p">[])</span>
         <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fileoption_restore_json</span><span class="p">[</span><span class="s2">&quot;fsCloneOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;reservationTime&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">][</span><span class="s2">&quot;reservation_time&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;cloneMountPath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">][</span><span class="s2">&quot;clone_mount_path&quot;</span><span class="p">]}</span>
+
+            <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clone_cleanup_script&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_fileoption_restore_json</span><span class="p">[</span><span class="s2">&quot;fsCloneOptions&quot;</span><span class="p">][</span><span class="s2">&quot;cloneCleanupOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;cleanupScriptPath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instant_clone_options&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clone_cleanup_script&quot;</span><span class="p">)</span>
+                <span class="p">}</span>
+
 
     <span class="k">def</span> <span class="nf">_restore_volume_rst_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for the volumeRst restore option in restore JSON&quot;&quot;&quot;</span>

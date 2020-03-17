@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.sqlsubclient &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.subclients.sqlsubclient &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -142,7 +142,7 @@
             
   <h1>Source code for cvpysdk.subclients.sqlsubclient</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="c1"># ————————————————————————–</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
 <span class="c1">#</span>
 <span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
@@ -156,7 +156,7 @@
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
-<span class="c1"># ————————————————————————–</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
 
 <span class="sd">&quot;&quot;&quot;File for operating on a SQL Server Subclient</span>
 
@@ -325,7 +325,9 @@
 <div class="viewcode-block" id="SQLServerSubclient.backup"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sqlsubclient.SQLServerSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;Differential&quot;</span><span class="p">,</span>
-            <span class="n">data_options</span><span class="o">=</span><span class="p">[]):</span>
+            <span class="n">data_options</span><span class="o">=</span><span class="p">[],</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs a backup job for the subclient of the level specified.</span>
 
 <span class="sd">            Args:</span>
@@ -347,8 +349,15 @@
 
 <span class="sd">                    default: []</span>
 
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
+
 <span class="sd">            Returns:</span>
-<span class="sd">                object - instance of the Job class for this backup job</span>
+<span class="sd">                object - instance of the Job class for this backup job if its an immediate Job</span>
+
+<span class="sd">                         instance of the Schedule class for the backup job if its a scheduled Job</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -358,104 +367,71 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">advanced_options</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">backup_level</span> <span class="o">=</span> <span class="n">backup_level</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;transaction_log&#39;</span><span class="p">,</span> <span class="s1">&#39;differential&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">data_options</span><span class="p">:</span>
-            <span class="n">invalid_full_data_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tail_log_backup&#39;</span><span class="p">,</span> <span class="s1">&#39;allow_diff_backup_on_read_only&#39;</span><span class="p">]</span>
-            <span class="n">invalid_transaction_log_data_opts</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="s1">&#39;start_log_backup_after_successfull_backup&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;allow_diff_backup_on_read_only&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;copy_only&#39;</span><span class="p">]</span>
-            <span class="n">invalid_differential_data_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tail_log_backup&#39;</span><span class="p">,</span> <span class="s1">&#39;copy_only&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">data_options</span> <span class="ow">or</span> <span class="n">schedule_pattern</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data_options</span><span class="p">:</span>
+                <span class="n">invalid_full_data_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tail_log_backup&#39;</span><span class="p">,</span> <span class="s1">&#39;allow_diff_backup_on_read_only&#39;</span><span class="p">]</span>
+                <span class="n">invalid_transaction_log_data_opts</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s1">&#39;start_log_backup_after_successfull_backup&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;allow_diff_backup_on_read_only&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;copy_only&#39;</span><span class="p">]</span>
+                <span class="n">invalid_differential_data_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tail_log_backup&#39;</span><span class="p">,</span> <span class="s1">&#39;copy_only&#39;</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="s1">&#39;checksum&#39;</span> <span class="ow">in</span> <span class="n">data_options</span> <span class="ow">and</span> <span class="s1">&#39;use_sql_compression&#39;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;checksum or use_sql_compression can be enabled , but not both&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span> <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_full_data_opts</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for full backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">invalid_full_data_opts</span><span class="p">))</span>
-            <span class="k">elif</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;transaction_log&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span>
-                                                           <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_transaction_log_data_opts</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for Transaction log backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">invalid_transaction_log_data_opts</span><span class="p">))</span>
-            <span class="k">elif</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;differential&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span>
-                                                        <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_differential_data_opts</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for full backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">invalid_differential_data_opts</span><span class="p">))</span>
+                <span class="k">if</span> <span class="s1">&#39;checksum&#39;</span> <span class="ow">in</span> <span class="n">data_options</span> <span class="ow">and</span> <span class="s1">&#39;use_sql_compression&#39;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;checksum or use_sql_compression can be enabled , but not both&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span> <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_full_data_opts</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for full backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">invalid_full_data_opts</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;transaction_log&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span>
+                                                               <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_transaction_log_data_opts</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for Transaction log backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">invalid_transaction_log_data_opts</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">backup_level</span> <span class="o">==</span> <span class="s1">&#39;differential&#39;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">option</span> <span class="ow">in</span> <span class="n">data_options</span>
+                                                            <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">invalid_differential_data_opts</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> are not applicable for full backup&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">invalid_differential_data_opts</span><span class="p">))</span>
 
-            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="p">{</span>
-                            <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclient_name</span><span class="p">,</span>
-                            <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">name</span>
-                        <span class="p">}</span>
-                    <span class="p">],</span>
-                    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                        <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-                        <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                    <span class="p">},</span>
-                    <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="p">{</span>
-                            <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                            <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-                                <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">2</span>
-                            <span class="p">},</span>
-                            <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                    <span class="s2">&quot;truncateLogsOnSource&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                    <span class="s2">&quot;sybaseSkipFullafterLogBkp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                    <span class="s2">&quot;notSynthesizeFullFromPrevBackup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                    <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="n">backup_level</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
-                                    <span class="s2">&quot;incLevel&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                                    <span class="s2">&quot;adHocBackup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                    <span class="s2">&quot;runIncrementalBackup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                    <span class="s2">&quot;doNotTruncateLog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                    <span class="s2">&quot;vsaBackupOptions&quot;</span><span class="p">:</span> <span class="p">{},</span>
-                                    <span class="s2">&quot;dataOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                        <span class="s2">&quot;enableIndexCheckPointing&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                        <span class="s2">&quot;verifySynthFull&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                                        <span class="s2">&quot;startLogBackupAfterSuccessfullBackup&quot;</span><span class="p">:</span>
-                                            <span class="s2">&quot;start_log_backup_after_successfull_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
-                                        <span class="s2">&quot;tailLogBackup&quot;</span><span class="p">:</span> <span class="s2">&quot;tail_log_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
-                                        <span class="s2">&quot;partailSqlBkp&quot;</span><span class="p">:</span> <span class="s2">&quot;partial_sql_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
-                                        <span class="s2">&quot;useSqlCompression&quot;</span><span class="p">:</span> <span class="s2">&quot;use_sql_compression&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
-                                        <span class="s2">&quot;useCatalogServer&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                        <span class="s2">&quot;enforceTransactionLogUsage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                        <span class="s2">&quot;copyOnly&quot;</span><span class="p">:</span> <span class="s2">&quot;copy_only&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
-                                        <span class="s2">&quot;skipConsistencyCheck&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                        <span class="s2">&quot;skipCatalogPhaseForSnapBackup&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                                        <span class="s2">&quot;runIntegrityCheck&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                        <span class="s2">&quot;checksum&quot;</span><span class="p">:</span> <span class="s2">&quot;checksum&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
-                                        <span class="s2">&quot;continueaftererror&quot;</span><span class="p">:</span> <span class="s2">&quot;continue_after_error&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
-                                        <span class="s2">&quot;allowDiffBackupOnReadOnly&quot;</span><span class="p">:</span> <span class="s2">&quot;allow_diff_backup_on_read_only&quot;</span> <span class="ow">in</span> <span class="n">data_options</span>
-                                    <span class="p">}</span>
-                                <span class="p">}</span>
-
-                            <span class="p">}</span>
-                        <span class="p">}</span>
-                    <span class="p">]</span>
+                <span class="n">advanced_options</span><span class="p">[</span><span class="s2">&quot;dataOpt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;enableIndexCheckPointing&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;verifySynthFull&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;startLogBackupAfterSuccessfullBackup&quot;</span><span class="p">:</span>
+                        <span class="s2">&quot;start_log_backup_after_successfull_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                    <span class="s2">&quot;tailLogBackup&quot;</span><span class="p">:</span> <span class="s2">&quot;tail_log_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                    <span class="s2">&quot;partailSqlBkp&quot;</span><span class="p">:</span> <span class="s2">&quot;partial_sql_backup&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                    <span class="s2">&quot;useSqlCompression&quot;</span><span class="p">:</span> <span class="s2">&quot;use_sql_compression&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                    <span class="s2">&quot;useCatalogServer&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;enforceTransactionLogUsage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;copyOnly&quot;</span><span class="p">:</span> <span class="s2">&quot;copy_only&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                    <span class="s2">&quot;skipConsistencyCheck&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;skipCatalogPhaseForSnapBackup&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;runIntegrityCheck&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;checksum&quot;</span><span class="p">:</span> <span class="s2">&quot;checksum&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                    <span class="s2">&quot;continueaftererror&quot;</span><span class="p">:</span> <span class="s2">&quot;continue_after_error&quot;</span> <span class="ow">in</span> <span class="n">data_options</span><span class="p">,</span>
+                    <span class="s2">&quot;allowDiffBackupOnReadOnly&quot;</span><span class="p">:</span> <span class="s2">&quot;allow_diff_backup_on_read_only&quot;</span> <span class="ow">in</span> <span class="n">data_options</span>
                 <span class="p">}</span>
-            <span class="p">}</span>
 
-            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SUBCLIENT_BACKUP&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">,</span> <span class="n">backup_level</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span>
+                <span class="n">backup_level</span><span class="p">,</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;BEFORE_SYNTH&quot;</span><span class="p">,</span>
+                <span class="n">advanced_options</span><span class="p">,</span>
+                <span class="n">schedule_pattern</span>
             <span class="p">)</span>
-            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">request_json</span>
-        <span class="p">)</span>
+            <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">,</span> <span class="n">request_json</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">SQLServerSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span>
+            <span class="n">backup_level</span><span class="o">=</span><span class="n">backup_level</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">mssql_subclient_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

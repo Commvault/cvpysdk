@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.oraclesubclient &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.subclients.oraclesubclient &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -196,7 +196,7 @@
 
 <span class="sd">    _get_oracle_restore_json            --  To get restore JSON for an oracle instance</span>
 
-<span class="sd">    _oracle_cumulative_backup_json      --  Get cumulative backup JSON for oracle instance</span>
+<span class="sd">    _oracle_backup_json                 --  Get backup JSON for oracle instance</span>
 
 <span class="sd">    is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient</span>
 
@@ -227,18 +227,34 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
         <span class="c1">#self._oracle_properties = {}</span>
 
-    <span class="k">def</span> <span class="nf">_oracle_cumulative_backup_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds oracle options to oracle backup</span>
+    <span class="k">def</span> <span class="nf">_oracle_backup_json</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">backup_level</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs a backup job for the subclient of the level specified.</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            dict    -- dict containing request JSON</span>
+<span class="sd">            Args:</span>
+<span class="sd">                backup_level            (str)   --  level of backup the user wish to run</span>
+<span class="sd">                                                    Full / Incremental</span>
+
+<span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -- dict containing request JSON</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">oracle_options</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;oracleOptions&quot;</span><span class="p">:</span> <span class="p">{}</span>
         <span class="p">}</span>
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span><span class="n">InstanceBackupType</span><span class="o">.</span><span class="n">CUMULATIVE</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;BEFORE SYNTH&quot;</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_json</span><span class="p">(</span>
+            <span class="n">backup_level</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;BEFORE_SYNTH&quot;</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span>
+        <span class="p">)</span>
 
         <span class="c1"># Add option to run RMAN cumulatives</span>
         <span class="n">oracle_options</span><span class="p">[</span><span class="s2">&quot;oracleOptions&quot;</span><span class="p">][</span><span class="s2">&quot;cumulative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -497,17 +513,31 @@
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;&#39;</span><span class="si">{0}</span><span class="s2">&#39; object has no attribute &#39;</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;find&#39;</span><span class="p">))</span>
 
-<div class="viewcode-block" id="OracleSubclient.backup"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_level</span><span class="o">=</span><span class="n">InstanceBackupType</span><span class="o">.</span><span class="n">FULL</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">cumulative</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="OracleSubclient.backup"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">backup_level</span><span class="o">=</span><span class="n">InstanceBackupType</span><span class="o">.</span><span class="n">FULL</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="n">cumulative</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Args:</span>
+
+<span class="sd">            backup_level            (str)   --  level of backup the user wish to run</span>
+<span class="sd">                                                Full / Incremental</span>
+<span class="sd">                                                    default: Full</span>
+
 <span class="sd">            cumulative (Bool) -- True if cumulative backup is required</span>
-<span class="sd">                default: False</span>
-<span class="sd">            backup_level (str)  -- Level of backup. Can be full or incremental</span>
-<span class="sd">                default: full</span>
+<span class="sd">                                    default: False</span>
+
+<span class="sd">            schedule_pattern (dict) -- scheduling options to be included for the task</span>
+
+<span class="sd">                        Please refer schedules.schedulePattern.createSchedule()</span>
+<span class="sd">                                                                    doc for the types of Jsons</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            object -- instance of Job class</span>
+<span class="sd">            object - instance of the Job class for this backup job if its an immediate Job</span>
+
+<span class="sd">                     instance of the Schedule class for the backup job if its a scheduled Job</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            SDKException:</span>
@@ -521,10 +551,15 @@
         <span class="k">if</span> <span class="n">backup_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;incremental&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">cumulative</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">cumulative</span> <span class="ow">or</span> <span class="n">schedule_pattern</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">OracleSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="n">backup_level</span><span class="p">)</span>
 
-        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_cumulative_backup_json</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">cumulative</span><span class="p">:</span>
+            <span class="n">backup_level</span> <span class="o">=</span> <span class="n">InstanceBackupType</span><span class="o">.</span><span class="n">CUMULATIVE</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_backup_json</span><span class="p">(</span>
+            <span class="n">backup_level</span><span class="p">,</span>
+            <span class="n">schedule_pattern</span>
+        <span class="p">)</span>
         <span class="n">backup_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">,</span> <span class="n">request_json</span>

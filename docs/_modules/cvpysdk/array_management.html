@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.array_management &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.array_management &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -191,7 +191,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-
+<span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 
@@ -403,7 +403,7 @@
 
 <span class="sd">                    control_host        (str)               -- control host of the array</span>
 
-<span class="sd">                    array_access_node    (str)              -- Array Access Node MediaAgent Name</span>
+<span class="sd">                    array_access_node   (list)              -- Array Access Node MediaAgent&#39;s Name list</span>
 
 <span class="sd">                    is_ocum             (bool)              -- used for netapp to specify whether</span>
 <span class="sd">                                                               to use Primary file server or OCUM</span>
@@ -413,20 +413,16 @@
 <span class="sd">                errorMessage   (string) :  Error message</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">array_access_node</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
-        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;assocType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;copyId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;appId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;selectedMAs&quot;</span><span class="p">:[</span>
-                <span class="p">{</span>
+        <span class="n">selectedMAs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">array_access_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">array_access_node</span><span class="p">:</span>
+                <span class="n">client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+                <span class="n">node_dict</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="s2">&quot;arrayControllerId&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
                     <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:{</span>
-                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">array_access_node</span><span class="p">,</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">node</span><span class="p">,</span>
                         <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">client_id</span>
-                    <span class="p">},</span>
+                        <span class="p">},</span>
                     <span class="s2">&quot;arrCtrlOptions&quot;</span><span class="p">:[</span>
                         <span class="p">{</span>
                             <span class="s2">&quot;isEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
@@ -437,7 +433,15 @@
                         <span class="p">}</span>
                     <span class="p">]</span>
                 <span class="p">}</span>
-            <span class="p">],</span>
+                <span class="n">selectedMAs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_dict</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;assocType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;copyId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;appId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;selectedMAs&quot;</span><span class="p">:</span><span class="n">selectedMAs</span><span class="p">,</span>
             <span class="s2">&quot;hostDG&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;doNotMoveDevices&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="s2">&quot;isOverridden&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
@@ -561,19 +565,15 @@
 
 <div class="viewcode-block" id="ArrayManagement.edit_array"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.array_management.ArrayManagement.edit_array">[docs]</a>    <span class="k">def</span> <span class="nf">edit_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                    <span class="n">control_host_id</span><span class="p">,</span>
-                   <span class="n">master_config_id</span><span class="p">,</span>
-                   <span class="n">value</span><span class="p">,</span>
+                   <span class="n">config_data</span><span class="p">,</span>
                    <span class="n">config_update_level</span><span class="p">,</span>
                    <span class="n">level_id</span><span class="p">,</span>
-                   <span class="n">array_access_node</span><span class="p">,</span>
-                   <span class="n">mode</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Method to Update Snap Configuration and Array controllers for the Array</span>
+                   <span class="n">array_access_node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to Update Snap Configuration and Array access nodes for the given Array</span>
 <span class="sd">        Args:</span>
 <span class="sd">            control_host_id        (int)        -- Control Host Id of the Array</span>
 
-<span class="sd">            master_config_id       (int)        -- Master config Id of Snap config</span>
-
-<span class="sd">            value                  (str)        -- Value to Update</span>
+<span class="sd">            Config_data            (dict)       -- Master config Id and the config value in dict format</span>
 
 <span class="sd">            config_update_level    (str)        -- update level for the Snap config</span>
 <span class="sd">            ex: &quot;array&quot;, &quot;subclient&quot;, &quot;copy&quot;, &quot;client&quot;</span>
@@ -581,13 +581,11 @@
 <span class="sd">            level_id               (int)        -- level Id where the config needs to be</span>
 <span class="sd">                                                   added/updated</span>
 
-<span class="sd">            array_access_node       (str)        -- Array Access Node MA</span>
+<span class="sd">            array_access_node      (dict)       -- Array Access Node MA&#39;s in dict format with</span>
+<span class="sd">                                                   operation mode</span>
 <span class="sd">            default: None</span>
+<span class="sd">            Ex: {&quot;snapautotest3&quot; : &quot;add&quot;, &quot;linuxautomation1&quot; : &quot;add&quot;, &quot;snapautofc1&quot; : &quot;delete&quot;}</span>
 
-<span class="sd">            mode                    (str)       -- Operation type for the Array Access Node whether</span>
-<span class="sd">                                                   to add or remove</span>
-<span class="sd">            default: add</span>
-<span class="sd">            values: add, remove</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">copy_level_id</span> <span class="o">=</span> <span class="n">app_level_id</span> <span class="o">=</span> <span class="n">client_level_id</span> <span class="o">=</span> <span class="mi">0</span>
@@ -622,62 +620,100 @@
             <span class="p">}</span>
         <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">update_dict</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">master_config_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;configList&#39;</span><span class="p">][</span><span class="s1">&#39;configList&#39;</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;masterConfigId&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">master_config_id</span><span class="p">):</span>
-                    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">config_update_level</span> <span class="o">!=</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
-                        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;isOverridden&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">config_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">config_data</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">m_config</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;configList&#39;</span><span class="p">][</span><span class="s1">&#39;configList&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;masterConfigId&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">m_config</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="k">for</span> <span class="n">alias</span><span class="p">,</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
+                                    <span class="n">config_values_dict</span> <span class="o">=</span> <span class="p">{</span>
+                                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">alias</span><span class="p">),</span>
+                                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                                        <span class="p">}</span>
+                                    <span class="n">aliasPresent</span> <span class="o">=</span> <span class="kc">False</span>
+                                    <span class="k">for</span> <span class="n">alias_name</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">]:</span>
+                                        <span class="k">if</span> <span class="n">alias_name</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">alias</span><span class="p">:</span>
+                                            <span class="n">aliasPresent</span> <span class="o">=</span> <span class="kc">True</span>
+                                    <span class="k">if</span> <span class="ow">not</span> <span class="n">aliasPresent</span><span class="p">:</span>
+                                        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_values_dict</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;add&quot;</span> <span class="ow">and</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;delete&quot;</span><span class="p">:</span>
+                                    <span class="k">for</span> <span class="n">alias_name</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">]:</span>
+                                        <span class="k">if</span> <span class="n">alias_name</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">mode</span><span class="p">:</span>
+                                            <span class="n">alias_name</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alias</span>
+                                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;delete&quot;</span><span class="p">:</span>
+                                    <span class="k">for</span> <span class="n">alias_name</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">])):</span>
+                                        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">][</span><span class="n">alias_name</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">alias</span><span class="p">:</span>
+                                            <span class="k">del</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">][</span><span class="n">alias_name</span><span class="p">]</span>
+                                            <span class="k">break</span>
+                            <span class="k">if</span> <span class="n">config_update_level</span> <span class="o">!=</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+                                <span class="n">config</span><span class="p">[</span><span class="s1">&#39;isOverridden&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="k">if</span> <span class="n">array_access_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
-            <span class="n">client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">array_access_node</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s2">&quot;selectedMAs&quot;</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">:</span>
-                <span class="n">update_dict</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;arrayControllerId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                    <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">array_access_node</span><span class="p">,</span>
-                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">client_id</span>
-                    <span class="p">},</span>
-                    <span class="s2">&quot;arrCtrlOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="p">{</span>
-                            <span class="s2">&quot;isEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                            <span class="s2">&quot;arrCtrlOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Pruning&quot;</span><span class="p">,</span>
-                                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">262144</span>
-                            <span class="p">}</span>
-                        <span class="p">}</span>
-                    <span class="p">]</span>
-                <span class="p">}</span>
-                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">update_dict</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">update_dict</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;selectedMAs&quot;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="p">{</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">config_update_level</span> <span class="o">!=</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+                                <span class="n">config</span><span class="p">[</span><span class="s1">&#39;isOverridden&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">array_access_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">array_access_node</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">access_node</span><span class="p">,</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">z</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">access_node</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s2">&quot;selectedMAs&quot;</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">:</span>
+                        <span class="n">update_dict</span> <span class="o">=</span> <span class="p">{</span>
                             <span class="s2">&quot;arrayControllerId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
                             <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">array_access_node</span><span class="p">,</span>
+                                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">access_node</span><span class="p">,</span>
                                 <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">client_id</span>
-                            <span class="p">},</span>
+                                <span class="p">},</span>
                             <span class="s2">&quot;arrCtrlOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
                                 <span class="p">{</span>
                                     <span class="s2">&quot;isEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                                     <span class="s2">&quot;arrCtrlOption&quot;</span><span class="p">:</span> <span class="p">{</span>
                                         <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Pruning&quot;</span><span class="p">,</span>
                                         <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">262144</span>
+                                        <span class="p">}</span>
                                     <span class="p">}</span>
-                                <span class="p">}</span>
-                            <span class="p">]</span>
-                        <span class="p">}</span>
-                    <span class="p">]}</span>
-                <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">update_dict</span><span class="p">)</span>
+                                <span class="p">]</span>
+                            <span class="p">}</span>
+                        <span class="n">isNodePresent</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">for</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;mediaAgent&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">client_id</span><span class="p">):</span>
 
-        <span class="k">elif</span> <span class="n">array_access_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;remove&quot;</span><span class="p">:</span>
-            <span class="n">client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">array_access_node</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s2">&quot;selectedMAs&quot;</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">controller</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">])):</span>
-                    <span class="k">if</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">][</span><span class="n">controller</span><span class="p">][</span><span class="s1">&#39;mediaAgent&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">client_id</span><span class="p">):</span>
-                        <span class="k">del</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">][</span><span class="n">controller</span><span class="p">]</span>
-                        <span class="k">break</span>
+                                <span class="n">isNodePresent</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">isNodePresent</span><span class="p">:</span>
+                            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">update_dict</span><span class="p">)</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">update_dict</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;selectedMAs&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;arrayControllerId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                    <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">access_node</span><span class="p">,</span>
+                                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">client_id</span>
+                                    <span class="p">},</span>
+                                    <span class="s2">&quot;arrCtrlOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                        <span class="p">{</span>
+                                            <span class="s2">&quot;isEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                            <span class="s2">&quot;arrCtrlOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Pruning&quot;</span><span class="p">,</span>
+                                                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">262144</span>
+                                            <span class="p">}</span>
+                                        <span class="p">}</span>
+                                    <span class="p">]</span>
+                                <span class="p">}</span>
+                            <span class="p">]}</span>
+                        <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">update_dict</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;delete&quot;</span><span class="p">:</span>
+                    <span class="n">client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">access_node</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s2">&quot;selectedMAs&quot;</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">controller</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">])):</span>
+                            <span class="k">if</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">][</span><span class="n">controller</span><span class="p">][</span><span class="s1">&#39;mediaAgent&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">client_id</span><span class="p">):</span>
+                                <span class="k">del</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;selectedMAs&#39;</span><span class="p">][</span><span class="n">controller</span><span class="p">]</span>
+                                <span class="k">break</span>
 
         <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;configs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">request_json</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;configList&#39;</span><span class="p">)</span>
 
