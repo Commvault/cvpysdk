@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.organization &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.organization &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -249,6 +249,10 @@
 
 <span class="sd">    deactivate()                --  To deactivate the organization</span>
 
+<span class="sd">    enable_auto_discover()      --  Enable autodiscover option for the oraganization</span>
+
+<span class="sd">    disable_auto_discover()      --  Diable autodiscover option for the oraganization</span>
+
 <span class="sd">Organization Attributes</span>
 <span class="sd">-----------------------</span>
 
@@ -286,9 +290,11 @@
 <span class="sd">        **plans = [&#39;plan1&#39;,</span>
 <span class="sd">        &#39;plan2&#39;]**                  --  update the list of plans associated with the organization</span>
 
-<span class="sd">        **operator_role**	    	 -- returns the operator role assigned to an user</span>
+<span class="sd">        **operator_role**             -- returns the operator role assigned to an user</span>
 
-<span class="sd">        **tenant_operator**			 -- returns the operators associated with the organization</span>
+<span class="sd">        **tenant_operator**             -- returns the operators associated with the organization</span>
+
+<span class="sd">         **is_auto_discover_enabled**-- returns the autodiscover option for the Organization</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -455,7 +461,8 @@
             <span class="n">company_alias</span><span class="p">,</span>
             <span class="n">email_domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">primary_domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">default_plans</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">default_plans</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">enable_auto_discover</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new organization with the given name to the Commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -552,6 +559,7 @@
                     <span class="p">}</span>
                 <span class="p">},</span>
                 <span class="s1">&#39;organizationProperties&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">:</span> <span class="n">enable_auto_discover</span><span class="p">,</span>
                     <span class="s1">&#39;primaryDomain&#39;</span><span class="p">:</span> <span class="n">primary_domain</span><span class="p">,</span>
                     <span class="s1">&#39;primaryContacts&#39;</span><span class="p">:</span> <span class="p">[</span>
                         <span class="p">{</span>
@@ -664,7 +672,6 @@
 <div class="viewcode-block" id="Organizations.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organizations.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the list of organizations associated to the Commcell.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_organizations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_organizations</span><span class="p">()</span></div></div>
-
 
 <div class="viewcode-block" id="Organization"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization">[docs]</a><span class="k">class</span> <span class="nc">Organization</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for performing operations on an Organization.&quot;&quot;&quot;</span>
@@ -894,6 +901,30 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_auth_code_enabled</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_auto_discover_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns boolen whether organization autodiscover attribute enabled for this organization.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;organizationProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shared_laptop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns boolean whether Shared Laptop Usage is enabled for this Organization or not.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_organization_info</span><span class="p">[</span><span class="s1">&#39;organizationProperties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preferenceMachineCentricClient&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="nd">@shared_laptop</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">shared_laptop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets Shared Laptop Usage for this Organization</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        value (bool): True/False</span>
+<span class="sd">            False: Enable Shared Laptop usage</span>
+<span class="sd">            True: Disable Shared Laptop usage</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">({</span><span class="s1">&#39;preferenceMachineCentricClient&#39;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">value</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">machine_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the count of machines added to this Organization.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_machine_count</span>
@@ -1120,7 +1151,7 @@
         <span class="sd">&quot;&quot;&quot;Update the local user_group as tenant operator of the company</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            user_group_list		(list)  -- user group list</span>
+<span class="sd">            user_group_list        (list)  -- user group list</span>
 
 <span class="sd">            request_type        (str)   --  decides whether to UPDATE, DELETE or OVERWRITE user_group</span>
 <span class="sd">            security association</span>
@@ -1152,7 +1183,7 @@
         <span class="sd">&quot;&quot;&quot;Update the local user as tenant operator of the company</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            user_list		(list) -- list of users</span>
+<span class="sd">            user_list        (list) -- list of users</span>
 
 <span class="sd">            request_type    (Str)  --  decides whether to UPDATE, DELETE or</span>
 <span class="sd">                                       OVERWRITE user security association</span>
@@ -1299,7 +1330,27 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Organization.enable_auto_discover"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.enable_auto_discover">[docs]</a>    <span class="k">def</span> <span class="nf">enable_auto_discover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables autodiscover at company level..</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update enableAutoDiscovery property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">({</span><span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Organization.disable_auto_discover"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.disable_auto_discover">[docs]</a>    <span class="k">def</span> <span class="nf">disable_auto_discover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables autodiscover at company level..</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update enableAutoDiscovery property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">({</span><span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span></div></div>
 </pre></div>
 
            </div>

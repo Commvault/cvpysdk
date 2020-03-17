@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.reports package &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.reports package &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -81,9 +81,8 @@
               <!-- Local TOC -->
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">cvpysdk.reports package</a><ul>
-<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-cvpysdk.reports.backup_job_summary">cvpysdk.reports.backup_job_summary module</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.reports.report">cvpysdk.reports.report module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.reports">Module contents</a></li>
 </ul>
 </li>
@@ -153,78 +152,169 @@
             
   <div class="section" id="cvpysdk-reports-package">
 <h1>cvpysdk.reports package<a class="headerlink" href="#cvpysdk-reports-package" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="subpackages">
-<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-</div>
-</div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-cvpysdk.reports.backup_job_summary">
-<span id="cvpysdk-reports-backup-job-summary-module"></span><h2>cvpysdk.reports.backup_job_summary module<a class="headerlink" href="#module-cvpysdk.reports.backup_job_summary" title="Permalink to this headline">¶</a></h2>
-<p>Module for performing operations on Job Summary for Reports</p>
+<div class="section" id="module-cvpysdk.reports.report">
+<span id="cvpysdk-reports-report-module"></span><h2>cvpysdk.reports.report module<a class="headerlink" href="#module-cvpysdk.reports.report" title="Permalink to this headline">¶</a></h2>
+<p>Module for performing operations on classic Reports.</p>
+<p>Report              :  Class for selecting different options on report and generate the report.
+BackupJobSummary    :  Generate backup job summary report.
+FormatType          :  Use this Enum class to provide different file extension.</p>
+<p>Report:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>__init__(commcell_object)                   –  Initialize the Report instance for the</dt><dd><p>commcell</p>
+</dd>
+</dl>
+<p>backup_job_summary()                        –  Returns backup job summary instance</p>
+<dl class="simple">
+<dt>set_format(format_type)                     –  sets specified file extension for the report</dt><dd><p>to be generated</p>
+</dd>
+<dt>select_local_drive(report_copy_location, client_name) –  Selects local drive as report generation</dt><dd><p>location for specified client</p>
+</dd>
+</dl>
+<p>select_network_share()                      –  select network share as location</p>
+<p>set_report_custom_name(name)                –  sets custom report name</p>
+<p>run_report()                                –  Generates the report</p>
+</div></blockquote>
+<p>BackupJobSummary:</p>
+<blockquote>
+<div><p>__init__(commcell_object)                   –  Initialize the backup job summary report object</p>
+<blockquote>
+<div><p>select_protected_objects()                  –  Select protected object option</p>
+<p>set_last_hours(hours)                       –  Jobs to be included since n hours</p>
+<p>set_last_days(hours)                        –  Jobs to be included since n days</p>
+<p>select_computers(clients, client_groups)    –  select specific clients and clientgroups</p>
+</div></blockquote>
+</div></blockquote>
 <dl class="class">
-<dt id="cvpysdk.reports.backup_job_summary.FormatType">
-<em class="property">class </em><code class="descclassname">cvpysdk.reports.backup_job_summary.</code><code class="descname">FormatType</code><a class="reference internal" href="../_modules/cvpysdk/reports/backup_job_summary.html#FormatType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.FormatType" title="Permalink to this definition">¶</a></dt>
+<dt id="cvpysdk.reports.report.BackupJobSummary">
+<em class="property">class </em><code class="sig-prename descclassname">cvpysdk.reports.report.</code><code class="sig-name descname">BackupJobSummary</code><span class="sig-paren">(</span><em class="sig-param">commcell_object</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#BackupJobSummary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.BackupJobSummary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#cvpysdk.reports.report.Report" title="cvpysdk.reports.report.Report"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.reports.report.Report</span></code></a></p>
+<p>Operations on backup job summary report</p>
+<dl class="method">
+<dt id="cvpysdk.reports.report.BackupJobSummary.select_computers">
+<code class="sig-name descname">select_computers</code><span class="sig-paren">(</span><em class="sig-param">clients=None</em>, <em class="sig-param">client_groups=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#BackupJobSummary.select_computers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.BackupJobSummary.select_computers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select clients and client groups for generating the report
+Args:</p>
+<blockquote>
+<div><p>clients           (List)    –  List of clients
+client_groups     (List)    –  List of client groups</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.reports.report.BackupJobSummary.select_protected_objects">
+<code class="sig-name descname">select_protected_objects</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#BackupJobSummary.select_protected_objects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.BackupJobSummary.select_protected_objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>select protected objects</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.reports.report.BackupJobSummary.set_last_days">
+<code class="sig-name descname">set_last_days</code><span class="sig-paren">(</span><em class="sig-param">number_of_days=24</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#BackupJobSummary.set_last_days"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.BackupJobSummary.set_last_days" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set time range to generate report since n number of days
+Args:</p>
+<blockquote>
+<div><p>number_of_hours     (Int)    –  number of hours</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.reports.report.BackupJobSummary.set_last_hours">
+<code class="sig-name descname">set_last_hours</code><span class="sig-paren">(</span><em class="sig-param">number_of_hours=24</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#BackupJobSummary.set_last_hours"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.BackupJobSummary.set_last_hours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set time range to generate report since n number of hours
+Args:</p>
+<blockquote>
+<div><p>number_of_hours     (Int)    –  number of hours</p>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cvpysdk.reports.report.FormatType">
+<em class="property">class </em><code class="sig-prename descclassname">cvpysdk.reports.report.</code><code class="sig-name descname">FormatType</code><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#FormatType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.FormatType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
 <p>Types of output format</p>
 <dl class="attribute">
-<dt id="cvpysdk.reports.backup_job_summary.FormatType.HTML">
-<code class="descname">HTML</code><em class="property"> = 1</em><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.FormatType.HTML" title="Permalink to this definition">¶</a></dt>
+<dt id="cvpysdk.reports.report.FormatType.HTML">
+<code class="sig-name descname">HTML</code><em class="property"> = 1</em><a class="headerlink" href="#cvpysdk.reports.report.FormatType.HTML" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="cvpysdk.reports.backup_job_summary.FormatType.PDF">
-<code class="descname">PDF</code><em class="property"> = 6</em><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.FormatType.PDF" title="Permalink to this definition">¶</a></dt>
+<dt id="cvpysdk.reports.report.FormatType.PDF">
+<code class="sig-name descname">PDF</code><em class="property"> = 6</em><a class="headerlink" href="#cvpysdk.reports.report.FormatType.PDF" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="cvpysdk.reports.backup_job_summary.FormatType.TEXT">
-<code class="descname">TEXT</code><em class="property"> = 2</em><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.FormatType.TEXT" title="Permalink to this definition">¶</a></dt>
+<dt id="cvpysdk.reports.report.FormatType.TEXT">
+<code class="sig-name descname">TEXT</code><em class="property"> = 2</em><a class="headerlink" href="#cvpysdk.reports.report.FormatType.TEXT" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="cvpysdk.reports.backup_job_summary.FormatType.XML">
-<code class="descname">XML</code><em class="property"> = 12</em><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.FormatType.XML" title="Permalink to this definition">¶</a></dt>
+<dt id="cvpysdk.reports.report.FormatType.XML">
+<code class="sig-name descname">XML</code><em class="property"> = 12</em><a class="headerlink" href="#cvpysdk.reports.report.FormatType.XML" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="cvpysdk.reports.backup_job_summary.Report">
-<em class="property">class </em><code class="descclassname">cvpysdk.reports.backup_job_summary.</code><code class="descname">Report</code><span class="sig-paren">(</span><em>commcell</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/backup_job_summary.html#Report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.Report" title="Permalink to this definition">¶</a></dt>
+<dt id="cvpysdk.reports.report.Report">
+<em class="property">class </em><code class="sig-prename descclassname">cvpysdk.reports.report.</code><code class="sig-name descname">Report</code><span class="sig-paren">(</span><em class="sig-param">commcell</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#Report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.Report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Class for building a backup job summary report</p>
+<p>Operations on classic report</p>
 <dl class="method">
-<dt id="cvpysdk.reports.backup_job_summary.Report.export_report">
-<code class="descname">export_report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/backup_job_summary.html#Report.export_report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.Report.export_report" title="Permalink to this definition">¶</a></dt>
-<dd><p>Executes the backup job summary report</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>str: Job ID</p>
-</dd>
-</dl>
+<dt id="cvpysdk.reports.report.Report.backup_job_summary">
+<em class="property">property </em><code class="sig-name descname">backup_job_summary</code><a class="headerlink" href="#cvpysdk.reports.report.Report.backup_job_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns object of backup job summary report</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="cvpysdk.reports.backup_job_summary.Report.set_format">
-<code class="descname">set_format</code><span class="sig-paren">(</span><em>format_type</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/backup_job_summary.html#Report.set_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.Report.set_format" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the output format of a report</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>format_type (FormatType): Report format type</p>
-</dd>
-</dl>
+<dt id="cvpysdk.reports.report.Report.run_report">
+<code class="sig-name descname">run_report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#Report.run_report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.Report.run_report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the report
+Returns:</p>
+<blockquote>
+<div><p>str: Job ID</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="method">
-<dt id="cvpysdk.reports.backup_job_summary.Report.set_local_path">
-<code class="descname">set_local_path</code><span class="sig-paren">(</span><em>report_save_path</em>, <em>client_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/backup_job_summary.html#Report.set_local_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.backup_job_summary.Report.set_local_path" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the Client and the path for the report to be saved on</p>
-<dl>
-<dt>Args:</dt><dd><p>report_save_path: Report copy location of the backup job summary</p>
-<p>client_name: Name of the client to copy the report summary on</p>
-</dd>
-</dl>
+<dt id="cvpysdk.reports.report.Report.select_local_drive">
+<code class="sig-name descname">select_local_drive</code><span class="sig-paren">(</span><em class="sig-param">report_copy_location</em>, <em class="sig-param">client_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#Report.select_local_drive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.Report.select_local_drive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select local drive
+Args:</p>
+<blockquote>
+<div><p>client_name          (String)        –       Name of the client
+report_copy_location (String)        –       location where report need to be saved</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.reports.report.Report.select_network_share">
+<code class="sig-name descname">select_network_share</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#Report.select_network_share"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.Report.select_network_share" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select network share</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.reports.report.Report.set_format">
+<code class="sig-name descname">set_format</code><span class="sig-paren">(</span><em class="sig-param">format_type</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#Report.set_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.Report.set_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the output format of a report
+Args:</p>
+<blockquote>
+<div><p>format_type (FormatType): set file extension using Enum class FormatType</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.reports.report.Report.set_report_custom_name">
+<code class="sig-name descname">set_report_custom_name</code><span class="sig-paren">(</span><em class="sig-param">name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/reports/report.html#Report.set_report_custom_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.reports.report.Report.set_report_custom_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets report custom name
+Args:</p>
+<blockquote>
+<div><p>name(String)               –       Custom name of the report</p>
+</div></blockquote>
 </dd></dl>
 
 </dd></dl>
@@ -232,6 +322,7 @@
 </div>
 <div class="section" id="module-cvpysdk.reports">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cvpysdk.reports" title="Permalink to this headline">¶</a></h2>
+<p>Initialize Reports for the SDK.</p>
 </div>
 </div>
 

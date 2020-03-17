@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.virtualserver.amazon &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.instances.virtualserver.amazon &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -194,6 +194,7 @@
 
         <span class="nb">super</span><span class="p">(</span><span class="n">AmazonInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_instance_properties</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_tenant_instance_properties</span><span class="p">()</span>
         <span class="k">if</span> <span class="s1">&#39;virtualServerInstance&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
             <span class="n">_member_servers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;virtualServerInstance&quot;</span><span class="p">]</span> \
                 <span class="p">[</span><span class="s2">&quot;associatedClients&quot;</span><span class="p">][</span><span class="s2">&quot;memberServers&quot;</span><span class="p">]</span>
@@ -232,7 +233,32 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">server_host_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getter for the domain name in the AWS vendor json&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server_name</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_tenant_instance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the properties if the client is Tenant</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;virtualServerInstance&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;virtualServerInstance&#39;</span><span class="p">][</span><span class="s1">&#39;amazonInstanceInfo&#39;</span><span class="p">][</span><span class="s1">&#39;enableAdminAccount&#39;</span><span class="p">]:</span>
+                <span class="n">admin_ins_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;virtualServerInstance&#39;</span><span class="p">][</span><span class="s1">&#39;amazonInstanceInfo&#39;</span><span class="p">][</span><span class="s1">&#39;adminInstanceId&#39;</span><span class="p">]</span>
+                <span class="n">_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INSTANCE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">admin_ins_id</span><span class="p">)</span>
+                <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">_instance</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">&quot;instanceProperties&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_admin_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;instanceProperties&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="s1">&#39;virtualServerInstance&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_admin_properties</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_asscociatedclients</span> <span class="o">=</span> <span class="kc">None</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;virtualServerInstance&#39;</span><span class="p">][</span><span class="s1">&#39;associatedClients&#39;</span><span class="p">]</span> <span class="o">=</span>\
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_admin_properties</span><span class="p">[</span><span class="s1">&#39;virtualServerInstance&#39;</span><span class="p">][</span><span class="s1">&#39;associatedClients&#39;</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_virtualserverinstance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;virtualServerInstance&quot;</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_vsinstancetype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_virtualserverinstance</span><span class="p">[</span><span class="s1">&#39;vsInstanceType&#39;</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_asscociatedclients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_virtualserverinstance</span><span class="p">[</span><span class="s1">&#39;associatedClients&#39;</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 </pre></div>
 
            </div>

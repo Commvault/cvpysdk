@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.job &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.job &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -404,6 +404,21 @@
 
 <span class="sd">**job.state**                       -- returns the current state of the job.</span>
 
+<span class="sd">ErrorRule</span>
+<span class="sd">=========</span>
+
+<span class="sd">    _get_xml_for_rule()             --  Returns the XML for a given rule&#39;s dictionary of key value pairs.</span>
+
+<span class="sd">    add_error_rule()                --  Add new error rules as well as update existing rules.</span>
+
+<span class="sd">    _modify_job_status_on_errors()  --  Internally used to enable or disable job status on errors.</span>
+
+<span class="sd">    enable()                        --  Enable an error rule for a specific iDA using _modify_job_status_on_errors.</span>
+
+<span class="sd">    disable()                       --  Disable an error rule for a specific iDA using _modify_job_status_on_errors.</span>
+
+<span class="sd">    _modify_job_status_on_errors()  --  To enable or disable job status on errors.</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
@@ -592,6 +607,7 @@
                                     <span class="n">status</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
                                     <span class="n">operation</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;localizedOperationName&#39;</span><span class="p">]</span>
                                     <span class="n">percent_complete</span> <span class="o">=</span> <span class="n">job_summary</span><span class="p">[</span><span class="s1">&#39;percentComplete&#39;</span><span class="p">]</span>
+                                    <span class="n">backup_level</span> <span class="o">=</span> <span class="n">job_summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupLevelName&#39;</span><span class="p">)</span>
 
                                     <span class="n">app_type</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
                                     <span class="n">job_type</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -619,7 +635,8 @@
                                         <span class="s1">&#39;job_type&#39;</span><span class="p">:</span> <span class="n">job_type</span><span class="p">,</span>
                                         <span class="s1">&#39;percent_complete&#39;</span><span class="p">:</span> <span class="n">percent_complete</span><span class="p">,</span>
                                         <span class="s1">&#39;pending_reason&#39;</span><span class="p">:</span> <span class="n">pending_reason</span><span class="p">,</span>
-                                        <span class="s1">&#39;subclient_id&#39;</span><span class="p">:</span> <span class="n">subclient_id</span>
+                                        <span class="s1">&#39;subclient_id&#39;</span><span class="p">:</span> <span class="n">subclient_id</span><span class="p">,</span>
+                                        <span class="s1">&#39;backup_level&#39;</span><span class="p">:</span> <span class="n">backup_level</span>
                                     <span class="p">}</span>
 
                     <span class="k">return</span> <span class="n">jobs_dict</span>
@@ -990,7 +1007,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_comcell</span> <span class="o">=</span> <span class="n">commcell_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_service</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;JOB_MANAGEMENT_SETTINGS&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_error_rules</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">error_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span>  <span class="bp">self</span><span class="o">.</span><span class="n">_error_rules</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_error_rules</span> <span class="o">=</span> <span class="n">_ErrorRule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_comcell</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_error_rules</span>
 
     <span class="k">def</span> <span class="nf">_set_jobmanagement_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1979,7 +2003,19 @@
 <span class="sd">                Returns:    (dict)    --  The update settings.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_settings</span>
+
+<div class="viewcode-block" id="JobManagement.set_job_error_threshold"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement.set_job_error_threshold">[docs]</a>    <span class="k">def</span> <span class="nf">set_job_error_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_threshold_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            error_threshold_dict  (dict)  :   A dictionary of following  key/value pairs can be set.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Yet To Be Implemented&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="Job"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.Job">[docs]</a><span class="k">class</span> <span class="nc">Job</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -2359,7 +2395,7 @@
         <span class="sd">&quot;&quot;&quot;Treats the job full summary as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span>
-    
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">username</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the username as a read-only attribute.&quot;&quot;&quot;</span>
@@ -2577,6 +2613,274 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div></div>
+
+<span class="k">class</span> <span class="nc">_ErrorRule</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for enabling, disabling, adding, getting and deleting error rules.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xml_body</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;App_SetJobErrorDecision&gt;</span>
+<span class="s2">        &lt;entity _type_=&quot;1&quot; commCellId=&quot;</span><span class="si">{commcell_id}</span><span class="s2">&quot; commCellName=&quot;</span><span class="si">{commserv_name}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">        &lt;jobErrorRuleList&gt;</span>
+<span class="s2">        &lt;idaRuleList isEnabled=&quot;</span><span class="si">{enable_flag_ida}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">        &lt;ida _type_=&quot;78&quot; appGroupId=&quot;57&quot; appGroupName=&quot;</span><span class="si">{app_group_name}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">        &lt;ruleList&gt;</span><span class="si">{final_str}</span><span class="s2">&lt;srcEntity _type_=&quot;1&quot; commCellId=&quot;</span><span class="si">{commcell_id}</span><span class="s2">&quot; /&gt;&lt;/ruleList&gt;</span>
+<span class="s2">        &lt;osEntity _type_=&quot;161&quot; /&gt;</span>
+<span class="s2">        &lt;/idaRuleList&gt;</span>
+<span class="s2">        &lt;/jobErrorRuleList&gt;</span>
+<span class="s2">        &lt;/App_SetJobErrorDecision&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_rule_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ruleList blockedFileTypes=&quot;0&quot; isEnabled=&quot;</span><span class="si">{is_enabled}</span><span class="s2">&quot; jobDecision=&quot;</span><span class="si">{job_decision}</span><span class="s2">&quot; pattern=&quot;</span><span class="si">{pattern}</span><span class="s2">&quot; skipTLbackups=&quot;0&quot; skipofflineDBs=&quot;0&quot; skippedFiles=&quot;0&quot;&gt;</span>
+<span class="s2">        &lt;errorCode allErrorCodes=&quot;</span><span class="si">{all_error_codes}</span><span class="s2">&quot; fromValue=&quot;</span><span class="si">{from_error_code}</span><span class="s2">&quot; skipReportingError=&quot;</span><span class="si">{skip_reporting_error}</span><span class="s2">&quot; toValue=&quot;</span><span class="si">{to_error_code}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">        &lt;/ruleList&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_get_xml_for_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the XML for a given rule&#39;s dictionary of key value pairs. The XML output is used internally when</span>
+<span class="sd">        when adding new or updating existing rules.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rule_dict   (dict)  -   Dictionary of a rule&#39;s key value pairs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str -   The XML output formatted as a string.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_rule_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span>
+                                          <span class="n">all_error_codes</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;all_error_codes&#39;</span><span class="p">],</span>
+                                          <span class="n">from_error_code</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;from_error_code&#39;</span><span class="p">],</span>
+                                          <span class="n">to_error_code</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;to_error_code&#39;</span><span class="p">],</span>
+                                          <span class="n">job_decision</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">],</span>
+                                          <span class="n">is_enabled</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;is_enabled&#39;</span><span class="p">],</span>
+                                          <span class="n">skip_reporting_error</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;skip_reporting_error&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">add_error_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules_arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add new error rules as well as update existing rules, each rule is identified by its rule name denoted by key</span>
+<span class="sd">        rule_name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                rules_arg   (dict)  --  A dictionary whose key is the application group name and value is a rules list.</span>
+
+<span class="sd">                    Supported value(s) for key is</span>
+<span class="sd">                        APPGRP_WindowsFileSystemIDA for Windows</span>
+
+<span class="sd">                    The value for above key is a list</span>
+<span class="sd">                    where each item of the list is a dictionary of the following key value pairs.</span>
+
+<span class="sd">                        is_enabled              (str)   --  Specifies whether the rule should be enabled or not.</span>
+
+<span class="sd">                        pattern                 (str)   --  Specifies the file pattern for the error rule.</span>
+
+<span class="sd">                        all_error_codes         (bool)  --  Specifies whether all error codes should be enabled.</span>
+
+<span class="sd">                        from_error_code         (int)   --  Error code range&#39;s lower value.</span>
+<span class="sd">                        Valid values are all non negative integers.</span>
+
+<span class="sd">                        to_error_code           (int)   --  Error code range&#39;s upper value.</span>
+<span class="sd">                        Valid values are all non negative integers higher larger the from_ec value.</span>
+
+<span class="sd">                        skip_reporting_error    (bool)  --  Specifies if error codes need to be skipped from being reported.</span>
+
+<span class="sd">                    Example:</span>
+<span class="sd">                            {</span>
+<span class="sd">                             APPGRP_WindowsFileSystemIDA : { &#39;rule_1&#39;: { &#39;appGroupName&#39;: APPGRP_WindowsFileSystemIDA,</span>
+<span class="sd">                                                                        &#39;pattern&#39;: &quot;*&quot;,</span>
+<span class="sd">                                                                        &#39;all_error_codes&#39;: False,</span>
+<span class="sd">                                                                        &#39;from_error_code&#39;: 1,</span>
+<span class="sd">                                                                        &#39;to_error_code&#39;: 2,</span>
+<span class="sd">                                                                        &#39;job_decision&#39;: 0,</span>
+<span class="sd">                                                                        &#39;is_enabled&#39;: True,</span>
+<span class="sd">                                                                        &#39;skip_reporting_error&#39;: False</span>
+<span class="sd">                                                                        },</span>
+<span class="sd">                                                             &#39;rule_2&#39; : { ......}</span>
+<span class="sd">                                                            }</span>
+<span class="sd">                            }</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                Exception in case of invalid key/value pair(s).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">final_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">old_values</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">rules_dict</span> <span class="ow">in</span> <span class="n">rules_arg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">existing_error_rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_error_rules</span><span class="p">(</span><span class="n">app_group</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">rule_name</span><span class="p">,</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">rules_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">assert</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;all_error_codes&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;skip_reporting_error&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;from_error_code&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;to_error_code&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="ow">and</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;is_enabled&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;Invalid key value pairs provided.&quot;</span><span class="p">)</span>
+
+                <span class="n">rule_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">rule</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;appGroupName&#39;</span><span class="p">}</span>
+
+                <span class="c1"># GET RULE STRING FOR EACH RULE DICTIONARY PROVIDED IN THE ARGUMENT</span>
+                <span class="n">new_rule_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_xml_for_rule</span><span class="p">(</span><span class="n">rule_dict</span><span class="p">)</span>
+
+                <span class="c1"># IF RULE NAME NOT PRESENT IN OUR INTERNAL STRUCTURE, IT MEANS USER IS ADDING NEW RULE</span>
+                <span class="k">if</span> <span class="n">rule_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="p">[</span><span class="n">rule_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;new_value&#39;</span><span class="p">:</span> <span class="n">new_rule_str</span><span class="p">,</span> <span class="s1">&#39;old_value&#39;</span><span class="p">:</span> <span class="n">new_rule_str</span><span class="p">}</span>
+                    <span class="n">final_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">final_str</span><span class="p">,</span> <span class="n">new_rule_str</span><span class="p">))</span>
+
+                <span class="c1"># ELSE CHECK IF THE RULE&#39;S VALUE REMAINS SAME AND IF IT DOES, WE SIMPLY CONTINUE AND STORE EXISTING VALUE</span>
+                <span class="k">elif</span> <span class="n">new_rule_str</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="p">[</span><span class="n">rule_name</span><span class="p">][</span><span class="s1">&#39;old_value&#39;</span><span class="p">]:</span>
+                    <span class="n">final_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">final_str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="p">[</span><span class="n">rule_name</span><span class="p">][</span><span class="s1">&#39;old_value&#39;</span><span class="p">]))</span>
+
+                <span class="c1"># ELSE RULE IS BEING UPDATED, STORE NEW VALUE IN FINAL STRING AND PRESERVE OLD VALUE AS WELL</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="p">[</span><span class="n">rule_name</span><span class="p">][</span><span class="s1">&#39;old_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="p">[</span><span class="n">rule_name</span><span class="p">][</span><span class="s1">&#39;new_value&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="p">[</span><span class="n">rule_name</span><span class="p">][</span><span class="s1">&#39;new_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_rule_str</span>
+                    <span class="n">final_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">final_str</span><span class="p">,</span> <span class="n">new_rule_str</span><span class="p">))</span>
+
+            <span class="c1"># NOW GO THROUGH ALL EXISTING RULES ON CS AND EITHER PRESERVE OR UPDATE IT</span>
+            <span class="c1"># PREPARE A LIST OF ALL OLD VALUES FIRST</span>
+            <span class="k">for</span> <span class="n">rule_name</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">old_values</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">value</span> <span class="k">for</span> <span class="n">value_type</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value_type</span> <span class="o">==</span> <span class="s1">&#39;old_value&#39;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">existing_error_rule</span> <span class="ow">in</span> <span class="n">existing_error_rules</span><span class="p">:</span>
+                <span class="n">existing_rule_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pattern&#39;</span><span class="p">:</span> <span class="n">existing_error_rule</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span>
+                                      <span class="s1">&#39;all_error_codes&#39;</span><span class="p">:</span> <span class="n">existing_error_rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;allErrorCodes&#39;</span><span class="p">],</span>
+                                      <span class="s1">&#39;skip_reporting_error&#39;</span><span class="p">:</span> <span class="n">existing_error_rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;skipReportingError&#39;</span><span class="p">],</span>
+                                      <span class="s1">&#39;from_error_code&#39;</span><span class="p">:</span> <span class="n">existing_error_rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;fromValue&#39;</span><span class="p">],</span>
+                                      <span class="s1">&#39;to_error_code&#39;</span><span class="p">:</span> <span class="n">existing_error_rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;toValue&#39;</span><span class="p">],</span>
+                                      <span class="s1">&#39;job_decision&#39;</span><span class="p">:</span> <span class="n">existing_error_rule</span><span class="p">[</span><span class="s1">&#39;jobDecision&#39;</span><span class="p">],</span>
+                                      <span class="s1">&#39;is_enabled&#39;</span><span class="p">:</span> <span class="n">existing_error_rule</span><span class="p">[</span><span class="s1">&#39;isEnabled&#39;</span><span class="p">]}</span>
+
+                <span class="n">existing_rule_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_xml_for_rule</span><span class="p">(</span><span class="n">existing_rule_dict</span><span class="p">)</span>
+                <span class="c1"># AN EXISTING RULE THAT HAS NOT BEEN UPDATED AND IS NOT ADDED BY THE TEST CASE OR THROUGH AUTOMATION.</span>
+                <span class="c1"># IN OTHER WORDS, AN EXISTING RULE THAT WAS ADDED OUTSIDE OF THE SCOPE OF THE TEST CASE</span>
+                <span class="k">if</span> <span class="n">existing_rule_str</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">old_values</span><span class="p">:</span>
+                    <span class="n">final_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">final_str</span><span class="p">,</span> <span class="n">existing_rule_str</span><span class="p">))</span>
+
+        <span class="c1"># NEED TO ADD SUPPORT FOR UPDATION OF ERROR RULES FOR MULTIPLE iDAs SIMULTANEOUSLY</span>
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xml_body</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">commcell_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commcell_id</span><span class="p">,</span>
+                                        <span class="n">commserv_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span>
+                                        <span class="n">enable_flag_ida</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                        <span class="n">app_group_name</span><span class="o">=</span><span class="n">app_group</span><span class="p">,</span>
+                                        <span class="n">final_str</span><span class="o">=</span><span class="n">final_str</span><span class="p">)</span>
+
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xml_body</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">xml_body</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">enable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables the job error control rules for the specified Application Group Type.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                app_group   (str)   --  The iDA for which the enable flag needs to be set.</span>
+<span class="sd">                Currently supported values are APPGRP_WindowsFileSystemIDA.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modify_job_status_on_errors</span><span class="p">(</span><span class="n">app_group</span><span class="p">,</span> <span class="n">enable_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables the job error control rules for the specified Application Group Type.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                app_group   (str)   --  The iDA for which the enable flag needs to be set.</span>
+<span class="sd">                Currently supported values are APPGRP_WindowsFileSystemIDA.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modify_job_status_on_errors</span><span class="p">(</span><span class="n">app_group</span><span class="p">,</span> <span class="n">enable_flag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_modify_job_status_on_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">enable_flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;To enable or disable job status on errors.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                app_group   (str)   --  The iDA for which the enable flag needs to be set.</span>
+<span class="sd">                Currently supported values are APPGRP_WindowsFileSystemIDA.</span>
+
+<span class="sd">                enable_flag (bool)  --  Enables and disables job status on errors.</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># FETCHING ALL EXISTING RULES</span>
+        <span class="n">error_rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_error_rules</span><span class="p">(</span><span class="n">app_group</span><span class="p">)</span>
+
+        <span class="c1"># FOR EVERY RULE IN RULE LIST</span>
+        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">error_rules</span><span class="p">:</span>
+            <span class="n">rule_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_rule_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span>
+                                                  <span class="n">all_error_codes</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;allErrorCodes&#39;</span><span class="p">],</span>
+                                                  <span class="n">from_error_code</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;fromValue&#39;</span><span class="p">],</span>
+                                                  <span class="n">to_error_code</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;toValue&#39;</span><span class="p">],</span>
+                                                  <span class="n">job_decision</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;jobDecision&#39;</span><span class="p">],</span>
+                                                  <span class="n">is_enabled</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;isEnabled&#39;</span><span class="p">],</span>
+                                                  <span class="n">skip_reporting_error</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">][</span><span class="s1">&#39;skipReportingError&#39;</span><span class="p">])</span>
+
+            <span class="n">final_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">final_str</span><span class="p">,</span> <span class="n">rule_str</span><span class="p">))</span>
+
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xml_body</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">commcell_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commcell_id</span><span class="p">,</span>
+                                        <span class="n">commserv_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span>
+                                        <span class="n">enable_flag_ida</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">enable_flag</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="n">final_str</span><span class="o">=</span><span class="n">final_str</span><span class="p">)</span>
+
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xml_body</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">xml_body</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_error_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the error rules set on the CS in the form of a dictionary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            app_group   (str)   --  The iDA for which the enable flag needs to be set.</span>
+<span class="sd">                Currently supported values are APPGRP_WindowsFileSystemIDA.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list    -   A list of error rules. Each rule will be a dictionary of key value pairs for pattern,</span>
+<span class="sd">            error code from value, error code to value etc.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">rule_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;App_GetJobErrorDecisionReq&gt;</span>
+<span class="s2">        &lt;entity _type_=&quot;1&quot; commCellId=&quot;</span><span class="si">{self.commcell.commcell_id}</span><span class="s2">&quot; commCellName=&quot;</span><span class="si">{self.commcell.commserv_name}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">        &lt;/App_GetJobErrorDecisionReq&gt;&quot;&quot;&quot;</span>
+
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xml_body</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+        <span class="n">error_rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">xml_body</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">error_rules</span><span class="p">):</span>
+
+            <span class="n">ida_rule_lists</span> <span class="o">=</span> <span class="n">error_rules</span><span class="p">[</span><span class="s1">&#39;jobErrorRuleList&#39;</span><span class="p">][</span><span class="s1">&#39;idaRuleList&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">ida_rule_list</span> <span class="ow">in</span> <span class="n">ida_rule_lists</span><span class="p">:</span>
+                <span class="c1"># HARD CODED FOR WINDOWS SUPPORT ONLY</span>
+                <span class="k">if</span> <span class="n">ida_rule_list</span><span class="p">[</span><span class="s1">&#39;ida&#39;</span><span class="p">][</span><span class="s1">&#39;appGroupName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">app_group</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">rule_list</span> <span class="o">=</span> <span class="n">ida_rule_list</span><span class="p">[</span><span class="s1">&#39;ruleList&#39;</span><span class="p">][</span><span class="s1">&#39;ruleList&#39;</span><span class="p">]</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">rule_list</span>
 </pre></div>
 
            </div>

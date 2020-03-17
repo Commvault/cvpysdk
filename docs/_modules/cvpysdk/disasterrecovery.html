@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.disasterrecovery &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.disasterrecovery &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -142,6 +142,7 @@
             
   <h1>Source code for cvpysdk.disasterrecovery</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># pylint: disable=W0212,W0201</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 <span class="c1"># Copyright Commvault Systems, Inc.</span>
 <span class="c1">#</span>
@@ -158,35 +159,92 @@
 <span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;Class to perform all the disaster recovery operations on commcell</span>
+<span class="sd">&quot;&quot;&quot;main file for performing disaster recovery operations on commcell</span>
 
-<span class="sd">DisasterRecovery is the only class defined in this file</span>
+<span class="sd">DisasterRecovery                :   Class for performing DR backup with various options.</span>
 
-<span class="sd">DisasterRecovery: Helper class to perform DR operations</span>
+<span class="sd">DisasterRecoveryManagement      :   Class for performing disaster recovery management operations.</span>
 
 <span class="sd">DisasterRecovery:</span>
+<span class="sd">=================</span>
 
-<span class="sd">    __init__()                    --  initializes DR helper object</span>
+<span class="sd">    __init__()                    --    initializes DisasterRecovery class object</span>
 
-<span class="sd">    disaster_recovery_backup()    --  function to run DR backup</span>
+<span class="sd">    reset_to_defaults()           --    resets the properties to default values</span>
 
-<span class="sd">    _process_drbackup_response()  -- process the disaster recovery backup request</span>
+<span class="sd">    disaster_recovery_backup()    --    function to run DR backup</span>
 
-<span class="sd">    restore_out_of_place()        -- function to run DR restore operation</span>
+<span class="sd">    _process_drbackup_response()  --    process the disaster recovery backup request</span>
 
-<span class="sd">    drbackupwithjson()            -- Run DR backup with JSON including clients with</span>
-<span class="sd">                                     sendlogfiles.</span>
+<span class="sd">    restore_out_of_place()        --    function to run DR restore operation</span>
 
-<span class="sd">    _generatedrbackupjson()       -- Generate JSON corresponds to DR backup job</span>
+<span class="sd">    _advanced_dr_backup()         --    includes advance dr backup options</span>
 
-<span class="sd">    _process_createtask_response()-- Runs the CreateTask API with the request JSON</span>
-<span class="sd">                                     provided for DR backup.</span>
+<span class="sd">    _generatedrbackupjson()       --    Generate JSON corresponds to DR backup job</span>
 
-<span class="sd">    _filter_paths()               -- Filters the paths based on the Operating System and Agent.</span>
+<span class="sd">    _process_createtask_response()--    Runs the CreateTask API with the request JSON</span>
+<span class="sd">                                        provided for DR backup.</span>
+
+<span class="sd">    _filter_paths()               --    Filters the paths based on the Operating System and Agent.</span>
+
+
+<span class="sd">DisasterRecovery Attributes</span>
+<span class="sd">==========================</span>
+
+<span class="sd">    **backuptype**                --    set or get backup type</span>
+<span class="sd">    **is_compression_enabled**    --    set or get compression property</span>
+<span class="sd">    **is_history_db_enabled**     --    set or get history db property</span>
+<span class="sd">    **is_workflow_db_enabled**    --    set or get workflow db property</span>
+<span class="sd">    **is_appstudio_db_enabled**   --    set or get appstudio db property</span>
+<span class="sd">    **is_cvcloud_db_enabled**     --    set or get cvcloud db property</span>
+<span class="sd">    **is_dm2_db_enabled**         --    set or get dm2db property</span>
+<span class="sd">    **client_list**               --    set or get client list property.</span>
+
+<span class="sd">DisasterRecoveryManagement:</span>
+<span class="sd">==========================</span>
+
+<span class="sd">    __init__()                          --   initializes DisasterRecoveryManagement class object</span>
+
+<span class="sd">    _get_dr_properties()                --   Executes get request on server and retrives the dr settings</span>
+
+<span class="sd">    _set_dr_properties()                --   Executes post request on server and sets the dr settings</span>
+
+<span class="sd">    refresh()                           --   retrives the latest dr settings</span>
+
+<span class="sd">    set_local_dr_path                   --   sets the local dr path</span>
+
+<span class="sd">    set_network_dr_path                 --   sets the unc path</span>
+
+<span class="sd">    upload_metdata_to_commvault_cloud   --   sets ths account to be used for commvault cloud backup.</span>
+
+<span class="sd">    upload_metdata_to_cloud_library     --   sets the libarary to be used for cloud backup.</span>
+
+<span class="sd">    impersonate_user                    --   account to be used for execution of pre/post scripts</span>
+
+<span class="sd">    use_impersonate_user                --  gets the setting use_impersonate_user</span>
+
+<span class="sd">DisasterRecoveryManagement Attributes:</span>
+<span class="sd">=====================================</span>
+
+<span class="sd">    **number_of_metadata**                  --  set or get number of metadata to be retained property</span>
+<span class="sd">    **use_vss**                             --  set or get use vss property</span>
+<span class="sd">    **wild_card_settings**                  --  set or get wild card settings property</span>
+<span class="sd">    **backup_metadata_folder**              --  get backup metadata folder property</span>
+<span class="sd">    **upload_backup_metadata_to_cloud**     --  get upload backup metadata to cloud property</span>
+<span class="sd">    **upload_backup_metadata_to_cloud_lib** --  get upload backup metadata to cloud lib.</span>
+<span class="sd">    **dr_storage_policy**                   --  set or get dr storage policy property</span>
+<span class="sd">    **pre_scan_process**                    --  set or get pre scan process</span>
+<span class="sd">    **post_scan_process**                   --  set or get post scan process</span>
+<span class="sd">    **pre_backup_process**                  --  set or get pre backup process</span>
+<span class="sd">    **post_backup_process**                 --  set or get post backup process</span>
+<span class="sd">    **run_post_scan_process**               --  set or get run post scan process</span>
+<span class="sd">    **run_post_backup_process**             --  set or get run post backup process</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.policies.storage_policies</span> <span class="k">import</span> <span class="n">StoragePolicy</span>
 <span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
 <span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 <span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Client</span>
@@ -205,53 +263,30 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">install_directory</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">iscompressionenabled</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_RESTORE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESTORE&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span> <span class="o">=</span> <span class="s2">&quot;full&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_CREATE_TASK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ishistorydb</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">isworkflowdb</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_client_list</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">advbackup</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_to_defaults</span><span class="p">()</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">client_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the client_list as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_list</span>
+<div class="viewcode-block" id="DisasterRecovery.reset_to_defaults"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecovery.reset_to_defaults">[docs]</a>    <span class="k">def</span> <span class="nf">reset_to_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the instance variables to default values</span>
 
-    <span class="nd">@client_list</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">client_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the client_list as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_client_list</span> <span class="o">=</span> <span class="n">value</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">iscompression_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the iscompressionenabled as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscompressionenabled</span>
-
-    <span class="nd">@iscompression_enabled</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">iscompression_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the iscompressionenabled as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">iscompressionenabled</span> <span class="o">=</span> <span class="n">value</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">backup_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the backup_type as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span>
-
-    <span class="nd">@backup_type</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">backup_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Treats the backup_type as a read-only attribute.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span> <span class="o">=</span> <span class="n">value</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                 None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backup_type</span> <span class="o">=</span> <span class="s2">&quot;full&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_compression_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_history_db_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_workflow_db_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_appstudio_db_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_cvcloud_db_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_dm2_db_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="DisasterRecovery.disaster_recovery_backup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecovery.disaster_recovery_backup">[docs]</a>    <span class="k">def</span> <span class="nf">disaster_recovery_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs a DR job for Commserv</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                backup_level        (str)   --  level of backup the user wish to run</span>
-<span class="sd">                        Full / / Differential</span>
-<span class="sd">                    default: Full</span>
-
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this backup job</span>
@@ -265,20 +300,19 @@
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;differential&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;differential&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
         <span class="n">backuptypes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;full&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;differential&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">advbackup</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span> <span class="o">=</span> <span class="n">backuptypes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backup_type</span> <span class="o">=</span> <span class="n">backuptypes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_backup_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_dr_backup</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">dr_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DRBACKUP&#39;</span><span class="p">]</span>
-            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;isCompressionEnabled&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscompression_enabled</span><span class="p">,</span>
-                            <span class="s2">&quot;jobType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;backupType&quot;</span><span class="p">:</span> <span class="n">backuptypes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span><span class="o">.</span><span class="n">lower</span><span class="p">()]}</span>
-            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-                <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">dr_service</span><span class="p">,</span> <span class="n">request_json</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_drbackup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>            </div>
+        <span class="n">dr_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DRBACKUP&#39;</span><span class="p">]</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;isCompressionEnabled&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_compression_enabled</span><span class="p">,</span>
+                        <span class="s2">&quot;jobType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;backupType&quot;</span><span class="p">:</span> <span class="n">backuptypes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">backup_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()]}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">dr_service</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_drbackup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_process_drbackup_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;DR Backup response will be processed.</span>
@@ -301,16 +335,14 @@
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Initializing backup failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
                     <span class="p">)</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DisasterRecovery.restore_out_of_place"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecovery.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -321,7 +353,8 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
 <span class="sd">            at the specified destionation location.</span>
 
@@ -364,6 +397,8 @@
 <span class="sd">                                                specified file</span>
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
 
+<span class="sd">                restore_jobs    (list)      --  list of jobs to be restored if the job is index free restore</span>
+
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
 
@@ -381,10 +416,9 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">))</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span><span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">restore_data_and_acl</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="p">(</span><span class="n">basestring</span><span class="p">,</span> <span class="n">Client</span><span class="p">))</span>
+                 <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                 <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overwrite</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">restore_data_and_acl</span><span class="p">,</span> <span class="nb">bool</span><span class="p">))):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">fs_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -392,17 +426,15 @@
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
             <span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="p">,</span> <span class="n">client</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
         <span class="n">drpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">CommserveDR&quot;</span>
         <span class="n">destination_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">([</span><span class="n">destination_path</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span>
         <span class="n">drpath</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter_paths</span><span class="p">([</span><span class="n">drpath</span><span class="p">],</span> <span class="kc">True</span><span class="p">)]</span>
-        <span class="k">if</span> <span class="n">drpath</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">drpath</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
-
-        <span class="c1">#client_obj = self.commcell.clients.get(self.commcell.commserv_name)</span>
         <span class="n">agent_obj</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;File System&quot;</span><span class="p">)</span>
         <span class="n">instance_obj</span> <span class="o">=</span> <span class="n">agent_obj</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DefaultInstanceName&quot;</span><span class="p">)</span>
 
@@ -425,16 +457,11 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">from_time</span><span class="p">,</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
-            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">)</span></div>
+            <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_jobs</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_advanced_dr_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs a DR job with JSON input</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                backup_level        (str)   --  level of backup the user wish to run</span>
-<span class="sd">                        Full / / Differential / Synthetic_full</span>
-<span class="sd">                    default: Full</span>
-
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this backup job</span>
@@ -459,7 +486,7 @@
                 <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
                 <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="s2">&quot;DATA_PROTECTION&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="s2">&quot;IMMEDIATE&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="s2">&quot;COMMANDLINE&quot;</span>
+                <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span>
             <span class="p">}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_subtask</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="s2">&quot;ADMIN&quot;</span><span class="p">,</span>
@@ -475,11 +502,37 @@
                         <span class="s2">&quot;consumeLicense&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
                     <span class="n">clientdict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
 
+            <span class="n">common_opts</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="p">:</span>
+                <span class="n">common_opts</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;startUpOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;priority&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority&quot;</span><span class="p">,</span> <span class="mi">66</span><span class="p">),</span>
+                        <span class="s2">&quot;startInSuspendedState&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;start_in_suspended_state&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                        <span class="s2">&quot;startWhenActivityIsLow&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;start_when_activity_is_low&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                        <span class="s2">&quot;useDefaultPriority&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_default_priority&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;jobRetryOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;runningTime&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;enableTotalRunningTime&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                <span class="s2">&quot;enable_total_running_time&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                            <span class="s2">&quot;totalRunningTime&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_running_time&quot;</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;enableNumberOfRetries&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_number_of_retries&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                        <span class="s2">&quot;killRunningJobWhenTotalRunningTimeExpires&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                            <span class="s2">&quot;kill_running_job_when_total_running_time_expires&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                        <span class="s2">&quot;numberOfRetries&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;number_of_retries&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;jobDescription&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;job_description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="p">}</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">_droptions</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;drbackupType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">backuptype</span><span class="p">,</span> <span class="s2">&quot;dbName&quot;</span><span class="p">:</span> <span class="s2">&quot;commserv&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;backupHistoryDataBase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ishistorydb</span><span class="p">,</span>
-                <span class="s2">&quot;backupWFEngineDataBase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">isworkflowdb</span><span class="p">,</span>
-                <span class="s2">&quot;enableDatabasesBackupCompression&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscompression_enabled</span><span class="p">,</span>
+                <span class="s2">&quot;drbackupType&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backuptype</span><span class="p">,</span> <span class="s2">&quot;dbName&quot;</span><span class="p">:</span> <span class="s2">&quot;commserv&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;backupHistoryDataBase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_history_db_enabled</span><span class="p">,</span>
+                <span class="s2">&quot;backupWFEngineDataBase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_workflow_db_enabled</span><span class="p">,</span>
+                <span class="s2">&quot;backupAppStudioDataBase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_appstudio_db_enabled</span><span class="p">,</span>
+                <span class="s2">&quot;backupCVCloudDataBase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cvcloud_db_enabled</span><span class="p">,</span>
+                <span class="s2">&quot;backupDM2DataBase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_dm2_db_enabled</span><span class="p">,</span>
+                <span class="s2">&quot;enableDatabasesBackupCompression&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_compression_enabled</span><span class="p">,</span>
                 <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="n">clientdict</span>
 
             <span class="p">}</span>
@@ -514,6 +567,10 @@
                     <span class="p">]</span>
                 <span class="p">}</span>
             <span class="p">}</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_job_options</span><span class="p">:</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;commonOpts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">common_opts</span>
+
             <span class="k">return</span> <span class="n">request_json</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
@@ -543,20 +600,17 @@
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
 
                     <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;DR backup job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="n">error_message</span><span class="p">)</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                        <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to run the DR backup job&#39;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to run the DR backup job&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_filter_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">,</span> <span class="n">is_single_path</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Filters the paths based on the Operating System, and Agent.</span>
@@ -584,8 +638,651 @@
 
         <span class="k">if</span> <span class="n">is_single_path</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">paths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">paths</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">client_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the client_list as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_list</span>
+
+    <span class="nd">@client_list</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">client_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the client_list as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client_list</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">paths</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_compression_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the iscompressionenabled as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_compression_enabled</span>
+
+    <span class="nd">@is_compression_enabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_compression_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the iscompressionenabled as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_compression_enabled</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the backup_type as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backuptype</span>
+
+    <span class="nd">@backup_type</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backup_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the backup_type as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backuptype</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_history_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the historydb as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_history_db_enabled</span>
+
+    <span class="nd">@is_history_db_enabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_history_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;sets the value of ishistorydb</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (bool)      --  True/False</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_history_db_enabled</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_workflow_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the workflowdb as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_workflow_db_enabled</span>
+
+    <span class="nd">@is_workflow_db_enabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_workflow_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the value of isworkflowdb</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (bool)      --  True/False</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_workflow_db_enabled</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_appstudio_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the workflowdb as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_appstudio_db_enabled</span>
+
+    <span class="nd">@is_appstudio_db_enabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_appstudio_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the value of isappstudiodb</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (bool)      --  True/False</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_appstudio_db_enabled</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_cvcloud_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the cvclouddb as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_cvcloud_db_enabled</span>
+
+    <span class="nd">@is_cvcloud_db_enabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_cvcloud_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the value of iscvclouddb</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (bool)      --  True/False</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_cvcloud_db_enabled</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_dm2_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the dm2db as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_dm2_db_enabled</span>
+
+    <span class="nd">@is_dm2_db_enabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_dm2_db_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the value of isdm2db</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (bool)      --  True/False</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_dm2_db_enabled</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DisasterRecoveryManagement"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement">[docs]</a><span class="k">class</span> <span class="nc">DisasterRecoveryManagement</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to perform all the disaster recovery management operations on commcell&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes DisasterRecoveryManagement object</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">            commcell    (object)    --  instance of commcell</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell</span> <span class="o">=</span> <span class="n">commcell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_service</span> <span class="o">=</span> <span class="n">commcell</span><span class="o">.</span><span class="n">_services</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DISASTER_RECOVERY_PROPERTIES&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_dr_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes a request on the server to get the settings of disaster recovery Backup.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_service</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to get dr management properties. </span><span class="se">\n</span><span class="s1">Error: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="s1">&#39;drBackupInfo&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;drBackupInfo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;prePostProcessSettings&#39;</span><span class="p">,</span> <span class="p">{})</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;drBackupInfo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;exportSettings&#39;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_dr_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes a request on the server, to set the dr settings.</span>
+
+<span class="sd">         Returns:</span>
+<span class="sd">               None</span>
+<span class="sd">         Raises:</span>
+<span class="sd">              SDKException:</span>
+<span class="sd">                    if given inputs are invalid.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_service</span><span class="p">,</span>
+                                                           <span class="n">payload</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;processinginstructioninfo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;attributes&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">{}):</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;Failed to set dr properties, Received errorcode: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                               <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                                   <span class="s1">&#39;processinginstructioninfo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;attributes&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">)))</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to set dr properties. Error: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorString&#39;</span><span class="p">)</span>
+                        <span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DisasterRecoveryManagement.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        refreshs the dr settings associated with commcell.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_dr_properties</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DisasterRecoveryManagement.set_local_dr_path"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement.set_local_dr_path">[docs]</a>    <span class="k">def</span> <span class="nf">set_local_dr_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets local DR path</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 path       (str)       --         local path.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;backupMetadataFolder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DisasterRecoveryManagement.set_network_dr_path"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement.set_network_dr_path">[docs]</a>    <span class="k">def</span> <span class="nf">set_network_dr_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets network DR path</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 path       (str)       --      UNC path.</span>
+
+<span class="sd">                 username   (str)       --      username with admin privileges of the remote machine.</span>
+
+<span class="sd">                 password   (str)       --      password.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;backupMetadataFolder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;networkUserAccount&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;networkUserAccount&#39;</span><span class="p">][</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DisasterRecoveryManagement.upload_metdata_to_commvault_cloud"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement.upload_metdata_to_commvault_cloud">[docs]</a>    <span class="k">def</span> <span class="nf">upload_metdata_to_commvault_cloud</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable/Disable upload metadata to commvault cloud setting.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 flag       (bool)      --      True/False.</span>
+
+<span class="sd">                 username   (str)       --      username of the commvault cloud.</span>
+
+<span class="sd">                 password   (str)       --      password of the commvault cloud.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                 None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;uploadBackupMetadataToCloud&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag</span>
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;cloudCredentials&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;cloudCredentials&#39;</span><span class="p">][</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DisasterRecoveryManagement.upload_metdata_to_cloud_library"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement.upload_metdata_to_cloud_library">[docs]</a>    <span class="k">def</span> <span class="nf">upload_metdata_to_cloud_library</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">libraryname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable/Disable upload metadata to cloud library</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 flag       (bool)      --      True/False.</span>
+
+<span class="sd">                 libraryname   (str)    --      Third party cloud library name.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;uploadBackupMetadataToCloudLib&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag</span>
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">libraryname</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;cloudLibrary&#39;</span><span class="p">][</span><span class="s1">&#39;libraryName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">libraryname</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DisasterRecoveryManagement.impersonate_user"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement.impersonate_user">[docs]</a>    <span class="k">def</span> <span class="nf">impersonate_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable/Disable Impersonate user option for pre/post scripts.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                flag        (bool)      --  True/False.</span>
+
+<span class="sd">                username    (str)       --  username with admin privileges.</span>
+
+<span class="sd">                password    (str)       --  password for the account.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;useImpersonateUser&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag</span>
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;impersonateUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;impersonateUser&#39;</span><span class="p">][</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">use_impersonate_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the impersonate user(True/False)</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                  True/False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;useImpersonateUser&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">number_of_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         gets the value, Number of metadata folders to be retained.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                number of metadata     (int)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;numberOfMetadata&#39;</span><span class="p">)</span>
+
+    <span class="nd">@number_of_metadata</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">number_of_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the value, Number of metadata folders to be retained.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value       (int)       --      number of metadata folders to be retained.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;numberOfMetadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">use_vss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the value, use vss()</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                True/False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isUseVSS&#39;</span><span class="p">)</span>
+
+    <span class="nd">@use_vss</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">use_vss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the value, use vss</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 flag   (bool)      --      True/Flase</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;isUseVSS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wild_card_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the wild card settings</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (str)       --     client logs that are to be backed up</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;wildCardSetting&#39;</span><span class="p">)</span>
+
+    <span class="nd">@wild_card_settings</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">wild_card_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the wild card setting</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 logs    (list)      --      log file names</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                  None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mandatory</span> <span class="o">=</span> <span class="s2">&quot;cvd;SIDBPrune;SIDBEngine;CVMA&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">logs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">:</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="n">temp</span> <span class="o">+</span> <span class="s1">&#39;;&#39;</span> <span class="o">+</span> <span class="n">log</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Pass log names in list&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;wildCardSetting&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mandatory</span> <span class="o">+</span> <span class="n">temp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backup_metadata_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the backup metadata folder</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                 (str)      --      Backup metadata folder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupMetadataFolder&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">upload_backup_metadata_to_cloud</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the upload backup metadata to cloud setting</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                 True/False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uploadBackupMetadataToCloud&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">upload_backup_metadata_to_cloud_lib</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the upload metadata to cloud lib</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                True/False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uploadBackupMetadataToCloudLib&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dr_storage_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the storage policy name, that is being used for DR backups</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (str)       --      Name of the storage policy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storagePolicy&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">)</span>
+
+    <span class="nd">@dr_storage_policy</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">dr_storage_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_policy_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the storage policy for DR jobs</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                storage_policy_object       (object)        --      object of the storage policy</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy_object</span><span class="p">,</span> <span class="n">StoragePolicy</span><span class="p">):</span>        <span class="c1"># add str</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;storagePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">storage_policy_object</span><span class="o">.</span><span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_export_settings</span><span class="p">[</span><span class="s1">&#39;storagePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">storage_policy_object</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pre_scan_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the script path of the pre scan process</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (str)       --      script path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preScanProcess&#39;</span><span class="p">)</span>
+
+    <span class="nd">@pre_scan_process</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">pre_scan_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the pre scan process.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 path   (str)      --   path of the pre scan script</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;preScanProcess&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">post_scan_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the script path of the post scan process</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (str)       --      script path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postScanProcess&#39;</span><span class="p">)</span>
+
+    <span class="nd">@post_scan_process</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">post_scan_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         sets the post scan process.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 path   (str)      --   path of the post scan script</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;postScanProcess&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pre_backup_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the script path of the pre backup process</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (str)       --      script path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preBackupProcess&#39;</span><span class="p">)</span>
+
+    <span class="nd">@pre_backup_process</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">pre_backup_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         sets the pre backup process.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 path   (str)      --   path of the pre backup script</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;preBackupProcess&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">post_backup_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the script path of the post backup process</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (str)       --      script path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postBackupProcess&#39;</span><span class="p">)</span>
+
+    <span class="nd">@post_backup_process</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">post_backup_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         sets the post backup process.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 path   (str)      --   path of the post backup script</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;postBackupProcess&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">run_post_scan_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets the value, run post scan process</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                 True/False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;runPostScanProcess&#39;</span><span class="p">)</span>
+
+    <span class="nd">@run_post_scan_process</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">run_post_scan_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the value, run post scan process</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 flag      (bool)   --      True/False</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;runPostScanProcess&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">run_post_backup_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         gets the value, run post backup process</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                 True/False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;runPostBackupProcess&#39;</span><span class="p">)</span>
+
+    <span class="nd">@run_post_backup_process</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">run_post_backup_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the value, run post backup process</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                 flag      (bool)   --      True/False</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepost_settings</span><span class="p">[</span><span class="s1">&#39;runPostBackupProcess&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_dr_properties</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

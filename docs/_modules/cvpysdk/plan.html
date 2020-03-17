@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.plan &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.plan &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -534,7 +534,7 @@
 <div class="viewcode-block" id="Plans.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.plan.Plans.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">plan_name</span><span class="p">,</span>
             <span class="n">plan_sub_type</span><span class="p">,</span>
-            <span class="n">storage_pool_name</span><span class="p">,</span>
+            <span class="n">storage_pool_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">sla_in_minutes</span><span class="o">=</span><span class="mi">240</span><span class="p">,</span>
             <span class="n">override_entities</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new Plan to the CommCell.</span>
@@ -549,6 +549,8 @@
 <span class="sd">                &quot;FSServer&quot;  -   File System Plans</span>
 
 <span class="sd">                &quot;Laptop&quot;    -   Laptop Plans</span>
+
+<span class="sd">                &quot;ExchangeUser&quot;  -   Exchange Mailbox Plan</span>
 
 
 <span class="sd">            storage_pool_name   (str)   --  name of the storage pool to be used for the plan</span>
@@ -590,27 +592,27 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_sub_type</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">plan_sub_type</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">plan_name</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                     <span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Plan &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">plan_name</span><span class="p">)</span>
                 <span class="p">)</span>
-
-        <span class="n">storage_pool_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_pools</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="n">storage_pool_name</span><span class="p">)</span><span class="o">.</span><span class="n">storage_pool_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">plan_sub_type</span> <span class="o">==</span> <span class="s1">&#39;ExchangeUser&#39;</span><span class="p">:</span>
+            <span class="n">storage_pool_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_pools</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">storage_pool_name</span><span class="p">)</span><span class="o">.</span><span class="n">storage_pool_id</span><span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_plan_template</span><span class="p">(</span><span class="n">plan_sub_type</span><span class="p">,</span> <span class="s2">&quot;MSP&quot;</span><span class="p">)</span>
 
         <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;slaInMinutes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sla_in_minutes</span>
         <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Created from CvPySDK.&quot;</span>
         <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;planName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plan_name</span>
-        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;dedupeFlags&#39;</span><span class="p">][</span><span class="s1">&#39;useGlobalDedupStore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="n">storage_pool_id</span>
-        <span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">plan_sub_type</span> <span class="o">==</span> <span class="s1">&#39;ExchangeUser&#39;</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;dedupeFlags&#39;</span><span class="p">][</span><span class="s1">&#39;useGlobalDedupStore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="n">storage_pool_id</span>
+            <span class="p">}</span>
         <span class="k">if</span> <span class="n">plan_sub_type</span> <span class="ow">is</span> <span class="s2">&quot;Server&quot;</span> <span class="ow">and</span> <span class="s1">&#39;database&#39;</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">]:</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;plan&#39;</span><span class="p">][</span><span class="s1">&#39;database&#39;</span><span class="p">][</span><span class="s1">&#39;storageLog&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;dedupeFlags&#39;</span><span class="p">][</span>
                 <span class="s1">&#39;useGlobalDedupStore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
@@ -834,11 +836,15 @@
                 <span class="k">if</span> <span class="s1">&#39;subtype&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_subtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">][</span><span class="s1">&#39;subtype&#39;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;copy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">]:</span>
-                    <span class="k">for</span> <span class="n">copy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">]:</span>
-                        <span class="k">if</span> <span class="s1">&#39;useGlobalPolicy&#39;</span> <span class="ow">in</span> <span class="n">copy</span><span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pool</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span>
-                            <span class="k">break</span>
+                <span class="k">if</span> <span class="s1">&#39;storage&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;copy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">copy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span><span class="s1">&#39;copy&#39;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="s1">&#39;useGlobalPolicy&#39;</span> <span class="ow">in</span> <span class="n">copy</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pool</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;useGlobalPolicy&#39;</span><span class="p">]</span>
+                                <span class="k">break</span>
+                    <span class="k">if</span> <span class="s1">&#39;storagePolicy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;storagePolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span>
+                            <span class="s1">&#39;storagePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subtype</span> <span class="o">==</span> <span class="mi">33554439</span><span class="p">:</span>
                     <span class="k">if</span> <span class="s1">&#39;clientGroup&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;autoCreatedEntities&#39;</span><span class="p">]:</span>
@@ -852,13 +858,11 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_user_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;autoCreatedEntities&#39;</span><span class="p">][</span>
                             <span class="s1">&#39;localUserGroup&#39;</span><span class="p">][</span><span class="s1">&#39;userGroupName&#39;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;storagePolicy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">]:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;storagePolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;storage&#39;</span><span class="p">][</span>
-                        <span class="s1">&#39;storagePolicy&#39;</span><span class="p">][</span><span class="s1">&#39;storagePolicyName&#39;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;task&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">]:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;schedulePolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">][</span>
-                        <span class="s1">&#39;task&#39;</span><span class="p">][</span><span class="s1">&#39;taskName&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;schedule&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;task&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_child_policies</span><span class="p">[</span><span class="s1">&#39;schedulePolicy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">][</span>
+                            <span class="s1">&#39;task&#39;</span><span class="p">][</span><span class="s1">&#39;taskName&#39;</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="s1">&#39;laptop&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">:</span>
                     <span class="k">if</span> <span class="s1">&#39;backupContent&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_properties</span><span class="p">[</span><span class="s1">&#39;laptop&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]:</span>

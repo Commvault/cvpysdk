@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.agent &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.agent &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -190,6 +190,10 @@
 <span class="sd">    get(agent_name)             --  returns the Agent class object of the input agent name</span>
 
 <span class="sd">    refresh()                   --  refresh the agents installed on the client</span>
+
+<span class="sd">    _process_add_response()     --  processes add agent request response</span>
+
+<span class="sd">    add_database_agent()        --  adds database agent</span>
 
 
 <span class="sd">Agent:</span>
@@ -428,7 +432,128 @@
 
 <div class="viewcode-block" id="Agents.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.agent.Agents.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the agents installed on the Client.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_agents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_agents</span><span class="p">()</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_agents</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_add_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the Agent Add API with the request JSON provided,</span>
+<span class="sd">            and returns the contents after parsing the response.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                request_json    (dict)  --  JSON request to run for the API</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (bool, basestring, basestring):</span>
+<span class="sd">                    bool -  flag specifies whether success / failure</span>
+
+<span class="sd">                    str  -  error code received in the response</span>
+
+<span class="sd">                    str  -  error message received</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;AGENT&#39;</span><span class="p">],</span> <span class="n">request_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create agent</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># initialize the agetns again</span>
+                        <span class="c1"># so the agent object has all the agents</span>
+                        <span class="n">agent_name</span> <span class="o">=</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;association&#39;</span><span class="p">][</span><span class="s1">&#39;entity&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;appName&#39;</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">agent_name</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create agent</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Agents.add_database_agent"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.agent.Agents.add_database_agent">[docs]</a>    <span class="k">def</span> <span class="nf">add_database_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">,</span> <span class="n">access_node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds database agent to cloud client</span>
+<span class="sd">            Args:</span>
+<span class="sd">                agent_name      (str)   --  agent name</span>
+<span class="sd">                access_node     (str)   --  access node name</span>
+<span class="sd">                **kwargs        (dict)  --  dict of keyword arguments as follows</span>
+<span class="sd">                                            install_dir     (str)   --  database client install directory</span>
+<span class="sd">                                            version         (str)   --  database version</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Agent class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                  if agent with given name already exists</span>
+
+<span class="sd">                    if failed to add the agent</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_agent</span><span class="p">(</span><span class="n">agent_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Agent&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Agent &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">agent_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;createAgent&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                            <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="n">agent_name</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;agentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;AgentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;createIndexOnFail&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;createIndexOnFull&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;installDate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;userDescription&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;runTrueUpJobAfterDaysForOnePass&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;maxSimultaneousStubRecoveries&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;agentVersion&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;isTrueUpOptionEnabledForOnePass&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;cloudDbConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;dbProxyClientList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;dbSoftwareConfigList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;installDir&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install_dir&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+                                    <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span><span class="s2">&quot;10.0&quot;</span><span class="p">)</span>
+                                <span class="p">}</span>
+                            <span class="p">],</span>
+                            <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">access_node</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;idaEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="n">agent_name</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="Agent"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.agent.Agent">[docs]</a><span class="k">class</span> <span class="nc">Agent</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>

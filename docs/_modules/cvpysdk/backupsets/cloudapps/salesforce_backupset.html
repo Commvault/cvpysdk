@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupsets.cloudapps.salesforce_backupset &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.backupsets.cloudapps.salesforce_backupset &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -178,6 +178,8 @@
 
 <span class="sd">    download_cache_path()            --    Fetches download cache path from backupset</span>
 
+<span class="sd">    mutual_auth_path()               --    Fetches mutual auth path from backupset</span>
+
 <span class="sd">    salesforce_user_name()           --    Fetches salesforce user name from backupset</span>
 
 <span class="sd">    is_sync_db_enabled()             --    Determines sync database enabled or not on backupset</span>
@@ -221,6 +223,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_download_cache_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mutual_auth_path</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_user_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_api_token</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_enabled</span> <span class="o">=</span> <span class="kc">None</span>
@@ -258,10 +261,11 @@
                 <span class="n">sfbackupset</span> <span class="o">=</span> <span class="n">cloud_apps_backupset</span><span class="p">[</span><span class="s1">&#39;salesforceBackupSet&#39;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="s1">&#39;downloadCachePath&#39;</span> <span class="ow">in</span> <span class="n">sfbackupset</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_download_cache_path</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;downloadCachePath&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_mutual_auth_path</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mutualAuthPath&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="s1">&#39;userName&#39;</span> <span class="ow">in</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;userPassword&#39;</span><span class="p">]:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_user_name</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;userPassword&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="s1">&#39;syncDatabase&#39;</span> <span class="ow">in</span> <span class="n">sfbackupset</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_enabled</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbEnabled&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_enabled</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dbEnabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_enabled</span><span class="p">:</span>
                     <span class="k">if</span> <span class="s1">&#39;dbType&#39;</span> <span class="ow">in</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">]:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_type</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbType&#39;</span><span class="p">]</span>
@@ -276,7 +280,7 @@
                     <span class="k">if</span> <span class="s1">&#39;userName&#39;</span> <span class="ow">in</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbUserPassword&#39;</span><span class="p">]:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_user_name</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="p">[</span>
                             <span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbUserPassword&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="s1">&#39;dbUserPassword&#39;</span> <span class="ow">in</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbUserPassword&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="s1">&#39;password&#39;</span> <span class="ow">in</span> <span class="n">sfbackupset</span><span class="p">[</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbUserPassword&#39;</span><span class="p">]:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_user_password</span> <span class="o">=</span> <span class="n">sfbackupset</span><span class="p">[</span>
                             <span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbUserPassword&#39;</span><span class="p">][</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
 
@@ -301,6 +305,11 @@
     <span class="k">def</span> <span class="nf">download_cache_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getter for download cache path&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_download_cache_path</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mutual_auth_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getter for download cache path&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mutual_auth_path</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">salesforce_user_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -340,7 +349,20 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">sync_db_user_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getter for the sync database user name&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_user_name</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sync_db_user_name</span>
+
+    <span class="nd">@mutual_auth_path</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">mutual_auth_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets mutual auth path for the backupset.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            value       (str)      --   mutual auth certificate path on access node</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mutual_auth_path</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sync_db_enabled</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;cloudAppsBackupset&#39;</span><span class="p">][</span><span class="s1">&#39;salesforceBackupSet&#39;</span><span class="p">][</span><span class="s1">&#39;syncDatabase&#39;</span><span class="p">][</span><span class="s1">&#39;dbUserPassword&#39;</span><span class="p">][</span>
+                    <span class="s1">&#39;password&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;cloudAppsBackupset&#39;</span><span class="p">][</span><span class="s1">&#39;salesforceBackupSet&#39;</span><span class="p">][</span><span class="s1">&#39;mutualAuthPath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

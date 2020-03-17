@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.exchange.usermailbox_subclient &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.subclients.exchange.usermailbox_subclient &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -180,6 +180,10 @@
 
 <span class="sd">    restore_in_place()                  --  runs in-place restore for the subclient</span>
 
+<span class="sd">    set_pst_association()               --  Create PST assocaition for UserMailboxSubclient</span>
+
+<span class="sd">    set_fs_association_for_pst()        --  Helper method to create pst association for</span>
+<span class="sd">                                            PST Ingestion by FS association</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -190,6 +194,10 @@
 <span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 
 <span class="kn">from</span> <span class="nn">..exchsubclient</span> <span class="k">import</span> <span class="n">ExchangeSubclient</span>
+
+<span class="kn">from</span> <span class="nn">...subclient</span> <span class="k">import</span> <span class="n">Subclients</span>
+
+<span class="kn">from</span> <span class="nn">...backupset</span> <span class="k">import</span> <span class="n">Backupsets</span>
 
 
 <div class="viewcode-block" id="UsermailboxSubclient"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.exchange.html#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient">[docs]</a><span class="k">class</span> <span class="nc">UsermailboxSubclient</span><span class="p">(</span><span class="n">ExchangeSubclient</span><span class="p">):</span>
@@ -493,6 +501,8 @@
                     <span class="n">archive_policy</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="n">cleanup_policy</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="n">retention_policy</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="n">plan_name</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="n">plan_id</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="n">display_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="p">[</span><span class="s1">&#39;userMailBoxInfo&#39;</span><span class="p">][</span><span class="s1">&#39;displayName&#39;</span><span class="p">])</span>
                     <span class="n">alias_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="p">[</span><span class="s1">&#39;userMailBoxInfo&#39;</span><span class="p">][</span><span class="s1">&#39;aliasName&#39;</span><span class="p">])</span>
                     <span class="n">smtp_address</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="p">[</span><span class="s1">&#39;userMailBoxInfo&#39;</span><span class="p">][</span><span class="s1">&#39;smtpAdrress&#39;</span><span class="p">])</span>
@@ -500,14 +510,17 @@
                     <span class="n">exchange_server</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="p">[</span><span class="s1">&#39;userMailBoxInfo&#39;</span><span class="p">][</span><span class="s1">&#39;exchangeServer&#39;</span><span class="p">])</span>
                     <span class="n">user_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="p">[</span><span class="s1">&#39;userMailBoxInfo&#39;</span><span class="p">][</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;userGUID&#39;</span><span class="p">])</span>
                     <span class="n">is_auto_discover_user</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="p">[</span><span class="s1">&#39;userMailBoxInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isAutoDiscoveredUser&#39;</span><span class="p">])</span>
-
-                    <span class="k">for</span> <span class="n">policy</span> <span class="ow">in</span> <span class="n">child</span><span class="p">[</span><span class="s1">&#39;policies&#39;</span><span class="p">][</span><span class="s1">&#39;emailPolicies&#39;</span><span class="p">]:</span>
-                        <span class="k">if</span> <span class="n">policy</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicy&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicyType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                            <span class="n">archive_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;policyEntity&#39;</span><span class="p">][</span><span class="s1">&#39;policyName&#39;</span><span class="p">])</span>
-                        <span class="k">elif</span> <span class="n">policy</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicy&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicyType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                            <span class="n">cleanup_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;policyEntity&#39;</span><span class="p">][</span><span class="s1">&#39;policyName&#39;</span><span class="p">])</span>
-                        <span class="k">elif</span> <span class="n">policy</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicy&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicyType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                            <span class="n">retention_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;policyEntity&#39;</span><span class="p">][</span><span class="s1">&#39;policyName&#39;</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="s1">&#39;emailPolicies&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="p">[</span><span class="s1">&#39;policies&#39;</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">policy</span> <span class="ow">in</span> <span class="n">child</span><span class="p">[</span><span class="s1">&#39;policies&#39;</span><span class="p">][</span><span class="s1">&#39;emailPolicies&#39;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">policy</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicy&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicyType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="n">archive_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;policyEntity&#39;</span><span class="p">][</span><span class="s1">&#39;policyName&#39;</span><span class="p">])</span>
+                            <span class="k">elif</span> <span class="n">policy</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicy&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicyType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                                <span class="n">cleanup_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;policyEntity&#39;</span><span class="p">][</span><span class="s1">&#39;policyName&#39;</span><span class="p">])</span>
+                            <span class="k">elif</span> <span class="n">policy</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicy&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;emailPolicyType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                                <span class="n">retention_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;policyEntity&#39;</span><span class="p">][</span><span class="s1">&#39;policyName&#39;</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="s1">&#39;plan&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="p">:</span>
+                        <span class="n">plan_name</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;plan&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;planName&#39;</span><span class="p">)</span>
+                        <span class="n">plan_id</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;plan&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;planId&#39;</span><span class="p">)</span>
 
                     <span class="n">temp_dict</span> <span class="o">=</span> <span class="p">{</span>
                         <span class="s1">&#39;display_name&#39;</span><span class="p">:</span> <span class="n">display_name</span><span class="p">,</span>
@@ -519,7 +532,9 @@
                         <span class="s1">&#39;is_auto_discover_user&#39;</span><span class="p">:</span> <span class="n">is_auto_discover_user</span><span class="p">,</span>
                         <span class="s1">&#39;archive_policy&#39;</span><span class="p">:</span> <span class="n">archive_policy</span><span class="p">,</span>
                         <span class="s1">&#39;cleanup_policy&#39;</span><span class="p">:</span> <span class="n">cleanup_policy</span><span class="p">,</span>
-                        <span class="s1">&#39;retention_policy&#39;</span><span class="p">:</span> <span class="n">retention_policy</span>
+                        <span class="s1">&#39;retention_policy&#39;</span><span class="p">:</span> <span class="n">retention_policy</span><span class="p">,</span>
+                        <span class="s1">&#39;plan_name&#39;</span><span class="p">:</span> <span class="n">plan_name</span><span class="p">,</span>
+                        <span class="s1">&#39;plan_id&#39;</span><span class="p">:</span> <span class="n">plan_id</span>
                     <span class="p">}</span>
 
                     <span class="n">users</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span>
@@ -728,7 +743,12 @@
 
 <span class="sd">                        &#39;pstTaskName&#39; : &quot;Task Name for PST&quot;,</span>
 
-<span class="sd">                        &#39;folders&#39; : [&#39;list of folders&#39;],</span>
+<span class="sd">                        &#39;folders&#39; : [&#39;list of folders&#39;] //If pst ingestion by folder location,</span>
+<span class="sd">                        &#39;fsContent&#39;: Dictionary of client, backupset, subclient</span>
+<span class="sd">                        Ex: {&#39;client1&#39;:{&#39;backupset1&#39;:[subclient1], &#39;backupset2&#39;:None},</span>
+<span class="sd">                            &#39;client2&#39;: None}</span>
+<span class="sd">                        This would add subclient1, all subclients under backupset2 and</span>
+<span class="sd">                        all backupsets under client2 to the association</span>
 
 <span class="sd">                        &#39;pstOwnerManagement&#39; : {</span>
 
@@ -739,7 +759,6 @@
 <span class="sd">                            &#39;usePSTNameToCreateChild&#39;: Boolean</span>
 <span class="sd">                        }</span>
 <span class="sd">                    }</span>
-<span class="sd">					</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_content</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
@@ -756,7 +775,6 @@
             <span class="n">pst_dict</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;pstTaskName&#39;</span><span class="p">:</span> <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;pstTaskName&#39;</span><span class="p">],</span>
                 <span class="s1">&#39;taskType&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="s1">&#39;folders&#39;</span><span class="p">:</span><span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;folders&#39;</span><span class="p">],</span>
                 <span class="s1">&#39;pstOwnerManagement&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;adProperty&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
                     <span class="s1">&#39;startingFolderPath&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
@@ -776,7 +794,12 @@
                         <span class="n">subclient_content</span><span class="p">[</span><span class="s2">&quot;pstOwnerManagement&quot;</span><span class="p">][</span><span class="s2">&quot;ownerSelectionOrder&quot;</span><span class="p">]</span>
                 <span class="p">}</span>
             <span class="p">}</span>
-
+            <span class="k">if</span> <span class="s1">&#39;folders&#39;</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">:</span>
+                <span class="n">pst_dict</span><span class="p">[</span><span class="s1">&#39;folders&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;folders&#39;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="s1">&#39;fsContent&#39;</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">:</span>
+                <span class="n">pst_dict</span><span class="p">[</span><span class="s1">&#39;associations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_fs_association_for_pst</span><span class="p">(</span>
+                    <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;fsContent&#39;</span><span class="p">])</span>
+                <span class="n">pst_dict</span><span class="p">[</span><span class="s1">&#39;taskType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
             <span class="n">subclient_entity</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_subclient_id</span><span class="p">)}</span>
             <span class="n">discover_info</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;discoverByType&#39;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
@@ -793,6 +816,62 @@
 
         <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> not given in content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="UsermailboxSubclient.set_fs_association_for_pst"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.exchange.html#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_fs_association_for_pst">[docs]</a>    <span class="k">def</span> <span class="nf">set_fs_association_for_pst</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">association</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method to create pst association for PST Ingestion by FS</span>
+<span class="sd">            Args:</span>
+<span class="sd">                association(dict) -- Dictionary of client, backupset, subclient</span>
+<span class="sd">                                    Ex: {&#39;client1&#39;:{&#39;backupset1&#39;:[subclient1], &#39;backupset2&#39;:None},</span>
+<span class="sd">                                        &#39;client2&#39;: None}</span>
+<span class="sd">                                    This would add subclient1, all subclients under backupset2 and</span>
+<span class="sd">                                    all backupsets under client2 to the association</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">assoc_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">client_dict</span><span class="p">,</span> <span class="n">backupset_dict</span><span class="p">,</span> <span class="n">sub_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span> <span class="nb">dict</span><span class="p">(),</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">_type_id</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;subclient&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;apptype&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">backupsets</span> <span class="ow">in</span> <span class="n">association</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">client_name</span> <span class="o">=</span> <span class="n">client_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">client_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span>
+
+            <span class="n">client_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;commCellId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_id</span><span class="p">),</span>
+                           <span class="s2">&quot;commcellName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span>
+                           <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client_name</span><span class="p">,</span>
+                           <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">client_obj</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+                           <span class="p">}</span>
+            <span class="n">agent</span> <span class="o">=</span> <span class="n">client_obj</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file system&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">backupsets</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">backupset_name</span><span class="p">,</span> <span class="n">subclients</span> <span class="ow">in</span> <span class="n">backupsets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">backupset_name</span> <span class="o">=</span> <span class="n">backupset_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">backupset_obj</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">backupset_obj</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span><span class="s1">&#39;102&#39;</span><span class="p">,</span><span class="s2">&quot;Backupset </span><span class="si">{0}</span><span class="s2"> not present in file &quot;</span>
+                                                             <span class="s2">&quot;system agent&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">))</span>
+                    <span class="n">backupset_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="n">backupset_obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                      <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="s2">&quot;File System&quot;</span><span class="p">,</span>
+                                      <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">agent_id</span><span class="p">),</span>
+                                      <span class="s2">&quot;backupsetId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">backupset_obj</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">),</span>
+                                      <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="n">_type_id</span><span class="p">[</span><span class="s2">&quot;backupset&quot;</span><span class="p">]</span>
+                                      <span class="p">}</span>
+                    <span class="n">backupset_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">client_dict</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">subclient_name</span> <span class="ow">in</span> <span class="n">subclients</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">subclient_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">backupset_obj</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span><span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                               <span class="s2">&quot;Subclient </span><span class="si">%s</span><span class="s2"> not present in backupset </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                                               <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)))</span>
+                        <span class="n">subclient_name</span> <span class="o">=</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                        <span class="n">sub_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">backupset_obj</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">[</span>
+                                                           <span class="n">subclient_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
+                                    <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span><span class="p">}</span>
+                        <span class="n">sub_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">backupset_dict</span><span class="p">)</span>
+                        <span class="n">sub_dict</span><span class="p">[</span><span class="s2">&quot;_type_&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_type_id</span><span class="p">[</span><span class="s2">&quot;subclient&quot;</span><span class="p">]</span>
+                        <span class="n">assoc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sub_dict</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">subclients</span><span class="p">:</span>
+                        <span class="n">assoc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">backupset_dict</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">client_dict</span><span class="p">[</span><span class="s2">&quot;_type_&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_type_id</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span>
+                <span class="n">assoc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">assoc_list</span></div>
 
 <div class="viewcode-block" id="UsermailboxSubclient.set_database_assocaition"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.exchange.html#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_database_assocaition">[docs]</a>    <span class="k">def</span> <span class="nf">set_database_assocaition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_content</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create Database assocaition for UserMailboxSubclient.</span>
@@ -1129,6 +1208,50 @@
         <span class="n">_assocaition_json_</span><span class="p">[</span><span class="s2">&quot;emailAssociation&quot;</span><span class="p">][</span><span class="s2">&quot;emailDiscoverinfo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">discover_info</span>
         <span class="n">_assocaition_json_</span><span class="p">[</span><span class="s2">&quot;emailAssociation&quot;</span><span class="p">][</span><span class="s2">&quot;emailStatus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_association_request</span><span class="p">(</span><span class="n">_assocaition_json_</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UsermailboxSubclient.enable_auto_discover_association"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.exchange.html#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_auto_discover_association">[docs]</a>    <span class="k">def</span> <span class="nf">enable_auto_discover_association</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">association_name</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enable all users assocaition for UserMailboxSubclient.</span>
+
+<span class="sd">                    Args:</span>
+<span class="sd">                        association_name  (str)  --  Type of auto discover association</span>
+<span class="sd">                            Valid Values:</span>
+<span class="sd">                                &quot;All Users&quot;</span>
+<span class="sd">                                &quot;All O365 Mailboxes&quot;</span>
+<span class="sd">                                &quot;All Public Folders&quot;</span>
+
+<span class="sd">                        plan_name  (str)  --  Name of the plan to associate with users/groups</span>
+
+
+<span class="sd">                &quot;&quot;&quot;</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plan_name</span><span class="p">)</span>
+
+        <span class="n">association_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;All Users&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                            <span class="s2">&quot;All Office365 Groups&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+                            <span class="s2">&quot;All Public Folders&quot;</span><span class="p">:</span> <span class="mi">12</span>
+                            <span class="p">}</span>
+
+        <span class="n">_association_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;emailAssociation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;emailStatus&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;advanceOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enableAutoDiscovery&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subclientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
+                <span class="s2">&quot;emailDiscoverinfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;discoverByType&quot;</span><span class="p">:</span> <span class="n">association_dict</span><span class="p">[</span><span class="n">association_name</span><span class="p">],</span>
+                    <span class="s2">&quot;genericAssociations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;associationName&quot;</span><span class="p">:</span> <span class="n">association_name</span><span class="p">,</span>
+                            <span class="s2">&quot;associationType&quot;</span><span class="p">:</span> <span class="n">association_dict</span><span class="p">[</span><span class="n">association_name</span><span class="p">]</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;plan&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;planId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_association_request</span><span class="p">(</span><span class="n">_association_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="UsermailboxSubclient.refresh"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.exchange.html#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the User Mailbox Subclient.&quot;&quot;&quot;</span>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.cloudapps.salesforce_subclient &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.subclients.cloudapps.salesforce_subclient &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -173,6 +173,17 @@
 
 <span class="sd">    _get_subclient_properties_json()          --  gets all the subclient  related properties of</span>
 <span class="sd">                                                      salesforce subclient.</span>
+<span class="sd">    enable_files                              --  Enables files option on subclient content</span>
+
+<span class="sd">    disable_files                             --  Disables files option on subclient content</span>
+
+<span class="sd">    enable_metadata                           --  Enables metadata option on subclient content</span>
+
+<span class="sd">    disable_metadata                          --  Disables metadata option on subclient content</span>
+
+<span class="sd">    enable_archived_deleted                   --  Enables backup archived and deleted option on subclient content</span>
+
+<span class="sd">    disable_archived_deleted                  --  Disables backup archived and deleted  option on subclient content</span>
 
 <span class="sd">    browse()                                  --  Browses the salesforce content</span>
 
@@ -217,6 +228,26 @@
     <span class="sd">&quot;&quot;&quot;Derived class from CloudAppsSubclient Base class, representing a Salesforce subclient,</span>
 <span class="sd">        and to perform operations on that subclient.&quot;&quot;&quot;</span>
 
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for the class</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            backupset_object  (object)  -- instance of the Backupset class</span>
+
+<span class="sd">            subclient_name    (str)     -- name of the subclient</span>
+
+<span class="sd">            subclient_id      (str)     -- id of the subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cloud_apps_subclient_prop</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_files</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_archived_deleted</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_objects</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SalesforceSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_get_subclient_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the properties of this subclient.</span>
 
@@ -229,8 +260,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SalesforceSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="s1">&#39;CloudAppsSubclientProp&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;CloudAppsSubclientProp&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;cloudAppsSubClientProp&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;cloudAppsSubClientProp&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;salesforceSubclient&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span><span class="p">:</span>
+                <span class="n">sfsubclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span><span class="p">[</span><span class="s1">&#39;salesforceSubclient&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_objects</span> <span class="o">=</span> <span class="n">sfsubclient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupSfObjects&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_files</span> <span class="o">=</span> <span class="n">sfsubclient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupFileObjects&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span> <span class="o">=</span> <span class="n">sfsubclient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupSFMetadata&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_archived_deleted</span> <span class="o">=</span> <span class="n">sfsubclient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;backupArchivedandDeletedRecs&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_subclient_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;get the all subclient related properties of this subclient.</span>
@@ -243,7 +280,7 @@
             <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;proxyClient&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxyClient</span><span class="p">,</span>
                 <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span><span class="p">,</span>
-                <span class="s2">&quot;CloudAppsSubclientProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span><span class="p">,</span>
+                <span class="s2">&quot;cloudAppsSubClientProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_apps_subclient_prop</span><span class="p">,</span>
                 <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonProperties</span><span class="p">,</span>
                 <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
             <span class="p">}</span>
@@ -251,18 +288,85 @@
 
         <span class="k">return</span> <span class="n">subclient_json</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">objects</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getter for salesforce files option&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objects</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getter for salesforce files option&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_files</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getter for salesforce metadata option &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">archived_deleted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getter for salesfoce backup archived and deleted data&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_archived_data</span>
+
+<div class="viewcode-block" id="SalesforceSubclient.enable_files"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_files">[docs]</a>    <span class="k">def</span> <span class="nf">enable_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables files option on subclient content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]</span><span class="se">\</span>
+<span class="s2">                                           [&#39;salesforceSubclient&#39;][&#39;backupFileObjects&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SalesforceSubclient.enable_metadata"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">enable_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables metadata option on subclient content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]</span><span class="se">\</span>
+<span class="s2">                                           [&#39;salesforceSubclient&#39;][&#39;backupSFMetadata&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SalesforceSubclient.enable_archived_deleted"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_archived_deleted">[docs]</a>    <span class="k">def</span> <span class="nf">enable_archived_deleted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables backup archived deleted option on subclient content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">archived_deleted</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]</span><span class="se">\</span>
+<span class="s2">                                           [&#39;salesforceSubclient&#39;][&#39;backupArchivedandDeletedRecs&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SalesforceSubclient.disable_files"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.disable_files">[docs]</a>    <span class="k">def</span> <span class="nf">disable_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disables files option on subclient content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]</span><span class="se">\</span>
+<span class="s2">                                           [&#39;salesforceSubclient&#39;][&#39;backupFileObjects&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SalesforceSubclient.disable_metadata"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.disable_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">disable_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables metadata option on subclient content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]</span><span class="se">\</span>
+<span class="s2">                                           [&#39;salesforceSubclient&#39;][&#39;backupSFMetadata&#39;]&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SalesforceSubclient.disable_archived_deleted"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.disable_archived_deleted">[docs]</a>    <span class="k">def</span> <span class="nf">disable_archived_deleted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disables backup archived and deleted option on subclient content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">archived_deleted</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]</span><span class="se">\</span>
+<span class="s2">                                           [&#39;salesforceSubclient&#39;][&#39;backupArchivedandDeletedRecs&#39;]&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="SalesforceSubclient.check_object_in_browse"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.cloudapps.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.check_object_in_browse">[docs]</a>    <span class="k">def</span> <span class="nf">check_object_in_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_to_restore</span><span class="p">,</span> <span class="n">browse_data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check if the particular object is present in browse of the subclient</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                _object_to_restore     (str)   --  folder path whioch has to be restored</span>
+<span class="sd">                object_to_restore     (str)   --  folder path whioch has to be restored</span>
 
-<span class="sd">                _browse_data           (str)   --  list of objects from browse response</span>
+<span class="sd">                browse_data           (str)   --  list of objects from browse response</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if object is not present in browse result</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">source_item</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -306,7 +410,7 @@
                 <span class="s2">&quot;syncDatabase&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;dbEnabled&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
                     <span class="s2">&quot;dbType&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="s1">&#39;SQLSERVER&#39;</span><span class="p">),</span>
-                    <span class="s2">&quot;dbHost&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="s2">&quot;dbHost&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host_name&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
                     <span class="s2">&quot;dbPort&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="s1">&#39;1433&#39;</span><span class="p">),</span>
                     <span class="s2">&quot;dbName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_name&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
                     <span class="s2">&quot;dbInstance&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
@@ -439,10 +543,9 @@
             <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">objects_to_restore</span><span class="p">]</span>
 
-        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
             <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
@@ -451,7 +554,7 @@
 
         <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">each_object</span><span class="p">,</span> <span class="n">browse_files</span><span class="p">)</span>
                 <span class="p">)</span>
 
@@ -499,7 +602,7 @@
 <span class="sd">                                                    for restore</span>
 <span class="sd">                    default: SQLSERVER</span>
 
-<span class="sd">                db_host             (str)   :   database hostname (ex:dbhost.company.com)</span>
+<span class="sd">                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)</span>
 
 <span class="sd">                db_instance         (str)   :   database instance name</span>
 <span class="sd">                                                    (provide if applicable for that database type)</span>
@@ -578,7 +681,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;db_host_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                 <span class="s1">&#39;db_instance&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                 <span class="s1">&#39;db_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                 <span class="s1">&#39;db_user_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
@@ -598,10 +701,9 @@
             <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">objects_to_restore</span><span class="p">]</span>
 
-        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
             <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
@@ -610,7 +712,7 @@
 
         <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">each_object</span><span class="p">,</span> <span class="n">browse_files</span><span class="p">)</span>
                 <span class="p">)</span>
 
@@ -623,7 +725,7 @@
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_fs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="s1">&#39;SQLSERVER&#39;</span><span class="p">)</span>
-        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_name&quot;</span><span class="p">,</span> <span class="s2">&quot;autorestoredb&quot;</span><span class="p">)</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_port&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="s1">&#39;1433&#39;</span><span class="p">)</span>
@@ -675,7 +777,7 @@
 <span class="sd">                                                    for restore</span>
 <span class="sd">                    default: SQLSERVER</span>
 
-<span class="sd">                db_host             (str)   :   database hostname (ex:dbhost.company.com)</span>
+<span class="sd">                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)</span>
 
 <span class="sd">                db_instance         (str)   :   database instance name</span>
 <span class="sd">                                                    (provide if applicable for that database type)</span>
@@ -758,7 +860,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
 
-        <span class="n">dest_agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">dest_client</span><span class="p">,</span> <span class="s1">&#39;Cloud Apps&#39;</span><span class="p">)</span>
+        <span class="n">dest_agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">dest_client</span><span class="p">,</span> <span class="s1">&#39;Cloud Apps&#39;</span><span class="p">,</span> <span class="s1">&#39;134&#39;</span><span class="p">)</span>
 
         <span class="c1"># check if instance name is correct</span>
         <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -784,7 +886,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">is_sync_db_enabled</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-                    <span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span> <span class="s1">&#39;db_instance&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+                    <span class="s1">&#39;db_host_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span> <span class="s1">&#39;db_instance&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                     <span class="s1">&#39;db_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span> <span class="s1">&#39;db_user_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                     <span class="s1">&#39;db_user_password&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Salesforce&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
@@ -801,17 +903,16 @@
             <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">objects_to_restore</span><span class="p">]</span>
 
-        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
             <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span> <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
             <span class="n">to_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span>
                         <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
                         <span class="n">each_object</span><span class="p">,</span>
@@ -827,14 +928,14 @@
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;to_cloud&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;from_database&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">is_sync_db_enabled</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">is_sync_db_enabled</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;db_host_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">dbtype</span> <span class="o">=</span> <span class="s1">&#39;SQLSERVER&#39;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">dbtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">is_sync_db_enabled</span>
+                <span class="n">dbtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_type</span>
             <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="n">dbtype</span><span class="p">)</span>
-            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_host</span>
+            <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;db_host_name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_host</span>
             <span class="p">)</span>
             <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                 <span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">sync_db_instance</span>
@@ -905,7 +1006,7 @@
 <span class="sd">                                                    for restore</span>
 <span class="sd">                    default: SQLSERVER</span>
 
-<span class="sd">                db_host             (str)   :   database hostname (ex:dbhost.company.com)</span>
+<span class="sd">                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)</span>
 
 <span class="sd">                db_instance         (str)   :   database instance name</span>
 <span class="sd">                                                    (provide if applicable for that database type)</span>
@@ -1013,7 +1114,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;114&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;db_host&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;db_host_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                 <span class="s1">&#39;db_instance&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                 <span class="s1">&#39;db_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
                 <span class="s1">&#39;db_user_name&#39;</span> <span class="ow">in</span> <span class="n">sf_options</span> <span class="ow">and</span>
@@ -1024,17 +1125,16 @@
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_instance_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_instance</span><span class="o">.</span><span class="n">instance_name</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;dest_backupset_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_backupset</span><span class="o">.</span><span class="n">backupset_name</span>
 
-        <span class="bp">self</span><span class="o">.</span> <span class="n">_restore_salesforce_destination_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_salesforce_destination_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
 
         <span class="c1"># process the objects to restore</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="n">objects_to_restore</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">objects_to_restore_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objects_to_restore</span><span class="p">)</span>
+            <span class="n">objects_to_restore_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">objects_to_restore</span><span class="p">]</span>
 
-        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">browse_files</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
             <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/Objects&#39;</span><span class="p">,</span>
             <span class="n">from_time</span><span class="o">=</span><span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;from_time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
@@ -1043,7 +1143,7 @@
 
         <span class="k">for</span> <span class="n">each_object</span> <span class="ow">in</span> <span class="n">objects_to_restore_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">each_object</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/Files&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;source_item&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">check_object_in_browse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">each_object</span><span class="p">,</span> <span class="n">browse_files</span><span class="p">)</span>
                 <span class="p">)</span>
 
@@ -1058,7 +1158,7 @@
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;from_database&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_enabled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_type&quot;</span><span class="p">,</span> <span class="s1">&#39;SQLSERVER&#39;</span><span class="p">)</span>
-        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_host_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_instance&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_name&quot;</span><span class="p">,</span> <span class="s1">&#39;autorestoredb&#39;</span><span class="p">)</span>
         <span class="n">file_restore_option</span><span class="p">[</span><span class="s2">&quot;db_port&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sf_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="s1">&#39;1433&#39;</span><span class="p">)</span>
@@ -1085,7 +1185,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_salesforce_options_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_browse_option_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_impersonation_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_commonOptions_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_common_options_json</span><span class="p">(</span><span class="n">file_restore_option</span><span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>

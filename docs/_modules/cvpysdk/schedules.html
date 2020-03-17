@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.schedules &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.schedules &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -149,7 +149,7 @@
 <span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
-<span class="c1">#</span>
+<span class="c1">#class Schedules</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
@@ -1130,6 +1130,7 @@
         <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agent</span>
         <span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupset</span>
         <span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
+        <span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instance</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">class_object</span> <span class="o">=</span> <span class="n">class_object</span>
 
@@ -1163,6 +1164,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;AGENT_SCHEDULES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="n">class_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="n">class_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Agent: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_SCHEDULES</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INSTANCE_SCHEDULES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">,</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">instance_id</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;Instance: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">class_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_commcell_object</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Backupset</span><span class="p">):</span>

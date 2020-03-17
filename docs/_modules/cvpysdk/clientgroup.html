@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.clientgroup &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.clientgroup &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -262,6 +262,12 @@
 <span class="sd">    update_properties()             -- to update the client group properties</span>
 
 <span class="sd">    add_additional_setting()        -- adds registry key to client group property</span>
+
+<span class="sd">    is_auto_discover_enabled()      -- gets the autodiscover option for the Organization</span>
+
+<span class="sd">    enable_auto_discover()          -- enables  autodiscover option at client group level</span>
+
+<span class="sd">    disable_auto_discover()         -- disables  autodiscover option at client group level</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -1348,6 +1354,11 @@
 
         <span class="k">return</span> <span class="n">client_group_filters</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_auto_discover_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns boolen for clientgroup autodiscover attribute whether property is enabled or not.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
     <span class="nd">@client_group_filter</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">client_group_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;&quot;&quot;Sets the specified server group filters&quot;&quot;&quot;</span>
@@ -1905,6 +1916,56 @@
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientGroup.enable_auto_discover"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.enable_auto_discover">[docs]</a>    <span class="k">def</span> <span class="nf">enable_auto_discover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables autodiscover at ClientGroup level..</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to enable_auto_discover</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientGroupOperationType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;clientGroupDetail&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;clientGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_name</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to enable autodiscover </span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to enable autodiscover&#39;</span>
+
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientGroup.disable_auto_discover"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.disable_auto_discover">[docs]</a>    <span class="k">def</span> <span class="nf">disable_auto_discover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables autodiscover at ClientGroup level..</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to disable_auto_discover</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientGroupOperationType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;clientGroupDetail&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;clientGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">clientgroup_name</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to Disable autodiscover </span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to Disable autodiscover&#39;</span>
+
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ClientGroup.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the ClientGroup.&quot;&quot;&quot;</span>

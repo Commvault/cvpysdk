@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.security.role &mdash; Developer SDK - Python 11.18 documentation</title>
+  <title>cvpysdk.security.role &mdash; Developer SDK - Python 11.19 documentation</title>
   
 
   
@@ -323,7 +323,7 @@
 <span class="sd">                    if role already exists on the commcell</span>
 
 <span class="sd">         &quot;&quot;&quot;</span>
-        <span class="k">if</span><span class="p">(</span><span class="n">permission_list</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">and</span> <span class="n">categoryname_list</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">permission_list</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">and</span> <span class="n">categoryname_list</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;empty role can not be created!!  &quot;</span>
                                               <span class="s2">&quot;either permission_list or categoryname_list &quot;</span>
                                               <span class="s2">&quot;should have some value! &quot;</span><span class="p">)</span>
@@ -333,7 +333,10 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Role&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
                                <span class="s2">&quot;Role </span><span class="si">{0}</span><span class="s2"> already exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rolename</span><span class="p">))</span>
 
-        <span class="n">arr</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;permissionName&quot;</span><span class="p">:</span> <span class="n">permission</span><span class="p">}</span> <span class="k">for</span> <span class="n">permission</span> <span class="ow">in</span> <span class="n">permission_list</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">permission_list</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;permissionName&quot;</span><span class="p">:</span> <span class="n">permission</span><span class="p">}</span> <span class="k">for</span> <span class="n">permission</span> <span class="ow">in</span> <span class="n">permission_list</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">categoryname_list</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">catname</span> <span class="ow">in</span> <span class="n">categoryname_list</span><span class="p">:</span>
                 <span class="n">cat_blob</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;categoryName&quot;</span><span class="p">:</span><span class="n">catname</span><span class="p">}</span>
@@ -880,6 +883,11 @@
             <span class="p">}</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_role_props</span><span class="p">(</span><span class="n">props_dict</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">permissions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the permissions that are associated with role&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_role_permissions</span>
 
 <div class="viewcode-block" id="Role.refresh"><a class="viewcode-back" href="../../../source/cvpysdk.security.html#cvpysdk.security.role.Role.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the Roles.&quot;&quot;&quot;</span>
