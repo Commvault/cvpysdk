@@ -203,17 +203,17 @@ class DownloadCenter(object):
 
         if flag:
             try:
-                packages = xmltodict.parse(response.text)[root]['searchResult']['packages']
+                packages = response.json()['searchResult']['packages']
 
                 if isinstance(packages, dict):
                     packages = [packages]
 
                 for package in packages:
-                    name = package['@name'].lower()
+                    name = package['name'].lower()
 
                     self._packages[name] = {
-                        'id': package['@packageId'],
-                        'description': package['@description'],
+                        'id': package['packageId'],
+                        'description': package['description'],
                         'platforms': {}
                     }
 
@@ -223,9 +223,9 @@ class DownloadCenter(object):
                         platforms = [platforms]
 
                     for platform in platforms:
-                        platform_name = platform['@name']
-                        platform_id = platform['@id']
-                        download_type = platform['downloadType']['@name']
+                        platform_name = platform['name']
+                        platform_id = platform['id']
+                        download_type = platform['downloadType']['name']
 
                         if platform_name not in self._packages[name]['platforms']:
                             self._packages[name]['platforms'][platform_name] = {

@@ -2217,6 +2217,16 @@ class Job(object):
     def start_time(self):
         """Treats the start time as a read-only attribute."""
         return self._start_time
+    
+    @property
+    def start_timestamp(self):
+        """Treats the unix start time as a read-only attribute."""
+        return self._summary['jobStartTime']
+
+    @property
+    def end_timestamp(self):
+        """Treats the unix end time as a read-only attribute"""
+        return self._summary['jobEndTime']
 
     @property
     def end_time(self):

@@ -103,6 +103,10 @@ Workflow:
 
     clone_workflow()                    --  Clones the workflow
 
+    schedule_workflow()                 --  Creates a schedule for the workflow
+
+    _process_workflow_schedule_response -- processes the response received schedule creation request
+
     refresh()                           --  Refreshes the workflow properties
 
     @Property
@@ -845,6 +849,8 @@ class WorkFlow(object):
         self._EXECUTE_WORKFLOW = self._services['EXECUTE_WORKFLOW']
         self._GET_WORKFLOW = self._services['GET_WORKFLOW'] % (self._workflow_id)
         self._GET_WORKFLOW_DEFINITION = self._services['GET_WORKFLOW_DEFINITION']
+        self._CREATE_SCHEDULE = self._services['CREATE_UPDATE_SCHEDULE_POLICY']
+        self._MODIFY_SCHEDULE = self._services['EXECUTE_QCOMMAND']
 
         self._workflows = self._commcell_object.workflows.all_workflows
         self._activities = self._commcell_object.workflows.all_activities
@@ -1356,6 +1362,133 @@ class WorkFlow(object):
                 raise SDKException('Workflow', '102', 'Failed to clone the workflow')
         else:
             raise SDKException('Response', '101', response.text)
+
+    def schedule_workflow(self, schedule_pattern, workflow_inputs=None):
+        """ Creates a schedule for a workflow
+
+             Args:
+                  schedule_pattern(dict)    -- Please refer SchedulePattern.create_schedule in
+                                            schedules.py for the types of pattern to be sent
+
+                                     eg: {
+                                            "schedule_name: 'schedule1',
+                                            "freq_type": 'daily',
+                                            "active_start_time": time_in_%H/%S (str),
+                                            "repeat_days": days_to_repeat (int)
+                                         }
+
+                  workflow_inputs(dict) --  dictionary consisting of inputs for the workflow
+
+                    if inputs are not given, user will be prompted for inputs on the command line
+
+                    default: None
+
+                    inputs dict format:
+
+                    {
+                            'input1_name': 'input1_value',
+
+                            'input2_name': 'input2_value'
+                    }
+
+                    e.g.:
+
+                    for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+                    {
+                    "ClientGroupName": "client_group_value"
+                    }
+
+             Returns:
+                     Object : An instance of the Schedule class for the schedule created
+            """
+        from cvpysdk.schedules import SchedulePattern
+        if workflow_inputs is not None:
+            xml = str(xmltodict.unparse(input_dict={"inputs": workflow_inputs}).split('\n')[1])
+        task_req = {
+            "processinginstructioninfo": {},
+            "taskInfo": {
+                "associations": [
+                    {
+                        "workflowName": self._workflow_name
+                    }
+                ],
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 2,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 2001
+                        },
+                        "options": {
+                            "workflowJobOptions": xml if workflow_inputs else "",
+                            "adminOpts": {
+                                "contentIndexingOption": {
+                                    "subClientBasedAnalytics": False
+                                }
+                            }
+                        }
+                    }
+                ]
+                }
+        }
+        request_json = SchedulePattern().create_schedule(task_req, schedule_pattern)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CREATE_SCHEDULE, request_json)
+        output = self._process_workflow_schedule_response(flag, response)
+        if output[0]:
+            self._commcell_object.schedules.refresh()
+            return self._commcell_object.schedules.get(task_id=response.json()["taskId"])
+        o_str = 'Failed to create Schedule\nError: "{0}"'
+        raise SDKException('Schedules', '102', o_str.format(output[2]))
+
+    def _process_workflow_schedule_response(self, flag, response):
+        """
+        processes the response received post create schedule request
+        Args:
+        flag: (bool) -- True or false based on response
+        response: (dict) response from modify request
+        Returns:
+            flag: (Bool) -- based on success and failure
+            error_code: (int) -- error_code from response
+            error_message: (str) -- error_message from the response if any
+        """
+
+        if flag:
+            if response.json():
+                if "taskId" in response.json():
+                    task_id = str(response.json()["taskId"])
+
+                    if task_id:
+                        return True, "0", ""
+
+                elif "errorCode" in response.json():
+                    error_code = str(response.json()['errorCode'])
+                    error_message = response.json()['errorMessage']
+
+                    if error_code == "0":
+                        return True, "0", ""
+
+                    if error_message:
+                        return False, error_code, error_message
+                    else:
+                        return False, error_code, ""
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
 
     def refresh(self):
         """Refreshes the properties of the workflow."""

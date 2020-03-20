@@ -706,9 +706,8 @@ class VirtualServerSubclient(Subclient):
                                                 and corresponding
         """
 
-        if not new_name:
+        if not new_name and not self._instance_object.instance_name == 'google cloud platform':
             new_name = name
-
         temp_disk_dict = {}
         temp_disk_dict[self.disk_pattern.name.value] = name
         temp_disk_dict[self.disk_pattern.datastore.value] = datastore
@@ -789,6 +788,12 @@ class VirtualServerSubclient(Subclient):
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
 
         for network_card_dict in vm_nics_list:
+            if self._instance_object.instance_name == 'google cloud platform':
+                current_project = network_card_dict.get('subnetId').split('/')[6]
+                network_card_dict['subnetId'] = network_card_dict.get('subnetId').replace(
+                    current_project, value.get('project_id'))
+                network_card_dict['label'] = network_card_dict.get('sourceNetwork').replace(
+                    current_project, value.get('project_id'))
             _destnetwork = value.get("destination_network",
                                      value.get('network',
                                                network_card_dict['name']))
@@ -796,7 +801,7 @@ class VirtualServerSubclient(Subclient):
             nics = {
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
-                "sourceNetworkId": "",
+                "sourceNetworkId": network_card_dict.get('sourceNetwork',""),
                 "networkName":_destnetwork ,
                 "name": network_card_dict['label'],
                 "networkName": _destnetwork,
@@ -885,6 +890,7 @@ class VirtualServerSubclient(Subclient):
             "newGuid": value.get("new_guid", ""),
             "newName": value.get("new_name", ""),
             "esxHost": value.get("esx_host", ""),
+            "projectId" : value.get("project_id", ""),
             "cluster": value.get("cluster", ""),
             "name": value.get("name", ""),
             "nics": value.get("nics", []),
@@ -1175,12 +1181,14 @@ class VirtualServerSubclient(Subclient):
             label = nic.get('label')
             subnet = nic.get('subnet')
             networkDisplayName = nic.get('networkDisplayName', "")
+            sourceNetwork = nic.get('id',"")
 
             nic_info = {
                 'name': name,
                 'label': label,
                 'subnetId': subnet,
-                'networkDisplayName': networkDisplayName
+                'networkDisplayName': networkDisplayName,
+                'sourceNetwork': sourceNetwork
             }
             nic_list.append(nic_info)
 
@@ -1987,6 +1995,8 @@ class VirtualServerSubclient(Subclient):
             new_name_prefix = restore_option.get("disk_name_prefix")
             new_name = data["name"] if new_name_prefix is None \
                 else new_name_prefix + "_" + data["name"]
+            if self._instance_object.instance_name == 'google cloud platform':
+                new_name = ""
             if restore_option['destination_instance'].lower() == 'vmware':
                 _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
             else:
@@ -1999,7 +2009,7 @@ class VirtualServerSubclient(Subclient):
         restore_option["disks"] = vm_disks
 
         # prepare nics info json
-        if "nics" not in restore_option:
+        if "nics" not in restore_option or self._instance_object.instance_name == 'google cloud platform':
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option["nics"] = nics_list
             if "source_ip" in restore_option and "destination_ip" in restore_option:
@@ -2074,7 +2084,7 @@ class VirtualServerSubclient(Subclient):
             if "datastore" in restore_option:
                 ds = restore_option["datastore"]
             new_name_prefix = restore_option.get("disk_name_prefix")
-            new_name = "delete_" + data["name"] if new_name_prefix is None \
+            new_name = "del_" + data["name"] if new_name_prefix is None \
                 else new_name_prefix + "_" + data["name"]
             _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
             vm_disks.append(_disk_dict)
@@ -2382,7 +2392,7 @@ class VirtualServerSubclient(Subclient):
                         restore_option["restore_new_name"] is not None):
                     restore_option["new_name"] = restore_option["restore_new_name"] + _each_vm_to_restore
                 else:
-                    restore_option["new_name"] = "Delete" + _each_vm_to_restore
+                    restore_option["new_name"] = "del" + _each_vm_to_restore
             else:
                 restore_option["new_name"] = _each_vm_to_restore
             self.set_advanced_vm_restore_options(_each_vm_to_restore, restore_option)

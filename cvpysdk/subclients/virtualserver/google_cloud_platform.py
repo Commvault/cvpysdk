@@ -129,6 +129,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             public_ip=False,
             copy_precedence=0,
+            project_id=None,
             restore_option=None):
 
         """Restores the FULL Virtual machine specified  in the input  list to the client,
@@ -196,6 +197,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             datacenter=zone,
             in_place=False,
             createPublicIP=public_ip,
+            project_id=project_id,
             restore_new_name=new_name
         )
 

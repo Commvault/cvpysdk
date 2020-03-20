@@ -144,6 +144,10 @@ class VsaLiveSync:
         if instance_name == hv_type.MS_VIRTUAL_SERVER.value.lower():
             from .hyperv_live_sync import HyperVLiveSync
             return object.__new__(HyperVLiveSync)
+
+        if instance_name == hv_type.VIRTUAL_CENTER.value.lower():
+            from .vmware_live_sync import VMWareLiveSync
+            return object.__new__(VMWareLiveSync)
         raise SDKException(
             'LiveSync',
             '102',

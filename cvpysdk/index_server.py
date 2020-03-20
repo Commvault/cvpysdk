@@ -307,7 +307,7 @@ class IndexServers(object):
         """
         if isinstance(cloud_name, basestring):
             for index_server in self._all_index_servers:
-                if self._all_index_servers[index_server]["engineName"] == cloud_name:
+                if self._all_index_servers[index_server]["engineName"].lower() == cloud_name.lower():
                     return True
             return False
         raise SDKException('IndexServers', '101')

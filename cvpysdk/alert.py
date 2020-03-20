@@ -322,6 +322,11 @@ class Alerts(object):
                 "mediaAgentName": "media_agent_name",
                 "mediaAgentId": "media_agent_id",
                 "_type_": 11
+            },
+            "storage_policies": {
+                "storagePolicyName": "storage_policy_name",
+                "storagePolicyId": "storage_policy_id",
+                "_type_": 17
             }
         }
 

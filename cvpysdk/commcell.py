@@ -149,6 +149,9 @@ Commcell instance Attributes
     **schedule_policies**       --  returns the instance of the `SchedulePolicies` class,
     to interact with the schedule policies added to the Commcell
 
+    **schedules**       --  returns the instance of the `Schedules` class,
+    to interact with the schedules associated to the Commcell
+
     **user_groups**             --  returns the instance of the `UserGroups` class,
     to interact with the user groups added to the Commcell
 
@@ -233,6 +236,10 @@ Commcell instance Attributes
 
     **job_management**          --  Returns an instance of the JobManagement class.
 
+    **hac_clusters**            --  Returns an instance of the HAC Clusters class
+
+    **index_pools**             --  Returns an instance of the IndexPools class
+
 """
 
 from __future__ import absolute_import
@@ -293,6 +300,8 @@ from .reports import report
 from .recovery_targets import RecoveryTargets
 from .job import JobManagement
 from .index_server import IndexServers
+from .hac_clusters import HACClusters
+from .index_pools import IndexPools
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -460,6 +469,7 @@ class Commcell(object):
         self._disk_libraries = None
         self._storage_policies = None
         self._schedule_policies = None
+        self._schedules = None
         self._policies = None
         self._user_groups = None
         self._domains = None
@@ -492,6 +502,8 @@ class Commcell(object):
         self._recovery_targets = None
         self._job_management = None
         self._index_servers = None
+        self._hac_clusters = None
+        self._index_pools = None
         self.refresh()
 
         del self._password
@@ -547,6 +559,7 @@ class Commcell(object):
         del self._disk_libraries
         del self._storage_policies
         del self._schedule_policies
+        del self._schedules
         del self._user_groups
         del self._policies
         del self._domains
@@ -580,6 +593,8 @@ class Commcell(object):
         del self._backup_network_pairs
         del self._job_management
         del self._index_servers
+        del self._hac_clusters
+        del self._index_pools
         del self
 
     def _get_commserv_details(self):
@@ -854,6 +869,28 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def hac_clusters(self):
+        """Returns the instance of the HAC Clusters class."""
+        try:
+            if self._hac_clusters is None:
+                self._hac_clusters = HACClusters(self)
+
+            return self._hac_clusters
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def index_pools(self):
+        """Returns the instance of the HAC Clusters class."""
+        try:
+            if self._index_pools is None:
+                self._index_pools = IndexPools(self)
+
+            return self._index_pools
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def media_agents(self):
         """Returns the instance of the MediaAgents class."""
         try:
@@ -906,6 +943,17 @@ class Commcell(object):
     def schedule_policies(self):
         """Returns the instance of the SchedulePolicies class."""
         return self.policies.schedule_policies
+
+    @property
+    def schedules(self):
+        """Returns the instance of the Schedules class."""
+        try:
+            if self._schedules is None:
+                self._schedules = Schedules(self)
+
+            return self._schedules
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def policies(self):
@@ -1386,6 +1434,7 @@ class Commcell(object):
         self._disk_libraries = None
         self._storage_policies = None
         self._schedule_policies = None
+        self._schedules = None
         self._user_groups = None
         self._domains = None
         self._client_groups = None
@@ -1415,6 +1464,8 @@ class Commcell(object):
         self._registered_commcells = None
         self._redirect_rules_service = None
         self._index_servers = None
+        self._hac_clusters = None
+        self._index_pools = None
 
     def run_data_aging(
             self,
