@@ -272,11 +272,80 @@ class StoragePools:
         if self.has_storage_pool(name):
             return StoragePool(self._commcell_object, name, storage_pool_id=self._storage_pools[name])
         else:
-            raise SDKException('StoragePool', '103')
+            raise SDKException('StoragePool', '103')    
+    
+    def hyperscale_create_storage_pool(self, storage_pool_name, media_agents):
+        """
+            Create new storage pool for hyperscale
+            Args:
+                storage_pool_name (string) -- Name of the storage pools to create
+                
+                media_agents      (List)   -- List of 3 media agents with name's(str)
+                                                or instance of media agent's(object)
+                                                
+                Example: ["ma1","ma2","ma3"]
 
-    def refresh(self):
-        """Refresh the list of storage pools associated to the Commcell."""
-        self._storage_pools = self._get_storage_pools()
+            Return:
+                 flag, response -- response returned by the REST API call
+        """
+        
+        if not isinstance(media_agents, list):
+            raise SDKException('Storage', '101')
+        if not isinstance(storage_pool_name, basestring):
+            raise SDKException('Storage', '101')
+        
+        mediagent_obj = []
+        for media_agent in media_agents:
+            if isinstance(media_agent, MediaAgent):
+                mediagent_obj.append(media_agent)
+            elif isinstance(media_agent, basestring):
+                mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
+            else:
+                raise SDKException('Storage', '103')
+        if len(mediagent_obj) <= 2:
+            raise SDKException('Storage', '102', "minimum 3 media agents are required")
+        
+        request_xml = """<App_CreateStoragePolicyReq storagePolicyName="{0}" copyName="{0}_Primary" type="1"
+                                     numberOfCopies="1">
+                                    <storagePolicyCopyInfo>
+                                        <storagePolicyFlags scaleOutStoragePolicy="1"/>
+                                    </storagePolicyCopyInfo>
+                                    <storage>
+                                        <mediaAgent mediaAgentId="{4}" mediaAgentName="{1}" displayName="{1}"/>
+                                    </storage>
+                                    <storage>
+                                        <mediaAgent mediaAgentId="{5}" mediaAgentName="{2}" displayName="{2}"/>
+                                    </storage>
+                                    <storage>
+                                        <mediaAgent mediaAgentId="{6}" mediaAgentName="{3}" displayName="{3}"/>
+                                    </storage>
+                                    <scaleoutConfiguration configurationType="1"/>
+                                </App_CreateStoragePolicyReq>
+                                """.format(storage_pool_name, mediagent_obj[0].media_agent_name,
+                                           mediagent_obj[1].media_agent_name, mediagent_obj[2].media_agent_name,
+                                           mediagent_obj[0].media_agent_id, mediagent_obj[1].media_agent_id,
+                                           mediagent_obj[2].media_agent_id)
+        
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._add_storage_pool_api, request_xml
+        )
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+
+                if int(error_code) != 0:
+                    error_message = response.json()['error']['errorMessage']
+                    o_str = 'Failed to create storage pool\nError: "{0}"'
+
+                    raise SDKException('StoragePool', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+        return self.get(storage_pool_name)
 
     def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path):
         """
@@ -456,7 +525,10 @@ class StoragePools:
                     'No storage pool exists with name: {0}'.format(storage_pool_name)
                 )
 
-
+    def refresh(self):
+        """Refresh the list of storage pools associated to the Commcell."""
+        self._storage_pools = self._get_storage_pools()
+        
 class StoragePool(object):
     """Class for individual storage pools"""
 
@@ -522,6 +594,90 @@ class StoragePool(object):
     def storage_pool_id(self):
         """Treats id as a read only attribute"""
         return self._storage_pool_id
+    
+    def hyperscale_add_nodes(self, media_agents):
+        """
+        Add 3 new nodes to an existing storage pool
+
+        args:
+            media_agents      (List)   -- List of 3 media agents with name's(str)
+                                            or instance of media agent's(object)
+                                            
+            Example: ["ma1","ma2","ma3"]
+
+        Raises:
+                SDKException:
+                    if add nodes to an existing storage pool fails
+        """
+        if not isinstance(media_agents, list):
+            raise SDKException('Storage', '101')
+        
+        mediagent_obj = []
+        for media_agent in media_agents:        
+            if isinstance(media_agent, MediaAgent):
+                mediagent_obj.append(media_agent)
+            elif isinstance(media_agent, basestring):
+                mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
+            else:
+                raise SDKException('Storage', '103')
+                    
+        if len(mediagent_obj) <= 2:
+            raise SDKException('Storage', '102', "Minimum 3 MediaAgents required")
+        
+        
+        request_json = {
+            "scaleoutOperationType": 2,
+            "StoragePolicy": {
+                "storagePolicyName": "{0}".format(self.storage_pool_name),
+            },
+            "storage": [
+                {
+                    "mediaAgent": {
+                        "displayName": "{0}".format(mediagent_obj[0].media_agent_id),
+                        "mediaAgentName": "{0}".format(mediagent_obj[0].media_agent_name)
+                    }
+                },
+                {
+                    "mediaAgent": {
+                        "displayName": "{0}".format(mediagent_obj[1].media_agent_id),
+                        "mediaAgentName": "{0}".format(mediagent_obj[1].media_agent_name)
+                    }
+                },
+                {
+                    "mediaAgent": {
+                        "displayName": "{0}".format(mediagent_obj[2].media_agent_id),
+                        "mediaAgentName": "{0}".format(mediagent_obj[2].media_agent_name)
+                    }
+                }
+            ],
+            "scaleoutConfiguration": {
+                "configurationType": 1
+            }
+        }
+
+        self._edit_storage_pool_api = self._commcell_object._services[
+            'EDIT_STORAGE_POOL']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._edit_storage_pool_api, request_json
+        )
+        
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+
+                if int(error_code) != 0:
+                    error_message = response.json()['error']['errorMessage']
+                    o_str = 'Failed to add nodes to storage pool\nError: "{0}"'
+
+                    raise SDKException('StoragePool', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
 
     def refresh(self):
         """Refreshes propery of the class object"""

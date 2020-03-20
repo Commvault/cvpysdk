@@ -293,23 +293,23 @@ class FileSystemSubclient(Subclient):
         final_dict = super(FileSystemSubclient, self)._common_backup_options(options)
 
         common_options = {
-                "jobDescription": options.get('job_description', ""),
-                "jobRetryOpts": {
-                    "killRunningJobWhenTotalRunningTimeExpires": options.get(
-                        'kill_running_job_when_total_running_time_expires', False),
-                    "numberOfRetries": options.get('number_of_retries', 0),
-                    "enableNumberOfRetries": options.get('enable_number_of_retries', False),
-                    "runningTime": {
-                        "enableTotalRunningTime": options.get('enable_total_running_time', False),
-                        "totalRunningTime": options.get('total_running_time', 3600)
-                    }
-                },
-                "startUpOpts": {
-                    "startInSuspendedState": options.get('start_in_suspended_state', False),
-                    "useDefaultPriority": options.get('use_default_priority', True),
-                    "priority": options.get('priority', 166)
+            "jobDescription": options.get('job_description', ""),
+            "jobRetryOpts": {
+                "killRunningJobWhenTotalRunningTimeExpires": options.get(
+                    'kill_running_job_when_total_running_time_expires', False),
+                "numberOfRetries": options.get('number_of_retries', 0),
+                "enableNumberOfRetries": options.get('enable_number_of_retries', False),
+                "runningTime": {
+                    "enableTotalRunningTime": options.get('enable_total_running_time', False),
+                    "totalRunningTime": options.get('total_running_time', 3600)
                 }
+            },
+            "startUpOpts": {
+                "startInSuspendedState": options.get('start_in_suspended_state', False),
+                "useDefaultPriority": options.get('use_default_priority', True),
+                "priority": options.get('priority', 166)
             }
+        }
 
         return common_options
 
@@ -1567,7 +1567,8 @@ class FileSystemSubclient(Subclient):
             from_time=None,
             to_time=None,
             fs_options=None,
-            schedule_pattern=None):
+            schedule_pattern=None
+    ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -1600,18 +1601,29 @@ class FileSystemSubclient(Subclient):
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
+
                     options:
+
                         preserve_level          : preserve level option to set in restore
+
                         proxy_client            : proxy that needed to be used for restore
+
                         impersonate_user        : Impersonate user options for restore
+
                         impersonate_password    : Impersonate password option for restore
                         in base64 encoded form
+
                         all_versions            : if set to True restores all the versions of the
                         specified file
+
                         versions                : list of version numbers to be backed up
+
                         media_agent             : Media Agent need to be used for Browse and restore
+
                         is_vlr_restore          : sets if the restore job is to be triggered as vlr
+
                         validate_only           : To validate data backed up for restore
+
                         instant_clone_options   : Options for FS clone found on Command Center, the value must be
                         a dictionary containing the following key value pairs.
 
@@ -1629,6 +1641,8 @@ class FileSystemSubclient(Subclient):
 
                             clone_cleanup_script    (str)   --  The script that will run after clean up.
                             This is an OPTIONAL key.
+
+                        no_of_streams   (int)       -- Number of streams to be used for restore
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 
@@ -1677,7 +1691,8 @@ class FileSystemSubclient(Subclient):
                 from_time=from_time,
                 to_time=to_time,
                 destPath=destination_path,
-                restore_option=fs_options)
+                restore_option=fs_options
+            )
 
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(
                 self._vlr_restore_options_dict)
@@ -1698,7 +1713,8 @@ class FileSystemSubclient(Subclient):
                 from_time=from_time,
                 to_time=to_time,
                 fs_options=fs_options,
-                schedule_pattern=schedule_pattern)
+                schedule_pattern=schedule_pattern
+            )
 
     @property
     def catalog_acl(self):

@@ -84,7 +84,8 @@ class FSBackupset(Backupset):
             from_time=None,
             to_time=None,
             fs_options=None,
-            restore_jobs=None):
+            restore_jobs=None
+    ):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -110,13 +111,20 @@ class FSBackupset(Backupset):
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
+
                     options:
+
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
+
                         versions            : list of version numbers to be backed up
+
                         validate_only       : To validate data backed up for restore
 
+                        no_of_streams   (int)       -- Number of streams to be used for restore
+
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -155,7 +163,8 @@ class FSBackupset(Backupset):
             from_time=None,
             to_time=None,
             fs_options=None,
-            restore_jobs=None):
+            restore_jobs=None
+    ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -188,18 +197,29 @@ class FSBackupset(Backupset):
                     default: None
 
                 fs_options      (dict)             -- dictionary that includes all advanced options
+
                     options:
+
                         preserve_level      : preserve level option to set in restore
+
                         proxy_client        : proxy that needed to be used for restore
+
                         impersonate_user    : Impersonate user options for restore
+
                         impersonate_password: Impersonate password option for restore
                                                 in base64 encoded form
+
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
+
                         versions            : list of version numbers to be backed up
+
                         validate_only       : To validate data backed up for restore
 
+                        no_of_streams   (int)       -- Number of streams to be used for restore
+
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -542,14 +562,14 @@ class FSBackupset(Backupset):
         if restore_options.get('VcenterServerName'):
 
             vm_option['vmInfo']['proxyClient'][
-            'clientName'] = restore_options.get('VirtualizationClient', None)
+                'clientName'] = restore_options.get('VirtualizationClient', None)
 
             response_json['taskInfo']['subTasks'][0]['options'][
-            'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
-                'esxServerName'] = restore_options.get('VcenterServerName', None)
+                'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
+                    'esxServerName'] = restore_options.get('VcenterServerName', None)
 
             response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
-            'destClient']['clientName'] = restore_options.get('VirtualizationClient', None)
+                'destClient']['clientName'] = restore_options.get('VirtualizationClient', None)
 
             vm_option['vmInfo']['vmLocation']['hostName'] = restore_options.get(
                 'EsxServer')
@@ -557,14 +577,14 @@ class FSBackupset(Backupset):
             vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('VcenterServerName')
 
         if restore_options.get('HyperVInstance'):
-            if restore_options.get('OsType')=='UNIX':
+            if restore_options.get('OsType') == 'UNIX':
                 vm_option['vendor'] = 'MICROSOFT'
             response_json['taskInfo']['subTasks'][0]['options'][
-            'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
-                'esxServerName'] = restore_options.get('HyperVInstance', None)
+                'restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption'][
+                    'esxServerName'] = restore_options.get('HyperVInstance', None)
 
             response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
-            'destClient']['clientName'] = restore_options.get('HyperVInstance', None)
+                'destClient']['clientName'] = restore_options.get('HyperVInstance', None)
 
             vm_option['vmInfo']['vmLocation']['hostName'] = restore_options.get(
                 'HyperVHost')
@@ -590,18 +610,18 @@ class FSBackupset(Backupset):
                 'clientName'] = restore_options.get('CloneClientName', None)
             vm_option['oneTouchResponse']['clients'][0]['newclient'][
                 'hostName'] = restore_options.get('CloneClientName', None)
-        if restore_options.get('OsType')=='UNIX':
+        if restore_options.get('OsType') == 'UNIX':
             vm_option['oneTouchResponse']['clients'][0]['newclient'][
-            'hostName'] = ''
+                'hostName'] = ''
             vm_option['oneTouchResponse']['clients'][0]['backupSet'][
-            'backupsetName'] = self._properties['backupSetEntity']['backupsetName']
+                'backupsetName'] = self._properties['backupSetEntity']['backupsetName']
             if (response_json['taskInfo']['subTasks'][0]['options']['adminOpts'][
-                'vmProvisioningOption']['virtualMachineOption'][0]['oneTouchResponse']
-                ['hwconfig']['mem_size']) < 4096:
+                    'vmProvisioningOption']['virtualMachineOption'][0]['oneTouchResponse'][
+                        'hwconfig']['mem_size']) < 4096:
                 vm_option['oneTouchResponse']['hwconfig']['mem_size'] = 4096
         if restore_options.get('UseDhcp'):
             vm_option['oneTouchResponse']['clients'][0]['netconfig']['ipinfo']['interfaces'][0][
-            'protocols'][0]['useDhcp'] = True
+                'protocols'][0]['useDhcp'] = True
 
         response_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
             'inPlace'] = False
@@ -1134,10 +1154,8 @@ class FSBackupset(Backupset):
 
         flag, response = self._cvpysdk_object.make_request('DELETE', self._services['DELETE_BLR_PAIR']%blrid)
 
-        if response.status_code != 200 and flag ==  False:
+        if response.status_code != 200 and flag == False:
             raise SDKException('Response', '101', self._update_response_(response.text))
-
-
 
     def create_fsblr_replication_pair(self, srcclientid, destclientid, rpstoreid=None, replicationtype=None,
                                       **replication_options):
@@ -1327,4 +1345,3 @@ class FSBackupset(Backupset):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-

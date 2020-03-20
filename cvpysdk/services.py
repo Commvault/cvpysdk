@@ -139,6 +139,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
+    'SQL_CLONES': '{0}sql/clones',
+    'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
@@ -208,8 +210,13 @@ SERVICES_DICT_TEMPLATE = {
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
+
     'DRBACKUP': '{0}/CommServ/DRBackup',
     'DISASTER_RECOVERY_PROPERTIES': '{0}/Commcell/DRBackup/Properties',
+    'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
+    'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
+    'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
+
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
     'METRICS': '{0}CommServ/MetricsReporting',
@@ -260,6 +267,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
+    'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
@@ -277,6 +285,9 @@ SERVICES_DICT_TEMPLATE = {
     'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',
+
+    'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
+    'CREATE_PSEUDO_CLIENT': '{0}pseudoClient',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',

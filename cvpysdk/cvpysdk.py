@@ -401,7 +401,8 @@ class CVPySDK(object):
                         # pass silently if payload is alredy encoded in bytes
                         pass
 
-                    if 'Content-type' in headers:
+                    if 'Content-type' in headers and headers['Content-type'] not in [
+                            'application/x-www-form-urlencoded']:
                         try:
                             if payload is not None:
                                 xmltodict.parse(payload)

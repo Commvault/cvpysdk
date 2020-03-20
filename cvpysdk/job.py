@@ -2060,7 +2060,7 @@ class Job(object):
         )
 
     def _wait_for_status(self, status):
-        """Waits for 2 minutes or till the job status is changed to given status,
+        """Waits for 6 minutes or till the job status is changed to given status,
             whichever is earlier.
 
             Args:
@@ -2073,7 +2073,7 @@ class Job(object):
         start_time = time.time()
 
         while self.status.lower() != status.lower():
-            if (self.is_finished is True) or (time.time() - start_time > 120):
+            if (self.is_finished is True) or (time.time() - start_time > 360):
                 break
 
             time.sleep(3)
