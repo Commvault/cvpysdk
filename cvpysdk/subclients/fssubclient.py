@@ -120,7 +120,9 @@ FileSystemSubclient Instance Attributes:
 
     **backup_savf_file_data**             --  Sets the savf file data property for ibmi backup.
 
-	**pre_post_commands**				  --  Sets the pre/post commands for the subclient
+	**pre_post_commands**				  --  Sets the pre/post commands for the subclient.
+
+	**backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
 
 """
 
@@ -1977,3 +1979,28 @@ class FileSystemSubclient(Subclient):
 
         else:
             raise SDKException('Subclient', '101')
+
+    @property
+    def backup_nodes(self):
+        """
+        Gets the backup nodes for FS Agent under Network Share Clients.
+        """
+        return self._fsSubClientProp["backupConfiguration"]["backupDataAccessNodes"]
+
+    @backup_nodes.setter
+    def backup_nodes(self, value):
+        """
+        Sets the backup nodes for FS Agent under Network Share Clients.
+
+            Args:
+                value  (list)   --  Specifies the nodes, a list of strings, values are data access node host names.
+        """
+
+        update_properties = self.properties
+
+        access_nodes = []
+        for access_node in value:
+            access_nodes.append({"clientName": access_node})
+
+        update_properties["fsSubClientProp"]["backupConfiguration"] = {"backupDataAccessNodes": access_nodes}
+        self.update_properties(update_properties)

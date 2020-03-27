@@ -2097,7 +2097,7 @@ class Client(object):
 
                 if 'version' in self._properties['client']['versionInfo']:
                     service_pack = re.findall(
-                        r'ServicePack:([\d]*)',
+                        r'[ServicePack|FeatureRelease]:([\d]*)',
                         self._properties['client']['versionInfo']['version']
                     )
 

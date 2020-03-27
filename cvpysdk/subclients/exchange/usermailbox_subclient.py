@@ -41,6 +41,26 @@ UsermailboxSubclient:
 
     set_fs_association_for_pst()        --  Helper method to create pst association for
                                             PST Ingestion by FS association
+    
+    _association_json_with_plan()       --  Create the Association JSON for
+                                            associations using Exchange Plan
+    
+    _association_mailboxes_json()       --  Association for particular mailboxes
+
+    backup_mailboxes()                  --  Backup specific mailboxes
+
+    _backup_generic_items_json()        --  JSON to backup generic items
+
+    backup_generic_items()              --  Backup Generic Items
+                                            viz. All Public Folders/
+                                                All User Mailboxes/
+                                                All Group Mailboxes
+    
+    set_adgroup_associations()          --  Create Association for ADGroups
+
+    _get_discover_adgroups()            --  Get the discovered AD Groups
+
+    _get_discover_users()               --  Get the discovered users
 """
 
 
@@ -177,6 +197,100 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
 
         return associations_json
+
+    def _association_json_with_plan(self, plan_details):
+        """Constructs association json with plan to create association in UserMailbox Subclient.
+        
+            Args: plan_details = {
+                    'plan_name': Plan Name,
+                    'plan_id': int or None (Optional)
+                    }
+                 Returns:
+                    dict -- Association JSON request to pass to the API
+        """
+
+        try:
+            if not self._commcell_object.plans.has_plan(plan_details['plan_name']):
+                raise SDKException('Subclient', '102', 'Plan Name {} not found'.format(plan_details['plan_name']))
+            if 'plan_id' not in plan_details or plan_details['plan_id'] is None:
+                plan_id = self._commcell_object.plans[plan_details['plan_name'].lower()]
+            else:
+                plan_id = plan_details['plan_id']
+
+        except KeyError as err:
+            raise SDKException('Subclient','102','{} not given in content'.format(err))
+
+        plan_details = {
+            'planId' : int(plan_id)
+        }
+
+        association_json = {
+            "emailAssociation": {
+                "subclientEntity" : self._subClientEntity,
+                "plan": plan_details
+            }
+        }
+        return association_json
+
+    def _association_mailboxes_json(self, mailbox_alias_names):
+        """
+            Args:
+                mailbox_alias_names(list): alias names of the mailboxes to backup
+                    Example:
+                        ['aj', 'tkumar']
+            Returns:
+                mailboxes_json(list): Required details of mailboxes to backup
+        """
+        mailboxes_json = []
+        mailbox_alias_names = set(mailbox_alias_names)
+        for user in self._users:
+            if user['alias_name'] in mailbox_alias_names:
+                mailbox_info = {
+                    "aliasName": user["alias_name"],
+                    "mailBoxType": user['mailbox_type'],
+                    "databaseName": user['database_name'],
+                    "displayName": user['display_name'],
+                    "smtpAddress": user['smtp_address'],
+                    "isAutoDiscoveredUser": True if user['is_auto_discover_user'].lower() == 'true' else False,
+                    "msExchRecipientTypeDetails": user['mailbox_type'],
+                    "exchangeVersion": user['exchange_version'],
+                    "exchangeServer": user['exchange_server'],
+                    "lastArchiveJobRanTime": user['last_archive_job_ran_time'],
+                    "user": {
+                        "userGUID": user['user_guid']
+                    }
+                }
+                mailboxes_json.append(mailbox_info)
+        return mailboxes_json
+
+    def _task_json_for_backup(self, mailbox_alias_names):
+        """
+        Args:
+            mailbox_alias_names(list): alias names of the mailboxes to backup
+                Sample Values
+                    ['aj', 'tkumar']
+        Returns:
+            task_json(dict): Task json required to pass to the API
+        """
+        task_json = self._backup_json('Full', False, '')
+        associated_mailboxes_json = self._association_mailboxes_json(mailbox_alias_names)
+        backup_options = {
+            'backupLevel': 2,  # Incremental
+            'incLevel': 1,
+            'exchOnePassOptions': {
+                'mailBoxes': associated_mailboxes_json
+            }
+        }
+        data_options = {
+            "useCatalogServer": False,
+            "followMountPoints": True,
+            "enforceTransactionLogUsage": False,
+            "skipConsistencyCheck": True,
+            "createNewIndex": False
+        }
+        task_json['taskInfo']['subTasks'][0]['options']['backupOpts'] = backup_options
+        task_json['taskInfo']['subTasks'][0]['options']['dataOpt'] = data_options
+        return task_json  
 
     def _set_association_request(self, associations_json):
         """Runs the emailAssociation ass API to set association
@@ -367,6 +481,9 @@ class UsermailboxSubclient(ExchangeSubclient):
                     exchange_server = str(child['userMailBoxInfo']['exchangeServer'])
                     user_guid = str(child['userMailBoxInfo']['user']['userGUID'])
                     is_auto_discover_user = str(child['userMailBoxInfo']['isAutoDiscoveredUser'])
+                    mailbox_type = int(child['userMailBoxInfo']['msExchRecipientTypeDetails'])
+                    exchange_version = int(child['userMailBoxInfo']['exchangeVersion'])
+                    last_archive_job_ran_time = child['userMailBoxInfo']['lastArchiveJobRanTime']
                     if 'emailPolicies' in child['policies']:
                         for policy in child['policies']['emailPolicies']:
                             if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 1:
@@ -391,7 +508,10 @@ class UsermailboxSubclient(ExchangeSubclient):
                         'cleanup_policy': cleanup_policy,
                         'retention_policy': retention_policy,
                         'plan_name': plan_name,
-                        'plan_id': plan_id
+                        'plan_id': plan_id,
+                        'mailbox_type': mailbox_type,
+                        'exchange_version': exchange_version,
+                        'last_archive_job_ran_time': last_archive_job_ran_time
                     }
 
                     users.append(temp_dict)
@@ -528,7 +648,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         """Returns the list of AD groups associated with the UserMailbox subclient."""
         return self._adgroups
 
-    def set_user_assocaition(self, subclient_content):
+    def set_user_assocaition(self, subclient_content, use_policies=True):
         """Create User assocaition for UserMailboxSubclient.
 
             Args:
@@ -538,11 +658,20 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         'mailboxNames' : ["AutoCi2"],,
 
+                        -- if use_policies is True --
+
                         'archive_policy' : "CIPLAN Archiving policy",
 
                         'cleanup_policy' : 'CIPLAN Clean-up policy',
 
                         'retention_policy': 'CIPLAN Retention policy'
+
+                        -- if use_policies is False --
+
+                        'plan_name': 'Exchange Plan Name',
+
+                        'plan_id': int or None (Optional)
+                        --
                     }
 
         """
@@ -571,6 +700,8 @@ class UsermailboxSubclient(ExchangeSubclient):
                             'isAutoDiscoveredUser': mb_item['isAutoDiscoveredUser'],
                             "associated": False,
                             'databaseName': mb_item['databaseName'],
+                            "exchangeVersion": mb_item['exchangeVersion'],
+                            "msExchRecipientTypeDetails": mb_item['msExchRecipientTypeDetails'],
                             'user': {
                                 '_type_': 13,
                                 'userGUID': mb_item['user']['userGUID']
@@ -585,10 +716,14 @@ class UsermailboxSubclient(ExchangeSubclient):
             "discoverByType": 1,
             "mailBoxes": users
         }
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(subclient_content)
+            
+        _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
 
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
-        self._set_association_request(_assocaition_json_)
+        self._set_association_request(_association_json_)
 
     def set_pst_association(self, subclient_content):
         """Create PST assocaition for UserMailboxSubclient.
@@ -838,23 +973,107 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_assocaition_json_)
 
-    def delete_user_assocaition(self, subclient_content):
-        """delete User assocaition for UserMailboxSubclient.
+    def _backup_generic_items_json(self, subclient_content):
+        """
+            Create the JSON for Backing Up the Generic Items of any Exchange Online Client
 
             Args:
+                subclient_content   (list)  List having dictionary of items to be backed up
+
+                subclient_content = [
+                    {
+                    "associationName" : "All Public Folders",
+                    "associationType":12
+                    },
+                    {
+                    "associationName" : "All Users",
+                    "associationType":12
+                    }
+                ]
+
+            Returns:
+                The JSON to create a backup task
+        """
+
+        task_dict = {
+            "taskInfo": {
+                "associations": [
+                    self._subClientEntity
+                ],
+                "task": {
+                    "taskType": 1
+                },
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskType": 2,
+                            "operationType": 2
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "backupLevel": 1,
+                                "incLevel": 1,
+                                "exchOnePassOptions": {
+                                    "genericAssociations": [
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        task_dict["taskInfo"]["subTasks"][0]["options"]["backupOpts"]["exchOnePassOptions"][
+                "genericAssociations"]= subclient_content
+        return task_dict
+
+    def backup_generic_items(self, subclient_content):
+        """
+            Backups the Generic Items for any Exchange Online Client
+            GGeneric Items:
+                All Public Folders/ All O365 Group ailboxes/ All Users
+
+            Args:
+                subclient_content   (list)  List having dictionary of items to be backed up
+
+                subclient_content = [
+                    {
+                    "associationName" : "All Public Folders",
+                    "associationType":12
+                    },
+                    {
+                    "associationName" : "All Users",
+                    "associationType":12
+                    }
+                ]
+        """
+        task_dict = self._backup_generic_items_json(subclient_content=subclient_content)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['CREATE_TASK'], task_dict
+        )
+
+        return self._process_backup_response(flag, response)
+
+    def delete_user_assocaition(self, subclient_content, use_policies=True):
+        """delete User assocaition for UserMailboxSubclient.
+            Args:
                 subclient_content   (dict)  --  dict of the Users to delete from subclient
-
                     subclient_content = {
-
                         'mailboxNames' : ["AutoCi2"],
-
+                        -- if use_policies is True --
                         'archive_policy' : "CIPLAN Archiving policy",
 
                         'cleanup_policy' : 'CIPLAN Clean-up policy',
 
                         'retention_policy': 'CIPLAN Retention policy'
+                        --
+                        -- if use_policies is False --
+                        'plan_name': Plan Name,
+                        'plan_id': int or None (Optional)
+                        --
                     }
-
+                use_policies (bool) -- If True uses policies else uses Plan
         """
         users = []
 
@@ -881,25 +1100,28 @@ class UsermailboxSubclient(ExchangeSubclient):
                             'isAutoDiscoveredUser': mb_item['isAutoDiscoveredUser'],
                             "associated": False,
                             'databaseName': mb_item['databaseName'],
+                            "exchangeVersion": mb_item['exchangeVersion'],
+                            "msExchRecipientTypeDetails": mb_item['msExchRecipientTypeDetails'],
+                            "exchangeServer": mb_item['exchangeServer'],
                             'user': {
                                 '_type_': 13,
                                 'userGUID': mb_item['user']['userGUID']
                             }
                         }
                         users.append(mailbox_dict)
-
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
-
         discover_info = {
             "discoverByType": 1,
             "mailBoxes": users
         }
-
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_["emailAssociation"]["emailStatus"] = 1
-        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
-        self._update_association_request(_assocaition_json_)
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(subclient_content)
+        _association_json_["emailAssociation"]["emailStatus"] = 1
+        _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._update_association_request(_association_json_)
 
     def delete_database_assocaition(self, subclient_content):
         """Deletes Database assocaition for UserMailboxSubclient.
@@ -1109,6 +1331,23 @@ class UsermailboxSubclient(ExchangeSubclient):
             }
         }
         self._set_association_request(_association_json)
+
+    def backup_mailboxes(self, mailbox_alias_names):
+        """
+        Backup specific mailboxes.
+        Args:
+            mailbox_alias_names(list): alias names of all the mailboxes to backup
+                Sample Values:
+                    ['aj', 'tkumar']
+        Returns:
+            job(Job): instance of job class for the backup job
+        """
+        task_json = self._task_json_for_backup(mailbox_alias_names)
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json
+        )
+        return self._process_backup_response(flag, response)
 
     def refresh(self):
         """Refresh the User Mailbox Subclient."""

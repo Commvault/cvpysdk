@@ -185,6 +185,7 @@ class Instances(object):
 
         from .instances.vsinstance import VirtualServerInstance
         from .instances.cainstance import CloudAppsInstance
+        from .instances.bigdataappsinstance import BigDataAppsInstance
         from .instances.sqlinstance import SQLServerInstance
         from .instances.hanainstance import SAPHANAInstance
         from .instances.oracleinstance import OracleInstance
@@ -204,6 +205,7 @@ class Instances(object):
         # the appropriate class object will be initialized based on the agent
         self._instances_dict = {
             'virtual server': [VirtualServerInstance, VMInstance],
+            'big data apps': BigDataAppsInstance,
             'cloud apps': CloudAppsInstance,
             'sql server': SQLServerInstance,
             'sap hana': SAPHANAInstance,
