@@ -74,7 +74,7 @@ class UnixDownloadFeatures(Enum):
     VIRTUAL_SERVER = 1136
     TEST_AUTOMATION = 1153
     PYTHON_SDK = 1154
-    CONTENT_ANALYZER=1108
+    CONTENT_ANALYZER = 1108
 
 
 class WindowsDownloadFeatures(Enum):
@@ -97,5 +97,27 @@ class WindowsDownloadFeatures(Enum):
     TEST_AUTOMATION = 719
     PYTHON_SDK = 754
     COMMSERVE_LITE = 25
-    CONTENT_ANALYZER=729
+    CONTENT_ANALYZER = 729
 
+
+class OSNameIDMapping(Enum):
+    """
+    Class for os name to id mapping
+    """
+    WINDOWS_32 = 1
+    WINDOWS_64 = 3
+    UNIX_AIX = 14
+    UNIX_AIX32 = 28
+    UNIX_FREEBSD86 = 25
+    UNIX_FREEBSD64 = 26
+    UNIX_HP = 20
+    UNIX_LINUX86 = 15
+    UNIX_LINUX64 = 16
+    UNIX_S390 = 18
+    UNIX_S390_31 = 29
+    UNIX_PPC64 = 17
+    UNIX_SOLARIS86 = 31
+    UNIX_SOLARIS64 = 23
+    UNIX_SOLARIS_SPARC = 22
+    UNIX_SOLARIS_SPARC86 = 30
+    UNIX_LINUX64LE = 32

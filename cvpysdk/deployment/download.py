@@ -26,8 +26,9 @@ Download
 
     download_software()                   --  downloads software packages in the commcell
 
-"""
+    sync_remote_cache()                   --  syncs remote cache
 
+"""
 from ..job import Job
 from ..exception import SDKException
 from .deploymentconstants import DownloadOptions
@@ -216,6 +217,102 @@ class Download(object):
                                     ],
                                     "downloadUpdatesJobOptions": {
                                         "downloadSoftware": True
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            'POST', self._services['CREATE_TASK'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self.commcell_object, response.json()['jobIds'][0])
+
+                else:
+                    raise SDKException('Download', '101')
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def sync_remote_cache(self, client_list=None):
+        """Syncs remote cache
+
+            Args:
+
+                client_list  --  list of client names
+                Default is None. By default all remote cache clients are synced
+
+            Returns:
+                object - instance of the Job class for sync job
+
+            Raises:
+                SDKException:
+                    if sync job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another sync job is running with the given client
+
+        """
+
+        clients = []
+        if client_list is None:
+
+            clients = [{
+                "_type_": 2
+            }]
+        else:
+            for each in client_list:
+                clients.append({
+                    "_type_": 3,
+                    "clientName": each})
+
+        request_json = {
+            "taskInfo": {
+                "task": {
+                    "ownerId": 1,
+                    "taskType": 1,
+                    "ownerName": "admin",
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4019
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "updateOption": {
+                                    "syncUpdateCaches": True,
+                                    "invokeLevel": 1,
+                                    "isWindows": False,
+                                    "majorOnly": False,
+                                    "isSpName": False,
+                                    "copyUpdates": True,
+                                    "isHotfixesDownload": False,
+                                    "isSpDelayedDays": True,
+                                    "copySoftwareAndUpdates": False,
+                                    "isUnix": False,
+                                    "clientAndClientGroups": clients,
+                                    "downloadUpdatesJobOptions": {
+                                        "downloadSoftware": False
                                     }
                                 }
                             }

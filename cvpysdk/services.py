@@ -98,6 +98,7 @@ SERVICES_DICT_TEMPLATE = {
     'CREATE_UPDATE_SCHEDULE_POLICY': '{0}Task',
     'GET_SCHEDULE_POLICY': '{0}SchedulePolicy/%s',
     'MEDIA_AGENT': '{0}MediaAgent/%s',
+    'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
@@ -105,6 +106,8 @@ SERVICES_DICT_TEMPLATE = {
     'CREATE_BLR_PAIR': '{0}Replications/Groups',
     'DELETE_BLR_PAIR': '{0}Replications/Monitors/continuous/%s',
     'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s&vmUuid=%s',
+
+    'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
 
     'MODIFY_ALERT': '{0}AlertRule/%s/Action/Modify',
     'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
@@ -286,8 +289,11 @@ SERVICES_DICT_TEMPLATE = {
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',
 
-    'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
-    'CREATE_PSEUDO_CLIENT': '{0}pseudoClient',
+    'CREATE_PSEUDO_CLIENT':'{0}pseudoClient',
+    'GET_OFFICE_365_ENTITIES':'{0}Office365/entities',
+    'CLOUD_DISCOVERY':'{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
+    'USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UserPolicyAssociation',
+    'UPDATE_USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UpdateUserPolicyAssociation',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
@@ -316,6 +322,7 @@ SERVICES_DICT_TEMPLATE = {
     'IDENTITY_APPS': '{0}ThirdParty/App',
 
     'GLOBAL_PARAM': '{0}/setGlobalParam',
+    'GET_GLOBAL_PARAM': '{0}/CommServ/AddRemoveSoftware/CommServeSoftwareCache',
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',

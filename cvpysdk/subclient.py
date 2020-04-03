@@ -1389,7 +1389,9 @@ class Subclient(object):
             request_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = advance_job_option_dict
 
         if schedule_pattern:
-            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+            request_json = SchedulePattern(
+                schedule_pattern=schedule_pattern
+            ).create_schedule(request_json, schedule_pattern)
 
         return request_json
 

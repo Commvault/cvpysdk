@@ -192,7 +192,7 @@ class Backupsets(object):
         from .backupsets.db2backupset import DB2Backupset
         from .backupsets.vsbackupset import VSBackupset
         from .backupsets.aadbackupset import AzureAdBackupset
-        
+        from .backupsets.sharepointbackupset import SharepointBackupset
 
         self._backupsets_dict = {
             'file system': FSBackupset,
@@ -205,7 +205,7 @@ class Backupsets(object):
             'db2': DB2Backupset,
             'virtual server': VSBackupset,
             "azure ad" : AzureAdBackupset,
-            
+            'sharepoint server': SharepointBackupset
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:

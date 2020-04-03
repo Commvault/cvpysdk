@@ -72,9 +72,12 @@ Clients
     _process_add_response()               -- to process the add client request using API call
 
     add_vmware_client()                   --  adds a new VMWare Virtualization Client to the
-    Commcell
+                                              Commcell
 
-    add_share_point_client()      -- adds a new sharepoint pseudo client to the Commcell
+    add_kubernetes_client()               --  adds a new Kubernetes Virtualization Client to the
+                                              Commcell
+
+    add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
@@ -340,7 +343,7 @@ class Clients(object):
         self._OFFICE_365_CLIENTS = self._services['GET_OFFICE_365_ENTITIES']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
-        self._ADD_EXCHANGE_CLIENT =  self._ADD_SHAREPOINT_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._clients = None
         self._hidden_clients = None
@@ -911,6 +914,109 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+
+    def add_kubernetes_client(
+            self,
+            client_name,
+            master_node,
+            secret_name,
+            secret_key,
+            vsaclient,
+            vsaclient_id
+    ):
+        """Adds a new Kubernetes Virtualization Client to the Commcell.
+
+            Args:
+                client_name         (str)   --  name of the new Kubernetes Virtual Client
+
+                master_node         (str)   --  Kubernetes kubectl node
+
+                secret_name         (str)   --  Kubernetes Secret name
+
+                secret_key          (str)   --  Kubernetes Secret Key
+
+                vsaclient           (str)   --  Virtual Server proxy client
+
+                vsaclient_id        (int)   --  Virtual Server Client id
+
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        host_name = "https://{0}:6443".format(master_node)
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "virtualServerClientProperties": {
+                    "virtualServerInstanceInfo": {
+                        "vsInstanceType": 20,
+                        "k8s": {
+                            "secretName": secret_name,
+                            "secretKey": secret_key,
+                            "secretType": "ServiceAccount",
+                            "endpointurl": host_name
+                        },
+                        "associatedClients": {
+                            "memberServers": [
+                                {
+                                    "client": {
+                                        "clientName": vsaclient,
+                                        "clientId": vsaclient_id,
+                                        "_type_": 3
+                                    }
+                                }
+                            ]
+                        },
+                        "vmwareVendor": {
+                            "vcenterHostName": host_name
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._ADD_CLIENT, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        self.refresh()
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
     def add_vmware_client(
             self,
             client_name,
@@ -1005,11 +1111,7 @@ class Clients(object):
             service_type,
             index_server,
             access_nodes_list,
-            global_administrator,
-            global_administrator_password,
-            azure_app_id,
-            azure_app_key_id,
-            azure_directory_id):
+            **kwargs):
         """Adds a new Office 365 Share Point Pseudo Client to the Commcell.
 
             Args:
@@ -1019,12 +1121,24 @@ class Clients(object):
 
                 service_type                (dict)  --  service type of Sharepoint
                                                          "ServiceType": {
-                                                                    "SharePoint": 4
+                                                                    "Sharepoint Global Administrator": 4
                                                          }
 
                 index_server                (str)   --  index server for virtual client
 
-                access_nodes_list           (list)  --  list containing client names / client objects,
+                access_nodes_list           (list)  --  list containing client names / client objects
+
+            Kwargs :
+
+                tenant_url                  (str)   --  url of sharepoint tenant
+
+                user_username                (str)   --  username of sharepoint user
+
+                user_password               (str)   -- password of sharepoint user
+
+                azure_username              (str)   --  username of azure app
+
+                azure_secret                (str)   --  secret key of azure app
 
                 global_administrator        (str)   --  username of global administrator
 
@@ -1036,12 +1150,17 @@ class Clients(object):
 
                 azure_directory_id    (str)   --  azure directory id for sharepoint online
 
+
             Returns:
                 object  -   instance of the Client class for this new client
 
             Raises:
                 SDKException:
                     if client with given name already exists
+
+                    if index_server is not found
+
+                    if server_plan is not found
 
                     if failed to add the client
 
@@ -1066,8 +1185,6 @@ class Clients(object):
                 }
         else:
             raise SDKException('IndexServers', '102')
-
-        server_plan_dict = {}
 
         if self._commcell_object.plans.has_plan(server_plan):
             server_plan_object = self._commcell_object.plans.get(server_plan)
@@ -1103,40 +1220,15 @@ class Clients(object):
                     }
                 }
                 member_servers.append(client_dict)
-        azure_app_key_id = b64encode(azure_app_key_id.encode()).decode()
-        global_administrator_password = b64encode(global_administrator_password.encode()).decode()
 
         request_json = {
             "clientInfo": {
                 "clientType": 37,
+                "lookupPlanInfo": False,
                 "sharepointPseudoClientProperties": {
                     "sharePointVersion": 23,
                     "sharepointBackupSet": {
-                        "spOffice365BackupSetProp": {
-                            "cloudRegion": 1,
-                            "infraStructurePoolEnabled": False,
-                            "serviceAccounts": {
-                                "accounts": [
-                                    {
-                                        "serviceType": service_type["SharePoint"],
-                                        "userAccount": {
-                                             "userName": global_administrator,
-                                             "password": global_administrator_password
-                                        }
-                                    }
-                                ]
-                            },
-                            "office365Credentials": {},
-                            "azureAppList": {
-                                "azureApps": [
-                                    {
-                                        "azureAppId": azure_app_id,
-                                         "azureAppKeyValue": azure_app_key_id,
-                                         "azureDirectoryId": azure_directory_id
-                                    }
-                                ]
-                            }
-                        }
+
                     },
                     "indexServer": index_server_dict,
                     "jobResultsDir": {},
@@ -1154,6 +1246,78 @@ class Clients(object):
             }
 
         }
+        tenant_url = kwargs.get('tenant_url')
+        global_administrator = kwargs.get('global_administrator')
+        if tenant_url:
+            azure_secret = b64encode(kwargs.get('azure_secret').encode()).decode()
+            user_password = b64encode(kwargs.get('user_password').encode()).decode()
+
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"] = {
+                    "tenantUrlItem": tenant_url,
+                    "cloudRegion": 1,
+                    "infraStructurePoolEnabled": False,
+                    "serviceAccounts": {
+                        "accounts": [
+                            {
+                                "serviceType": service_type["Sharepoint Online"],
+                                "userAccount": {
+                                    "password": user_password,
+                                    "userName": kwargs.get('user_username')
+                                }
+                            },
+                            {
+                                "serviceType": service_type["Sharepoint Azure Storage"],
+                                "userAccount": {
+                                    "password": azure_secret,
+                                    "userName": kwargs.get('azure_username')
+                                }
+                            }
+                        ]
+                    },
+                    "office365Credentials": {
+                        "userName": ""
+                    },
+                    "azureAppList": {
+                        "azureApps": [
+                            {
+                                "azureDirectoryId": "",
+                                "azureAppId": ""
+                            }
+                        ]
+                    }
+                }
+        elif global_administrator:
+            azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+            global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
+
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"] = {
+                    "cloudRegion": 1,
+                    "infraStructurePoolEnabled": False,
+                    "serviceAccounts": {
+                        "accounts": [
+                            {
+                                "serviceType": service_type["Sharepoint Global Administrator"],
+                                "userAccount": {
+                                    "userName": global_administrator,
+                                    "password": global_administrator_password
+                                }
+                            }
+                        ]
+                    },
+                    "office365Credentials": {},
+                    "azureAppList": {
+                        "azureApps": [
+                            {
+                                "azureAppId": kwargs.get('azure_app_id'),
+                                "azureAppKeyValue": azure_app_key_id,
+                                "azureDirectoryId": kwargs.get('azure_directory_id')
+                            }
+                        ]
+                    }
+                }
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_SHAREPOINT_CLIENT, request_json
         )

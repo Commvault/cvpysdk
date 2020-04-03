@@ -44,6 +44,8 @@ Commcell:
 
     _qoperation_execscript()    --  runs the qoperation execute qscript with specified arguements
 
+    get_gxglobalparam_value()	--	makes a rest api call to get values from GXGlobalParam
+
     _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)
 
     logout()                    --  logs out the user associated with the current instance
@@ -65,6 +67,14 @@ Commcell:
 
     download_software()         --  triggers the Download Software job with the given options
 
+    sync_remote_cache()         --  syncs remote cache
+
+    get_remote_cache_path()     --  returns remote cache path
+
+    configure_remotecache()     --  configures client as remote cache
+
+    configure_packages_to_sync()    --  configures packages to sync for the remote cache
+
     push_servicepack_and_hotfixes() --  triggers installation of service pack and hotfixes
 
     install_software()              --  triggers the install Software job with the given options
@@ -74,7 +84,7 @@ Commcell:
 
     enable_shared_laptop()          --   Executes the request on the server to enable Shared Laptop on commcell
 
-    disable_shared_laptop()          --  Executes the request on the server to disable Shared Laptop on commcell
+    disable_shared_laptop()         --  Executes the request on the server to disable Shared Laptop on commcell
 
     execute_qcommand()              --  executes the ExecuteQCommand API on the commcell
 
@@ -130,6 +140,8 @@ Commcell instance Attributes
 
     **clients**                 --  returns the instance of the `Clients` class,
     to interact with the clients added on the Commcell
+
+    **commserv_cache**          --  returns the instance of the `CommServeCache` class
 
     **media_agents**            --  returns the instance of the `MediaAgents` class,
     to interact with the media agents associated with the Commcell class instance
@@ -293,6 +305,8 @@ from .identity_management import IdentityManagementApps
 from .system import System
 from .commcell_migration import CommCellMigration
 from .deployment.download import Download
+from .deployment.cache_config import CommServeCache
+from .deployment.cache_config import RemoteCache
 from .deployment.install import Install
 from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
@@ -462,6 +476,7 @@ class Commcell(object):
 
         self._id = None
         self._clients = None
+        self._commserv_cache = None
         self._media_agents = None
         self._workflows = None
         self._disaster_recovery = None
@@ -553,6 +568,7 @@ class Commcell(object):
     def _remove_attribs_(self):
         """Removes all the attributes associated with the instance of this class."""
         del self._clients
+        del self._commserv_cache
         del self._media_agents
         del self._workflows
         del self._alerts
@@ -741,6 +757,34 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def get_gxglobalparam_value(self):
+        """Makes a rest api call to get values from GXGlobalParam
+
+            Returns:
+                dict    -   json response received from the server
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_GLOBAL_PARAM']
+        )
+
+        if flag:
+            if response.ok:
+                try:
+                    return response.json()
+                except ValueError:
+                    return {'output': response}
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def _set_gxglobalparam_value(self, request_json):
         """ Updates GXGlobalParam table (Commcell level configuration parameters)
 
@@ -854,6 +898,17 @@ class Commcell(object):
                 self._clients = Clients(self)
 
             return self._clients
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def commserv_cache(self):
+        """Returns the instance of the CommServeCache  class."""
+        try:
+            if self._commserv_cache is None:
+                self._commserv_cache = CommServeCache(self)
+
+            return self._commserv_cache
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
@@ -1428,6 +1483,7 @@ class Commcell(object):
     def refresh(self):
         """Refresh the properties of the Commcell."""
         self._clients = None
+        self._commserv_cache = None
         self._media_agents = None
         self._workflows = None
         self._alerts = None
@@ -1684,6 +1740,32 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def sync_remote_cache(self, client_list=None):
+        """Syncs remote cache
+
+            Args:
+
+                client_list (list) --  list of client names.
+                Default is None. By default all remote cache clients are synced
+
+            Returns:
+                object - instance of the Job class for sync job
+
+            Raises:
+                SDKException:
+                    if sync job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another sync job is running with the given client
+
+        """
+        download = Download(self)
+        return download.sync_remote_cache(
+            client_list=client_list)
+
     def download_software(self,
                           options=None,
                           os_list=None,
@@ -1756,6 +1838,81 @@ class Commcell(object):
             os_list=os_list,
             service_pack=service_pack
         )
+
+    def get_remote_cache_path(self, client_name):
+        """
+        Returns remote cache path
+
+        Args:
+            client_name (str) -- Client name
+
+        Returns:
+                remote cache path (str)
+
+        Raises:
+            exception if qoperation fails
+
+        """
+        remote_cache = RemoteCache(self, client_name)
+        return remote_cache.get_remote_cache_path()
+
+    def configure_remotecache(self, cache_path, client_name):
+        """
+        Configures client as remote cache
+
+        Args:
+            cache_path (str)  -- Remote cache path
+
+            client_name (str) -- Client name
+
+        Raises:
+            exception if qoperation fails
+        """
+        remote_cache = RemoteCache(self, client_name)
+        return remote_cache.configure_remotecache(cache_path)
+
+    def configure_packages_to_sync(self, client_name, win_os=None, win_package_list=None, unix_os=None,
+                                   unix_package_list=None):
+        """
+        Configures packages to sync for the remote cache
+
+        Args:
+            client_name (str) 	 	-- name of the client
+            win_os 		(list)	 	-- list of windows oses to sync
+            win_package_list  (list)-- list of windows packages to sync
+            unix_os (list) 		  	-- list of unix oses to sync
+            unix_package_list (list)-- list of unix packages to sync
+
+        Raises:
+            SDKException:
+            - Failed to execute the api
+
+            - Response is incorrect
+
+            - Incorrect input
+
+        Usage:
+            commcell_obj.configure_packages_to_sync()
+
+            win_os = ["WINDOWS_32", "WINDOWS_64"]
+            unix_os = ["UNIX_LINUX64", "UNIX_AIX"]
+            win_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
+            unix_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
+
+            OS_Name_ID_Mapping, WindowsDownloadFeatures and UnixDownloadFeatures enum is used for
+            providing input to the configure_packages_to_sync method, it can be imported by
+
+                >>> from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
+                    from cvpysdk.deployment.deploymentconstants import OS_Name_ID_Mapping
+                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
+
+        """
+        remote_cache = RemoteCache(self, client_name)
+        return remote_cache.configure_packages_to_sync(
+            win_os=win_os,
+            win_package_list=win_package_list,
+            unix_os=unix_os,
+            unix_package_list=unix_package_list)
 
     def push_servicepack_and_hotfix(
             self,
@@ -2125,7 +2282,7 @@ class Commcell(object):
                 <UserMappings/>
                 <assocTree _type_="13" userName="{3}"/>
             </clientThirdPartyApps>
-        </App_SetClientThirdPartyAppPropReq> 
+        </App_SetClientThirdPartyAppPropReq>
         	"""\
             .format(str(saml_app_key), saml_app_name, props, user_to_be_added)
         self._qoperation_execute(xml_execute_command)
@@ -2190,7 +2347,7 @@ class Commcell(object):
             if response.json() and 'redirectRules' in response.json():
                 redirect_rules_list = []
                 redirect_rules_list = response.json()['redirectRules']['domains'] + \
-                                      response.json()['redirectRules']['rules']
+                    response.json()['redirectRules']['rules']
                 return redirect_rules_list
             else:
                 raise SDKException('Response', '102')

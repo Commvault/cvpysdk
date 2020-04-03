@@ -200,6 +200,7 @@ class Instances(object):
         from .instances.vminstance import VMInstance
         from .instances.db2instance import DB2Instance
         from .instances.aadinstance import AzureAdInstance
+        from .instances.sharepointinstance import SharepointInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -219,7 +220,8 @@ class Instances(object):
             'postgresql': PostgreSQLInstance,
             'informix': InformixInstance,
             'db2': DB2Instance,
-            'azure ad': AzureAdInstance
+            'azure ad': AzureAdInstance,
+            'sharepoint server': SharepointInstance
         }
 
     def __str__(self):

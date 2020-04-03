@@ -37,7 +37,7 @@ UsermailboxSubclient:
 
     restore_in_place()                  --  runs in-place restore for the subclient
 
-    set_pst_association()               --  Create PST assocaition for UserMailboxSubclient
+    set_pst_association()               --  Create PST association for UserMailboxSubclient
 
     set_fs_association_for_pst()        --  Helper method to create pst association for
                                             PST Ingestion by FS association
@@ -61,6 +61,11 @@ UsermailboxSubclient:
     _get_discover_adgroups()            --  Get the discovered AD Groups
 
     _get_discover_users()               --  Get the discovered users
+
+    set_o365group_asscoiations()        --  Create O365 group association for UsermailboxSubclient
+
+    delete_o365group_association()      --  delete O365 group association for UsermailboxSubclient
+
 """
 
 
@@ -147,12 +152,12 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return policy_json
 
-    def _association_json(self, subclient_content):
+    def _association_json(self, subclient_content, is_o365group=False):
         """Constructs association json to create assocaition in UserMailbox Subclient.
 
             Args:
                 subclient_content (dict)  --  dict of the Users to add to the subclient
-
+                                             (dict of only policies in case of office 365 groups)
                 subclient_content = {
 
                         'archive_policy' : "CIPLAN Archiving policy",
@@ -187,7 +192,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         associations_json = {
             "emailAssociation": {
                 "advanceOptions": {
-                    "enableAutoDiscovery": subclient_content.get("is_auto_discover_user", False)
+                    "enableAutoDiscovery": subclient_content.get("is_auto_discover_user",
+                                                                 is_o365group)
                 },
                 "subclientEntity": self._subClientEntity,
                 "policies": {
@@ -211,22 +217,23 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         try:
             if not self._commcell_object.plans.has_plan(plan_details['plan_name']):
-                raise SDKException('Subclient', '102', 'Plan Name {} not found'.format(plan_details['plan_name']))
+                raise SDKException('Subclient', '102',
+                                   'Plan Name {} not found'.format(plan_details['plan_name']))
             if 'plan_id' not in plan_details or plan_details['plan_id'] is None:
                 plan_id = self._commcell_object.plans[plan_details['plan_name'].lower()]
             else:
                 plan_id = plan_details['plan_id']
 
         except KeyError as err:
-            raise SDKException('Subclient','102','{} not given in content'.format(err))
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
         plan_details = {
-            'planId' : int(plan_id)
+            'planId': int(plan_id)
         }
 
         association_json = {
             "emailAssociation": {
-                "subclientEntity" : self._subClientEntity,
+                "subclientEntity": self._subClientEntity,
                 "plan": plan_details
             }
         }
@@ -450,10 +457,11 @@ class UsermailboxSubclient(ExchangeSubclient):
         """Gets the appropriate users associations from the Subclient.
 
             Returns:
-                list    -   list of users associated with the subclient
+                list    -   list of users and groups associated with the subclient
 
         """
         users = []
+        groups = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
             'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'User')
@@ -513,10 +521,12 @@ class UsermailboxSubclient(ExchangeSubclient):
                         'exchange_version': exchange_version,
                         'last_archive_job_ran_time': last_archive_job_ran_time
                     }
+                    if int(child['userMailBoxInfo']['msExchRecipientTypeDetails']) == 36:
+                        groups.append(temp_dict)
+                    else:
+                        users.append(temp_dict)
 
-                    users.append(temp_dict)
-
-        return users
+        return users, groups
 
     def _get_database_associations(self):
         """Gets the appropriate database association from the Subclient.
@@ -648,6 +658,11 @@ class UsermailboxSubclient(ExchangeSubclient):
         """Returns the list of AD groups associated with the UserMailbox subclient."""
         return self._adgroups
 
+    @property
+    def o365groups(self):
+        """Returns the list of discovered O365 groups for the UserMailbox subclient."""
+        return self._o365groups
+
     def set_user_assocaition(self, subclient_content, use_policies=True):
         """Create User assocaition for UserMailboxSubclient.
 
@@ -720,10 +735,8 @@ class UsermailboxSubclient(ExchangeSubclient):
             _association_json_ = self._association_json(subclient_content)
         else:
             _association_json_ = self._association_json_with_plan(subclient_content)
-            
-        _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
-
-        self._set_association_request(_association_json_)
+        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._set_association_request(_assocaition_json_)
 
     def set_pst_association(self, subclient_content):
         """Create PST assocaition for UserMailboxSubclient.
@@ -791,7 +804,7 @@ class UsermailboxSubclient(ExchangeSubclient):
             elif 'fsContent' in subclient_content:
                 pst_dict['associations'] = self.set_fs_association_for_pst(
                     subclient_content['fsContent'])
-                pst_dict['taskType'] = 0;
+                pst_dict['taskType'] = 0
             subclient_entity = {"_type_": 7, "subclientId": int(self._subclient_id)}
             discover_info = {
                 'discoverByType': 9,
@@ -837,8 +850,8 @@ class UsermailboxSubclient(ExchangeSubclient):
                     backupset_name = backupset_name.lower()
                     backupset_obj = agent.backupsets.get(backupset_name)
                     if not backupset_obj:
-                        raise SDKException('Subclient','102',"Backupset {0} not present in file "
-                                                             "system agent".format(backupset_name))
+                        raise SDKException('Subclient', '102', "Backupset {0} not present in "
+                                                               "".format(backupset_name))
                     backupset_dict = {"backupsetName": backupset_obj.name,
                                       "appName": "File System",
                                       "applicationId": int(agent.agent_id),
@@ -848,7 +861,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                     backupset_dict.update(client_dict)
                     for subclient_name in subclients:
                         if subclient_name not in backupset_obj.subclients.all_subclients:
-                            raise SDKException('Subclient','102',
+                            raise SDKException('Subclient', '102',
                                                "Subclient %s not present in backupset %s" %
                                                (str(subclient_name), str(backupset_name)))
                         subclient_name = subclient_name.lower()
@@ -1055,6 +1068,33 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return self._process_backup_response(flag, response)
 
+    def set_o365group_asscoiations(self, subclient_content):
+        """Create O365 Group association for UserMailboxSubclient.
+            Args:
+                subclient_content   (dict)  --  dict of the policies to associate
+
+                    subclient_content = {
+
+                        'archive_policy' : "CIPLAN Archiving policy",
+
+                        'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+                        'retention_policy': 'CIPLAN Retention policy'
+                    }
+        """
+        discover_info = {
+            "discoverByType": 11,
+            "genericAssociations": [
+                {
+                    "associationName": "All O365 Group Mailboxes",
+                    "associationType": 11
+                }
+            ]
+        }
+        _assocaition_json_ = self._association_json(subclient_content, True)
+        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._set_association_request(_assocaition_json_)
+
     def delete_user_assocaition(self, subclient_content, use_policies=True):
         """delete User assocaition for UserMailboxSubclient.
             Args:
@@ -1109,6 +1149,8 @@ class UsermailboxSubclient(ExchangeSubclient):
                             }
                         }
                         users.append(mailbox_dict)
+                        break
+
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
         discover_info = {
@@ -1120,8 +1162,58 @@ class UsermailboxSubclient(ExchangeSubclient):
         else:
             _association_json_ = self._association_json_with_plan(subclient_content)
         _association_json_["emailAssociation"]["emailStatus"] = 1
-        _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
-        self._update_association_request(_association_json_)
+        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._update_association_request(_assocaition_json_)
+
+    def delete_o365group_association(self, subclient_content):
+        """delete O365 group association for UserMailboxSubclient.
+
+            Args:
+                subclient_content   (dict)  --  dict of the Users to delete from subclient
+
+                    subclient_content = {
+
+                        'mailboxNames' : ["AutoCi2"],
+
+                        'archive_policy' : "CIPLAN Archiving policy",
+
+                        'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+                        'retention_policy': 'CIPLAN Retention policy'
+                    }
+
+        """
+        groups = []
+        try:
+            for mb_item in self.o365groups:
+                mailbox_dict = {
+                    'smtpAdrress': mb_item['smtp_address'],
+                    'aliasName': mb_item['alias_name'],
+                    'mailBoxType': 1,
+                    'displayName': mb_item['display_name'],
+                    'exchangeServer': "",
+                    'isAutoDiscoveredUser': mb_item['is_auto_discover_user'].lower() == 'true',
+                    'msExchRecipientTypeDetails': 36,
+                    "associated": False,
+                    'databaseName': mb_item['database_name'],
+                    'user': {
+                        '_type_': 13,
+                        'userGUID': mb_item['user_guid']
+                    }
+                }
+                groups.append(mailbox_dict)
+
+        except KeyError as err:
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+
+        discover_info = {
+            "discoverByType": 1,
+            "mailBoxes": groups
+        }
+        _assocaition_json_ = self._association_json(subclient_content, True)
+        _assocaition_json_["emailAssociation"]["emailStatus"] = 1
+        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._update_association_request(_assocaition_json_)
 
     def delete_database_assocaition(self, subclient_content):
         """Deletes Database assocaition for UserMailboxSubclient.
@@ -1355,6 +1447,6 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._discover_users = self._get_discover_users()
         self._discover_databases = self._get_discover_database()
         self._discover_adgroups = self._get_discover_adgroups()
-        self._users = self._get_user_assocaitions()
+        self._users, self._o365groups = self._get_user_assocaitions()
         self._databases = self._get_database_associations()
         self._adgroups = self._get_adgroup_assocaitions()
