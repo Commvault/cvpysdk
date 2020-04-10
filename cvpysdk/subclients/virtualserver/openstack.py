@@ -175,7 +175,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             source_ip=None,
             destination_ip=None,
             datacenter = None,
-            cluster = None
+            cluster = None,
+            securityGroups = None
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -268,8 +269,9 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             source_item=[],
             source_ip=source_ip,
             destination_ip=destination_ip,
-            data_center = datacenter,
-            cluster = cluster
+            datacenter = datacenter,
+            cluster = cluster,
+            securityGroups = securityGroups
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

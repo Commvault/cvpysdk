@@ -102,6 +102,17 @@ Commcell:
 
     get_eligible_service_commcells()             -- gets the eligible service commcells to redirect
 
+    get_default_plan()                  -- Get the default plans associed with the commcell
+
+    get_security_associations()         -- Get the security associations associated with the commcell
+
+    get_password_encryption_config()    -- Get the Password encryption configuration for the commcell
+
+    get_email_settings()                -- Get the SMTP settings for the commcell
+
+    get_commcell_properties()           -- Get the general, privacy and other properties of commcell
+
+    get_commcell_organization_properties()     -- Get the organization properties of commcell
 
 Commcell instance Attributes
 ============================
@@ -2148,6 +2159,194 @@ class Commcell(object):
                 if response.get('errorCode', -1) != 0:
                     raise SDKException(
                         'Response', '101', 'Failed to disable shared laptop')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_commcell_properties(self):
+        """ Get Commcell properties
+        Returns: (dict)
+            "hostName": String,
+            "enableSharedLaptopUsage": Boolean,
+            "enableTwoFactorAuthentication": Boolean,
+            "networkErrorRetryCount": Number,
+            "useUPNForEmail": Boolean,
+            "flags": Number,
+            "description": String,
+            "networkErrorRetryFreq": Number,
+            "autoClientOwnerAssignmentType": Number,
+            "networkErrorRetryFlag": Boolean,
+            "allowUsersToEnablePasskey": Boolean,
+            "autoClientOwnerAssignmentValue": String,
+            "enablePrivacy": Boolean,
+            "twoFactorAuthenticationInfo": {
+                "mode": Number
+            }
+        """
+        url = self._services['SET_COMMCELL_PROPERTIES']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                return response.get("commCellInfo").get("generalInfo")
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_commcell_organization_properties(self):
+        """
+            Get organization properties for the commcell
+        return:
+            dict of organization properties of commcell
+        """
+        url = self._services['ORGANIZATION'] % '0'
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                passkey_details = response.get('organizationInfo').get('organizationProperties')
+                return passkey_details
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_email_settings(self):
+        """
+            Get Email Server (SMTP) setup for commcell
+        return: (dict) Email server settings for commcell
+        """
+        url = self._services['EMAIL_SERVER']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                return response
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_password_encryption_config(self):
+        """ Get the password encryption config for commcell
+        returns: (dict)
+            "keyFilePath": String,
+            "keyProviderName": String,
+            "isKeyMovedToFile": Boolean
+        """
+        pass__enc_config = {}
+
+        url = self._services['PASSWORD_ENCRYPTION_CONFIG']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                for key, value in response.items():
+                    pass__enc_config.update({key: value})
+                return pass__enc_config
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_security_associations(self):
+        """ Get the security associations for commcell
+            Returns: (dict)
+                    {
+                    'master': [
+                                ['Array Management'],
+                                ['Create Role', 'Edit Role', 'Delete Role'],
+                                ['Master']
+                            ],
+                    'User2': [
+                                ['View']
+                            ]
+                    }
+         """
+        security_associations = {}
+        value_list = {}
+        url = self._services['SECURITY_ASSOCIATION'] + '/1/2'
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations')
+                for list_item in security_list:
+                    name = list_item.get('userOrGroup')[0].get('userGroupName') or \
+                           list_item.get('userOrGroup')[0].get('userName') or \
+                           list_item.get('userOrGroup')[0].get('providerDomainName') + '\\' + \
+                           list_item.get('userOrGroup')[0].get('externalGroupName')
+                    value = []
+                    if list_item.get('properties').get('role'):
+                        value.append(list_item.get('properties').get('role').get('roleName'))
+                    elif list_item.get('properties').get('categoryPermission'):
+                        for sub_list_item in list_item.get('properties').get('categoryPermission').get(
+                                'categoriesPermissionList'):
+                            value.append(sub_list_item.get('permissionName'))
+                    if name in value_list:
+                        value_list[name].append(value)
+                        value_list[name].sort()
+                    else:
+                        value_list[name] = [value]
+                    security_associations.update({name: value_list[name]})
+                return security_associations
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_default_plan(self):
+        """Executes the request on the server to get Default Plan at commcell level.
+           This is independent of the organization, as id is 0.
+           returns: (list of dictionaries)
+                 [
+                 { "subtype": 'File system plan', "plan": { "planName": "Gold plan", "planId": 2 } }
+                ]
+         """
+        default_plan_details = []
+        plan_sub_type = {
+            16777223: 'DLO plan',
+            33554437: 'Server plan',
+            33554439: 'Laptop plan',
+            33579013: 'Database plan',
+            67108869: 'Snap plan',
+            50331655: 'File system plan',
+            83886085: 'VSA system plan',
+            83918853: 'VSA Replication plan',
+            100859907: 'ExchangeUser plan',
+            100794372: 'ExchangeJournal plan',
+            117506053: 'DataClassification plan',
+            1: 'Ediscovery plan'
+        }
+        url = self._services['ORGANIZATION'] % '0' + '/defaultplan'
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                plan_details = response.get('organizationInfo').get('organizationProperties')
+                if "defaultPlans" in plan_details:
+                    plan_list = plan_details.get('defaultPlans')
+                    for default_plan in plan_list:
+                        default_plan_details.append({"subtype": plan_sub_type.get(default_plan.get('subtype')),
+                                                     "plan": {
+                                                         "planName": default_plan.get('plan').get('planName'),
+                                                         "planId": default_plan.get('plan').get('planId')}
+                                                     })
+                return default_plan_details
             else:
                 raise SDKException('Response', '102')
         else:

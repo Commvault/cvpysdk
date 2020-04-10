@@ -105,7 +105,8 @@ SERVICES_DICT_TEMPLATE = {
     'ALERT': '{0}AlertRule/%s',
     'CREATE_BLR_PAIR': '{0}Replications/Groups',
     'DELETE_BLR_PAIR': '{0}Replications/Monitors/continuous/%s',
-    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s&vmUuid=%s',
+    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s'
+                           '&vmUuid=%s',
 
     'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
 
@@ -226,6 +227,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_METRICS': '{0}CommServ/MetricsReporting?isPrivateCloud=%s',
 
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
+
+    'PASSWORD_ENCRYPTION_CONFIG': '{0}/Commcell/PasswordEncryptionConfig',
 
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
     'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',

@@ -808,6 +808,26 @@ class VirtualServerSubclient(Subclient):
                 "destinationNetwork": _destnetwork
             }
 
+            # setting nics for azureRM instance
+            if value['destination_instance'] == 'azure resource manager':
+                if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
+                    nics["networkDisplayName"] = value["networkDisplayName"]
+                    nics["networkName"] = value["networkDisplayName"].split('\\')[0]
+                    temp = nics['subnetId'].split('/')
+                    modify_nics = nics['subnetId'].split('/')
+                    modify_nics[8] = nics["networkName"]
+                    modify_nics[4] = value['networkrsg']
+                    modify_nics[2] = value['destsubid']
+                    modify_nics[10] = value["networkDisplayName"].split('\\')[1]
+                    final_nics = ""
+                    for each_info in modify_nics[1:]:
+                        final_nics = final_nics + '/' + each_info
+                    nics["subnetId"] = final_nics
+                    name = ''
+                    for each_info in modify_nics[1:9]:
+                        name = name + '/' + each_info
+                    nics["name"] = name
+
             nics_list.append(nics)
 
         return nics_list
@@ -926,6 +946,8 @@ class VirtualServerSubclient(Subclient):
             self._advanced_option_restore_json["roleInfo"] = {
                 "name": value["iamRole"]
             }
+        if "securityGroups" in value and value["securityGroups"] is not None:
+            self._advanced_option_restore_json["securityGroups"] = [{"groupName": value["securityGroups"]}]
         if "destComputerName" in value and value["destComputerName"] is not None:
             self._advanced_option_restore_json["destComputerName"] = value["destComputerName"]
         if "destComputerUserName" in value and value["destComputerUserName"] is not None:
