@@ -856,8 +856,8 @@ class FSBackupset(Backupset):
         }
         request_json['taskInfo']['subTasks'][0]['subTask'] = subtask_json
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions'] = common_options
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'][
-            0] = restore_options.get('onetouch_server_directory', None)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'] = (
+            [restore_options.get('onetouch_server_directory', '')])
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
             'destClient']['clientName'] = restore_options.get('onetouch_server', None)
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][

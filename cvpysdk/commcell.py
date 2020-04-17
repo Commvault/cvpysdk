@@ -2433,7 +2433,7 @@ class Commcell(object):
                     if response is not success
 
         """
-        from urllib.parse import urlencode
+        from urllib.parse import (urlencode, quote)
 
         headers = self._headers.copy()
         headers['Content-type'] = 'application/x-www-form-urlencoded'
@@ -2446,7 +2446,7 @@ class Commcell(object):
             payload['inputRequestXML'] = input_xml
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['EXEC_QCOMMAND'], urlencode(payload), headers=headers
+            'POST', self._services['EXEC_QCOMMAND'], urlencode(payload, quote_via=quote), headers=headers
         )
 
         if flag:

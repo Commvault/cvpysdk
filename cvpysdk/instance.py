@@ -928,15 +928,32 @@ class Instances(object):
             Get Cluster Type from Default Instance to assign it to the New Instance.
             Atleast one instance should be present in the client.
         """
+        cluster_properties = {}
         flag, response = self._cvpysdk_object.make_request('GET', self._INSTANCES)
         if flag:
             if response.json() and "instanceProperties" in response.json():
-                clusterProperties = response.json()["instanceProperties"][0]
-                clusterType = clusterProperties["distributedClusterInstance"]["clusterType"]
+                cluster_properties = response.json()["instanceProperties"][0]
             else:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+        cluster_type = cluster_properties.get('distributedClusterInstance', {}).get('clusterType')
+        cluster_config = {}
+        uxfs_config = cluster_properties.get(
+            'distributedClusterInstance', {}).get('clusterConfig', {}).get('uxfsConfig')
+        hadoop_config = cluster_properties.get(
+            'distributedClusterInstance', {}).get('clusterConfig', {}).get('hadoopConfig')
+        if uxfs_config is not None:
+            uxfs_config['coordinatorNode'] = {"clientName": distributed_options.get('MasterNode', '')}
+            cluster_config['uxfsConfig'] = uxfs_config
+        if hadoop_config is not None:
+            hadoop_config['coordinatorNode'] = {"clientName": distributed_options.get('MasterNode', '')}
+            hbase_config = hadoop_config.get('hadoopApps', {}).get('appConfigs', [{}])[0].get('hBaseConfig')
+            if hbase_config is not None:
+                hadoop_config["hadoopApps"]["appConfigs"][0]['hBaseConfig']["hbaseClientNode"] = {
+                    "clientName": distributed_options.get('MasterNode', '')}
+            cluster_config['hadoopConfig'] = hadoop_config
 
         request_json = {
             "instanceProperties": {
@@ -947,17 +964,11 @@ class Instances(object):
                     "instanceName": distributed_options["instanceName"],
                 },
                 "distributedClusterInstance": {
-                    "clusterType": clusterType,
+                    "clusterType": cluster_type,
                     "instance": {
                         "instanceName": distributed_options["instanceName"]
                     },
-                    "clusterConfig": {
-                        "uxfsConfig": {
-                            "coordinatorNode": {
-                                "clientName": distributed_options["MasterNode"]
-                            }
-                        }
-                    },
+                    "clusterConfig": cluster_config,
                     "dataAccessNodes": {
                         "dataAccessNodes": distributed_options["dataAccessNodes"]
                     }
@@ -2590,6 +2601,10 @@ class Instance(object):
             self._destination_restore_json["destinationInstance"] = {
                 "instanceName": value.get('destination_instance', self.instance_name)
             }
+            if value.get('destination_instance_id') is not None:
+                self._destination_restore_json["destinationInstance"]["instanceId"] =  int(
+                    value.get('destination_instance_id')
+                    )
 
             self._destination_restore_json["noOfStreams"] = value.get('no_of_streams', 2)
 

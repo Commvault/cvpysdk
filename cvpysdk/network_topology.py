@@ -201,6 +201,79 @@ class NetworkTopologies(object):
         return (self._network_topologies and
                 network_topology_name.lower() in self._network_topologies)
 
+    @staticmethod
+    def verify_smart_topology_groups(is_smartTopology, count_mnemonic):
+        """ Helper function to verify client groups while creating a smart topology
+
+        Args:
+            is_smartTopology(bool) - If the type of topology is a smart topology
+
+            count_mneomic(int) - The number of mnemonic groups within the input
+
+        Raises:
+            SDKException
+
+        """
+
+        if is_smartTopology:
+            if count_mnemonic == 0:
+                raise SDKException('NetworkTopology', '102',
+                                   ' One client group should be mnemonic in a smart topology'
+                                   )
+            elif count_mnemonic > 1:
+                raise SDKException('NetworkTopology', '102',
+                                   'There cannot be more than one mnemonic group in a topology')
+        elif count_mnemonic != 0:
+            raise SDKException('NetworkTopology', '102',
+                               ' Mnemonic group cannot be present in Non-smart toplogy'
+                               )
+
+    @staticmethod
+    def create_firewall_groups_list(client_groups):
+        """ Is a helper function which is used to create firewall groups list and count the number of mnemonic groups
+
+        Args:
+            client_groups(list of dict) - client group names and client group types
+
+                example:
+                    [{'group_type':2, 'group_name': "test1", 'is_mnemonic': False },
+                    {'group_type':1, 'group_name': "test2", 'is_mnemonic': False },
+                    {'group_type':3, 'group_name': "test3", 'is_mnemonic': False }]
+
+        Returns:
+            Tuple - A tuple consisting of firewall_groups_list and number of mnemonic groups
+
+        """
+        count_mnemonic = 0
+        firewall_groups_list = []
+
+        mnemonic_grp_set = {'My CommServe Computer and MediaAgents', 'My CommServe Computer',
+                            'My MediaAgents'}
+
+        for client_group in client_groups:
+            is_mnemonic = client_group.get('is_mnemonic', False)
+            if is_mnemonic:
+                if client_group.get('group_name') not in mnemonic_grp_set:
+                    raise SDKException('NetworkTopology', '102',
+                                       'Client group {0} is not a mnemonic group'.format(client_group.get('group_name'))
+                                       )
+                if client_group.get('group_type') in {3, 4}:
+                    raise SDKException('NetworkTopology', '102',
+                                       'Proxy Client group {0} cannot be a mnemonic group'.format(
+                                           client_group.get('group_name'))
+                                       )
+                count_mnemonic += 1
+            firewall_groups_dict = {
+                "fwGroupType": client_group.get('group_type'),
+                "isMnemonic": client_group.get('is_mnemonic', False),
+                "clientGroup": {
+                    "clientGroupName": client_group.get('group_name')
+                }
+            }
+            firewall_groups_list.append(firewall_groups_dict)
+
+        return (firewall_groups_list, count_mnemonic)
+
     def add(self, network_topology_name, client_groups=None, **kwargs):
         """Adds a new Network Topology to the Commcell.
 
@@ -224,7 +297,7 @@ class NetworkTopologies(object):
                                                  topology
                                                  Default value: False
 
-                is_smart_topology   (boolean)  --   specified as true for smart topology
+                is_smart_topology   (boolean)  --   specified as true for smart topology must be set if one mnemonic group is present
                                                  Default value: False
 
                 topology_type        (int)     --   to specify type of network topology
@@ -268,6 +341,7 @@ class NetworkTopologies(object):
                     if client group specified is already a part of some topology
 
         """
+
         if not isinstance(network_topology_name, basestring):
             raise SDKException('NetworkTopology', '101')
 
@@ -277,6 +351,7 @@ class NetworkTopologies(object):
                                'name and group type')
 
         firewall_groups_list = []
+        count_mnemonic = 0
 
         display_type = kwargs.get('display_type', 0)
 
@@ -285,16 +360,11 @@ class NetworkTopologies(object):
         else:
             d_type = "<App_TopologyExtendedProperties displayType=\"0\" />"
 
-        for client_group in client_groups:
-            firewall_groups_dict = {
-                "fwGroupType": client_group.get('group_type'),
-                "isMnemonic": client_group.get('is_mnemonic', False),
-                "clientGroup": {
-                    "clientGroupName": client_group.get('group_name')
-                    }
-                }
+        firewall_groups_list, count_mnemonic = self.create_firewall_groups_list(client_groups)
 
-            firewall_groups_list.append(firewall_groups_dict)
+        is_smartTopology = kwargs.get('is_smart_topology', False)
+
+        self.verify_smart_topology_groups(is_smartTopology, count_mnemonic)
 
         if not self.has_network_topology(network_topology_name):
 
@@ -310,9 +380,9 @@ class NetworkTopologies(object):
                     "topologyEntity": {
                         "topologyName": network_topology_name
 
-                        }
                     }
                 }
+            }
 
             flag, response = self._cvpysdk_object.make_request('POST',
                                                                self._NETWORK_TOPOLOGIES,
@@ -609,21 +679,12 @@ class NetworkTopology(object):
         """
 
         firewall_groups_list = []
-
+        count_mnemonic = 0
         if firewall_groups is None:
             firewall_groups_list = self.firewall_groups
 
         else:
-            for client_group in firewall_groups:
-                firewall_groups_dict = {
-                    "fwGroupType": client_group.get('group_type'),
-                    "isMnemonic": client_group.get('is_mnemonic', False),
-                    "clientGroup": {
-                        "clientGroupName": client_group.get('group_name')
-                        }
-                    }
-
-                firewall_groups_list.append(firewall_groups_dict)
+            firewall_groups_list, count_mnemonic = NetworkTopologies.create_firewall_groups_list(firewall_groups)
 
         network_topology_name = kwargs.get('network_topology_name', self.network_topology_name)
 
@@ -634,6 +695,8 @@ class NetworkTopology(object):
         wildcard_proxy = kwargs.get('wildcard_proxy', False)
 
         is_smart_topology = kwargs.get('is_smart_topology', False)
+
+        NetworkTopologies.verify_smart_topology_groups(is_smart_topology, count_mnemonic)
 
         extended_properties = self.extended_properties
 
@@ -647,9 +710,9 @@ class NetworkTopology(object):
                 "firewallGroups": firewall_groups_list,
                 "topologyEntity": {
                     "topologyName": network_topology_name
-                    }
                 }
             }
+        }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', self._NETWORKTOPOLOGY, request_json

@@ -274,6 +274,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
+    'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=ReplaceDisk',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
@@ -329,7 +330,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',
-
+    
+    'GET_NETWORK_SUMMARY' :'{0}/FirewallSummary/%s',
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',
     'PUSH_TOPOLOGY': '{0}FirewallTopology/%s/Push',

@@ -188,7 +188,7 @@ class ExchangeSubclient(Subclient):
 
     def _json_restore_exchange_common_option(self, value):
         """
-            setter for  the Exchange Mailbox in place restore common options in restore json
+           Prepare exchange mailbox in place restore common options in restore json
 
             Args:
                 value   (dict)  --  restore common options need to be included
@@ -221,6 +221,8 @@ class ExchangeSubclient(Subclient):
             "recoverToRecoveredItemsFolder": False,
             "append": False
         }
+
+        return self._exchange_common_option_restore_json
 
     def _json_out_of_place_destination_option(self, value):
         """setter for  the Exchange Mailbox out of place restore
@@ -530,7 +532,7 @@ class ExchangeSubclient(Subclient):
             'options']['restoreOptions']['exchangeOption'] = self._exchange_option_restore_json
         if restore_as_stub:
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                'commonOptions'] = self._exchange_common_option_restore_json
+                'commonOptions'] = self._json_restore_exchange_common_option(restore_as_stub)
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json

@@ -138,6 +138,8 @@ StoragePolicyCopy:
 
     _set_copy_properties()	                --	sets the properties of this storage policy copy
 
+    set_copy_software_compression()         --  Sets the copy software compression setting
+
     delete_job()                            --  delete a job from storage policy copy node
 
     recopy_jobs()                           --  recopies a job on a secondary copy
@@ -2652,6 +2654,33 @@ class StoragePolicyCopy(object):
         if retention_values[2] >= 0:
             self._retention_rules['retainArchiverDataForDays'] = retention_values[2]
 
+        self._set_copy_properties()
+
+    @property
+    def copy_software_compression(self):
+        """Treats the copy software compression setting as a read-only attribute."""
+        return 'compressionOnClients' in self._extended_flags
+
+    def set_copy_software_compression(self, value):
+        """Sets the copy software compression setting as the value provided as input.
+            Args:
+                value    (bool) --  software compression value to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update compression values on copy
+
+                    if the type of value input is not correct
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        if value is False:
+            if 'compressionOnClients' in self._extended_flags:
+                self._extended_flags['compressionOnClients'] = 0
+
+        self._extended_flags['compressionOnClients'] = int(value)
         self._set_copy_properties()
 
     @property

@@ -110,7 +110,7 @@ Clients Attributes
 
     **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
-    
+
     **office365_clients** -- returns the dictioanry consisting of all the office 365 clients that are
     associated with the commcell
 
@@ -206,6 +206,9 @@ Client
     set_job_start_time()         -- sets the job start time at client level
 
     uninstall_software()		 --	Uninstalls all the packages of the client
+
+    get_network_summary()        -- Gets the network summary of the client
+
 
 
 Client Attributes
@@ -452,7 +455,7 @@ class Clients(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-        
+
     def _get_office_365_clients(self):
         """REST API call to get all office365 clients in the commcell
 
@@ -914,7 +917,6 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-
     def add_kubernetes_client(
             self,
             client_name,
@@ -1015,7 +1017,6 @@ class Clients(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-
 
     def add_vmware_client(
             self,
@@ -2102,6 +2103,7 @@ class Clients(object):
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
         self._office_365_clients = None
+
 
 class Client(object):
     """Class for performing client operations for a specific client."""
@@ -3830,6 +3832,26 @@ class Client(object):
                 time.sleep(5)
 
             raise SDKException('Client', '107')
+
+    def get_network_summary(self):
+        """Gets the network summary for the client
+
+        Returns:
+             str    -   Network Summary
+
+        Raises:
+            SDKException:
+                    if response is not successful
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_NETWORK_SUMMARY'].replace('%s',
+                                                                                                                self.client_id))
+        if flag:
+            if "No Network Config found" in response.text:
+                return ""
+            return response.text
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
     def push_network_config(self):
         """Performs a push network configuration on the client

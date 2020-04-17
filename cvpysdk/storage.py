@@ -133,6 +133,15 @@ DiskLibrary:
 
     add_mount_path()            --  adds the mount path on the local/ remote machine
 
+    set_mountpath_reserve_space()      --  to set reserve space on the mountpath
+
+    change_device_access_type()  -- to change device access type
+
+    verify_media()              --  To perform verify media operation on media
+
+    set_mountpath_preferred_on_mediaagent() --  Sets select preferred mountPath according to mediaagent setting on the
+                                                library
+
     _get_library_properties()   --  gets the disk library properties
 
     refresh()                   --  Refresh the properties of this disk library.
@@ -141,7 +150,8 @@ DiskLibrary instance Attributes
 
     **media_agents_associated**  --  returns the media agents associated with the disk library
     **library_properties**       --  Returns the dictionary consisting of the full properties of the library
-
+    **free_space**               --  returns the free space on the library
+    **mountpath_usage**          --  returns mountpath usage on library
 
 """
 from __future__ import absolute_import
@@ -1485,6 +1495,222 @@ class DiskLibrary(object):
                                                                  self._library_name,
                                                                  _stderr))
 
+    def set_mountpath_reserve_space(self, mount_path, size):
+        """
+            To set reserve space on the mountpath
+            Args:
+                mount_path (str)    --  Mountpath
+
+                size (int)          --  reserve space to be set in MB
+        """
+
+        request_json = {
+            "EVGui_ConfigureStorageLibraryReq":
+                {
+                    "isConfigRequired": 1,
+                    "library": {
+                        "opType": 8,
+                        "mediaAgentName": self.media_agent,
+                        "libraryName": self._library_name,
+                        "mountPath": mount_path
+                    },
+                    "libNewProp":{
+                      "reserveSpaceInMB": size
+                    }
+                }
+        }
+        self._commcell_object.qoperation_execute(request_json)
+
+    def change_device_access_type(self, mountpath_id, device_id, device_controller_id, media_agent_id,
+                                  device_access_type):
+        """
+        To change device access type
+            Args:
+                mountpath_id (int)  -- Mount Path Id
+
+                device_id (int)     -- Device Id
+
+                device_controller_id (int) -- Device Controller Id
+
+                media_agent_id (int)    --   Media Agent Id
+
+                device_access_type (int)    --  Device access type
+                                        Regular:
+                                                Access type     Value
+                                                Read              4
+                                                Read and Write    6
+                                                Preferred         8
+
+                                        IP:
+                                                Access type     Value
+                                                Read             20
+                                                Read/ Write      22
+
+                                        Fibre Channel (FC)
+                                                Access type     Value
+                                                Read             36
+                                                Read and Write   38
+
+                                        iSCSi
+                                                Access type     Value
+                                                Read             132
+                                                Read and Write   134
+        """
+
+        if not all([isinstance(mountpath_id, int), isinstance(device_id, int), isinstance(device_controller_id, int),
+                    isinstance(media_agent_id, int), isinstance(device_access_type, int)]):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "EVGui_MMDevicePathInfoReq":
+                {
+                    "mountpathId": mountpath_id,
+                    "infoList": {
+                        "accessType": device_access_type,
+                        "deviceId": device_id,
+                        "deviceControllerId": device_controller_id,
+                        "path": self.mount_path,
+                        "enabled": 1,
+                        "numWriters": -1,
+                        "opType": 2,
+                        "autoPickTransportType": 0,
+                        "protocolType": 679,
+                        "mediaAgent": {
+                            "id": media_agent_id
+                        }
+                    }
+                }
+        }
+        self._commcell_object.qoperation_execute(request_json)
+
+    def verify_media(self, media_name, location_id):
+        """
+            To perform verify media operation on media
+            Args:
+                media_name  --  Barcode of the media
+
+                location_id --  Slot Id of the media on the library
+        """
+
+        if not (isinstance(media_name, basestring) and
+                isinstance(location_id,int)):
+            raise SDKException('Storage', '101')
+
+        request_xml = f"""<TMMsg_CreateTaskReq>
+                            <taskInfo>
+                                <task taskType="1" />
+                                <subTasks subTaskOperation="1">
+                                    <subTask operationType="4005" subTaskType="1"/>
+                                    <options>
+                                        <adminOpts>
+                                            <libraryOption operation="6">
+                                                <library _type_="9" libraryName="{self.library_name}"/>
+                                                <media _type_="46" mediaName="{media_name}"/>
+                                                <verifyMedia>
+                                                    <location _type_="53" locationId="{location_id}"/>
+                                                </verifyMedia>
+                                            </libraryOption>
+                                        </adminOpts>
+                                    </options>
+                                </subTasks>
+                            </taskInfo>
+                        </TMMsg_CreateTaskReq>"""
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['CREATE_TASK'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    from cvpysdk.job import Job
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                if "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Error: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102',o_str)
+
+                else:
+                    raise SDKException('Response', '102')
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    @property
+    def free_space(self):
+        """Returns free space"""
+        return self._library_properties.get('magLibSummary', {}).get('totalFreeSpace').strip()
+
+    @property
+    def mountpath_usage(self):
+        """Returns mount path usage"""
+        return self._library_properties.get('magLibSummary', {}).get('mountPathUsage').strip()
+
+    @mountpath_usage.setter
+    def mountpath_usage(self, value):
+        """
+            Sets mount path usage on the library
+            Args:
+                value  (str)   -- option needed to set for mountpath usage
+                                    value: 'SPILL_AND_FILL' or 'FILL_AND_SPILL'
+        """
+        if not isinstance(value, basestring):
+            raise SDKException('Storage', '101')
+
+        if value == 'SPILL_AND_FILL':
+            value = 1
+        elif value == 'FILL_AND_SPILL':
+            value = 2
+        else:
+            raise SDKException('Storage', '110')
+
+        request_json = {
+            "EVGui_ConfigureStorageLibraryReq":
+                {
+                    "library": {
+                            "opType": 32,
+                            "libraryName": self.library_name
+                        },
+                    "libNewProp": {
+                            "mountPathUsage": value
+                        }
+                }
+        }
+        self._commcell_object.qoperation_execute(request_json)
+
+    def set_mountpath_preferred_on_mediaagent(self, value):
+        """Sets select preferred mountPath according to mediaagent setting on the library.
+            Args:
+                value    (bool) --  preferMountPathAccordingToMA value to be set on library (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update
+
+                    if the type of value input is not correct
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "EVGui_ConfigureStorageLibraryReq":
+                {
+                    "isConfigRequired": 1,
+                    "library": {
+                            "opType": 32,
+                            "libraryName": self.library_name
+                        },
+                    "libNewProp": {
+                            "preferMountPathAccordingToMA": int(value)
+                        }
+                }
+        }
+        self._commcell_object.qoperation_execute(request_json)
+
     @property
     def media_agents_associated(self):
         """Returns the media agents associated with the disk library"""
@@ -1520,10 +1746,20 @@ class DiskLibrary(object):
         """Treats the library id as a read-only attribute."""
         return self.mountpath
 
+    @mount_path.setter
+    def mount_path(self, mount_path):
+        """ setter for mountpath"""
+        self.mountpath = mount_path
+
     @property
     def media_agent(self):
         """Treats the library id as a read-only attribute."""
         return self.mediaagent
+
+    @media_agent.setter
+    def media_agent(self, media_agent):
+        """setter for media agent"""
+        self.mediaagent = media_agent
         
     def share_mount_path(self, new_media_agent, new_mount_path, **kwargs):
         """

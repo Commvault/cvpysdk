@@ -167,46 +167,49 @@ class SecurityAssociation(object):
         associations = {}
         entity_permissions = {}
         for every_association in security_dict:
-            entities = every_association['entities']['entity']
-            for entity in entities:
-                for each_key in entity:
-                    if 'Name' in each_key:
-                        if 'externalGroupName' in each_key:
-                            associations = entity[each_key]
-                        if 'providerDomainName' in each_key:
-                            if associations:
-                                ext_group = "{0}\\{1}".format(entity[each_key],
-                                                              associations)
-                                associations = {}
+            if 'entity' in every_association['entities']:
+                entities = every_association['entities']['entity']
+                for entity in entities:
+                    for each_key in entity:
+                        if 'Name' in each_key:
+                            if 'externalGroupName' in each_key:
+                                associations = entity[each_key]
+                            #if 'providerDomainName' in each_key:
+                                # No need to explicitely  check for provider key
+                                if associations:
+                                    ext_group = "{0}\\{1}".format(entity['providerDomainName'],
+                                                                  associations)
+                                    associations = {}
+                                else:
+                                    ext_group = entity[each_key]
+                                security_list.append(each_key)
+                                security_list.append(ext_group.lower())
+                                break
                             else:
-                                ext_group = entity[each_key]
-                            security_list.append(each_key)
-                            security_list.append(ext_group.lower())
-                        else:
-                            security_list.append(each_key)
-                            security_list.append(entity[each_key].lower())
-                            break
-                    elif 'flags' in each_key:
-                        security_list.append(entity['_type_'])
-                        security_list.append(entity['flags'])
+                                security_list.append(each_key)
+                                security_list.append(entity[each_key].lower())
+                                break
+                        elif 'flags' in each_key:
+                            security_list.append(entity['_type_'])
+                            security_list.append(entity['flags'])
 
-                if 'role' in every_association['properties']:
-                    role_list = every_association['properties']['role']
-                    for entity in role_list:
-                        if 'Name' in entity:
-                            security_list.append(role_list[entity].lower())
-                if 'categoryPermission' in every_association['properties']:
-                    categories = every_association['properties'][
-                        'categoryPermission']['categoriesPermissionList']
-                    for key in categories:
-                        categories = key
-                        for permission in categories:
-                            if 'Name' in permission:
-                                security_list.append(categories[permission] + str('-invalid'))
-                                #Not supporting custom permissions as of now.
-                entity_permissions.setdefault(count, security_list)
-                security_list = []
-                count += 1
+                    if 'role' in every_association['properties']:
+                        role_list = every_association['properties']['role']
+                        for entity in role_list:
+                            if 'Name' in entity:
+                                security_list.append(role_list[entity].lower())
+                    if 'categoryPermission' in every_association['properties']:
+                        categories = every_association['properties'][
+                            'categoryPermission']['categoriesPermissionList']
+                        for key in categories:
+                            categories = key
+                            for permission in categories:
+                                if 'Name' in permission:
+                                    security_list.append(categories[permission] + str('-invalid'))
+                                    #Not supporting custom permissions as of now.
+                    entity_permissions.setdefault(count, security_list)
+                    security_list = []
+                    count += 1
         return entity_permissions
 
 
