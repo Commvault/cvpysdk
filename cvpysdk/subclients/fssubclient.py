@@ -42,6 +42,9 @@ FileSystemSubclient:
 
     run_backup_copy()                   --  Runs the backup copy job from Subclient
 
+    restore_in_place()                  --  Restores the files/folders
+                                            specified in the input paths list to the same location.
+
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
 
@@ -1558,6 +1561,92 @@ class FileSystemSubclient(Subclient):
 
         return self._process_backup_response(flag, response)
 
+    def restore_in_place(
+            self,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            fs_options=None,
+            schedule_pattern=None,
+            proxy_client=None):
+        """Restores the files/folders specified in the input paths list to the same location.
+
+            Args:
+                paths                   (list)  --  list of full paths of files/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+                restore_data_and_acl    (bool)  --  restore data and ACL files
+                    default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                fs_options      (dict)          -- dictionary that includes all advanced options
+                    options:
+                        all_versions        : if set to True restores all the versions of the
+                                                specified file
+                        versions            : list of version numbers to be backed up
+                        validate_only       : To validate data backed up for restore
+
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+                proxy_client    (str)          -- Proxy client used during FS under NAS operations
+
+            Returns:
+                object - instance of the Job class for this restore job if its an immediate Job
+                         instance of the Schedule class for this restore job if its a scheduled Job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+        """
+        self._backupset_object._instance_object._restore_association = self._subClientEntity
+
+        if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
+            fs_options['destination_appTypeId'] = int(next(iter(self._client_object.agents.all_agents.values())))
+
+        return super(FileSystemSubclient, self).restore_in_place(
+            paths=paths,
+            overwrite=overwrite,
+            restore_data_and_acl=restore_data_and_acl,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            fs_options=fs_options,
+            schedule_pattern=schedule_pattern,
+            proxy_client=proxy_client
+        )
+
     def restore_out_of_place(
             self,
             client,
@@ -1670,6 +1759,15 @@ class FileSystemSubclient(Subclient):
                     if response is not success
         """
         self._backupset_object._instance_object._restore_association = self._subClientEntity
+
+        if not isinstance(client, (basestring, Client)):
+            raise SDKException('Subclient', '101')
+
+        if isinstance(client, basestring):
+            client = Client(self._commcell_object, client)
+
+        if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
+            fs_options['destination_appTypeId'] = int(next(iter(client.agents.all_agents.values())))
 
         # check to find whether file level Restore/ Volume level restore for blocklvel.
 

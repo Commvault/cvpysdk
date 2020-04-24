@@ -73,6 +73,8 @@ Commcell:
 
     configure_remotecache()     --  configures client as remote cache
 
+     assoc_entity_to_remote_cache()-- Associates client/client_group to the Remote Cache
+
     configure_packages_to_sync()    --  configures packages to sync for the remote cache
 
     push_servicepack_and_hotfixes() --  triggers installation of service pack and hotfixes
@@ -1882,6 +1884,27 @@ class Commcell(object):
         remote_cache = RemoteCache(self, client_name)
         return remote_cache.configure_remotecache(cache_path)
 
+    def assoc_entity_to_remote_cache(self,
+                                     remote_cache_client_name,
+                                     client_name=None,
+                                     client_group_name=None):
+        """
+        Associates client/client_group to the remote cache
+
+        Args:
+            remote_cache_client_name (str)  -- Name of the RemoteCache Client
+
+            client_name (str) -- Client that has to point to the RemoteCache
+
+            client_group_name (str)  -- The client_group which has to be pointed to Remote Cache
+
+        Raises:
+            exception if qoperation fails
+        """
+        remote_cache = RemoteCache(self, remote_cache_client_name)
+        return remote_cache.assoc_entity_to_remote_cache(client_name=client_name,
+                                                         client_group_name=client_group_name)
+
     def configure_packages_to_sync(self, client_name, win_os=None, win_package_list=None, unix_os=None,
                                    unix_package_list=None):
         """
@@ -1992,7 +2015,8 @@ class Commcell(object):
             windows_features=None,
             unix_features=None,
             username=None,
-            password=None):
+            password=None,
+            install_path=None):
         """
         Installs the selected features in the selected clients
         Args:
@@ -2017,6 +2041,10 @@ class Commcell(object):
             password    (str)               -- base64 encoded password
 
                 default : None
+
+            install_path (str)              -- Install to a specified path on the client
+
+                 default : None
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -2056,7 +2084,8 @@ class Commcell(object):
             windows_features=windows_features,
             unix_features=unix_features,
             username=username,
-            password=password)
+            password=password,
+            install_path=install_path)
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell

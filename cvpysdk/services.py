@@ -274,7 +274,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
-    'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=ReplaceDisk',
+    'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',

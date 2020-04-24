@@ -44,6 +44,9 @@ RemoteCache
     configure_remote_cache()              --  Configures client as remote cache
 
     configure_packages_to_sync()          --  Configures packages to sync for the remote cache
+
+    assoc_entity_to_remote_cache()        --  Associates entity to the Remote Cache
+
 """
 from ..exception import SDKException
 from .deploymentconstants import UnixDownloadFeatures
@@ -307,3 +310,69 @@ class RemoteCache(object):
                 'Error Code:"{0}"\nError Message: "{1}"'.format(
                     response['CVGui_GenericResp']['@errorCode'],
                     error_message))
+
+
+    def assoc_entity_to_remote_cache(self, client_name=None, client_group_name=None):
+        """
+            Points/Associates entity to the Remote Cache Client
+
+                Args:
+                    client_name (str)  -- The client which has to be pointed to Remote Cache
+
+                    client_group_name (str)  -- The client_group which has to be pointed to Remote Cache
+
+                Raises:
+                    SDKException:
+                    - Failed to execute the api
+
+                    - Response is incorrect
+        """
+
+        if client_name is None and client_group_name is None:
+            raise Exception("No clients or client groups to associate; Please provide a valid name")
+
+        if client_name and client_name in self.commcell.clients.all_clients:
+            entity_obj = self.commcell.clients.get(client_name)
+            entity_id = entity_obj.client_id
+            entity_name = entity_obj.client_name
+            entity_type ="0"
+
+        elif client_group_name in self.commcell.client_groups.all_clientgroups:
+            entity_obj = self.commcell.client_groups.get(client_group_name)
+            entity_id = entity_obj.clientgroup_id
+            entity_name = entity_obj.clientgroup_name
+            entity_type = "1"
+
+        else:
+            raise Exception("{0} does not exist".format(client_name if client_name else client_group_name))
+
+        request_xml = """
+            <EVGui_SetUpdateAgentInfoReq>
+            <uaInfo uaCachePath="%s" uaOpCode="5">
+            <uaName id="%s" name="%s"/>
+            <uaImpersonate/>
+            <patchUAContentConfigs/>
+            </uaInfo>
+            <uaList>
+            <addedList id="%s" name="%s" type="%s" >
+            </addedList>
+            </uaList>
+            </EVGui_SetUpdateAgentInfoReq>
+            """ %  (self.commcell.get_remote_cache_path(self.client_object.client_name),
+                    self.client_object.client_id,
+                    self.client_object.client_name,
+                    entity_id,
+                    entity_name,
+                    entity_type)
+
+        response = self.commcell.qoperation_execute(request_xml)
+        if response.get('errorCode') != 0:
+            error_message = "Failed with error: [{0}]".format(
+                response.get('errorMessage')
+            )
+            raise SDKException(
+                'Response',
+                '101',
+                'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
+            )
+

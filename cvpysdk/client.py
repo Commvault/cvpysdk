@@ -199,6 +199,8 @@ Client
 
     push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
 
+    repair_software()            -- triggers Repair software on the client machine
+
     get_dag_member_servers()     --  Gets the member servers of an Exchange DAG client.
 
     create_pseudo_client()       --  Creates a pseudo client
@@ -2636,9 +2638,13 @@ class Client(object):
                     operations_dict[operation]['exception_message'].format(service_name, output)
                 )
         elif 'unix' in self.os_info.lower():
+            commvault = r'/usr/bin/commvault'
+            if 'darwin' in self.os_info.lower():
+                commvault = r'/usr/local/bin/commvault'
+
             if self.instance:
-                command = 'commvault -instance {0} {1}'.format(
-                    self.instance, operations_dict[operation]['unix_command']
+                command = '{0} -instance {1} {2}'.format(
+                    commvault, self.instance, operations_dict[operation]['unix_command']
                 )
 
                 __, __, error = self.execute_command(command, wait_for_completion=False)
@@ -4473,6 +4479,47 @@ class Client(object):
             client_computers=[self.client_name],
             reboot_client=reboot_client,
             run_db_maintenance=run_db_maintenance
+        )
+
+    def repair_software(
+            self,
+            username=None,
+            password=None,
+            reboot_client=False):
+        """triggers Repair software on the client machine
+
+        Args:
+             username    (str)               -- username of the machine to re-install features on
+
+                default : None
+
+            password    (str)               -- base64 encoded password
+
+                default : None
+
+            reboot_client (bool)            -- boolean to specify whether to reboot the client
+            or not
+
+                default: False
+
+        Returns:
+            object - instance of the Job class for this download job
+
+        Raises:
+                SDKException:
+                if install job failed
+
+                if response is empty
+
+                if response is not success
+
+        """
+        install = Install(self._commcell_object)
+        return install.repair_software(
+            client=self.client_name,
+            username=username,
+            password=password,
+            reboot_client=reboot_client
         )
 
     def get_dag_member_servers(self):

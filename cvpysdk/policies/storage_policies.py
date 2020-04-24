@@ -140,6 +140,14 @@ StoragePolicyCopy:
 
     set_copy_software_compression()         --  Sets the copy software compression setting
 
+    is_parallel_copy()                      --  Gets the parallel copy setting on storage policy copy
+
+    set_parallel_copy()                     --  Sets the parallel copy setting on storage policy copy
+
+    is_inline_copy()                        --  Gets the inline copy setting on storage policy copy
+
+    set_inline_copy()                       --  Sets the inline copy setting on storage policy copy
+
     delete_job()                            --  delete a job from storage policy copy node
 
     recopy_jobs()                           --  recopies a job on a secondary copy
@@ -3023,6 +3031,52 @@ class StoragePolicyCopy(object):
             self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 0
         if managed_disk_space_value:
             self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 1
+        self._set_copy_properties()
+
+    @property
+    def is_parallel_copy(self):
+        """Treats the parallel copy setting as a read-only attribute."""
+        return 'enableParallelCopy' in self._copy_flags
+
+    def set_parallel_copy(self, value):
+        """ Sets the parallel copy on storage policy copy as the value provided as input.
+            Args:
+                value    (bool) --  parallel copy on storage policy copy value to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update parallel copy on storage policy copy
+
+                    if the type of value input is not correct
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        self._copy_flags['enableParallelCopy'] = int(value)
+
+        self._set_copy_properties()
+
+    @property
+    def is_inline_copy(self):
+        """Treats the inline copy setting as a read-only attribute."""
+        return 'inlineAuxCopy' in self._copy_flags
+
+    def set_inline_copy(self, value):
+        """ Sets the inline copy on storage policy copy as the value provided as input.
+            Args:
+                value    (bool) --  inline copy on storage policy copy value to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update inline copy on storage policy copy
+
+                    if the type of value input is not correct
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        self._copy_flags['inlineAuxCopy'] = int(value)
+
         self._set_copy_properties()
 
     def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):

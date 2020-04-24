@@ -65,6 +65,8 @@ FSBackupset:
 
 from __future__ import unicode_literals
 
+from past.builtins import basestring
+
 from ..backupset import Backupset
 from ..client import Client
 from ..exception import SDKException
@@ -140,6 +142,9 @@ class FSBackupset(Backupset):
                     if response is not success
         """
         self._instance_object._restore_association = self._backupset_association
+
+        if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
+            fs_options['destination_appTypeId'] = int(next(iter(self._client_object.agents.all_agents.values())))
 
         return self._instance_object._restore_in_place(
             paths=paths,
@@ -239,6 +244,15 @@ class FSBackupset(Backupset):
                     if response is not success
         """
         self._instance_object._restore_association = self._backupset_association
+
+        if not isinstance(client, (basestring, Client)):
+            raise SDKException('Subclient', '101')
+
+        if isinstance(client, basestring):
+            client = Client(self._commcell_object, client)
+
+        if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
+            fs_options['destination_appTypeId'] = int(next(iter(client.agents.all_agents.values())))
 
         return self._instance_object._restore_out_of_place(
             client=client,
