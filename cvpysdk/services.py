@@ -298,6 +298,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_DISCOVERY':'{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UserPolicyAssociation',
     'UPDATE_USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UpdateUserPolicyAssociation',
+    'OFFICE365_MOVE_JOB_RESULT_DIRECTORY' : '{0}Office365/MoveJobResultsDirectory',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
@@ -307,6 +308,8 @@ SERVICES_DICT_TEMPLATE = {
     'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
     'GET_EMAIL_POLICY_ASSOCIATIONS': '{0}Subclient/%s/EmailPolicyAssociation?discoveryType=%s',
     'SET_EMAIL_POLICY_ASSOCIATIONS': '{0}/Subclient/EmailPolicyAssociation',
+
+    'CREATE_NUTANIX_CLIENT': '{0}Client/Nutanix',
 
     'GET_EVENTS': '{0}Events',
     'GET_EVENT': '{0}Events/%s',
@@ -373,6 +376,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
+	'GET_SWAGGER': '{0}swagger/V3/swagger.json'
 }
 
 

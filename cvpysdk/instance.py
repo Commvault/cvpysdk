@@ -2583,7 +2583,16 @@ class Instance(object):
             }
             if self._destination_restore_json["inPlace"]:
                 self._destination_restore_json["destPath"] = [""]
-
+        # For Index server restore, we need to set proxy client & in-place flag
+        elif value.get("proxy_client") is not None and \
+                (self._agent_object.agent_name).upper() == "BIG DATA APPS" and \
+                self.name.upper() == "DYNAMICINDEXINSTANCE":
+            self._destination_restore_json = {
+                "inPlace": value.get("in_place", True),
+                "destClient": {
+                    "clientName": value.get("proxy_client", "")
+                }
+            }
         else:
             # removed clientId from destClient as VSA Restores fail with it
             self._destination_restore_json = {

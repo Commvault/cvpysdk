@@ -993,6 +993,7 @@ class Backupset(object):
             'job_id': 0,
             'commcell_id': self._commcell_object.commcell_id,
             'include_aged_data': False,
+            'include_meta_data':False,
             'include_hidden': False,
             'include_running_jobs': False,
             'vs_volume_browse': False,
@@ -1363,6 +1364,9 @@ class Backupset(object):
 
         if options['include_aged_data']:
             request_json['options']['includeAgedData'] = True
+
+        if options['include_meta_data']:
+            request_json['options']['includeMetadata'] = True
 
         if options['include_hidden']:
             request_json['options']['includeHidden'] = True

@@ -88,6 +88,8 @@ Clients
     add_salesforce_client()               --  adds a new salesforce client
 
     add_azure_client()                    --  adds a new azure cloud client
+    
+    add_nutanix_files_client()                  --  adds a new nutanix files client
 
     get(client_name)                      --  returns the Client class object of the input client
     name
@@ -210,6 +212,10 @@ Client
     uninstall_software()		 --	Uninstalls all the packages of the client
 
     get_network_summary()        -- Gets the network summary of the client
+	
+    change_exchange_job_results_directory()
+                                --  Move the Job Results Directory for an 
+                                    Exchange Online Environment
 
 
 
@@ -350,6 +356,7 @@ class Clients(object):
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -1976,6 +1983,95 @@ class Clients(object):
         }
 
         self._process_add_response(request_json)
+        
+    def add_nutanix_files_client(self, client_name, array_name, cifs_option=True, nfs_option=True):
+        """
+            Method to add new Nutanix Files client
+
+            Args:
+                client_name     (str)   --  Nutanix files client name
+                array_name      (str)   --  FQDN of the Nutanix array(File Server)
+                                            to be associated with client
+                cifs_option     (bool)  --  option for adding Windows File System agent in
+                                            the created client i.e for adding CIFS agent
+                nfs_option      (bool)  --  option for adding Linux File System agent in
+                                            the created client  i.e for adding NFS agent
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if nfs_option and cifs_option both are false
+
+                    if pseudo client with same name already exists
+        """
+
+        if self.has_client(client_name):
+            raise SDKException(
+                'Client', '102', 'Client "{0}" already exists.'.format(
+                    client_name)
+            )
+        if (nfs_option == cifs_option == False):
+            raise SDKException(
+                'Client',
+                '102',
+                "nfs_option and cifs_option both cannot be false")
+
+        request_json = {
+	                    "createPseudoClientRequest": {
+			                "clientInfo": {
+				                "fileServerInfo": {
+					                "arrayName": array_name,
+					                "arrayId": 0
+				                    },
+				                "clientAppType":2,
+				                "clientType": 18,
+			                    },
+			                "entity": {
+				                "clientName": client_name
+			                    }
+		                    }
+                        }
+
+        if(nfs_option != cifs_option):
+            additional_json = {}
+            if(nfs_option):
+                additional_json['osType'] = 'CLIENT_PLATFORM_OSTYPE_UNIX'
+            else:
+                additional_json['osType'] = 'CLIENT_PLATFORM_OSTYPE_WINDOWS'
+            request_json["createPseudoClientRequest"]['clientInfo']['nonNDMPClientProperties'] = additional_json
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_NUTANIX_CLIENT, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get(self, name):
         """Returns a client object if client name or host name or ID matches the client attribute
@@ -3858,6 +3954,81 @@ class Client(object):
                 return ""
             return response.text
         raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def change_exchange_job_results_directory(
+            self, new_directory_path, username=None, password=None):
+        """
+                Change the Job Result Directory of an Exchange Online Client
+
+                Arguments:
+                    new_directory   (str)   -- The new JR directory
+                        Example:
+                            C:\ JR
+                            or
+                            <UNC-PATH>
+
+
+                    username    (str)   --
+                        username of the machine, if new JobResults directory is a shared/ UNC path.
+
+                    password    (str)   --
+                        Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+                Raises
+                    SDKException   (object)
+                        Error in moving the job results directory
+        """
+        if self.client_type != 25:
+            raise SDKException(
+                'Client', '109',
+                ' Method is application for an Exchange Mailbox Client only')
+
+        if new_directory_path.startswith(r'\\') and (
+                username is None or password is None):
+            raise SDKException(
+                'Client', '101',
+                'For a network share path, pass the credentials also')
+
+        prop_dict = {
+            "clientId": int(self.client_id),
+            "appType": 137,
+            "jobResultDirectory": new_directory_path
+        }
+        if username is not None:
+            import base64
+            password = base64.b64encode(password.encode()).decode()
+            prop_dict["directoryAdmin"] = {
+                "serviceType": 3,
+                "userAccount": {
+                    "userName": username,
+                    "password": password
+                }
+            }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['OFFICE365_MOVE_JOB_RESULT_DIRECTORY'], prop_dict
+        )
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if error_code == 0:
+                    return
+                elif 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Failed to move the job results directory' \
+                            '\nError: "{0}"'.format(error_message)
+                    raise SDKException(
+                        'Response', '101',
+                        'Unable to move the job result directory' + o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                'Unable to move the job result directory')
 
     def push_network_config(self):
         """Performs a push network configuration on the client

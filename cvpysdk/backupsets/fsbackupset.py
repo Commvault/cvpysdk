@@ -144,7 +144,9 @@ class FSBackupset(Backupset):
         self._instance_object._restore_association = self._backupset_association
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(next(iter(self._client_object.agents.all_agents.values())))
+            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps'))))))
+            if not fs_options['destination_appTypeId']:
+                del fs_options['destination_appTypeId']
 
         return self._instance_object._restore_in_place(
             paths=paths,
@@ -252,7 +254,9 @@ class FSBackupset(Backupset):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(next(iter(client.agents.all_agents.values())))
+            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps'))))))
+            if not fs_options['destination_appTypeId']:
+                del fs_options['destination_appTypeId']
 
         return self._instance_object._restore_out_of_place(
             client=client,

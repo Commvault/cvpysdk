@@ -50,7 +50,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                                          backupset class, subclient name, subclient id
 
         """
-        self.diskExtension = [".vhd", ".avhd"]
+        self.diskExtension = [".vhd", "none"]
         super(AzureRMSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
 
@@ -58,6 +58,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      vm_to_restore=None,
                                      resource_group=None,
                                      storage_account=None,
+                                     datacenter=None,
                                      proxy_client=None,
                                      restore_new_name=None,
                                      overwrite=True,
@@ -66,6 +67,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      public_ip=False,
                                      restore_as_managed=False,
                                      copy_precedence=0,
+                                     disk_type=None,
                                      restore_option=None):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -134,10 +136,12 @@ class AzureRMSubclient(VirtualServerSubclient):
             volume_level_restore=1,
             esx_host=resource_group,
             datastore=storage_account,
+            datacenter=datacenter,
             client_name=proxy_client,
             in_place=False,
             createPublicIP=public_ip,
             restoreAsManagedVM=restore_as_managed,
+            disk_type=disk_type,
             instanceSize=instance_size,
             restore_new_name=restore_new_name
         )

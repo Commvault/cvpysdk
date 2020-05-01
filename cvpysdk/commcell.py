@@ -654,12 +654,29 @@ class Commcell(object):
                     self._commserv_name = response.json()['commcell']['commCellName']
                     self._commserv_timezone_name = response.json()['csTimeZone']['TimeZoneName']
                     self._commserv_version = response.json()['currentSPVersion']
-                    self._version_info = response.json().get('csVersionInfo')
+                    version_info = response.json().get('csVersionInfo')
                     self._id = response.json()['commcell']['commCellId']
 
                     self._commserv_timezone = re.search(
                         r'\(.*', response.json()['timeZone']
                     ).group()
+
+                    # set commcell version (E.g. 11.21.0)
+                    version_replace_strings = {
+                        '.0 SP': '.',
+                        ' SP': '.',
+                        ' HPK': '.',
+                        '+': '',
+                        '-': '',
+                        'a': '.1',
+                        'b': '.2'
+                    }
+
+                    for key, value in version_replace_strings.items():
+                        version_info = version_info.replace(key, value)
+
+                    self._version_info = version_info + '.0'*(3 - len(version_info.split('.')))
+
                 except KeyError as error:
                     raise SDKException('Commcell', '103', 'Key does not exist: {0}'.format(error))
             else:
@@ -870,7 +887,7 @@ class Commcell(object):
     def version(self):
         """Returns the complete version info of the commserv
 
-            Example: 11 SP19.1
+            Example: 11.19.1
 
         """
         return self._version_info

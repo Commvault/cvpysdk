@@ -1633,7 +1633,9 @@ class FileSystemSubclient(Subclient):
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(next(iter(self._client_object.agents.all_agents.values())))
+            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps'))))))
+            if not fs_options['destination_appTypeId']:
+                del fs_options['destination_appTypeId']
 
         return super(FileSystemSubclient, self).restore_in_place(
             paths=paths,
@@ -1767,9 +1769,11 @@ class FileSystemSubclient(Subclient):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(next(iter(client.agents.all_agents.values())))
+            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps'))))))
+            if not fs_options['destination_appTypeId']:
+                del fs_options['destination_appTypeId']
 
-        # check to find whether file level Restore/ Volume level restore for blocklvel.
+            # check to find whether file level Restore/ Volume level restore for blocklevel.
 
         if fs_options is not None and fs_options.get('is_vlr_restore', False):
             if not (isinstance(paths, list) and
@@ -2101,4 +2105,31 @@ class FileSystemSubclient(Subclient):
             access_nodes.append({"clientName": access_node})
 
         update_properties["fsSubClientProp"]["backupConfiguration"] = {"backupDataAccessNodes": access_nodes}
+        self.update_properties(update_properties)
+
+    @property
+    def network_share_auto_mount(self):
+        """
+        Returns the value of enableNetworkShareAutoMount, if true, the content will be auto-mounted during backup and
+        auto-mounted during in-place restores.
+        """
+        return self._fsSubClientProp['enableNetworkShareAutoMount']
+
+    @network_share_auto_mount.setter
+    def network_share_auto_mount(self, value):
+        """
+        Sets the value for enableNetworkShareAutoMount, needs to set to true if content is specified
+        in the file_server:/path format.
+
+            Args:
+                value   (bool)  --  Enables or disables the property by setting True or False respectively.
+
+        """
+        update_properties = self.properties
+
+        if isinstance(value, bool):
+            update_properties["fsSubClientProp"]['enableNetworkShareAutoMount'] = value
+        else:
+            raise SDKException('Subclient', '101')
+
         self.update_properties(update_properties)

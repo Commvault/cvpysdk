@@ -2410,6 +2410,8 @@ class VirtualServerSubclient(Subclient):
 
         for _each_vm_to_restore in restore_option['vm_to_restore']:
             if not restore_option["in_place"]:
+                if 'disk_type' in restore_option:
+                    restore_option['restoreAsManagedVM'] = restore_option['disk_type'][_each_vm_to_restore]
                 if ("restore_new_name" in restore_option and
                         restore_option["restore_new_name"] is not None):
                     restore_option["new_name"] = restore_option["restore_new_name"] + _each_vm_to_restore

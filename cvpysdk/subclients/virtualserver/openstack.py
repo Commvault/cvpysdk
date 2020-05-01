@@ -234,8 +234,9 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
-            raise SDKException('Subclient', '101')
+        for vm in vm_to_restore:
+            if vm and not isinstance(vm, basestring):
+                raise SDKException('Subclient', '101')
 
         if copy_precedence:
             restore_option['copy_precedence_applicable'] = True
@@ -251,8 +252,6 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
-        if vm_to_restore:
-            vm_to_restore = [vm_to_restore]
 
         self._set_restore_inputs(
             restore_option,
