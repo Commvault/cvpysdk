@@ -55,12 +55,13 @@ class BigDataAppsSubclient(FileSystemSubclient):
 
         """
         from cvpysdk.subclients.splunksubclient import SplunkSubclient
+
         cluster_types = {
             16: SplunkSubclient
         }
 
-        bigdata_apps_cluster_type = backupset_object._instance_object.properties \
-            ["distributedClusterInstance"]["clusterType"]
+        bigdata_apps_cluster_type = backupset_object._instance_object.properties. \
+            get('distributedClusterInstance', {}).get('clusterType', -1)
 
         if bigdata_apps_cluster_type in cluster_types.keys():
             cluster_type = cluster_types[bigdata_apps_cluster_type]

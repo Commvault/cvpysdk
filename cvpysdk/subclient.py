@@ -51,7 +51,9 @@ Subclients:
     has_subclient()             --  checks if a subclient exists with the given name or not
 
     add()                       --  adds a new subclient to the backupset
-
+    
+    add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump
+    
     add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
     get(subclient_name)         --  returns the subclient object of the input subclient name
@@ -158,10 +160,9 @@ from __future__ import unicode_literals
 import math
 import time
 import copy
-
+from base64 import b64encode
 from past.builtins import basestring
 from future.standard_library import install_aliases
-
 from .job import Job
 from .job import JobController
 from .schedules import Schedules
@@ -748,6 +749,157 @@ class Subclients(object):
             }
 
         return self._process_add_request(request_json)
+        
+    def add_oracle_logical_dump_subclient(
+                                 self,
+                                 subclient_name,
+                                 storage_policy,
+                                 dump_dir,
+                                 user_name,
+                                 domain_name,
+                                 password,
+                                 full_mode,
+                                 schema_value = None):
+        """
+        Method to add subclient for oracle logical dump.
+        This method add two type of subclient full mode
+        and schema mode. For full mode full_mode should be
+        true and schema_value should be none and for schema
+        mode full_mode should be false and schema_value should
+        be list of values.Rest of thing should be same for both.
+        Args:
+              subclient_name     (Str)  --  subclient name for logical dump
+              
+              storage_policy     (Str)  --  Storage policy for subclient
+              
+              dump_dir            (Str)  --  dump directory for subclient
+              
+              user_name           (Str)  --  username for oracle database
+              
+              domain_name         (Str)  --  domainname for oracle database
+              
+              password           (Str)  --  password for oracle database
+                                            (should be in encrypted and decrypted form)
+                                            
+              full_mode           (bool) --  if ture then subclient for full mode otherwise schema mode
+              
+              schema_value        (list) --  schema value for schema mode subclient
+              
+                   default: None
+        Return:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if storage policy argument is not of type string
+                    
+                    if subclient name already present
+                    
+                    if storage policy does not exist
+
+        """
+        if not (isinstance(subclient_name, basestring) and
+                isinstance(storage_policy, basestring) and
+                isinstance(dump_dir, basestring) and
+                isinstance(user_name,basestring) and
+                isinstance(domain_name, basestring) and
+                isinstance(password, basestring) and
+                isinstance(full_mode, bool)):
+            raise SDKException('Subclient', '101')
+        if (full_mode == False and not 
+                isinstance(schema_value, list)):
+            raise SDKException('Subclient','101')
+        
+            
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
+                    subclient_name)
+            )
+
+        if self._backupset_object is None:
+            if self._instance_object.backupsets.has_backupset(
+                    'defaultBackupSet'):
+                self._backupset_object = self._instance_object.backupsets.get(
+                    'defaultBackupSet')
+            else:
+                self._backupset_object = self._instance_object.backupsets.get(
+                    sorted(self._instance_object.backupsets.all_backupsets)[0]
+                )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                storage_policy):
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    storage_policy)
+            )
+
+        request_json = {
+                "subClientProperties": {
+                    "subClientEntity": {
+                        "clientName": self._client_object.client_name,
+                        "instanceName": self._instance_object.instance_name,
+                        "appName": self._agent_object.agent_name,
+                        "backupsetName": self._backupset_object.backupset_name,
+                        "subclientName": subclient_name
+                    },
+                    "oracleSubclientProp": {
+                        "data": False,
+                        "archiveDelete": False,
+                        "useSQLConntect": False,
+                        "dbSubclientType": 2,
+                        "mergeIncImageCopies": False,
+                        "selectiveOnlineFull": False,
+                        "protectBackupRecoveryArea": False,
+                        "selectArchiveLogDestForBackup": False,
+                        "backupSPFile": False,
+                        "backupControlFile": False,
+                        "backupArchiveLog": False,
+                        "validate": False,
+                    },
+                    "commonProperties": {
+                        "snapCopyInfo": {
+                            "useSeparateProxyForSnapToTape": False,
+                            "checkProxyForSQLIntegrity": False,
+                            "snapToTapeProxyToUseSource": False,
+                            "isSnapBackupEnabled": False,
+                            "IsOracleSposDriverEnabled": False,
+                            "isRMANEnableForTapeMovement": False
+                        },
+                        "dbDumpConfig": {
+                            "fullMode": True,
+                            "database": "",
+                            "dumpDir": dump_dir,
+                            "parallelism": 2,
+                            "overrideInstanceUser": True,
+                            "sqlConnect": {
+                                "password": b64encode(password.encode()).decode(),
+                                "domainName": domain_name,
+                                "userName": user_name
+                            }
+                        },
+                        "storageDevice": {
+                            "dataBackupStoragePolicy": {
+                                "storagePolicyName": storage_policy
+                            },
+                            "deDuplicationOptions": {
+                                "enableDeduplication": True
+                            }
+                        }
+                    }
+                }
+            }
+
+
+        if (full_mode == False):
+            request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["fullMode"] = False
+            request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["schema"] = schema_value
+
+        return self._process_add_request(request_json)
 
     def add_virtual_server_subclient(
             self,
@@ -829,11 +981,11 @@ class Subclients(object):
         content = []
         for item in subclient_content:
             content.append({
-                "equalsOrNotEquals": True,
-                "name": item['name'],
-                "allOrAnyChildren": True,
-                "type": item['type'].value
-            })
+                    "equalsOrNotEquals": True,
+                    "name": item['name'],
+                    "allOrAnyChildren": True,
+                    "type": item['type'].value
+                })
 
         request_json = {
             "subClientProperties": {
@@ -874,10 +1026,10 @@ class Subclients(object):
                     'Storage Policy: "{0}" does not exist in the Commcell'.format(kwargs.get('storage_policy'))
                 )
             request_json['subClientProperties']['commonProperties']['storageDevice'] = {
-                "dataBackupStoragePolicy": {
-                    "storagePolicyName": kwargs.get('storage_policy')
-                }
-            }
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": kwargs.get('storage_policy')
+                        }
+                    }
         else:
             raise SDKException('Subclient', '102', 'Either Plan or Storage policy should be given as input')
 
@@ -1389,9 +1541,7 @@ class Subclient(object):
             request_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = advance_job_option_dict
 
         if schedule_pattern:
-            request_json = SchedulePattern(
-                schedule_pattern=schedule_pattern
-            ).create_schedule(request_json, schedule_pattern)
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         return request_json
 
@@ -1472,7 +1622,7 @@ c
     @property
     def subclient_guid(self):
         """Returns the SubclientGUID"""
-        return self._subclient_properties.get('subClientEntity', {}).get('subclientGUID')
+        return self._subclient_properties.get('subClientEntity' , {}).get('subclientGUID')
 
     @display_name.setter
     def display_name(self, display_name):
@@ -2085,8 +2235,7 @@ c
             to_time=None,
             fs_options=None,
             schedule_pattern=None,
-            proxy_client=None
-    ):
+            proxy_client=None):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -2112,16 +2261,12 @@ c
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
-
                     options:
-
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
                         versions            : list of version numbers to be backed up
-
                         validate_only       : To validate data backed up for restore
 
-                        no_of_streams   (int)          -- Number of streams to be used for restore
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 
@@ -2160,7 +2305,7 @@ c
             to_time=to_time,
             fs_options=fs_options,
             schedule_pattern=schedule_pattern,
-            proxy_client=proxy_client,
+            proxy_client=proxy_client
         )
 
     def restore_out_of_place(
@@ -2175,8 +2320,7 @@ c
             to_time=None,
             fs_options=None,
             schedule_pattern=None,
-            proxy_client=None
-    ):
+            proxy_client=None):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -2209,28 +2353,18 @@ c
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
-
                     options:
-
                         preserve_level      : preserve level option to set in restore
-
                         proxy_client        : proxy that needed to be used for restore
-
                         impersonate_user    : Impersonate user options for restore
-
                         impersonate_password: Impersonate password option for restore
                                                 in base64 encoded form
-
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
-
                         versions            : list of version numbers to be backed up
-
                         media_agent         : Media Agent need to be used for Browse and restore
-
                         validate_only       : To validate data backed up for restore
 
-                        no_of_streams   (int)       -- Number of streams to be used for restore
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 

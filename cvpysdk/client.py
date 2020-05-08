@@ -3837,6 +3837,8 @@ class Client(object):
 
                     default:    None
 
+                    Example:    GxVssProv(Instance001)
+
             Returns:
                 None    -   if the service was started successfully
 
@@ -3858,6 +3860,8 @@ class Client(object):
 
                     default:    None
 
+                    Example:    GxVssProv(Instance001)
+
             Returns:
                 None    -   if the service was stopped successfully
 
@@ -3878,6 +3882,8 @@ class Client(object):
                     operation is executed on all services
 
                     default:    None
+
+                    Example:    GxVssProv(Instance001)
 
             Returns:
                 None    -   if the service was restarted successfully

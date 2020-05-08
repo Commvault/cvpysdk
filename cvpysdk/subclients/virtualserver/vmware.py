@@ -434,7 +434,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
         return self._process_restore_response(request_json)
 
-    def attach_disk_restore(self,
+	def attach_disk_restore(self,
                             vm_name,
                             vcenter,
                             esx=None,
@@ -546,7 +546,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
         return self._process_restore_response(request_json)
 
-    def full_vm_conversion_azurerm(
+	def full_vm_conversion_azurerm(
             self,
             azure_client,
             vm_to_restore=None,
@@ -642,6 +642,112 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+        def full_vm_conversion_hyperv(
+            self,
+            hyperv_client,
+            vm_to_restore=None,
+            hyperv_server=None,
+            destination_path=True,
+            esx_host=None,
+            overwrite=True,
+            power_on=True,
+            proxy_client=None,
+            register_to_failover=None,
+            network=None,
+            subnet=None,
+            copy_precedence=0,
+            restore_option=None,
+            drive=None):
+
+        """
+                        This converts the VMware to hyperv
+                        Args:
+                                vm_to_restore          (list):     provide the VM names to restore
+
+                                hyperv_client    (basestring):      name of the hyperv client
+                                                                   where the VM should be
+                                                                   restored.
+
+                                hyperv_server   (basestring):      HyperV server
+
+                                destination_path  (basestring):    path of the destinaion vm
+
+                                overwrite              (bool):    overwrite the existing VM
+                                                                  default: True
+
+                                power_on               (bool):    power on the  restored VM
+                                                                  default: True
+                                                                  
+                                resister_to_failover (basestring): failover register
+                                
+                                network           (basestring):   network of the vm 
+
+                                copy_precedence         (int):    copy precedence value
+                                                                  default: 0
+
+                                proxy_client      (basestring):   destination proxy client
+
+                            Returns:
+                                object - instance of the Job class for this restore job
+
+                            Raises:
+                                SDKException:
+                                    if inputs are not of correct type as per definition
+
+                                    if failed to initialize job
+
+                                    if response is empty
+
+                                    if response is not success
+
+        """
+
+        if restore_option is None:
+            restore_option = {}
+
+        # check mandatory input parameters are correct
+        if not (isinstance(hyperv_client, basestring)):
+            raise SDKException('Subclient', '101')
+
+        subclient = self._set_vm_conversion_defaults(hyperv_client, restore_option)
+        instance = subclient._backupset_object._instance_object
+        if proxy_client is None:
+            proxy_client = instance.server_host_name[0]
+
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=hyperv_client,
+            destination_path=destination_path, 
+            esx_host=esx_host,#"172.19.108.114", #esx_host
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            register_to_failover=register_to_failover,
+            network=network,
+            subnet=subnet,
+            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name
+        )
+
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['nics'] = [{'name' : 'Network adapter 1', 
+                                                                                 'networkName': network
+                                                                                 }]
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['DestinationPath'] = destination_path
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['Datastore'] = ''
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'][0]['DestinationPath'] = drive+destination_path
+        
         return self._process_restore_response(request_json)
 
     def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):

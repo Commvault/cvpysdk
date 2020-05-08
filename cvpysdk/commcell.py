@@ -69,13 +69,9 @@ Commcell:
 
     sync_remote_cache()         --  syncs remote cache
 
-    get_remote_cache_path()     --  returns remote cache path
+    get_remote_cache()     		--  returns the instance of the RemoteCache class
 
-    configure_remotecache()     --  configures client as remote cache
-
-     assoc_entity_to_remote_cache()-- Associates client/client_group to the Remote Cache
-
-    configure_packages_to_sync()    --  configures packages to sync for the remote cache
+    assoc_entity_to_remote_cache()  -- Associates client/client_group to the Remote Cache
 
     push_servicepack_and_hotfixes() --  triggers installation of service pack and hotfixes
 
@@ -490,6 +486,7 @@ class Commcell(object):
         self._id = None
         self._clients = None
         self._commserv_cache = None
+        self._remote_cache = None
         self._media_agents = None
         self._workflows = None
         self._disaster_recovery = None
@@ -582,6 +579,7 @@ class Commcell(object):
         """Removes all the attributes associated with the instance of this class."""
         del self._clients
         del self._commserv_cache
+        del self._remote_cache
         del self._media_agents
         del self._workflows
         del self._alerts
@@ -1514,6 +1512,7 @@ class Commcell(object):
         """Refresh the properties of the Commcell."""
         self._clients = None
         self._commserv_cache = None
+        self._remote_cache = None
         self._media_agents = None
         self._workflows = None
         self._alerts = None
@@ -1552,6 +1551,15 @@ class Commcell(object):
         self._index_servers = None
         self._hac_clusters = None
         self._index_pools = None
+
+    def get_remote_cache(self, client_name):
+        """Returns the instance of the RemoteCache  class."""
+        try:
+            self._remote_cache = RemoteCache(self, client_name)
+            return self._remote_cache
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     def run_data_aging(
             self,
@@ -1869,38 +1877,6 @@ class Commcell(object):
             service_pack=service_pack
         )
 
-    def get_remote_cache_path(self, client_name):
-        """
-        Returns remote cache path
-
-        Args:
-            client_name (str) -- Client name
-
-        Returns:
-                remote cache path (str)
-
-        Raises:
-            exception if qoperation fails
-
-        """
-        remote_cache = RemoteCache(self, client_name)
-        return remote_cache.get_remote_cache_path()
-
-    def configure_remotecache(self, cache_path, client_name):
-        """
-        Configures client as remote cache
-
-        Args:
-            cache_path (str)  -- Remote cache path
-
-            client_name (str) -- Client name
-
-        Raises:
-            exception if qoperation fails
-        """
-        remote_cache = RemoteCache(self, client_name)
-        return remote_cache.configure_remotecache(cache_path)
-
     def assoc_entity_to_remote_cache(self,
                                      remote_cache_client_name,
                                      client_name=None,
@@ -1921,49 +1897,6 @@ class Commcell(object):
         remote_cache = RemoteCache(self, remote_cache_client_name)
         return remote_cache.assoc_entity_to_remote_cache(client_name=client_name,
                                                          client_group_name=client_group_name)
-
-    def configure_packages_to_sync(self, client_name, win_os=None, win_package_list=None, unix_os=None,
-                                   unix_package_list=None):
-        """
-        Configures packages to sync for the remote cache
-
-        Args:
-            client_name (str) 	 	-- name of the client
-            win_os 		(list)	 	-- list of windows oses to sync
-            win_package_list  (list)-- list of windows packages to sync
-            unix_os (list) 		  	-- list of unix oses to sync
-            unix_package_list (list)-- list of unix packages to sync
-
-        Raises:
-            SDKException:
-            - Failed to execute the api
-
-            - Response is incorrect
-
-            - Incorrect input
-
-        Usage:
-            commcell_obj.configure_packages_to_sync()
-
-            win_os = ["WINDOWS_32", "WINDOWS_64"]
-            unix_os = ["UNIX_LINUX64", "UNIX_AIX"]
-            win_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
-            unix_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
-
-            OS_Name_ID_Mapping, WindowsDownloadFeatures and UnixDownloadFeatures enum is used for
-            providing input to the configure_packages_to_sync method, it can be imported by
-
-                >>> from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
-                    from cvpysdk.deployment.deploymentconstants import OS_Name_ID_Mapping
-                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
-
-        """
-        remote_cache = RemoteCache(self, client_name)
-        return remote_cache.configure_packages_to_sync(
-            win_os=win_os,
-            win_package_list=win_package_list,
-            unix_os=unix_os,
-            unix_package_list=unix_package_list)
 
     def push_servicepack_and_hotfix(
             self,

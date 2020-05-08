@@ -67,8 +67,8 @@ class BigDataAppsInstance(Instance):
         else:
             raise SDKException('Instance', '105')
 
-        bigdata_apps_cluster_type = properties \
-            ["distributedClusterInstance"]["clusterType"]
+        bigdata_apps_cluster_type = properties.get('distributedClusterInstance', {}). \
+            get('clusterType', -1)
 
         if bigdata_apps_cluster_type in instance_types.keys():
             instance_type = instance_types[bigdata_apps_cluster_type]

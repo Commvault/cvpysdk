@@ -2581,8 +2581,6 @@ class Instance(object):
                     "clientName": value.get("proxy_client", "")
                 }
             }
-            if self._destination_restore_json["inPlace"]:
-                self._destination_restore_json["destPath"] = [""]
         # For Index server restore, we need to set proxy client & in-place flag
         elif value.get("proxy_client") is not None and \
                 (self._agent_object.agent_name).upper() == "BIG DATA APPS" and \
