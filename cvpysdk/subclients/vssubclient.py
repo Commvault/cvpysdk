@@ -234,7 +234,7 @@ class VirtualServerSubclient(Subclient):
         """
         name = "name"
         datastore = "Datastore"
-        new_name = "newName"
+        new_name = "new_name"
 
     @property
     def content(self):
@@ -1123,7 +1123,8 @@ class VirtualServerSubclient(Subclient):
     def browse(self, vm_path='\\',
                show_deleted_files=False,
                vm_disk_browse=False,
-               vm_files_browse=False):
+               vm_files_browse=False,
+               operation='browse'):
         """Gets the content of the backup for this subclient at the path
            specified.
 
@@ -1146,6 +1147,8 @@ class VirtualServerSubclient(Subclient):
                 vm_files_browse      (bool)  -- browse files and folders
                                                 default: True
 
+                operation            (str)   -- Type of operation, browser of find
+
             Returns:
                 list - list of all folders or files with their full paths
                        inside the input path
@@ -1163,11 +1166,28 @@ class VirtualServerSubclient(Subclient):
         """
         vm_ids, vm_names = self._get_vm_ids_and_names_dict()
 
-        vm_path = self._parse_vm_path(vm_names, vm_path)
+        if operation == 'find':
+            # Return all VMs browse content for find operation
+            vm_paths = ['\\' + vm_id for vm_id in vm_names.values()]
+            vm_path_list = []
+            browse_content_dict = {}
+            for vm_path in vm_paths:
+                vm_path = self._parse_vm_path(vm_names, vm_path)
+                browse_content = super(VirtualServerSubclient, self).browse(
+                    show_deleted_files, vm_disk_browse, True, path=vm_path,
+                    vs_file_browse=vm_files_browse, operation=operation
+                )
+                vm_path_list += browse_content[0]
+                browse_content_dict.update(browse_content[1])
+            browse_content = (vm_path_list, browse_content_dict)
 
-        browse_content = super(VirtualServerSubclient, self).browse(
-            vm_path, show_deleted_files, vm_disk_browse, True, vs_file_browse=vm_files_browse
-        )
+        else:
+            vm_path = self._parse_vm_path(vm_names, vm_path)
+            browse_content = super(VirtualServerSubclient, self).browse(
+                show_deleted_files, vm_disk_browse, True, path=vm_path,
+                vs_file_browse=vm_files_browse, operation=operation
+            )
+
         if not vm_ids:
             for key, val in browse_content[1].items():
                 vm_ids[val['snap_display_name']] = val['name']
@@ -1232,6 +1252,14 @@ class VirtualServerSubclient(Subclient):
 
         nics_dict = {}
         nics = ""
+
+        # Added for v2.1
+        for vmpath in path:
+            result = path_dict[vmpath]
+            if ('browseMetaData' not in result['advanced_data']) or \
+                    ('virtualServerMetaData' not in result['advanced_data']['browseMetaData']) or \
+                    ('nics' not in result['advanced_data']['browseMetaData']['virtualServerMetaData']):
+                path, path_dict = self.browse(vm_disk_browse=True, operation='find')
         for vmpath in path:
             result = path_dict[vmpath]
             name = ""
@@ -1529,7 +1557,7 @@ class VirtualServerSubclient(Subclient):
         _folder_to_restore = _folder_to_restore.replace(":", "")
         _restore_folder_name = _folder_to_restore.split("\\")[-1]
         _folder_to_restore = _folder_to_restore.replace("\\" + _restore_folder_name, "")
-        _source_path = r'\\'.join([_vm_id, _folder_to_restore])
+        _source_path = '\\'.join([_vm_id, _folder_to_restore])
 
         _browse_files, _browse_files_dict = self.guest_files_browse(
             _source_path, from_date=from_date, to_date=to_date,
@@ -1643,7 +1671,7 @@ class VirtualServerSubclient(Subclient):
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
         return self._process_restore_response(request_json)
 
-    def vm_files_browse(self, vm_path='\\', show_deleted_files=False):
+    def vm_files_browse(self, vm_path='\\', show_deleted_files=False, operation='browse'):
         """Browses the Files and Folders of a Virtual Machine.
 
             Args:
@@ -1671,7 +1699,7 @@ class VirtualServerSubclient(Subclient):
 
                     if response is not success
         """
-        return self.browse(vm_path, show_deleted_files, True)
+        return self.browse(vm_path, show_deleted_files, True, operation=operation)
 
     def vm_files_browse_in_time(
             self,
@@ -1964,6 +1992,13 @@ class VirtualServerSubclient(Subclient):
 
         # vs metadata from browse result
         _metadata = browse_result[1][('\\' + vm_to_restore)]
+
+        if ('browseMetaData' not in _metadata['advanced_data']) or \
+                ('virtualServerMetaData' not in _metadata['advanced_data']['browseMetaData']) or \
+                ('nics' not in _metadata['advanced_data']['browseMetaData']['virtualServerMetaData']):
+            browse_result = self.vm_files_browse(operation='find')
+            _metadata = browse_result[1][('\\' + vm_to_restore)]
+
         vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
         if restore_option['in_place']:
             folder_path = vs_metadata.get("inventoryPath", '')
@@ -2119,9 +2154,9 @@ class VirtualServerSubclient(Subclient):
             restore_option,
             disks=vm_disks,
             esx_host=restore_option.get('esx'),
-            new_name=vm_to_restore,
-            new_guid = restore_option.get('guid'),
-            Datastore=restore_option.get('datastore'))
+            new_name=restore_option.get('newName'),
+            new_guid = restore_option.get('newGUID'),
+            datastore=restore_option.get('datastore'))
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
         self._advanced_restore_option_list.append(temp_dict)

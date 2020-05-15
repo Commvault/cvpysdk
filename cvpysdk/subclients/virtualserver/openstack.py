@@ -403,3 +403,116 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
         return self._process_restore_response(request_json)
+
+    def attach_disk_restore(self,
+                            vm_name,
+                            vcenter,
+                            esx=None,
+                            datastore=None,
+                            proxy_client=None,
+                            copy_precedence=0,
+                            media_agent=None,
+                            snap_proxy=None,
+                            disk_name=None,
+                            destinationVM = None,
+                            destinationVMGUID = None,
+                            datacenter = None,
+                            cluster = None):
+        """Attaches the Disks to the provided vm
+
+            Args:
+                vm_name             (basestring)    --  Name of the VM added in subclient content
+                                                        whose  disk is selected for restore
+
+                vcenter             (dict)          --  Dictinoary of vcenter, username and creds
+
+                esx                 (basestring)    --  Esx host where the vm resides
+
+                datastore               (string)    --  Datastore where disks will be restoed to
+                                                        default: None
+
+                proxy_client        (basestring)    --  Destination proxy client to be used
+                                                        default: None
+
+                copy_precedence            (int)    --  SP copy precedence from which browse has to
+                                                         be performed
+
+                media_agent                 (str)   -- MA needs to use for disk browse
+                    default :Storage policy MA
+
+                snap_proxy                   (str)   -- proxy need to be used for disk
+                                                    restores from snap
+                    default :proxy in instance or subclient
+
+                disk_name                    (str)  --  Prefix of the disk name to be attached
+                                                        defaul: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not passed in proper expected format
+
+                    if response is empty
+
+                    if response is not success
+        """
+        vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
+        _attach_disk_restore_option = {}
+        disk_name = []
+
+        # check if inputs are correct
+        if not (isinstance(vm_name, basestring) and
+                isinstance(disk_name, list)):
+            raise SDKException('Subclient', '101')
+
+        if copy_precedence:
+            _attach_disk_restore_option['copy_precedence_applicable'] = True
+
+        # fetching all disks from the vm
+        disk_list, disk_info_dict = self.disk_level_browse(
+            "\\" + vm_ids[vm_name])
+
+        if not disk_name:  # if disk names are not provided, restore all vmdk disks
+            for each_disk_path in disk_list:
+                disk_name.append(each_disk_path.split('\\')[-1])
+
+        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
+            for each_disk in disk_name:
+                each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
+                if each_disk_path not in disk_list:
+                    raise SDKException('Subclient', '111')
+
+        if proxy_client is not None:
+            _attach_disk_restore_option['client'] = proxy_client
+        else:
+            _attach_disk_restore_option['client'] = self._backupset_object._instance_object.co_ordinator
+
+        # set Source item List
+        src_item_list = []
+        for each_disk in disk_name:
+            src_item_list.append("\\" + vm_ids[vm_name] + "\\" + each_disk.split("\\")[-1])
+
+        _attach_disk_restore_option['paths'] = src_item_list
+        _attach_disk_restore_option['newName'] = destinationVM
+        _attach_disk_restore_option['newGUID'] = destinationVMGUID
+        _attach_disk_restore_option['datacenter'] = datacenter
+        _attach_disk_restore_option['cluster'] = cluster
+
+        self._set_restore_inputs(
+            _attach_disk_restore_option,
+            in_place=False,
+            copy_precedence=copy_precedence,
+            vm_to_restore=vm_name,
+            esxHost=vcenter['vcenter'],
+            userName=vcenter['user'],
+            password=vcenter['password'],
+            esx=esx,
+            paths=src_item_list,
+            datastore=datastore,
+            volume_level_restore=6,
+        )
+
+        request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
+        return self._process_restore_response(request_json)

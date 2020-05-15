@@ -113,7 +113,6 @@ class VSBackupset(Backupset):
         else:
             options = kwargs
 
-        options['operation'] = 'browse'
         options['retry_count'] = 0
         return self._do_browse(options)
 

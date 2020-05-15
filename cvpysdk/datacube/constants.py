@@ -26,6 +26,9 @@ IndexServerConstants            -       Maintains constants for index server
 class IndexServerConstants:
     """Class to maintain all the index server related constants"""
 
+    INDEX_SERVER_IDA_NAME = "Big Data Apps"
+    INDEX_SERVER_INSTANCE_NAME = "dynamicIndexInstance"
+
     ROLE_DATA_ANALYTICS = "Data Analytics"
     ROLE_EXCHANGE_INDEX = "Exchange Index"
 
@@ -45,6 +48,10 @@ class IndexServerConstants:
     OPERATION_ADD = 1
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
+
+    UPDATE_ADD_ROLE = {
+        "roleName": "",
+        "operationType": OPERATION_ADD}
 
     REQUEST_JSON = {
         "opType": OPERATION_ADD,

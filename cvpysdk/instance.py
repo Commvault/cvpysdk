@@ -72,6 +72,8 @@ Instances:
     new cloud storage instance
 
     refresh()                       --  refresh the instances associated with the agent
+    
+    add_mysql_instance()            --  Method to add new mysql Instance
 
 
 Instance:
@@ -1527,6 +1529,95 @@ class Instances(object):
                 },
                 "generalCloudProperties": self._general_properties_json
             }
+    
+    def add_mysql_instance(self, instance_name, database_options):
+        """Adds new mysql Instance to given Client
+            Args:
+				instance_name       (str)   --  instance_name
+              mysql_options       (dict)  --  dict of keyword arguments as follows:
+                    Example:
+                       database_options = {
+                            'enable_auto_discovery': True,
+                            'storage_policy': 'sai-sp',
+                            'port': 'hotsname:port',
+                            'mysql_user_name': 'mysqlusername'
+                            'mysql_password': 'password',
+                            'version': '5.7',
+                            'binary_directory': "",
+                            'config_file': "",
+                            'log_data_directory': "",
+                            'data_directory': "",
+                            'description': "Automation created instance"
+                        }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in mysql options
+
+                    if mysql instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        """
+        if None in database_options.values():
+            raise SDKException(
+                'Instance',
+                '102',
+                "One of the mysql parameter is None so cannot proceed with instance creation")
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                database_options["storage_policy"]):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    database_options["storage_policy"])
+            )
+        password = b64encode(database_options["mysql_password"].encode()).decode()
+
+        request_json = {
+            "instanceProperties": {
+                "description": "Automation created instance",
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": "MySQL",
+                    "applicationId": 104,
+                    "_type_": 0
+                },
+                "mySqlInstance": {
+                    "BinaryDirectory": database_options.get("binary_directory", ""),
+                    "ConfigFile": database_options.get("config_file", ""),
+                    "EnableAutoDiscovery": database_options.get("enable_auto_discovery", True),
+                    "LogDataDirectory": database_options.get("log_data_directory", ""),
+                    "dataDirectory": database_options.get("data_directory", ""),
+                    "port": database_options.get("port", "3306"),
+                    "version": database_options.get("version", "5.7"),
+                    "sslCAFile": database_options.get("sslca_file_path", ""),
+                    "SAUser": {
+                        "password": password,
+                        "userName": database_options.get("mysql_user_name", "mysql")
+                    },
+                    "mysqlStorageDevice": {
+                        "commandLineStoragePolicy": {
+                            "storagePolicyName": database_options.get("storage_policy", "")                        },
+                        "proxySettings":{
+                                "isProxyEnabled": True,
+                                "isUseSSL": True,
+                                "runBackupOnProxy": True}
+                }
+            }
+        }
+        }
+        self._process_add_response(request_json)
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""

@@ -395,6 +395,8 @@ class Commcell(object):
                     default: None
 
 
+            **Note** If certificate path is provided, force_https is set to True
+
             Returns:
                 object  -   instance of this class
 
@@ -408,6 +410,9 @@ class Commcell(object):
         web_service = [
             r'https://{0}/webconsole/api/'.format(webconsole_hostname)
         ]
+
+        if certificate_path:
+            force_https = True
 
         if force_https is False:
             web_service.append(r'http://{0}/webconsole/api/'.format(webconsole_hostname))
@@ -434,7 +439,8 @@ class Commcell(object):
                 if self._cvpysdk_object._is_valid_service():
                     break
             except (RequestsConnectionError, SSLError, Timeout):
-                continue
+                if force_https:
+                    raise
         else:
             raise SDKException('Commcell', '101')
 
