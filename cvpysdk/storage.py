@@ -92,6 +92,10 @@ MediaAgent:
 
     index_cache_enabled()                   --  returns index cache enabled status
 
+    set_state()                    -- enables/disables media agent
+
+    mark_for_maintenance() -- marks/unmarks media agent offline for maintenance
+
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
 
@@ -766,6 +770,101 @@ class MediaAgent(object):
 
         else:
             raise SDKException('Response', '101')
+
+    def set_state(self, enable=True):
+        """
+        disable the media agent by change in media agent properties.
+            Args:
+            enable      -   (bool)
+                            True        - Enable the media agent
+                            False       - Disable the media agent
+
+            Raises:
+            "exception"                  -   if there is an empty response
+                                         -   if there is an error in request execution
+                                         -   if response status is failure
+
+        """
+
+        if type(enable) != bool:
+            raise SDKException('Storage', '101')
+
+        media_id = int(self.media_agent_id)
+        request_json = {
+            "mediaAgentInfo": {
+                "mediaAgent": {
+                    "mediaAgentId": media_id
+                },
+                "mediaAgentProps": {
+                    "enableMA": enable
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._MEDIA_AGENTS, request_json
+        )
+
+        # check for response
+        # possible key errors if key not present in response, defaults set
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get('error', {}).get('errorCode', -1) != 0:
+                    error_message = response.get('error', {}).get('errorString', '')
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+
+    def mark_for_maintenance(self, mark=False):
+        """
+        mark the media agent offline for maintenance
+            Args:
+                mark  - (bool)
+                                        True    - mark the media agent for maintenance
+                                        False   - UNMARK the media agent for maintenance
+
+            Raises:
+            "exception"                  -   if there is an empty response
+                                         -   if there is an error in request execution
+                                         -   if response status is failure
+
+        """
+
+        if type(mark) != bool:
+            raise SDKException('Storage', '101')
+
+        media_id = int(self.media_agent_id)
+        request_json = {
+            "mediaAgentInfo": {
+                "mediaAgent": {
+                    "mediaAgentId": media_id
+                },
+                "mediaAgentProps": {
+                    "markMAOfflineForMaintenance": mark
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get('error', {}).get('errorCode', -1) != 0:
+                    error_message = response.get('error', {}).get('errorString', '')
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+
 
     @property
     def name(self):

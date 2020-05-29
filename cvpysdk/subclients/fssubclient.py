@@ -1742,7 +1742,6 @@ class FileSystemSubclient(Subclient):
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
 
-
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1840,11 +1839,12 @@ class FileSystemSubclient(Subclient):
 
             value   (bool)  -- To enable or disbale catalog acl
         """
-
+        update_properties = self.properties
         if isinstance(value, bool):
-            self._set_subclient_properties("_fsSubClientProp['catalogACL']", value)
+            update_properties['fsSubClientProp']['catalogACL'] = value
         else:
-            raise SDKException('Subclient', '102', 'argument value should be boolean')
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
 
     @property
     def index_server(self):

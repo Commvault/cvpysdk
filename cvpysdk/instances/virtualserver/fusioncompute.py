@@ -41,8 +41,8 @@ HyperVInstance:
 
 """
 
-
 from ..vsinstance import VirtualServerInstance
+
 
 class FusionComputeInstance(VirtualServerInstance):
     """Class for representing an Hyper-V of the Virtual Server agent."""
@@ -61,10 +61,7 @@ class FusionComputeInstance(VirtualServerInstance):
         self._vendor_id = 14
         self._server_name = None
 
-
-
-
-    def  _get_instance_properties(self):
+    def _get_instance_properties(self):
         """
         Get the properties of this instance
 
@@ -77,7 +74,6 @@ class FusionComputeInstance(VirtualServerInstance):
         super(FusionComputeInstance, self)._get_instance_properties()
         # waiting for praveen form
 
-
     def _get_instance_properties_json(self):
         """get the all instance related properties of this subclient.
 
@@ -86,7 +82,7 @@ class FusionComputeInstance(VirtualServerInstance):
 
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
@@ -94,16 +90,12 @@ class FusionComputeInstance(VirtualServerInstance):
                     "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
-                    }
+                }
             }
         }
         return instance_json
 
-
     @property
     def server_host_name(self):
         """return the Fusion compute VRM  associated with the PseudoClient"""
-        #return self._server_name
-        # TODO will change with Praveen Form(rsn)
-        return ["172.24.20.146"]
-        #for now to move on hard coed it
+        return self._server_name

@@ -294,6 +294,7 @@ SERVICES_DICT_TEMPLATE = {
     'RPSTORE': '{0}Replications/RPStore',
 
     'CREATE_PSEUDO_CLIENT':'{0}pseudoClient',
+    'CREATE_NAS_CLIENT':'{0}NASClient',
     'GET_OFFICE_365_ENTITIES':'{0}Office365/entities',
     'CLOUD_DISCOVERY':'{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UserPolicyAssociation',
@@ -306,6 +307,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'DELETE_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
+    'EMAIL_DISCOVERY_WITHOUT_REFRESH': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&refreshMailboxDb=false',
     'GET_EMAIL_POLICY_ASSOCIATIONS': '{0}Subclient/%s/EmailPolicyAssociation?discoveryType=%s',
     'SET_EMAIL_POLICY_ASSOCIATIONS': '{0}/Subclient/EmailPolicyAssociation',
 
@@ -333,7 +335,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',
-    
+
     'GET_NETWORK_SUMMARY' :'{0}/FirewallSummary/%s',
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',
@@ -354,7 +356,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',
     'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',
     'POLL_MAIL_SERVICE': '{0}/ServiceCommcell/IsUserPresent?email=%s',
-    'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s',
+    'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
 
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',

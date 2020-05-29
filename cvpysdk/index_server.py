@@ -483,6 +483,7 @@ class IndexServers(object):
                 if error_code == 0:
                     self.refresh()
                     self._commcell_object.clients.refresh()
+                    self._commcell_object.datacube.refresh_engine()
                 else:
                     o_str = 'Failed to create Index Server. Error: "{0}"'.format(
                         error_string)
@@ -521,6 +522,7 @@ class IndexServers(object):
                     and 'errorCode' not in response.json()['genericResp']:
                 self.refresh()
                 self._commcell_object.clients.refresh()
+                self._commcell_object.datacube.refresh_engine()
                 return
             if response.json() and 'genericResp' in response.json():
                 raise SDKException(

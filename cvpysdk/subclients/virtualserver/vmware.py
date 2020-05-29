@@ -272,8 +272,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option['client'] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, basestring) or
+                    isinstance(restored_vm_name, basestring)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
@@ -386,11 +386,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         disk_list, disk_info_dict = self.disk_level_browse(
             "\\" + vm_ids[vm_name])
 
-        if not disk_name:   # if disk names are not provided, restore all vmdk disks
+        if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
                 disk_name.append(each_disk_path.split('\\')[-1])
 
-        else:   # else, check if the given VM has a disk with the list of disks in disk_name.
+        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
                 each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
                 if each_disk_path not in disk_list:
@@ -434,7 +434,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
         return self._process_restore_response(request_json)
 
-	def attach_disk_restore(self,
+    def attach_disk_restore(self,
                             vm_name,
                             vcenter,
                             esx=None,
@@ -444,6 +444,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                             media_agent=None,
                             snap_proxy=None,
                             disk_name=None):
+
         """Attaches the Disks to the provided vm
 
             Args:
@@ -464,11 +465,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                                          be performed
 
                 media_agent                 (str)   -- MA needs to use for disk browse
-                    default :Storage policy MA
+                                                        default :Storage policy MA
 
                 snap_proxy                   (str)   -- proxy need to be used for disk
                                                     restores from snap
-                    default :proxy in instance or subclient
+                                                   default :proxy in instance or subclient
 
                 disk_name                    (str)  --  Prefix of the disk name to be attached
                                                         defaul: None
@@ -507,11 +508,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         disk_list, disk_info_dict = self.disk_level_browse(
             "\\" + vm_ids[vm_name])
 
-        if not disk_name:   # if disk names are not provided, restore all vmdk disks
+        if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
                 disk_name.append(each_disk_path.split('\\')[-1])
 
-        else:   # else, check if the given VM has a disk with the list of disks in disk_name.
+        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
                 each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
                 if each_disk_path not in disk_list:
@@ -546,7 +547,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
         return self._process_restore_response(request_json)
 
-	def full_vm_conversion_azurerm(
+    def full_vm_conversion_azurerm(
             self,
             azure_client,
             vm_to_restore=None,
@@ -562,51 +563,51 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option=None):
 
         """
-                        This converts the VMware to AzureRM
-                        Args:
-                                vm_to_restore          (list):     provide the VM names to restore
+            This converts the VMware to AzureRM
+            Args:
+                vm_to_restore          (list):     provide the VM names to restore
 
-                                azure_client    (basestring):      name of the AzureRM client
-                                                                   where the VM should be
-                                                                   restored.
+                azure_client    (basestring):      name of the AzureRM client
+                                                   where the VM should be
+                                                   restored.
 
-                                resource_group   (basestring):      destination Resource group
-                                                                    in the AzureRM
+                resource_group   (basestring):      destination Resource group
+                                                    in the AzureRM
 
-                                storage_account  (basestring):    storage account where the
-                                                                  restored VM should be located
-                                                                  in AzureRM
+                storage_account  (basestring):    storage account where the
+                                                  restored VM should be located
+                                                  in AzureRM
 
-                                overwrite              (bool):    overwrite the existing VM
-                                                                  default: True
+                overwrite              (bool):    overwrite the existing VM
+                                                  default: True
 
-                                power_on               (bool):    power on the  restored VM
-                                                                  default: True
+                power_on               (bool):    power on the  restored VM
+                                                  default: True
 
-                                instance_size    (basestring):    Instance Size of restored VM
+                instance_size    (basestring):    Instance Size of restored VM
 
-                                public_ip              (bool):    If True, creates the Public IP of
-                                                                  restored VM
+                public_ip              (bool):    If True, creates the Public IP of
+                                                  restored VM
 
-                                restore_as_managed     (bool):    If True, restore as Managed VM in Azure
+                restore_as_managed     (bool):    If True, restore as Managed VM in Azure
 
-                                copy_precedence         (int):    copy precedence value
-                                                                  default: 0
+                copy_precedence         (int):    copy precedence value
+                                                  default: 0
 
-                                proxy_client      (basestring):   destination proxy client
+                proxy_client      (basestring):   destination proxy client
 
-                            Returns:
-                                object - instance of the Job class for this restore job
+            Returns:
+                object - instance of the Job class for this restore job
 
-                            Raises:
-                                SDKException:
-                                    if inputs are not of correct type as per definition
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
 
-                                    if failed to initialize job
+                    if failed to initialize job
 
-                                    if response is empty
+                    if response is empty
 
-                                    if response is not success
+                    if response is not success
 
         """
 
@@ -644,7 +645,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
-        def full_vm_conversion_hyperv(
+    def full_vm_conversion_hyperv(
             self,
             hyperv_client,
             vm_to_restore=None,
@@ -662,45 +663,45 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             drive=None):
 
         """
-                        This converts the VMware to hyperv
-                        Args:
-                                vm_to_restore          (list):     provide the VM names to restore
+            This converts the VMware to hyperv
+            Args:
+                    vm_to_restore          (list):     provide the VM names to restore
 
-                                hyperv_client    (basestring):      name of the hyperv client
-                                                                   where the VM should be
-                                                                   restored.
+                    hyperv_client    (basestring):      name of the hyperv client
+                                                       where the VM should be
+                                                       restored.
 
-                                hyperv_server   (basestring):      HyperV server
+                    hyperv_server   (basestring):      HyperV server
 
-                                destination_path  (basestring):    path of the destinaion vm
+                    destination_path  (basestring):    path of the destinaion vm
 
-                                overwrite              (bool):    overwrite the existing VM
-                                                                  default: True
+                    overwrite              (bool):    overwrite the existing VM
+                                                      default: True
 
-                                power_on               (bool):    power on the  restored VM
-                                                                  default: True
-                                                                  
-                                resister_to_failover (basestring): failover register
-                                
-                                network           (basestring):   network of the vm 
+                    power_on               (bool):    power on the  restored VM
+                                                      default: True
 
-                                copy_precedence         (int):    copy precedence value
-                                                                  default: 0
+                    resister_to_failover (basestring): failover register
 
-                                proxy_client      (basestring):   destination proxy client
+                    network           (basestring):   network of the vm
 
-                            Returns:
-                                object - instance of the Job class for this restore job
+                    copy_precedence         (int):    copy precedence value
+                                                      default: 0
 
-                            Raises:
-                                SDKException:
-                                    if inputs are not of correct type as per definition
+                    proxy_client      (basestring):   destination proxy client
 
-                                    if failed to initialize job
+                Returns:
+                    object - instance of the Job class for this restore job
 
-                                    if response is empty
+                Raises:
+                    SDKException:
+                        if inputs are not of correct type as per definition
 
-                                    if response is not success
+                        if failed to initialize job
+
+                        if response is empty
+
+                        if response is not success
 
         """
 
@@ -720,8 +721,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option,
             in_place=False,
             vcenter_client=hyperv_client,
-            destination_path=destination_path, 
-            esx_host=esx_host,#"172.19.108.114", #esx_host
+            destination_path=destination_path,
+            esx_host=esx_host,
             unconditional_overwrite=overwrite,
             client_name=proxy_client,
             power_on=power_on,
@@ -738,7 +739,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json = self._prepare_fullvm_restore_json(restore_option)
 
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
-            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['nics'] = [{'name' : 'Network adapter 1', 
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['nics'] = [{'name': 'Network adapter 1',
                                                                                  'networkName': network
                                                                                  }]
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
@@ -746,8 +747,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
             'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['Datastore'] = ''
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
-            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'][0]['DestinationPath'] = drive+destination_path
-        
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'][0][
+            'DestinationPath'] = drive + destination_path
+
         return self._process_restore_response(request_json)
 
     def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):
@@ -815,7 +817,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 restore_option["rpstore_name"] = rpstore.rpstore_name
                 restore_option["rpstore_id"] = rpstore.rpstore_id
 
-            response = self._commcell_object.execute_qcommand("qoperation execute", self._prepare_blr_xml(restore_option))
+            response = self._commcell_object.execute_qcommand("qoperation execute",
+                                                              self._prepare_blr_xml(restore_option))
             if response.json() != {'errorMessage': '', 'errorCode': 0}:
                 raise SDKException("Subclient", 102, response.json()["errorMessage"])
 

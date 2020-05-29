@@ -76,7 +76,9 @@ Clients
 
     add_kubernetes_client()               --  adds a new Kubernetes Virtualization Client to the
                                               Commcell
-
+                                              
+    add_nas_client()                      --  adds a new NAS Client
+    
     add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
@@ -185,7 +187,7 @@ Client
 
     add_user_association()       --  adds the user associations on this client
 
-	add_client_owner()			 --  adds users to owner list of this client
+    add_client_owner()           --  adds users to owner list of this client
 
     refresh()                    --  refresh the properties of the client
 
@@ -209,10 +211,10 @@ Client
 
     set_job_start_time()         -- sets the job start time at client level
 
-    uninstall_software()		 --	Uninstalls all the packages of the client
+    uninstall_software()         -- Uninstalls all the packages of the client
 
     get_network_summary()        -- Gets the network summary of the client
-	
+    
     change_exchange_job_results_directory()
                                 --  Move the Job Results Directory for an 
                                     Exchange Online Environment
@@ -357,6 +359,7 @@ class Clients(object):
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
+        self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -1027,6 +1030,117 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_nas_client(self, 
+                    ndmp_server_clientname,
+                    ndmp_server_hostname,
+                    username,
+                    password
+                    ):
+
+        """
+        Adds new NAS client with NDMP and NetworkShare iDA
+
+        Args:
+            ndmp_server_clientname    (str)   --  new NAS client name
+
+            ndmp_server_hostname      (str)   --  HostName for new NAS client
+
+            username                (str)   --  NDMP user name
+
+            password                (str)   --  NDMP password
+
+        Returns:
+                client_object     (obj)   --  client object associated with the new NAS client
+
+        Raises:
+            SDKException:
+                if failed to add the client
+
+                if response is empty
+
+                if response is not success
+        """
+        password = b64encode(password.encode()).decode()
+        request_json = {
+            "nasTurboFSCreateReq": {
+                "turboNASproperties": {
+                    "osType": 3
+                }
+            },
+            "detectNDMPSrvReq": {
+                "listenPort": 10000,
+                "ndmpServerDetails": {
+                    "ndmpServerHostName": ndmp_server_hostname,
+                    "ndmpServerClientName": ndmp_server_clientname,
+                    "ndmpCredentials": {
+                        "userName": username,
+                        "password": password
+                    }
+                },
+                "detectMediaAgent": {
+                    "mediaAgentId": 0,
+                    "mediaAgentName": ""
+                }
+            },
+            "createPseudoClientReq": {
+                "clientInfo": {
+                    "clientType": 2,
+                    "nasClientProperties": {
+                        "listenPort": 10000,
+                        "ndmpServerDetails": {
+                            "ndmpServerHostName": ndmp_server_hostname,
+                            "ndmpServerClientName": ndmp_server_clientname,
+                            "ndmpCredentials": {
+                                "userName": username,
+                                "password": password
+                            }
+                        },
+                        "detectMediaAgent": {
+                            "mediaAgentId": 0,
+                            "mediaAgentName": ""
+                        }
+                    }
+                },
+                "entity": {
+                    "hostName": ndmp_server_hostname,
+                    "clientName": ndmp_server_clientname,
+                    "clientId": 0
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+           'POST', self._ADD_NAS_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+                
+                    if error_code != 0:
+                        error_message = response.json()['errorMessage']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_message)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(ndmp_server_clientname)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+            
     def add_vmware_client(
             self,
             client_name,
@@ -2019,19 +2133,19 @@ class Clients(object):
                 "nfs_option and cifs_option both cannot be false")
 
         request_json = {
-	                    "createPseudoClientRequest": {
-			                "clientInfo": {
-				                "fileServerInfo": {
-					                "arrayName": array_name,
-					                "arrayId": 0
-				                    },
-				                "clientAppType":2,
-				                "clientType": 18,
-			                    },
-			                "entity": {
-				                "clientName": client_name
-			                    }
-		                    }
+                        "createPseudoClientRequest": {
+                            "clientInfo": {
+                                "fileServerInfo": {
+                                    "arrayName": array_name,
+                                    "arrayId": 0
+                                    },
+                                "clientAppType":2,
+                                "clientType": 18,
+                                },
+                            "entity": {
+                                "clientName": client_name
+                                }
+                            }
                         }
 
         if(nfs_option != cifs_option):

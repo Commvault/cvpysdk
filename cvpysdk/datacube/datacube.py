@@ -38,6 +38,8 @@ Datacube:
 
     refresh()                   --  refresh the datasources associated with the Datacube Engine
 
+    refresh_engine()            --  refresh the index server associated with datacube
+
 """
 
 from __future__ import absolute_import
@@ -192,3 +194,7 @@ class Datacube(object):
     def refresh(self):
         """Refresh the datasources associated to the Datacube Engine."""
         self._datasources = None
+
+    def refresh_engine(self):
+        """Refresh the Index server associated to the Datacube."""
+        self._analytics_engines = self._get_analytics_engines()
