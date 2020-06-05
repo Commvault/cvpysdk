@@ -189,6 +189,8 @@ class RemoteCache(object):
         self.commcell = commcell
         self.client_object = self.commcell.clients.get(client_name)
         self.request_xml = CommServeCache.get_request_xml()
+        self._cvpysdk_object = commcell._cvpysdk_object
+        self._services = commcell._services
 
     def get_remote_cache_path(self):
         """
@@ -208,9 +210,9 @@ class RemoteCache(object):
         response = self.commcell.qoperation_execute(request_xml)
         if response:
             try:
-                for clients in response["qualifiedClients"]:
-                    if clients['clientName']['name'] == self.client_object.client_name:
-                        remote_cache_path = clients["cachePath"]
+                for clients in response["uaInfo"]:
+                    if clients['client']['clientName'] == self.client_object.client_name:
+                        remote_cache_path = clients["uaCachePath"]
                         break
                 return remote_cache_path
             except Exception:
@@ -382,32 +384,45 @@ class RemoteCache(object):
         else:
             raise Exception("{0} does not exist".format(client_name if client_name else client_group_name))
 
-        request_xml = """
-            <EVGui_SetUpdateAgentInfoReq>
-            <uaInfo uaCachePath="%s" uaOpCode="5">
-            <uaName id="%s" name="%s"/>
-            <uaImpersonate/>
-            <patchUAContentConfigs/>
-            </uaInfo>
-            <uaList>
-            <addedList id="%s" name="%s" type="%s" >
-            </addedList>
-            </uaList>
-            </EVGui_SetUpdateAgentInfoReq>
-            """ %  (self.commcell.get_remote_cache_path(self.client_object.client_name),
-                    self.client_object.client_id,
-                    self.client_object.client_name,
-                    entity_id,
-                    entity_name,
-                    entity_type)
+        request_json = {
+                "EVGui_SetUpdateAgentInfoReq" :{
+                "uaInfo": {
+                    "uaCachePath": self.get_remote_cache_path(),
+                    "uaOpCode": "5",
+                    "uaName": {
+                        "id": self.client_object.client_id,
+                        "name": self.client_object.client_name
+                    }
+                },
+                "uaList": {
+                    "addedList": {
+                        "id": entity_id,
+                        "name": entity_name
+                    }
+                }
+            }
+        }
 
-        response = self.commcell.qoperation_execute(request_xml)
-        if response.get('errorCode') != 0:
-            error_message = "Failed with error: [{0}]".format(
-                response.get('errorMessage')
-            )
-            raise SDKException(
-                'Response',
-                '101',
-                'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
-            )
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response.ok:
+                if response.json():
+                    if response.json().get('errorCode') != 0:
+                        error_code = response.json().get('errorCode')
+                        error_message = "Failed with error: [{0}]".format(
+                            response.json().get('errorMessage')
+                        )
+                        raise SDKException(
+                            'Response',
+                            '101',
+                            'Error Code:"{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')

@@ -71,8 +71,6 @@ Commcell:
 
     get_remote_cache()     		--  returns the instance of the RemoteCache class
 
-    assoc_entity_to_remote_cache()  -- Associates client/client_group to the Remote Cache
-
     push_servicepack_and_hotfixes() --  triggers installation of service pack and hotfixes
 
     install_software()              --  triggers the install Software job with the given options
@@ -1882,27 +1880,6 @@ class Commcell(object):
             os_list=os_list,
             service_pack=service_pack
         )
-
-    def assoc_entity_to_remote_cache(self,
-                                     remote_cache_client_name,
-                                     client_name=None,
-                                     client_group_name=None):
-        """
-        Associates client/client_group to the remote cache
-
-        Args:
-            remote_cache_client_name (str)  -- Name of the RemoteCache Client
-
-            client_name (str) -- Client that has to point to the RemoteCache
-
-            client_group_name (str)  -- The client_group which has to be pointed to Remote Cache
-
-        Raises:
-            exception if qoperation fails
-        """
-        remote_cache = RemoteCache(self, remote_cache_client_name)
-        return remote_cache.assoc_entity_to_remote_cache(client_name=client_name,
-                                                         client_group_name=client_group_name)
 
     def push_servicepack_and_hotfix(
             self,
