@@ -31,6 +31,7 @@ class IndexServerConstants:
 
     ROLE_DATA_ANALYTICS = "Data Analytics"
     ROLE_EXCHANGE_INDEX = "Exchange Index"
+    ROLE_ONEDRIVE_INDEX = "OneDrive Index"
 
     ENGINE_NAME = "engineName"
     CLOUD_ID = "cloudID"

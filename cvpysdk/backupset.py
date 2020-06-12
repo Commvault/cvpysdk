@@ -449,6 +449,8 @@ class Backupsets(object):
 
                     plan_name       (str)   -- name of the plan to associate to the backupset
 
+                    is_nas_turbo_backupset  (bool)    --  True for NAS based client.
+
 
             Returns:
                 object - instance of the Backupset class, if created successfully
@@ -498,6 +500,10 @@ class Backupsets(object):
                 }
             }
         }
+
+        if kwargs.get('is_nas_turbo_type'):
+            request_json["backupSetInfo"]["commonBackupSet"]["isNasTurboBackupSet"] = kwargs.get('is_nas_turbo_type',
+                                                                                                 False)
 
         agent_settings = {
             'db2': """
@@ -564,14 +570,15 @@ request_json['backupSetInfo'].update({
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-
-
-    def add_archiveset(self, archiveset_name):
+    def add_archiveset(self, archiveset_name, is_nas_turbo_backupset=False):
         """ 
         Adds a new archiveset to the agent. It is just a backupset but is mainly used for archive only items
 
         Args:
             archiveset_name     (str) -- name of new archiveset to add
+
+            is_nas_turbo_backupset  (bool) -- True for NAS based client.
+                default -   False
             
         Returns:
         object - instance of the Backupset class, if created successfully
@@ -598,11 +605,17 @@ request_json['backupSetInfo'].update({
         if self.has_backupset(archiveset_name):
             raise SDKException('archiveset_name', '102', 'Archiveset "{0}" already exists.'.format(archiveset_name))
 
+        if self._agent_object.agent_id not in ['29', '33']:
+            raise SDKException('Backupset', '101', "Archiveset is not applicable to this application type.")
+
+
+
         request_json = {
             "backupSetInfo": {
                 "useContentFromPlan": False,
                 "planEntity": {},
                 "commonBackupSet": {
+                    "isNasTurboBackupSet": is_nas_turbo_backupset,
                     "isArchivingEnabled": True,
                     "isDefaultBackupSet": False
                 },
@@ -1071,22 +1084,36 @@ class Backupset(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _run_backup(self, subclient_name, return_list):
-        """Triggers incremental backup job for the given subclient,
-            and appends its Job object to the list.
+    def _run_backup(self, subclient_name, return_list, **kwargs):
+        """Triggers backup job for the given subclient, and appends its Job object to the list.
+            Backup job is started only when backup activity is enabled and storage policy is set for it.
 
-            The SDKExcpetion class instance is appended to the list,
+            The SDKException class instance is appended to the list,
             if any exception is raised while running the backup job for the Subclient.
 
             Args:
                 subclient_name (str)   --  name of the subclient to trigger the backup for
 
                 return_list    (list)  --  list to append the job object to
+
+            Kwargs:
+                All arguments used by subclient.backup() can be used here. Commonly used arguments are
+
+                backup_level   (str)   --  The type of backup to run
+
+                advanced_options   (dict)  --  advanced backup options to be included while
+                                    making the request
+
+            Returns:
+                None
+
         """
         try:
-            job = self.subclients.get(subclient_name).backup()
-            if job:
+            subclient = self.subclients.get(subclient_name)
+            if subclient.is_backup_enabled and subclient.storage_policy is not None:
+                job = subclient.backup(**kwargs)
                 return_list.append(job)
+                time.sleep(2)  # Staggering the next backup job to be started
         except SDKException as excp:
             return_list.append(excp)
 
@@ -1817,10 +1844,21 @@ class Backupset(object):
             o_str = 'Failed to set this as the Default Backup Set\nError: "{0}"'
             raise SDKException('Backupset', '102', o_str.format(output[2]))
 
-    def backup(self):
-        """Runs Incremental backup job for all subclients in this backupset.
+    def backup(self, **kwargs):
+        """Runs backup job for all subclients in this backupset.
 
-            Runs Full Backup job for a subclient, if no job had been ran earlier for it.
+            kwargs:
+                Please refer subclient.backup() for all the supported arguments. Commonly used arguments are,
+
+                backup_level        (str)   --  level of backup the user wish to run
+                        Full / Incremental / Differential / Synthetic_full
+                    default: Incremental
+
+                advanced_options   (dict)  --  advanced backup options to be included while
+                                                    making the request
+
+                common_backup_options      (dict)  --  advanced job options to be included while
+                                                        making request
 
             Returns:
                 list    -   list consisting of the job objects for the backup jobs started for
@@ -1833,7 +1871,7 @@ class Backupset(object):
         if self.subclients.all_subclients:
             for subclient in self.subclients.all_subclients:
                 thread = threading.Thread(
-                    target=self._run_backup, args=(subclient, return_list)
+                    target=self._run_backup, args=(subclient, return_list), kwargs=kwargs
                 )
                 thread_list.append(thread)
                 thread.start()

@@ -2397,6 +2397,8 @@ c
                     if response is not success
         """
         self._instance_object._restore_association = self._subClientEntity
+        if 'proxy_client' in fs_options:
+            proxy_client = fs_options['proxy_client']
 
         return self._instance_object._restore_out_of_place(
             client=client,

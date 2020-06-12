@@ -234,7 +234,7 @@ class VirtualServerSubclient(Subclient):
         """
         name = "name"
         datastore = "Datastore"
-        new_name = "new_name"
+        new_name = "newName"
 
     @property
     def content(self):
@@ -2141,8 +2141,9 @@ class VirtualServerSubclient(Subclient):
             if "datastore" in restore_option:
                 ds = restore_option["datastore"]
             new_name_prefix = restore_option.get("disk_name_prefix")
-            new_name = "del_" + data["name"] if new_name_prefix is None \
-                else new_name_prefix + "_" + data["name"]
+            new_name = data["name"].replace("/", "_").replace(" ", "_")
+            new_name = "del_" + new_name if new_name_prefix is None \
+                else new_name_prefix + "_" + new_name
             _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
             vm_disks.append(_disk_dict)
         if not vm_disks:
@@ -2154,8 +2155,8 @@ class VirtualServerSubclient(Subclient):
             restore_option,
             disks=vm_disks,
             esx_host=restore_option.get('esx'),
-            new_name=restore_option.get('newName'),
-            new_guid = restore_option.get('newGUID'),
+            new_name=restore_option.get('newName', vm_to_restore),
+            new_guid=restore_option.get('newGUID', restore_option.get('guid')),
             datastore=restore_option.get('datastore'))
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
@@ -2348,7 +2349,7 @@ class VirtualServerSubclient(Subclient):
         self._json_restore_virtualServerRstOption(_disk_restore_option)
         self._json_vcenter_instance(_disk_restore_option)
         self._json_restore_attach_diskLevelVMRestoreOption(_disk_restore_option)
-        self.set_advanced_attach_disk_restore_options(_disk_restore_option['vm_to_restore'],_disk_restore_option)
+        self.set_advanced_attach_disk_restore_options(_disk_restore_option['vm_to_restore'], _disk_restore_option)
         self._virtualserver_option_restore_json["diskLevelVMRestoreOption"][
             "advancedRestoreOptions"] = self._advanced_restore_option_list
         self._advanced_restore_option_list = []

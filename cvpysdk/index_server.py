@@ -581,6 +581,7 @@ class IndexServer(object):
 
     def refresh(self):
         """Refresh the index server properties"""
+        self._commcell_obj.index_servers.refresh()
         self._get_properties()
         if not self._roles_obj:
             self._roles_obj = _Roles(self._commcell_obj)
